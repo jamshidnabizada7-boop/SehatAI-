@@ -19,6 +19,8 @@ import {
 import { ProfileCard } from './profile-card';
 import { SymptomJournal } from './symptom-journal';
 import { HealthTimeline } from './health-timeline';
+import { MaternalHealthTracker } from './maternal-health-tracker';
+import { ChildVaccineTracker } from './child-vaccine-tracker';
 import { AccountSection } from './account-section';
 import {
   clearJournal,
@@ -264,6 +266,12 @@ export function MyHealthView() {
 
         {/* Phase 2 — Health Timeline visualization (severity trend + triage distribution + recent entries) */}
         <HealthTimeline entries={entries} lang={uiLang} />
+
+        {/* Phase 2 — Maternal Health Tracker (WHO 8-visit ANC schedule, shown when profile.pregnant) */}
+        <MaternalHealthTracker lang={uiLang} isPregnant={profile?.pregnant ?? false} />
+
+        {/* Phase 2 — Child Vaccine Schedule Tracker (Pakistan EPI schedule) */}
+        <ChildVaccineTracker lang={uiLang} />
 
         {/* Account & data section (auth, retention, audit log, delete-my-data) */}
         <AccountSection />
