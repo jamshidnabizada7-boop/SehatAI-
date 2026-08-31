@@ -31,17 +31,55 @@ function getPerm(): PermState {
   return Notification.permission as PermState;
 }
 
+/** Phase 2 — Fetch VAPID public key from server + convert to Uint8Array for pushManager.subscribe */
+async function fetchVapidKey(): Promise<Uint8Array> {
+  try {
+    const res = await fetch('/api/push/vapid');
+    const data = await res.json();
+    const key = data.publicKey as string;
+    // Convert base64url to Uint8Array
+    const padding = '='.repeat((4 - (key.length % 4)) % 4);
+    const base64 = (key + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+  } catch {
+    throw new Error('Failed to fetch VAPID key');
+  }
+}
+
 export function PushNotificationManager() {
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
   const [perm, setPerm] = useState<PermState>(() => getPerm());
   const [testSent, setTestSent] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
 
   const requestPermission = useCallback(async () => {
     if (typeof Notification === 'undefined') return;
     try {
       const result = await Notification.requestPermission();
       setPerm(result as PermState);
+      // Phase 2 — subscribe to push service when permission granted
+      if (result === 'granted' && 'serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: await fetchVapidKey(),
+          });
+          // Store subscription on server
+          await fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subscription: sub }),
+          });
+          setPushSubscribed(true);
+        } catch {
+          // Push subscription failed — local notifications still work
+        }
+      }
     } catch {
       setPerm('denied');
     }

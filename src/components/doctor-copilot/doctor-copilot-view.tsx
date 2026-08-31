@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Stethoscope,
@@ -108,7 +108,50 @@ export function DoctorCopilotView() {
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = MOCK_PATIENTS.find((p) => p.id === selectedId);
+  const [realPatients, setRealPatients] = useState<typeof MOCK_PATIENTS>([]);
+  const [loading, setLoading] = useState(true);
+  const [useReal, setUseReal] = useState(false);
+
+  // Phase 2 — fetch real patient conversations (consent-gated)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/doctor/patients');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.patients && data.patients.length > 0 && !cancelled) {
+            const mapped = data.patients.map((p: any) => ({
+              id: p.conversationId,
+              name: p.patientName,
+              age: 0,
+              sex: (p.profile?.sex === 'female' ? 'F' : p.profile?.sex === 'male' ? 'M' : 'M') as 'M' | 'F',
+              chiefComplaint: p.chiefComplaint,
+              triage: (p.triageLevel || 'ROUTINE') as 'EMERGENCY' | 'URGENT' | 'ROUTINE' | 'SELF_CARE',
+              waitingMin: Math.floor((Date.now() - new Date(p.updatedAt).getTime()) / 60000),
+              conditions: p.profile?.conditions ?? [],
+              allergies: p.profile?.allergies ?? [],
+              medications: p.profile?.medications ?? [],
+              aiSummary: undefined,
+              drugAlerts: undefined,
+            }));
+            if (!cancelled) {
+              setRealPatients(mapped);
+              setUseReal(true);
+            }
+          }
+        }
+      } catch {
+        // fall back to mock data
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const patients = useReal && realPatients.length > 0 ? realPatients : MOCK_PATIENTS;
+  const selected = patients.find((p) => p.id === selectedId);
 
   if (selected) {
     return <PatientDetail patient={selected} lang={uiLang} onBack={() => setSelectedId(null)} />;
@@ -168,11 +211,11 @@ export function DoctorCopilotView() {
               {uiLang === 'ur' ? 'مریضوں کی قطار' : uiLang === 'roman' ? 'Mareezon ki qatar' : 'Patient queue'}
             </h2>
             <span className="text-xs text-muted-foreground">
-              {MOCK_PATIENTS.length} {uiLang === 'ur' ? 'مریض' : uiLang === 'roman' ? 'mareez' : 'patients'}
+              {patients.length} {uiLang === 'ur' ? 'مریض' : uiLang === 'roman' ? 'mareez' : 'patients'}
             </span>
           </div>
           <ul className="space-y-2">
-            {MOCK_PATIENTS.map((p, i) => (
+            {patients.map((p, i) => (
               <motion.li
                 key={p.id}
                 initial={{ opacity: 0, y: 6 }}

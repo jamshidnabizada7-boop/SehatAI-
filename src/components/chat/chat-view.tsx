@@ -40,6 +40,7 @@ import { ReferralRails } from './referral-rails';
 import { FirstAidCards } from './first-aid-cards';
 import { SymptomCheckerWizard } from './symptom-checker-wizard';
 import { ChatExportMenu } from './chat-export-menu';
+import { MedPreSendChecker } from './med-pre-send-checker';
 import { cn } from '@/lib/utils';
 
 const WELCOME_TRILINGUAL: { tag: string; text: string; lang: Lang }[] = [
@@ -492,6 +493,10 @@ export function ChatView() {
 
       {/* input bar */}
       <div className="relative px-4 pt-2 pb-3 sm:px-6">
+        {/* Phase 2 — Medication pre-send checker (client-side drug detection) */}
+        <div className="mb-1.5">
+          <MedPreSendChecker text={input} lang={uiLang} />
+        </div>
         <div className="flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
           <textarea
             ref={textareaRef}
