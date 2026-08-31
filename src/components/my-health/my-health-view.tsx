@@ -24,6 +24,7 @@ import { ChildVaccineTracker } from './child-vaccine-tracker';
 import { MentalHealthScreening } from './mental-health-screening';
 import { ChronicDiseaseModule } from './chronic-disease-module';
 import { NutritionLifestyleTracker } from './nutrition-lifestyle-tracker';
+import { FamilyHealthManager } from './family-health-manager';
 import { AccountSection } from './account-section';
 import {
   clearJournal,
@@ -284,6 +285,9 @@ export function MyHealthView() {
 
         {/* Phase 2 — Nutrition + Lifestyle tracker (BMI + water + steps) */}
         <NutritionLifestyleTracker lang={uiLang} />
+
+        {/* Phase 2 — Family Health Management (multi-profile for children/parents/spouse) */}
+        <FamilyHealthManager lang={uiLang} />
 
         {/* Account & data section (auth, retention, audit log, delete-my-data) */}
         <AccountSection />

@@ -745,3 +745,59 @@ Stage Summary:
 - Completed this round: (1) Built Chronic Disease Management Module — combined diabetes (glucose) + hypertension (BP) log with trend charts, status classification, high-BP warning callout. Directly targets Pakistan's world's-highest diabetes prevalence (~26%) + endemic hypertension. (2) Built Nutrition + Lifestyle Tracker — BMI calculator with scale, water intake with 8-glass goal, physical activity with 10K-step SVG progress ring. Both are trilingual + localStorage-backed + offline-capable.
 - Unresolved / risks: (a) The chronic disease module is gated on profile.conditions — users need to set diabetes/hypertension in their profile (the profile-card has a conditions multi-select). (b) The glucose/BP readings use localStorage only — device sync is Phase 3. (c) The BMI scale pointer uses inline left% positioning which may be slightly off on very narrow screens — acceptable for MVP. (d) The step count is manually entered (no pedometer API integration) — a future enhancement could use the DeviceMotion API.
 - Priority recommendations for next round: (1) Begin Phase 2 parallel veto constellation refactor (the single biggest architectural change — refactor the linear pipeline into primary + 4 concurrent validators with veto power, per Hippocratic AI's pattern). (2) Begin vector RAG (BGE-M3 + sqlite-vec) to replace the TF-IDF fuzzy matcher for better semantic retrieval. (3) Wire the Doctor Copilot to real patient conversations (consent-gated, from the Conversation table with userId). (4) Add VAPID key generation + push subscription endpoint for real Web Push. (5) Add a family health management feature (multi-profile: parent can track health for children + elderly parents).
+
+---
+Task ID: CRON-REVIEW-ROUND-9
+Agent: Z.ai Code (cron-triggered dev review)
+Task: Assess current project status, perform QA via agent-browser, add styling + new features per the master strategy Phase 2.
+
+Work Log:
+- Read worklog.md Rounds 1-8. Dev server healthy (HTTP 200 in 72ms), lint clean, no errors. Phase 0 + Phase 1 + Phase 2 (20 features) all complete + verified.
+- QA via agent-browser: all views render correctly, no console errors. Verified My Health view shows Nutrition Tracker + Mental Health Screening + Child Vaccine Tracker (Chronic Disease Module correctly hidden when no conditions). Codebase is stable — no bugs found this round.
+- Implemented 2 new features: Family Health Management (multi-profile) + Health Tips Browser with bookmarking.
+
+NEW FEATURE 1: Family Health Management (src/components/my-health/family-health-manager.tsx + src/lib/family-health.ts, ~500 lines total)
+- Multi-profile system: a user can create + manage health profiles for family members (self, spouse, children, parents, siblings, other)
+- Data module (family-health.ts): FamilyMember interface (id, name, relation, ageBand, sex, conditions, allergies, medications, notes, timestamps), loadFamily/saveFamily/sanitizeMember helpers, RELATION_META with trilingual labels + color classes, localStorage key (sehatai.family.v1)
+- Component features:
+  * Member list: avatar icon per relation (User/Heart/Baby/Users), relation badge (color-coded), name + age/sex/conditions/allergies summary, tap to edit
+  * Member editor modal (bottom-sheet on mobile): name input, relation selector (6 options with icons), age band selector (6 options), sex selector (3 options), conditions/allergies/medications multi-line textareas, notes input, save/cancel/delete buttons
+  * Empty state: friendly prompt explaining the feature + privacy note
+  * Privacy: localStorage (sehatai.family.v1), no server calls
+  * Trilingual throughout, indigo color theme (family convention)
+- Gated: always visible in My Health view (every family can benefit)
+- Integrated into my-health-view.tsx after NutritionLifestyleTracker
+- Verified live: My Health view → "Family health · 0 members" → "Add health profiles for your family — parents, children, or spouse. All data stays on this device."
+
+NEW FEATURE 2: Health Tips Browser (src/components/about/health-tips-browser.tsx, 230 lines)
+- Browse + bookmark the 15 daily health tips beyond the single "tip of the day" in the chat empty state
+- Features:
+  * Swipeable card UI with prev/next navigation (animated x-axis slide transitions)
+  * Bookmark tips (localStorage sehatai.tipBookmarks.v1) — bookmark icon toggles on each tip
+  * Bookmark filter toggle — shows only bookmarked tips (with count badge)
+  * Shuffle button (random tip)
+  * Share button (Web Share API if available, falls back to clipboard copy)
+  * Publisher badge on each tip (WHO, UNICEF, Pakistan MoNHSRC, etc.)
+  * "X / N tips" counter
+  * Empty state for bookmark filter when no bookmarks
+  * Privacy: bookmarks in localStorage, no server calls
+  * Trilingual throughout, amber color theme (health tips convention)
+- Integrated into about-view.tsx between HealthEducationLibrary and GlossarySection
+- Verified live: About view → "Health tips · 1 / 14 tips" → "WHO — Hand hygiene" → "Wash hands, stop germs" → text → Shuffle/Share buttons
+
+STYLING POLISH:
+- Family health: indigo color theme, relation-specific icons (User/Heart/Baby/Users), relation badges with distinct colors (primary/pink/orange/violet/teal/muted), bottom-sheet modal on mobile with spring animation
+- Health tips: amber color theme, animated card transitions (x-axis slide), bookmark toggle with BookmarkCheck/Bookmark icon swap, publisher badge with amber tint
+- Both use Framer Motion (entrance animations, card transitions, modal spring), trilingual labels, WCAG 2.2 AA touch targets (≥44px), responsive layout
+
+VERIFIED via agent-browser:
+- Family Health Manager: My Health view → "Family health · 0 members" → "Add health profiles for your family" → privacy note
+- Health Tips Browser: About view → "Health tips · 1 / 14 tips" → "WHO — Hand hygiene" → "Wash hands, stop germs" → text → Shuffle/Share buttons
+- Screenshots: sehatai-family-health-manager.png, sehatai-health-tips-browser.png in /home/z/my-project/download/
+- Lint clean (0 errors, 0 warnings). Dev server HTTP 200. No console errors.
+
+Stage Summary:
+- Current status: STABLE + ENHANCED. Phase 0 + Phase 1 + Phase 2 fully complete. Phase 2 now includes 22 major features: confidence badge, drug warning card, observability dashboard, referral rails, first-aid quick-access cards, 3-tier differential display, Doctor Summary FHIR export, Health Timeline visualization, Language Settings (6+ Pakistan languages), Medication Adherence Tracker, Voice Status Indicator, First-Aid Visual Guide (pictographic), Doctor Copilot stub view, Push Notification Manager, Maternal Health Tracker (WHO 8-visit ANC), Child Vaccine Schedule Tracker (Pakistan EPI), Health Education Library (160 WHO articles), Mental Health Screening (PHQ-9 + GAD-7), Chronic Disease Management (diabetes + BP log), Nutrition + Lifestyle Tracker (BMI + water + steps), Family Health Management (multi-profile), Health Tips Browser (browse + bookmark).
+- Completed this round: (1) Built Family Health Management — multi-profile system for tracking health of self/spouse/children/parents/siblings with full member editor (name, relation, age, sex, conditions, allergies, medications, notes). Addresses the Pakistani reality of shared phones + extended families living together. (2) Built Health Tips Browser — swipeable card UI with prev/next navigation, bookmarking, shuffle, share for the 15 daily health tips. Both are trilingual + localStorage-backed + offline-capable.
+- Unresolved / risks: (a) Family member profiles are localStorage-only — device sync is Phase 3 (CHT-style sync). (b) The family health profiles don't yet integrate with the chronic disease / vaccine / maternal trackers (each tracker is currently self-only; a future enhancement could let users select which family member they're logging for). (c) The health tips browser uses the existing HEALTH_TIPS array (15 tips) — when the corpus expands, the browser automatically reflects the new tips. (d) The Web Share API may not be available on all browsers — the fallback clipboard copy handles this.
+- Priority recommendations for next round: (1) Begin Phase 2 parallel veto constellation refactor (the single biggest architectural change — refactor the linear pipeline into primary + 4 concurrent validators with veto power, per Hippocratic AI's pattern). (2) Begin vector RAG (BGE-M3 + sqlite-vec) to replace the TF-IDF fuzzy matcher for better semantic retrieval. (3) Wire the Doctor Copilot to real patient conversations (consent-gated, from the Conversation table with userId). (4) Add VAPID key generation + push subscription endpoint for real Web Push. (5) Integrate family member selection into the chronic disease / vaccine / maternal trackers (so a parent can log glucose for a diabetic child or vaccines for a baby).

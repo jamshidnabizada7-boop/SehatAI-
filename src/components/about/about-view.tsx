@@ -24,6 +24,7 @@ import { resolveUiLang, t } from '@/lib/i18n';
 import { GlossarySection } from './glossary-section';
 import { FirstAidSection } from './first-aid-section';
 import { HealthEducationLibrary } from './health-education-library';
+import { HealthTipsBrowser } from './health-tips-browser';
 import { PwaInstallButton } from '@/components/app/pwa-install-button';
 import { cn } from '@/lib/utils';
 
@@ -225,6 +226,9 @@ export function AboutView() {
 
         {/* Phase 2 — Health Education Library (searchable WHO/UNICEF/IFRC corpus) */}
         <HealthEducationLibrary lang={uiLang} />
+
+        {/* Phase 2 — Health Tips Browser (browse + bookmark 15 daily tips) */}
+        <HealthTipsBrowser lang={uiLang} />
 
         {/* glossary */}
         <GlossarySection />
