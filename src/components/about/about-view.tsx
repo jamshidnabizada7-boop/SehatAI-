@@ -23,6 +23,7 @@ import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
 import { GlossarySection } from './glossary-section';
 import { FirstAidSection } from './first-aid-section';
+import { HealthEducationLibrary } from './health-education-library';
 import { PwaInstallButton } from '@/components/app/pwa-install-button';
 import { cn } from '@/lib/utils';
 
@@ -221,6 +222,9 @@ export function AboutView() {
 
         {/* first aid quick reference — all 23 reviewed emergency templates */}
         <FirstAidSection />
+
+        {/* Phase 2 — Health Education Library (searchable WHO/UNICEF/IFRC corpus) */}
+        <HealthEducationLibrary lang={uiLang} />
 
         {/* glossary */}
         <GlossarySection />

@@ -21,6 +21,7 @@ import { SymptomJournal } from './symptom-journal';
 import { HealthTimeline } from './health-timeline';
 import { MaternalHealthTracker } from './maternal-health-tracker';
 import { ChildVaccineTracker } from './child-vaccine-tracker';
+import { MentalHealthScreening } from './mental-health-screening';
 import { AccountSection } from './account-section';
 import {
   clearJournal,
@@ -272,6 +273,9 @@ export function MyHealthView() {
 
         {/* Phase 2 — Child Vaccine Schedule Tracker (Pakistan EPI schedule) */}
         <ChildVaccineTracker lang={uiLang} />
+
+        {/* Phase 2 — Mental Health Screening (PHQ-9 + GAD-7 validated tools) */}
+        <MentalHealthScreening lang={uiLang} />
 
         {/* Account & data section (auth, retention, audit log, delete-my-data) */}
         <AccountSection />
