@@ -28,6 +28,7 @@ import { FamilyHealthManager } from './family-health-manager';
 import { AirQualityTracker } from './air-quality-tracker';
 import { HydrationTracker } from './hydration-tracker';
 import { MedicalCalculatorSuite } from './medical-calculators';
+import { SleepTracker } from './sleep-tracker';
 import { AccountSection } from './account-section';
 import {
   clearJournal,
@@ -300,6 +301,9 @@ export function MyHealthView() {
 
         {/* Phase 2 — Medical Calculator Suite (EDD + GFR + insulin factor) */}
         <MedicalCalculatorSuite lang={uiLang} />
+
+        {/* Phase 2 — Sleep Quality Tracker (hours, quality rating, 7-day trend) */}
+        <SleepTracker lang={uiLang} />
 
         {/* Account & data section (auth, retention, audit log, delete-my-data) */}
         <AccountSection />

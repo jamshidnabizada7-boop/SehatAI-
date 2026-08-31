@@ -39,6 +39,7 @@ import { OutcomeFollowupCard } from '@/components/outcomes/outcome-followup-card
 import { ReferralRails } from './referral-rails';
 import { FirstAidCards } from './first-aid-cards';
 import { SymptomCheckerWizard } from './symptom-checker-wizard';
+import { ChatExportMenu } from './chat-export-menu';
 import { cn } from '@/lib/utils';
 
 const WELCOME_TRILINGUAL: { tag: string; text: string; lang: Lang }[] = [
@@ -464,6 +465,10 @@ export function ChatView() {
             <ClipboardCopy className="h-3.5 w-3.5" aria-hidden />
             <span className="hidden sm:inline">{t(uiLang, 'chat.copyTranscript')}</span>
           </Button>
+        ) : null}
+        {/* Phase 2 — Enhanced Chat Export (WhatsApp + Print/PDF) */}
+        {messages.length > 0 && !streaming ? (
+          <ChatExportMenu messages={messages} lang={uiLang} />
         ) : null}
         {hasAssistantReply ? (
           <Button
