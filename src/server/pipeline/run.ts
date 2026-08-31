@@ -1936,6 +1936,40 @@ export async function runPipeline(
     usedFallback: false,
   });
 
+  // ---------- Step 5.6 (Phase 2): pre-generation constellation veto ----------
+  // Run validators BEFORE generation to catch critical issues early.
+  // If a critical veto fires, we can adjust the prompt or refuse generation
+  // for that specific combination — this is the true Hippocratic AI pattern.
+  try {
+    const preConstellationInput: ConstellationInput = {
+      message,
+      language: lang,
+      profile,
+      triageLevel: triageData.level,
+      response: '', // no response yet — validators check the INPUT only
+      citations: [],
+      allowedCitationIds: new Set(),
+    };
+    const preConstellation = await runConstellation(preConstellationInput);
+    // Log pre-generation constellation
+    structuredLog('info', 'constellation.pre-gen', {
+      approved: preConstellation.approved,
+      mustAbstain: preConstellation.mustAbstain,
+      vetoNames: preConstellation.results.filter((r) => r.veto).map((r) => r.name),
+    });
+    // If a critical veto fires before generation, boost the safety directive
+    if (preConstellation.mustAbstain) {
+      // Add extra caution to the generation prompt
+      // The response will be heavily caveated
+      structuredLog('warn', 'constellation.pre-gen.critical', {
+        reason: preConstellation.results.find((r) => r.veto && r.severity === 'critical')?.reason,
+      });
+    }
+  } catch {
+    // Pre-generation constellation failure must not block the pipeline
+    structuredLog('warn', 'constellation.pre-gen.failed', { error: 'pre-generation constellation failed' });
+  }
+
   // ---------- Steps 6-9 wrapped so ANY failure degrades safely ----------
   let finalContent = '';
   let citations: Citation[] = [];

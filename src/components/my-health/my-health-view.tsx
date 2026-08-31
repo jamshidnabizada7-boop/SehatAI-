@@ -236,14 +236,12 @@ export function MyHealthView() {
           />
         </section>
 
-        {/* Phase 2 — Health Dashboard Summary Card (aggregate of all trackers) */}
+        {/* Phase 2 — Health Dashboard Summary Card (self-contained, reads from all trackers) */}
         <HealthSummaryCard
           lang={uiLang}
-          summary={{
-            conditionsCount: profile?.conditions?.length ?? 0,
-            allergiesCount: profile?.allergies?.length ?? 0,
-            medicationsCount: profile?.medications?.length ?? 0,
-          }}
+          conditionsCount={profile?.conditions?.length ?? 0}
+          allergiesCount={profile?.allergies?.length ?? 0}
+          medicationsCount={profile?.medications?.length ?? 0}
         />
 
         {/* Journal section */}

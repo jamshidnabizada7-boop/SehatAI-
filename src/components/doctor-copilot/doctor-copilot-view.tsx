@@ -374,40 +374,36 @@ function PatientDetail({ patient, lang, onBack }: { patient: MockPatient; lang: 
             </div>
           </div>
 
-          {/* conditions + allergies + meds */}
+          {/* conditions + allergies + meds — fixed alignment */}
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <div>
-              <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            <div className="rounded-lg border border-border/40 p-2">
+              <p className="mb-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 {lang === 'ur' ? 'بیماریاں' : lang === 'roman' ? 'Bimariyan' : 'Conditions'}
               </p>
               <div className="flex flex-wrap gap-1">
-                {patient.conditions.map((c) => (
+                {patient.conditions.length > 0 ? patient.conditions.map((c) => (
                   <span key={c} className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">{c}</span>
-                ))}
+                )) : <span className="text-[10px] text-muted-foreground">None</span>}
               </div>
             </div>
-            <div>
-              <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            <div className="rounded-lg border border-border/40 p-2">
+              <p className="mb-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 {lang === 'ur' ? 'الرجیز' : lang === 'roman' ? 'Allergies' : 'Allergies'}
               </p>
               <div className="flex flex-wrap gap-1">
-                {patient.allergies.length > 0 ? (
-                  patient.allergies.map((a) => (
-                    <span key={a} className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:text-red-400">⚠ {a}</span>
-                  ))
-                ) : (
-                  <span className="text-[10px] text-muted-foreground">None</span>
-                )}
+                {patient.allergies.length > 0 ? patient.allergies.map((a) => (
+                  <span key={a} className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:text-red-400">⚠ {a}</span>
+                )) : <span className="text-[10px] text-muted-foreground">None</span>}
               </div>
             </div>
-            <div>
-              <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            <div className="rounded-lg border border-border/40 p-2">
+              <p className="mb-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 {lang === 'ur' ? 'ادویات' : lang === 'roman' ? 'Adwayaat' : 'Medications'}
               </p>
               <div className="flex flex-wrap gap-1">
-                {patient.medications.map((m) => (
+                {patient.medications.length > 0 ? patient.medications.map((m) => (
                   <span key={m} className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">💊 {m}</span>
-                ))}
+                )) : <span className="text-[10px] text-muted-foreground">None</span>}
               </div>
             </div>
           </div>
@@ -454,6 +450,17 @@ function PatientDetail({ patient, lang, onBack }: { patient: MockPatient; lang: 
             </ul>
           </div>
         ) : null}
+
+        {/* action: view full conversation */}
+        <a
+          href={`/api/conversations/${patient.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+        >
+          <FileText className="h-3.5 w-3.5" aria-hidden />
+          {lang === 'ur' ? 'مکمل گفتگو دیکھیں' : lang === 'roman' ? 'Mukammal guftagu dekhein' : 'View full conversation'}
+        </a>
 
         {/* action stub */}
         <div className="rounded-xl border border-dashed border-border bg-card/50 p-4 text-center">

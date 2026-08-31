@@ -354,7 +354,28 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
         ) : (
           <Button
             size="sm"
-            onClick={() => setShowResults(true)}
+            onClick={() => {
+              // Phase 2 — Store screening result in localStorage
+              try {
+                const existing = JSON.parse(localStorage.getItem('sehatai.mental-health.v1') || '{}');
+                const entry = {
+                  date: new Date().toISOString(),
+                  tool: tool === 'phq9' ? 'PHQ-9' : 'GAD-7',
+                  score: totalScore,
+                  severity: result?.severity,
+                };
+                const history = existing.history || [];
+                history.push(entry);
+                // Keep last 20 entries
+                existing.history = history.slice(-20);
+                // Update latest scores for the health summary card
+                if (tool === 'phq9') existing.phq9Score = totalScore;
+                else existing.gad7Score = totalScore;
+                existing.lastUpdated = new Date().toISOString();
+                localStorage.setItem('sehatai.mental-health.v1', JSON.stringify(existing));
+              } catch {}
+              setShowResults(true);
+            }}
             disabled={!allAnswered}
             className="gap-1.5"
           >
