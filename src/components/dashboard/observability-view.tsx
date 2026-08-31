@@ -696,7 +696,63 @@ export function ObservabilityView() {
             ← {t(uiLang, 'nav.dashboard')}
           </Button>
         </div>
+
+        {/* Phase 2 — Admin: Doctor role assignment panel */}
+        <AdminRolePanel lang={uiLang} />
       </div>
     </div>
+  );
+}
+
+// ---------- Admin: Doctor Role Assignment ----------
+
+function AdminRolePanel({ lang }: { lang: Lang }) {
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const promote = useCallback(async () => {
+    if (!email.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/promote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), role: 'doctor' }),
+      });
+      if (res.ok) {
+        toast({ description: lang === 'ur' ? 'ڈاکٹر رول تفویض ہو گیا' : 'Doctor role assigned' });
+        setEmail('');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({ description: data.error || 'Failed', variant: 'destructive' });
+      }
+    } catch {
+      toast({ description: 'Network error', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  }, [email, lang, toast]);
+
+  return (
+    <ChartCard title={lang === 'ur' ? 'ایڈمن: ڈاکٹر رول' : 'Admin: Doctor role assignment'}>
+      <p className="mb-2 text-xs text-muted-foreground">
+        {lang === 'ur'
+          ? 'کسی بھی رجسٹرڈ صارف کو ڈاکٹر رول تفویض کریں — Doctor Copilot تک رسائی کے لیے۔'
+          : 'Assign doctor role to any registered user — grants access to Doctor Copilot.'}
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="doctor@example.com"
+          className="h-9 flex-1 rounded-lg border border-border bg-card px-2.5 text-sm"
+        />
+        <Button onClick={() => void promote()} disabled={loading || !email.trim()} size="sm" className="min-h-9 gap-1.5 rounded-lg bg-primary font-semibold text-primary-foreground hover:bg-primary/90">
+          {loading ? '...' : (lang === 'ur' ? 'تفویض' : 'Promote')}
+        </Button>
+      </div>
+    </ChartCard>
   );
 }

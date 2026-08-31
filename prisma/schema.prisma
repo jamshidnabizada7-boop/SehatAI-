@@ -26,6 +26,7 @@ model User {
   profiles      PatientProfile[]
   outcomes      OutcomeEntry[]
   auditLogs     AuditLog[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Account {
@@ -101,6 +102,19 @@ model AuditLog {
   ip        String?
   createdAt DateTime @default(now())
   @@index([userId, createdAt])
+}
+
+// Phase 2 — Push notification subscriptions (Web Push API)
+model PushSubscription {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint      String   @unique // PushSubscription.endpoint
+  keys          String   // JSON: { p256dh, auth }
+  expirationTime Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([userId])
 }
 
 // Conversations & messages with full pipeline metadata

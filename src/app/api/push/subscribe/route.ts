@@ -33,9 +33,31 @@ export async function POST(req: NextRequest) {
     if (user) userId = user.id;
   }
 
-  // Store subscription (in-memory for dev — in production, use DB)
-  // For now, just acknowledge
-  console.log('[push] Subscription stored for user:', userId ?? 'guest');
+  // Phase 2 — Store subscription in PushSubscription table
+  const sub = subscription as { endpoint?: string; keys?: unknown; expirationTime?: number | null };
+  if (!sub.endpoint) {
+    return NextResponse.json({ error: 'subscription.endpoint is required' }, { status: 400 });
+  }
+
+  try {
+    await db.pushSubscription.upsert({
+      where: { endpoint: sub.endpoint },
+      create: {
+        userId,
+        endpoint: sub.endpoint,
+        keys: JSON.stringify(sub.keys ?? {}),
+        expirationTime: sub.expirationTime ?? null,
+      },
+      update: {
+        userId,
+        keys: JSON.stringify(sub.keys ?? {}),
+        expirationTime: sub.expirationTime ?? null,
+      },
+    });
+  } catch {
+    // DB storage failed — acknowledge anyway (local notifications still work)
+    console.log('[push] DB storage failed for endpoint:', sub.endpoint.slice(0, 50));
+  }
 
   return NextResponse.json({ ok: true, userId });
 }

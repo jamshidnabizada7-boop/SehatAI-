@@ -70,6 +70,9 @@ import {
 } from '@/lib/prompt-security';
 import { requireUser } from '@/lib/auth';
 import { recordPipelineRun, structuredLog } from '@/lib/observability';
+// Phase 2 — Constellation + Vector RAG
+import { runConstellation, adjustConfidence, type ConstellationInput } from '@/server/constellation';
+import { vectorRetrieve } from '@/lib/vector-rag';
 
 // ============================================================
 // SehatAI — Core safety pipeline (server)
@@ -1833,24 +1836,51 @@ export async function runPipeline(
   emit('triage', triageData);
 
   // ---------- Step 5: retrieval (context-aware, multi-fallback) ----------
+  // Phase 2 — Vector RAG: cosine similarity retrieval (falls back to TF-IDF on failure)
   const tRet = Date.now();
-  let hits = retrieveCorpus(message, 3);
+  let hits: RetrievalHit[] = [];
+  try {
+    // Try vector retrieval first (cosine similarity — catches semantic matches)
+    const vectorHits = vectorRetrieve(message, 3);
+    hits = vectorHits.map((h) => ({
+      item: h.item,
+      score: h.score,
+    })) as unknown as RetrievalHit[];
+  } catch {
+    // Vector RAG failed — fall back to TF-IDF
+    hits = retrieveCorpus(message, 3);
+  }
 
   // Fallback 1: Use L1-extracted symptoms to boost retrieval for follow-up queries
   if (hits.length === 0 && l1?.symptoms?.length) {
     const symptomQuery = l1.symptoms.join(' ') + ' ' + message;
-    hits = retrieveCorpus(symptomQuery, 3);
+    try {
+      const vh = vectorRetrieve(symptomQuery, 3);
+      hits = vh.map((h) => ({ item: h.item, score: h.score }) as unknown as RetrievalHit);
+    } catch {
+      hits = retrieveCorpus(symptomQuery, 3);
+    }
   }
 
   // Fallback 2: For detected follow-ups, inject the topic from conversation history
   if (hits.length === 0 && isFollowUp && followUpTopic) {
     const topicQuery = followUpTopic + ' ' + message;
-    hits = retrieveCorpus(topicQuery, 3);
+    try {
+      const vh = vectorRetrieve(topicQuery, 3);
+      hits = vh.map((h) => ({ item: h.item, score: h.score }) as unknown as RetrievalHit);
+    } catch {
+      hits = retrieveCorpus(topicQuery, 3);
+    }
   }
 
   // Fallback 3: For follow-up queries, search with combined patient context
   if (hits.length === 0 && isFollowUp && previousPatientTexts.length > 0) {
-    hits = retrieveCorpus(combinedPatientContext, 3);
+    try {
+      const vh = vectorRetrieve(combinedPatientContext, 3);
+      hits = vh.map((h) => ({ item: h.item, score: h.score }) as unknown as RetrievalHit);
+    } catch {
+      hits = retrieveCorpus(combinedPatientContext, 3);
+    }
   }
 
   // Fallback 4: For follow-up queries, re-retrieve prior cited corpus items for continuity
@@ -2417,6 +2447,36 @@ export async function runPipeline(
     });
   } catch {
     // observability must never break the response
+  }
+
+  // Phase 2 — Parallel Veto Constellation: run 4 validators concurrently
+  // (red-flag recheck, medication safety, citation grounding, language consistency)
+  try {
+    const constellationInput: ConstellationInput = {
+      message,
+      language: lang,
+      profile,
+      triageLevel: triageData.level,
+      response: finalContent,
+      citations,
+      allowedCitationIds: new Set(citations.map((c) => c.id)),
+    };
+    const constellationResult = await runConstellation(constellationInput);
+    // Adjust confidence based on constellation agreement
+    finalConfidence = adjustConfidence(finalConfidence, constellationResult);
+    result.confidence = finalConfidence;
+    // Log constellation result (no PHI)
+    structuredLog('info', 'constellation.run', {
+      approved: constellationResult.approved,
+      mustAbstain: constellationResult.mustAbstain,
+      shouldRevise: constellationResult.shouldRevise,
+      agreementRatio: constellationResult.agreementRatio,
+      latencyMs: constellationResult.totalLatencyMs,
+      vetoNames: constellationResult.results.filter((r) => r.veto).map((r) => r.name),
+    });
+  } catch {
+    // constellation must never break the response — if it fails, the existing L2 judge still ran
+    structuredLog('warn', 'constellation.failed', { error: 'constellation execution failed' });
   }
 
   emit('done', {

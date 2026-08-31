@@ -21,6 +21,7 @@ import {
   Clock,
   Bed,
   Sun,
+  Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -391,6 +392,25 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
               : 'Log your sleep to see trends. Sleep quality is closely linked to mental health.'}
         </p>
       )}
+
+      {/* Phase 2 — Sleep ↔ Mental Health correlation insight */}
+      {entries.length >= 3 && avgHours < 6 && avgQuality < 3 ? (
+        <div className="mt-2 flex items-start gap-2 rounded-lg border border-violet-500/30 bg-violet-50/40 p-2.5 dark:bg-violet-950/20">
+          <Activity className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-600 dark:text-violet-400" aria-hidden />
+          <div>
+            <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400">
+              {lang === 'ur' ? 'نیند اور ذہنی صحت کا تعلق' : lang === 'roman' ? 'Neend aur zehni sehat ka taluq' : 'Sleep ↔ Mental health'}
+            </p>
+            <p className="text-[10px] leading-relaxed text-violet-700 dark:text-violet-400">
+              {lang === 'ur'
+                ? 'آپ کی نیند کم اور معیار برا ہے — یہ ڈپریشن یا گھبراہٹ کی علامات سے جڑا ہو سکتا ہے۔ PHQ-9 اسکریننگ کرنے پر غور کریں۔'
+                : lang === 'roman'
+                  ? 'Aap ki neend kam aur mayar bura hai — yeh depression ya ghabrahat ki alamaat se jurha ho sakta hai. PHQ-9 screening par ghour karein.'
+                  : 'Your sleep is short and poor quality — this may be linked to depression or anxiety symptoms. Consider taking the PHQ-9 screening above.'}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <p className="mt-2 text-center text-[10px] text-muted-foreground">
         {lang === 'ur' ? 'ڈیٹا صرف اس ڈیوائس پر محفوظ ہے۔' : lang === 'roman' ? 'Data sirf is device par mehfooz hai.' : 'Data stored only on this device.'}
