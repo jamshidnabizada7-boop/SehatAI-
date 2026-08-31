@@ -14,6 +14,7 @@ export const ur: Dict = {
     about: 'تعارف',
     myHealth: 'میری صحت',
     observability: 'مشاہدہ',
+    doctorCopilot: 'ڈاکٹر کاپائلٹ',
   },
   header: {
     language: 'زبان',

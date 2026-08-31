@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import type { LangPref } from '@/lib/i18n';
 
-export type View = 'chat' | 'reminders' | 'facilities' | 'dashboard' | 'about' | 'my-health' | 'observability';
+export type View = 'chat' | 'reminders' | 'facilities' | 'dashboard' | 'about' | 'my-health' | 'observability' | 'doctor-copilot';
 
 const SESSION_KEY = 'sehatai.sessionId';
 

@@ -15,6 +15,7 @@ import { RemindersView } from '@/components/reminders/reminders-view';
 import { FacilitiesView } from '@/components/facilities/facilities-view';
 import { DashboardView } from '@/components/dashboard/dashboard-view';
 import { ObservabilityView } from '@/components/dashboard/observability-view';
+import { DoctorCopilotView } from '@/components/doctor-copilot/doctor-copilot-view';
 import { AboutView } from '@/components/about/about-view';
 import { MyHealthView } from '@/components/my-health/my-health-view';
 import { EmergencyOverlay } from '@/components/chat/emergency-overlay';
@@ -68,6 +69,7 @@ export default function Home() {
               {view === 'facilities' ? <FacilitiesView /> : null}
               {view === 'dashboard' ? <DashboardView /> : null}
               {view === 'observability' ? <ObservabilityView /> : null}
+              {view === 'doctor-copilot' ? <DoctorCopilotView /> : null}
               {view === 'about' ? <AboutView /> : null}
               {view === 'my-health' ? <MyHealthView /> : null}
             </motion.div>

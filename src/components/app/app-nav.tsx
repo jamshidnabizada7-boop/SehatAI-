@@ -10,6 +10,7 @@ import {
   MapPin,
   MessageCircle,
   ClipboardList,
+  Stethoscope,
 } from 'lucide-react';
 import { useAppStore, type View } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
@@ -22,7 +23,8 @@ type LabelKey =
   | 'nav.dashboard'
   | 'nav.about'
   | 'nav.myHealth'
-  | 'nav.observability';
+  | 'nav.observability'
+  | 'nav.doctorCopilot';
 
 interface NavItem {
   view: View;
@@ -37,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { view: 'reminders', icon: Bell, labelKey: 'nav.reminders' },
   { view: 'facilities', icon: MapPin, labelKey: 'nav.facilities' },
   { view: 'my-health', icon: ClipboardList, labelKey: 'nav.myHealth' },
+  { view: 'doctor-copilot', icon: Stethoscope, labelKey: 'nav.doctorCopilot' },
   { view: 'dashboard', icon: BarChart3, labelKey: 'nav.dashboard' },
   { view: 'observability', icon: Activity, labelKey: 'nav.observability', adminOnly: true },
   { view: 'about', icon: Info, labelKey: 'nav.about' },

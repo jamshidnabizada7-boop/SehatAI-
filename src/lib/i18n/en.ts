@@ -12,6 +12,7 @@ export const en = {
     about: 'About',
     myHealth: 'My Health',
     observability: 'Observability',
+    doctorCopilot: 'Doctor Copilot',
   },
   header: {
     language: 'Language',

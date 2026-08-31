@@ -25,6 +25,7 @@ import type { Lang, Reminder, Reminder as ReminderType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ReminderDialog, type ReminderDraft } from './reminder-dialog';
 import { AdherenceTracker, markReminderDone, unmarkReminderDone, isDoneToday } from './adherence-tracker';
+import { PushNotificationManager } from './push-notification-manager';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -255,6 +256,9 @@ export function RemindersView() {
             <span className="hidden sm:inline">{t(uiLang, 'reminders.add')}</span>
           </Button>
         </div>
+
+        {/* Phase 2 — Push notification permission manager */}
+        <PushNotificationManager />
 
         {/* list */}
         {loading ? (

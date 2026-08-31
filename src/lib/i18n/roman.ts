@@ -14,6 +14,7 @@ export const roman: Dict = {
     about: 'Taaruf',
     myHealth: 'Meri Sehat',
     observability: 'Mushahida',
+    doctorCopilot: 'Doctor Copilot',
   },
   header: {
     language: 'Zaban',

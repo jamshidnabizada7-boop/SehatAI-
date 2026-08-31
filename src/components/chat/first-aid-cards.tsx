@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Flame,
@@ -8,10 +9,13 @@ import {
   Zap,
   Activity,
   ChevronRight,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { Lang, TriText } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { FirstAidGuideModal } from './first-aid-guide';
 
 // ============================================================
 // SehatAI — First-Aid Quick-Access Cards (Phase 2)
@@ -111,6 +115,7 @@ interface FirstAidCardsProps {
 }
 
 export function FirstAidCards({ lang, onSelect, className }: FirstAidCardsProps) {
+  const [guideOpen, setGuideOpen] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -119,14 +124,26 @@ export function FirstAidCards({ lang, onSelect, className }: FirstAidCardsProps)
       className={cn('w-full max-w-lg', className)}
       aria-label={lang === 'ur' ? 'ابتدائی طبی امداد' : lang === 'roman' ? 'Ibtidai tibbi imdaad' : 'First-aid quick access'}
     >
-      <p
-        className={cn(
-          'mb-2 px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase',
-          lang === 'ur' && 'font-urdu',
-        )}
-      >
-        {lang === 'ur' ? 'ابتدائی طبی امداد' : lang === 'roman' ? 'Ibtidai tibbi imdaad' : 'First-aid quick access'}
-      </p>
+      <div className="mb-2 flex items-center justify-between">
+        <p
+          className={cn(
+            'px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase',
+            lang === 'ur' && 'font-urdu',
+          )}
+        >
+          {lang === 'ur' ? 'ابتدائی طبی امداد' : lang === 'roman' ? 'Ibtidai tibbi imdaad' : 'First-aid quick access'}
+        </p>
+        {/* Phase 2 — visual guide button (pictographic step-by-step for low-literacy) */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setGuideOpen(true)}
+          className="h-7 gap-1 px-2 text-[11px] font-semibold text-primary hover:bg-primary/10"
+        >
+          <BookOpen className="h-3.5 w-3.5" aria-hidden />
+          {lang === 'ur' ? 'بصری گائیڈ' : lang === 'roman' ? 'Basri guide' : 'Visual guide'}
+        </Button>
+      </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {FIRST_AID_CARDS.map((card, i) => {
           const Icon = card.icon;
@@ -183,6 +200,7 @@ export function FirstAidCards({ lang, onSelect, className }: FirstAidCardsProps)
           );
         })}
       </div>
+      <FirstAidGuideModal open={guideOpen} onOpenChange={setGuideOpen} />
     </motion.div>
   );
 }
