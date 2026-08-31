@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useTheme } from 'next-themes';
-import { Globe2, HeartPulse, Moon, Search, Sun, Wifi, WifiOff } from 'lucide-react';
+import { Globe2, HeartPulse, Moon, Search, Sun, Wifi, WifiOff, Stethoscope, ShieldCheck, Clock, ShieldAlert } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -17,6 +18,52 @@ import type { LangPref } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { LanguageSettings } from '@/components/settings/language-settings';
+import { Badge } from '@/components/ui/badge';
+
+/** Role badge — small pill showing the user's role + verification state. */
+function RoleBadge() {
+  const { data: session, status } = useSession();
+  if (status !== 'authenticated' || !session?.user) return null;
+  const role = (session.user as { role?: string }).role ?? 'user';
+  const accountStatus = (session.user as { accountStatus?: string }).accountStatus ?? 'active';
+
+  if (role === 'doctor') {
+    if (accountStatus === 'pending_verification') {
+      return (
+        <Badge className="hidden items-center gap-1 bg-amber-500/15 text-[10px] font-bold text-amber-700 sm:inline-flex dark:text-amber-400">
+          <Clock className="h-3 w-3" /> DOCTOR · PENDING
+        </Badge>
+      );
+    }
+    if (accountStatus === 'suspended' || accountStatus === 'deleted') {
+      return (
+        <Badge className="hidden items-center gap-1 bg-red-500/15 text-[10px] font-bold text-red-700 sm:inline-flex dark:text-red-400">
+          <ShieldAlert className="h-3 w-3" /> DOCTOR · SUSPENDED
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="hidden items-center gap-1 bg-emerald-500/15 text-[10px] font-bold text-emerald-700 sm:inline-flex dark:text-emerald-400">
+        <ShieldCheck className="h-3 w-3" /> DOCTOR
+      </Badge>
+    );
+  }
+  if (role === 'admin') {
+    return (
+      <Badge className="hidden items-center gap-1 bg-slate-500/15 text-[10px] font-bold text-slate-700 sm:inline-flex dark:text-slate-300">
+        <ShieldCheck className="h-3 w-3" /> ADMIN
+      </Badge>
+    );
+  }
+  if (role === 'user') {
+    return (
+      <Badge className="hidden items-center gap-1 bg-primary/15 text-[10px] font-bold text-primary sm:inline-flex">
+        <HeartPulse className="h-3 w-3" /> PATIENT
+      </Badge>
+    );
+  }
+  return null;
+}
 
 export function AppHeader() {
   const langPref = useAppStore((s) => s.langPref);
@@ -53,7 +100,7 @@ export function AppHeader() {
             <HeartPulse className="h-5 w-5 text-primary-foreground" aria-hidden />
           </span>
           <span className="flex flex-col leading-none">
-            <span className="text-base font-extrabold tracking-tight text-foreground">
+            <span className="flex items-center gap-1.5 text-base font-extrabold tracking-tight text-foreground">
               Sehat<span className="text-primary">AI</span>
             </span>
             <span className="hidden text-[10px] font-medium text-muted-foreground sm:block">
@@ -61,6 +108,9 @@ export function AppHeader() {
             </span>
           </span>
         </div>
+
+        {/* role badge */}
+        <RoleBadge />
 
         <div className="ms-auto flex items-center gap-1.5">
           {/* global search — one box for first aid, glossary and topics */}

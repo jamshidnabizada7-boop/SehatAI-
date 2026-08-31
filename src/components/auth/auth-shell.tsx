@@ -1,17 +1,26 @@
 'use client';
 
-import { HeartPulse } from 'lucide-react';
+import { Stethoscope, HeartPulse } from 'lucide-react';
 import Link from 'next/link';
 import { AppHeader } from '@/components/app/app-header';
 import { AppFooter } from '@/components/app/app-footer';
+import { cn } from '@/lib/utils';
+
+type Variant = 'patient' | 'doctor';
 
 /**
  * Shared shell for the auth + onboarding pages: app header, scrollable
  * centered main area, sticky footer (mt-auto inside a min-h-dvh flex column).
+ *
+ * `variant="doctor"` swaps the brand accent color and icon for the
+ * Doctor Portal surface.
  */
-export function AuthShell({ children }: { children: React.ReactNode }) {
+export function AuthShell({ children, variant = 'patient' }: { children: React.ReactNode; variant?: Variant }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+    <div className={cn(
+      'flex min-h-dvh flex-col bg-background text-foreground',
+      variant === 'doctor' && 'bg-gradient-to-b from-emerald-50/60 via-background to-background dark:from-emerald-950/20',
+    )}>
       <AppHeader />
       <main
         id="main"
@@ -25,7 +34,20 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 }
 
 /** Small brand heading used above the auth forms. */
-export function AuthBrandHeading() {
+export function AuthBrandHeading({ variant = 'patient' }: { variant?: Variant }) {
+  if (variant === 'doctor') {
+    return (
+      <div className="mb-6 flex flex-col items-center gap-2 text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 shadow-sm">
+          <Stethoscope className="h-6 w-6 text-white" aria-hidden />
+        </span>
+        <p className="text-base font-extrabold tracking-tight text-foreground">
+          Sehat<span className="text-emerald-600">AI</span>{' '}
+          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Doctor Portal</span>
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="mb-6 flex flex-col items-center gap-2 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm">

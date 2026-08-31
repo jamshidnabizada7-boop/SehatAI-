@@ -40,6 +40,7 @@ import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang, t, type TKey } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { Lang } from '@/lib/types';
+import { DoctorVerificationsView } from '@/components/admin/doctor-verifications-view';
 
 // Phase 0 (W5 fix): hardcoded passcode removed. The dashboard is now gated
 // server-side by the user's role (admin) via GET /api/eval/access. The client
@@ -744,6 +745,11 @@ export function DashboardView() {
             </div>
           </>
         )}
+
+        {/* Doctor PMDC Verifications (admin only) */}
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+          <DoctorVerificationsView />
+        </div>
       </div>
     </div>
   );

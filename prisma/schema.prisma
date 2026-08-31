@@ -9,6 +9,7 @@ datasource db {
 
 // ============================================================
 // Phase 0 — Authentication (NextAuth.js credentials provider)
+// Doctor/Patient identity separation (PLAN-DOCTOR-LOGIN-SEPARATION)
 // ============================================================
 model User {
   id            String    @id @default(cuid())
@@ -16,6 +17,7 @@ model User {
   name          String?
   passwordHash  String?
   role          String    @default("user") // user | doctor | admin
+  accountStatus String    @default("active") // active | pending_verification | suspended | deleted
   consentAt     DateTime? // Urdu consent timestamp; null = not consented
   retentionDays Int?      // null = indefinite; otherwise auto-purge schedule
   createdAt     DateTime  @default(now())
@@ -27,6 +29,65 @@ model User {
   outcomes      OutcomeEntry[]
   auditLogs     AuditLog[]
   pushSubscriptions PushSubscription[]
+  doctorProfile DoctorProfile?
+}
+
+// ============================================================
+// Doctor identity (PMDC-verified). One-to-one with User (role=doctor).
+// Created at /auth/doctor/signup; verified by admin.
+// ============================================================
+model DoctorProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pmdcNumber      String   @unique              // Pakistan Medical & Dental Council #
+  pmdcVerifiedAt  DateTime?                      // null = not yet verified
+  pmdcVerifiedBy  String?                        // admin userId
+  specialty       String                         // e.g. "Cardiology", "Family Medicine"
+  subSpecialty    String?
+  facilityName    String?
+  facilityCity    String?
+  yearsExperience Int?
+  languages       String   @default("[]")       // JSON array: ["en","ur"]
+  consultationFee Int?                           // PKR, optional
+  bio             String?                         // short, for patient-facing directory
+  avatarUrl       String?
+  createdAt       DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  verificationDocs DoctorVerificationDoc[]
+  patientConsents PatientConsentForDoctor[]
+  @@index([pmdcNumber])
+}
+
+// Uploaded verification evidence (PMDC card / CNIC / degree / experience letter)
+model DoctorVerificationDoc {
+  id          String   @id @default(cuid())
+  doctorProfileId String
+  doctorProfile DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  docType     String   // pmdc_card | cnic | degree | experience_letter
+  fileName    String
+  fileUrl     String   // stored under /uploads (local disk in v1; S3 in prod)
+  mimeType    String
+  uploadedAt  DateTime @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?  // admin userId
+  status      String   @default("pending") // pending | approved | rejected
+  notes       String?
+  @@index([doctorProfileId])
+}
+
+// Consent boundary: a doctor can only see a patient's data if the patient
+// explicitly granted access (or has an active conversation with them).
+model PatientConsentForDoctor {
+  id           String   @id @default(cuid())
+  patientId    String
+  doctorId     String
+  doctorProfile DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  grantedAt    DateTime @default(now())
+  revokedAt    DateTime?
+  scope        String   @default("read_history") // read_history | soap_draft | follow_up
+  @@unique([patientId, doctorId, scope])
+  @@index([doctorId])
 }
 
 model Account {

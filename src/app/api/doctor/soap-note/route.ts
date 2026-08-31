@@ -3,8 +3,7 @@
 // Generates a SOAP note from the conversation with audit trail (every claim links to source message)
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { requireDoctor } from '@/lib/auth';
 import { llmJSON } from '@/server/llm';
 
 export const runtime = 'nodejs';
@@ -30,9 +29,9 @@ Rules:
 - Use English medical terminology with Urdu translations where the patient used Urdu`;
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let user;
+  try { user = await requireDoctor(); } catch (e: unknown) {
+    return NextResponse.json({ error: 'Forbidden — doctor role required' }, { status: (e as { status?: number }).status ?? 401 });
   }
 
   let body: { conversationId?: string };
@@ -82,17 +81,14 @@ export async function POST(req: NextRequest) {
     );
 
     // Audit log
-    const user = await db.user.findUnique({ where: { email: session.user.email! } });
-    if (user) {
-      await db.auditLog.create({
-        data: {
-          userId: user.id,
-          action: 'doctor.soap-note.generated',
-          resource: conversationId,
-          meta: JSON.stringify({ triageLevel: highestTriage }),
-        },
-      });
-    }
+    await db.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'doctor.soap-note.generated',
+        resource: conversationId,
+        meta: JSON.stringify({ triageLevel: highestTriage }),
+      },
+    });
 
     return NextResponse.json({
       soapNote: soapResult,

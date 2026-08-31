@@ -1,29 +1,23 @@
-// SehatAI — Phase 2: Doctor Copilot API
+// SehatAI — Doctor Copilot API
 // GET /api/doctor/patients → real patient conversations for the logged-in doctor
-// Fetches conversations that have userId set (authenticated patients),
-// with their latest message + triage level + conditions.
+// Doctor-only: requires role=doctor or admin. Falls back to all conversations
+// (so doctors see anyone who has chatted with SehatAI — implicit consent via usage).
+// In v2, this should be consent-gated via PatientConsentForDoctor.
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { requireDoctor } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
-export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  const email = session?.user?.email;
-  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await db.user.findUnique({ where: { email } });
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+export async function GET(_req: NextRequest) {
+  let user;
+  try { user = await requireDoctor(); } catch (e: unknown) {
+    return NextResponse.json({ error: 'Forbidden — doctor role required' }, { status: (e as { status?: number }).status ?? 401 });
+  }
 
-  // Phase 2 — allow all authenticated users to view conversations (for demo/development)
-  // In production, restrict to doctor/admin roles:
-  // if (user.role !== 'doctor' && user.role !== 'admin') {
-  //   return NextResponse.json({ error: 'Forbidden — doctor role required' }, { status: 403 });
-  // }
-
-  // Fetch ALL conversations (including guest sessions), include latest message + profile
+  // Fetch conversations with userId (authenticated patients), include latest message + profile
   const conversations = await db.conversation.findMany({
+    where: { userId: { not: null } },
     include: {
       messages: {
         orderBy: { createdAt: 'desc' },
@@ -31,7 +25,7 @@ export async function GET(req: NextRequest) {
       },
     },
     orderBy: { updatedAt: 'desc' },
-    take: 20,
+    take: 50,
   });
 
   // Fetch patient profiles for each user
@@ -60,7 +54,7 @@ export async function GET(req: NextRequest) {
     return {
       conversationId: c.id,
       patientId: c.userId ?? '',
-      patientName: user?.name ?? (c.userId ? 'Unknown' : 'Guest patient'),
+      patientName: user?.name ?? 'Unknown',
       patientEmail: user?.email ?? '',
       consentAt: user?.consentAt?.toISOString() ?? null,
       chiefComplaint: latestMsg?.content?.slice(0, 160) ?? 'No messages',
@@ -84,7 +78,7 @@ export async function GET(req: NextRequest) {
 
   // Audit log
   await db.auditLog.create({
-    data: { userId: user.id, action: 'doctor.patients.list', resource: 'copilot' },
+    data: { userId: user.id, action: 'doctor.patients.list', resource: 'copilot', meta: JSON.stringify({ count: patients.length }) },
   });
 
   return NextResponse.json({ patients });

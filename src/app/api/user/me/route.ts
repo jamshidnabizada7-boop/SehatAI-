@@ -1,5 +1,5 @@
 // SehatAI — Phase 0: current user info (for auth UI state)
-// GET /api/user/me -> { user: { id, email, name, consented, retentionDays } | null }
+// GET /api/user/me -> { user: { id, email, name, consented, retentionDays, role, accountStatus, doctorProfile? } | null }
 // Lightweight, unauthenticated reads return 200 with { user: null } so the
 // client can probe session state without triggering error toasts.
 import { NextResponse } from 'next/server';
@@ -17,9 +17,31 @@ export async function GET() {
   }
   const row = await db.user.findUnique({
     where: { id: user.id },
-    select: { id: true, email: true, name: true, consentAt: true, retentionDays: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      consentAt: true,
+      retentionDays: true,
+      role: true,
+      accountStatus: true,
+    },
   });
   if (!row) return NextResponse.json({ user: null });
+
+  // Fetch doctor profile if applicable
+  let doctorProfile: { pmdcNumber: string; specialty: string; pmdcVerifiedAt: string | null } | null = null;
+  if (row.role === 'doctor') {
+    const dp = await db.doctorProfile.findUnique({ where: { userId: row.id } });
+    if (dp) {
+      doctorProfile = {
+        pmdcNumber: dp.pmdcNumber,
+        specialty: dp.specialty,
+        pmdcVerifiedAt: dp.pmdcVerifiedAt?.toISOString() ?? null,
+      };
+    }
+  }
+
   return NextResponse.json({
     user: {
       id: row.id,
@@ -27,6 +49,9 @@ export async function GET() {
       name: row.name,
       consented: !!row.consentAt,
       retentionDays: row.retentionDays,
+      role: row.role,
+      accountStatus: row.accountStatus,
+      doctorProfile,
     },
   });
 }

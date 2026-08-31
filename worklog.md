@@ -1602,3 +1602,28 @@ Stage Summary:
 - New helpers: requireDoctor(), requireAdmin(), requireActiveDoctor() in src/lib/auth.ts.
 - 7 implementation phases (A-G) with discrete todos; existing users are NOT affected (backwards-compatible).
 - Plan awaits user approval before any code is written.
+
+---
+Task ID: IMPL-DOCTOR-LOGIN-SEPARATION
+Agent: Z.ai Code
+Task: User approved the doctor/patient identity separation plan and asked to implement it fully.
+
+Work Log:
+- Phase A (Schema + Auth): Added accountStatus field to User; created DoctorProfile, DoctorVerificationDoc, PatientConsentForDoctor models in prisma/schema.prisma. Ran bun run db:push. Added requireDoctor(), requireActiveDoctor(), requireAdmin() helpers + invalidateUserSessions() to src/lib/auth.ts. Extended JWT/session callbacks to carry accountStatus. Updated /api/user/me to return role + accountStatus + doctorProfile. Created /api/auth/session-role endpoint for client nav filtering.
+- Phase B (Doctor signup/signin): Extended /api/auth/signup to accept intendedRole=doctor + doctor profile fields + PMDC validation + per-IP rate limit (5/hour). Created /api/doctor/upload-doc endpoint (multipart upload, PMDC card/CNIC/degree/experience_letter). Built /auth/doctor/signup page (full form: PMDC, specialty, facility, languages, doc uploads, doctor consent). Built /auth/doctor/signin page (doctor-branded shell + post-login redirect logic). Built /onboarding/doctor/pending + /onboarding/doctor/rejected pages.
+- Phase C (Landing + nav): Created LandingChooser component shown for unauthenticated users with two cards (patient/doctor). Added doctorOnly/patientOnly/requireActiveDoctor flags to NAV_ITEMS. Updated app-nav.tsx to filter by role + accountStatus. Added RoleBadge to app-header (PATIENT/DOCTOR/DOCTOR PENDING/ADMIN). Updated patient signin to redirect by role.
+- Phase D (Doctor Portal expansion): Hardened /api/doctor/patients + /api/doctor/soap-note with requireDoctor(). Created /api/doctor/drug-checker (bulk med check), /api/doctor/fhir-export (FHIR R4 Bundle), /api/doctor/followups (GET+POST), /api/doctor/who-dak (14 decision tables). Rewrote doctor-copilot-view.tsx with 5-tab sub-nav: Patients / Drug Checker / Follow-ups / WHO DAK / Audit. Patient detail has SOAP generation + FHIR export + conversation link.
+- Phase E (Admin verification UI): Created /api/admin/doctor-verifications (list pending doctors + docs), /api/admin/verify-doctor (approve/reject with audit), /api/admin/doctor-doc (admin-only file serving). Built DoctorVerificationsView component with filter chips (Pending/Approved/Rejected/All), expandable cards, doc preview, reviewer notes, approve/reject actions. Wired it into the bottom of the DashboardView.
+- Phase F (Hardening): Updated /api/admin/promote to use requireAdmin() + invalidate sessions + handle legacy doctor backfill (creates DoctorProfile with pmdcVerifiedAt when admin promotes to doctor). Created scripts/promote-admin.ts to bootstrap a test admin.
+
+Stage Summary:
+- All 6 phases of the implementation plan are coded. Schema, auth helpers, doctor signup/signin, doctor portal expansion (5 tabs), admin verification UI, and hardening are in place.
+- Database schema now includes: User.accountStatus, DoctorProfile (PMDC #, specialty, verifiedAt), DoctorVerificationDoc (uploaded evidence), PatientConsentForDoctor (consent boundary).
+- Auth helpers: requireUser(), requireDoctor(), requireActiveDoctor() (role=doctor AND active AND PMDC verified), requireAdmin(), invalidateUserSessions().
+- 6 new API routes for doctor portal (drug-checker, fhir-export, followups, who-dak, upload-doc, soap-note hardened) + 3 new admin routes (doctor-verifications, verify-doctor, doctor-doc).
+- 4 new pages: /auth/doctor/signup, /auth/doctor/signin, /onboarding/doctor/pending, /onboarding/doctor/rejected.
+- 3 new components: LandingChooser, DoctorVerificationsView, expanded DoctorCopilotView with 5 tabs.
+- Nav is now role-aware: patients see Chat/Reminders/Facilities/My Health/About; doctors see Chat/Facilities/Doctor Copilot/About; admins see Chat/Facilities/Doctor Copilot/Dashboard/About.
+- Promoted test-patient@example.com → admin role for QA testing. Created test doctor dr-test@example.com (PMC-12345, pending_verification).
+- Lint clean. Dev server running on port 3000.
+- Next: Phase G — Agent Browser verification of full signup → pending → admin approve → doctor login → portal flow.

@@ -107,19 +107,43 @@ export default function SignInPage() {
           toast.error(T.errSignin.en, { description: T.errSignin.ur });
           return;
         }
-        // Decide the landing page: onboarding until Urdu consent is recorded.
+        // Decide the landing page based on role + consent
+        let role: string | null = null;
+        let accountStatus: string | null = null;
         let consented = false;
         try {
           const res = await fetch('/api/user/me', { cache: 'no-store' });
           if (res.ok) {
-            const data = (await res.json()) as { user?: { consented?: boolean } | null };
+            const data = (await res.json()) as { user?: { consented?: boolean; role?: string; accountStatus?: string } | null };
             consented = !!data.user?.consented;
+            role = data.user?.role ?? null;
+            accountStatus = data.user?.accountStatus ?? null;
           }
         } catch {
           // fall through — default to onboarding, which re-checks consent
         }
-        router.replace(consented ? '/' : '/onboarding');
-        router.refresh();
+        // Doctor/patient identity separation: redirect to the right portal
+        if (role === 'doctor') {
+          if (accountStatus === 'pending_verification') {
+            toast.info('Your PMDC verification is pending.');
+            router.replace('/onboarding/doctor/pending');
+            return;
+          }
+          if (accountStatus === 'suspended' || accountStatus === 'deleted') {
+            router.replace('/onboarding/doctor/rejected');
+            return;
+          }
+          toast.success('Welcome back, Doctor. Redirecting to Doctor Portal.');
+          window.location.href = '/?view=doctor-copilot';
+          return;
+        }
+        if (role === 'admin') {
+          window.location.href = '/?view=dashboard';
+          return;
+        }
+        // Force full reload to reset Zustand store state (so a previous doctor
+        // session's view doesn't bleed into the patient session).
+        window.location.href = consented ? '/' : '/onboarding';
       } catch {
         toast.error(T.errSignin.en, { description: T.errSignin.ur });
       } finally {

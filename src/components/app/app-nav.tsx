@@ -32,18 +32,42 @@ interface NavItem {
   labelKey: LabelKey;
   /** when true the item is only rendered for admin sessions */
   adminOnly?: boolean;
+  /** when true the item is only rendered for doctor+ sessions */
+  doctorOnly?: boolean;
+  /** when true the item is hidden for doctor sessions */
+  patientOnly?: boolean;
+  /** when true, requires role=doctor AND accountStatus=active (PMDC verified) */
+  requireActiveDoctor?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { view: 'chat', icon: MessageCircle, labelKey: 'nav.chat' },
-  { view: 'reminders', icon: Bell, labelKey: 'nav.reminders' },
+  { view: 'reminders', icon: Bell, labelKey: 'nav.reminders', patientOnly: true },
   { view: 'facilities', icon: MapPin, labelKey: 'nav.facilities' },
-  { view: 'my-health', icon: ClipboardList, labelKey: 'nav.myHealth' },
-  { view: 'doctor-copilot', icon: Stethoscope, labelKey: 'nav.doctorCopilot' },
-  { view: 'dashboard', icon: BarChart3, labelKey: 'nav.dashboard' },
+  { view: 'my-health', icon: ClipboardList, labelKey: 'nav.myHealth', patientOnly: true },
+  { view: 'doctor-copilot', icon: Stethoscope, labelKey: 'nav.doctorCopilot', doctorOnly: true, requireActiveDoctor: true },
+  { view: 'dashboard', icon: BarChart3, labelKey: 'nav.dashboard', adminOnly: true },
   { view: 'observability', icon: Activity, labelKey: 'nav.observability', adminOnly: true },
   { view: 'about', icon: Info, labelKey: 'nav.about' },
 ];
+
+/** Compute the visible nav items for a given session. */
+function useVisibleNavItems() {
+  const { data: session, status } = useSession();
+  return useMemo(() => {
+    const role = status === 'authenticated' ? ((session?.user as { role?: string } | undefined)?.role ?? 'guest') : 'guest';
+    const accountStatus = status === 'authenticated' ? ((session?.user as { accountStatus?: string } | undefined)?.accountStatus ?? 'active') : 'active';
+    const isDoctorActive = role === 'doctor' && accountStatus === 'active';
+    const isAdmin = role === 'admin';
+    return NAV_ITEMS.filter((it) => {
+      // admin sees everything (preview)
+      if (it.adminOnly) return isAdmin;
+      if (it.doctorOnly) return isDoctorActive || isAdmin;
+      if (it.patientOnly) return role === 'user' || role === 'guest' || !role;
+      return true;
+    });
+  }, [session, status]);
+}
 
 /** Bottom tab navigation (mobile). 44px+ touch targets. */
 export function BottomNav() {
@@ -51,10 +75,7 @@ export function BottomNav() {
   const setView = useAppStore((s) => s.setView);
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
-  const { data: session, status } = useSession();
-  const isAdmin = status === 'authenticated' && (session?.user as { role?: string } | undefined)?.role === 'admin';
-
-  const items = useMemo(() => NAV_ITEMS.filter((it) => !it.adminOnly || isAdmin), [isAdmin]);
+  const items = useVisibleNavItems();
 
   return (
     <nav
@@ -104,10 +125,7 @@ export function SidebarNav() {
   const setView = useAppStore((s) => s.setView);
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
-  const { data: session, status } = useSession();
-  const isAdmin = status === 'authenticated' && (session?.user as { role?: string } | undefined)?.role === 'admin';
-
-  const items = useMemo(() => NAV_ITEMS.filter((it) => !it.adminOnly || isAdmin), [isAdmin]);
+  const items = useVisibleNavItems();
 
   return (
     <nav
