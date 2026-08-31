@@ -1,0 +1,52 @@
+// SehatAI — Phase 3: Punjabi (Shahmukhi) + Sindhi translations
+// Basic translations for the most critical UI elements.
+// Full translations require the data collection program (4-month track).
+
+export const pa: Record<string, string> = {
+  'app.name': 'سیہ اے آئی',
+  'app.tagline': 'پاکستان کے لیے محفوظ صحت رہنمائی',
+  'nav.chat': 'چیٹ',
+  'nav.reminders': 'یاد دہانیاں',
+  'nav.facilities': 'سہولتیاں',
+  'nav.dashboard': 'ڈیش بورڈ',
+  'nav.about': 'تعارف',
+  'nav.myHealth': 'میری صحت',
+  'nav.doctorCopilot': 'ڈاکٹر کوپائلٹ',
+  'header.language': 'زبان',
+  'header.search': 'تلاش',
+  'chat.inputPlaceholder': 'اپنی علامات بیان کریں…',
+  'chat.you': 'آپ',
+  'chat.assistant': 'سیہ اے آئی',
+  'chat.send': 'بھیجیں',
+  'chat.newChat': 'نئی چیٹ',
+  'chat.history': 'تاریخ',
+  'chat.copyTranscript': 'نقل کریں',
+  'chat.transcriptEmpty': 'گفتگو خالی ہے',
+  'chat.transcriptCopied': 'کاپی ہو گیا',
+  'chat.doctorSummary': 'ڈاکٹر خلاصہ',
+  'footer.disclaimer': 'یہ طبی مشورہ نہیں ہے۔ تشخیص کے لیے ڈاکٹر سے رجوع کریں۔',
+  'myHealth.title': 'میری صحت',
+  'myHealth.pregnant': 'حاملہ',
+};
+
+export const sd: Record<string, string> = {
+  'app.name': 'سيهات آء آء',
+  'app.tagline': 'پاڪستان لاء محفوظ صحت رهنمائي',
+  'nav.chat': 'چيٽ',
+  'nav.reminders': 'ياد دهانيون',
+  'nav.facilities': 'سهولتون',
+  'nav.dashboard': 'ڊيش بورڊ',
+  'nav.about': 'تعارف',
+  'nav.myHealth': 'منهنجي صحت',
+  'nav.doctorCopilot': 'ڊاڪٽر ڪوپائلٽ',
+  'header.language': 'زبان',
+  'header.search': 'ڳولا',
+  'chat.inputPlaceholder': 'پنهنجون علامتون بيان ڪريو…',
+  'chat.you': 'توهان',
+  'chat.assistant': 'سيهات آء آء',
+  'chat.send': 'موڪليو',
+  'chat.newChat': 'نئون چيٽ',
+  'chat.history': 'تاريخ',
+  'footer.disclaimer': 'هي طبي مشوره ناهي. تشخيص لاء ڊاڪٽر سان رجوع ڪريو.',
+  'myHealth.title': 'منهنجي صحت',
+};

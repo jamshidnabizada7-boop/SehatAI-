@@ -1,0 +1,22 @@
+// SehatAI — Phase 3: Sindhi translations
+export const sd: Record<string, string> = {
+  'app.name': 'سيهات آء آء',
+  'app.tagline': 'پاڪستان لاء محفوظ صحت رهنمائي',
+  'nav.chat': 'چيٽ',
+  'nav.reminders': 'ياد دهانيون',
+  'nav.facilities': 'سهولتون',
+  'nav.dashboard': 'ڊيش بورڊ',
+  'nav.about': 'تعارف',
+  'nav.myHealth': 'منهنجي صحت',
+  'nav.doctorCopilot': 'ڊاڪٽر ڪوپائلٽ',
+  'header.language': 'زبان',
+  'header.search': 'ڳولا',
+  'chat.inputPlaceholder': 'پنهنجون علامتون بيان ڪريو…',
+  'chat.you': 'توهان',
+  'chat.assistant': 'سيهات آء آء',
+  'chat.send': 'موڪليو',
+  'chat.newChat': 'نئون چيٽ',
+  'chat.history': 'تاريخ',
+  'footer.disclaimer': 'هي طبي مشوره ناهي. تشخيص لاء ڊاڪٽر سان رجوع ڪريو.',
+  'myHealth.title': 'منهنجي صحت',
+};
