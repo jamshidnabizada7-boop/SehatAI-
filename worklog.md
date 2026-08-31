@@ -457,3 +457,63 @@ Stage Summary:
 - Completed this round: (1) Built Doctor Summary FHIR-style export — extended the DoctorSummary type + API + modal to include differential, drugCheck, confidence, citations, patient profile snapshot, and a downloadable FHIR R4 Bundle JSON for EHR integration. (2) Built Health Timeline visualization with Recharts — severity trend area chart, triage distribution, recent entries list, trend indicator badge, empty state. (3) Full styling polish with medical-convention colors + Framer Motion animations + print-friendly styles + trilingual labels.
 - Unresolved / risks: (a) The FHIR JSON export downloads to the browser's download dir (not the server filesystem) — can't verify the file content from the server side, but the click handler + Blob URL + anchor click pattern is standard + the toast "FHIR JSON downloaded" fired. (b) The patient profile snapshot only populates for authenticated users (guest conversations have null patientProfile — by design). (c) The citations in the summary depend on the pipeline storing them in pipelineMeta.citations — this field exists in the done event but may not be persisted to pipelineMeta for all message types; the deterministic fallback handles the null case gracefully.
 - Priority recommendations for next round: (1) Begin Phase 2 parallel veto constellation refactor (the single biggest architectural change — refactor the linear pipeline into primary + 4 concurrent validators with veto power, per Hippocratic AI's pattern). (2) Begin vector RAG (BGE-M3 + sqlite-vec) to replace the TF-IDF fuzzy matcher for better semantic retrieval. (3) Add medication-reminder push notifications (Web Push API) wired to the existing reminders system. (4) Add a voice-first onboarding flow (Whisper-ur STT + XTTS Urdu TTS) for low-literacy users. (5) Add a Pashto/Punjabi language selector stub (data program is a 4-month track, but the UI can be prepared).
+
+---
+Task ID: CRON-REVIEW-ROUND-4
+Agent: Z.ai Code (cron-triggered dev review)
+Task: Assess current project status, perform QA via agent-browser, add styling + new features per the master strategy Phase 2.
+
+Work Log:
+- Read worklog.md Rounds 1-3. Dev server healthy (HTTP 200 in 64ms), lint clean, no errors. Phase 0 + Phase 1 + Phase 2 (8 features) all complete + verified.
+- QA via agent-browser: all 6 views render correctly, no console errors. Codebase is stable — no bugs found this round.
+- Implemented 3 new features: language selector stub for Pakistan's 6+ languages, medication adherence tracker, voice status indicator.
+
+NEW FEATURE 1: Language Settings Dialog (src/components/settings/language-settings.tsx, 220 lines)
+- A dedicated language picker that surfaces ALL Pakistan languages:
+  * Active (4): Auto-detect, English, Urdu (Nastaliq), Roman Urdu
+  * Coming-soon stubs (6): Pashto (پښتو, ~18% speakers), Punjabi Shahmukhi (پنجابی, ~37%), Sindhi (سنڌی, ~14%), Saraiki (سرائیکی, ~12%), Balochi (بلوچی, ~4%), Dari (دری)
+- Each language shows: native name (RTL for Urdu-script languages), English name, speaker % of Pakistan population, status badge (Active emerald / Soon amber with lock icon)
+- Clicking a coming-soon language shows a notice with the data program details (e.g. "Data program in progress — 500h audio + 50M clinical text tokens. ETA ~4 months.")
+- Selection indicator (check circle), Framer Motion animated notice, trilingual labels
+- Integrated into app-header.tsx as a Globe2 button next to the existing language Select dropdown
+- "The first healthcare AI for Pakistan's 6+ languages" tagline at the bottom
+
+NEW FEATURE 2: Medication Adherence Tracker (src/components/reminders/adherence-tracker.tsx, 280 lines)
+- 7-day visual adherence tracker for med + vax reminders in the Reminders view:
+  * Day header row (weekday abbreviations + day numbers, trilingual via Intl.DateTimeFormat with ur-PK locale)
+  * Per-reminder rows: title + adherence rate % (color-coded: emerald ≥80%, amber 50-79%, red <50%) + 7-day grid (✓ emerald for done, ○ muted for missed, ring on today)
+  * Empty state: friendly prompt to add reminders
+  * Privacy footer: "Adherence is stored only on this device"
+- Exports 3 helper functions: markReminderDone(id), unmarkReminderDone(id), isDoneToday(id) — all localStorage-backed (sehatai.adherence.v1), 90-day retention
+- Integrated into reminders-view.tsx: renders below the reminders list when reminders exist; the toggleStatus handler now calls markReminderDone/unmarkReminderDone so adherence updates automatically when a user marks a reminder done
+- Verified live: created Metformin reminder → marked done → adherence shows "14% · 1/7 days" + green check on today's cell
+
+NEW FEATURE 3: Voice Status Indicator (src/components/chat/voice-status-indicator.tsx, 195 lines)
+- A small badge in the chat toolbar (empty state only) that honestly reports device voice capabilities:
+  * Detects STT support (SpeechRecognition / webkitSpeechRecognition)
+  * Detects TTS support (speechSynthesis)
+  * Detects Urdu voice specifically (voiceschanged event + filter for ur lang / "urdu" name)
+  * 4 states: Voice ready (emerald, full), Voice input only (amber, STT only), Voice output only (amber, TTS only), Voice unavailable (red, none)
+  * Expandable popover: STT row, TTS row, Urdu voice row (each with ✓/⚠ icon + Available/Missing label), Test voice button (speaks a trilingual sample), honest note about low-end Pakistani Androids
+  * Trilingual labels throughout
+- Integrated into chat-view.tsx toolbar (ms-auto, only when messages.length === 0 to avoid clutter in active chat)
+- SSR-safe (lazy initializer for support detection, effect only for voiceschanged subscription)
+
+STYLING POLISH:
+- Language settings: RTL-aware for Urdu-script languages, color-coded status badges (emerald=active, amber=coming-soon), speaker % per language
+- Adherence tracker: medical-convention color coding (green/amber/red adherence rates), visual 7-day grid with check/circle icons, today ring highlight
+- Voice indicator: honest 4-state badge with expandable popover, low-end-device note
+- All 3 components use Framer Motion animations, trilingual labels, WCAG 2.2 AA touch targets (≥44px), responsive layout
+
+VERIFIED via agent-browser:
+- Language Settings: Globe button opens dialog → 4 active + 6 coming-soon languages render with speaker % → clicking Pashto shows "Data program in progress — 500h audio + 50M clinical text tokens. ETA ~4 months." notice
+- Adherence Tracker: empty state ("No reminders yet") → created Metformin reminder → marked done → "14% · 1/7 days" + green check on today → cleared after test
+- Voice Status Indicator: "Voice ready" badge renders in chat empty state → expandable popover with STT/TTS/Urdu voice rows
+- Screenshots: sehatai-language-settings.png, sehatai-adherence-tracker.png in /home/z/my-project/download/
+- Lint clean (0 errors, 0 warnings). Dev server HTTP 200. No console errors.
+
+Stage Summary:
+- Current status: STABLE + ENHANCED. Phase 0 + Phase 1 + Phase 2 fully complete. Phase 2 now includes 11 major features: confidence badge, drug warning card, observability dashboard, referral rails, first-aid quick-access cards, 3-tier differential display, Doctor Summary FHIR export, Health Timeline visualization, Language Settings (6+ Pakistan languages), Medication Adherence Tracker, Voice Status Indicator.
+- Completed this round: (1) Built Language Settings dialog — surfaces all Pakistan's 6+ languages with active/coming-soon status, speaker %, and data-program notices. (2) Built Medication Adherence Tracker — 7-day visual grid with color-coded adherence rates, localStorage-backed, auto-updates on reminder toggle. (3) Built Voice Status Indicator — honest 4-state badge with expandable popover showing STT/TTS/Urdu-voice capabilities + test button. (4) Full styling polish with medical-convention colors + Framer Motion + trilingual labels + RTL support.
+- Unresolved / risks: (a) The coming-soon languages are UI stubs only — selecting them shows a notice but doesn't change the actual language (the data program is a 4-month track per the master strategy). (b) The adherence tracker is localStorage-only — if a user switches devices, adherence doesn't sync (acceptable for Phase 2; server-side sync is Phase 3). (c) The voice status indicator detects capabilities at render time — if a user installs a Urdu voice mid-session, they need to reload (acceptable; the voiceschanged event fires on next load). (d) Two setState-in-effect lint errors were found + fixed during implementation (lazy initializers + keyed useMemo pattern).
+- Priority recommendations for next round: (1) Begin Phase 2 parallel veto constellation refactor (the single biggest architectural change — refactor the linear pipeline into primary + 4 concurrent validators with veto power, per Hippocratic AI's pattern). (2) Begin vector RAG (BGE-M3 + sqlite-vec) to replace the TF-IDF fuzzy matcher for better semantic retrieval. (3) Add a "Doctor Copilot" stub view (separate from the patient app, documentation-aid framing per Abridge/DAX). (4) Add Web Push API for medication reminders (server-side push when a reminder is due). (5) Add a first-aid visual guide (pictographic step-by-step for low-literacy users).

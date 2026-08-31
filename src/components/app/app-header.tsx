@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useTheme } from 'next-themes';
-import { HeartPulse, Moon, Search, Sun, Wifi, WifiOff } from 'lucide-react';
+import { Globe2, HeartPulse, Moon, Search, Sun, Wifi, WifiOff } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -15,9 +16,11 @@ import { resolveUiLang, t } from '@/lib/i18n';
 import type { LangPref } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { LanguageSettings } from '@/components/settings/language-settings';
 
 export function AppHeader() {
   const langPref = useAppStore((s) => s.langPref);
+  const [langSettingsOpen, setLangSettingsOpen] = useState(false);
   const setLangPref = useAppStore((s) => s.setLangPref);
   const simulatedOffline = useAppStore((s) => s.simulatedOffline);
   const setSimulatedOffline = useAppStore((s) => s.setSimulatedOffline);
@@ -87,6 +90,18 @@ export function AppHeader() {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Phase 2 — full language settings (Pakistan 6+ languages, with coming-soon stubs) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setLangSettingsOpen(true)}
+            className="h-10 w-10 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label={uiLang === 'ur' ? 'تمام زبانیں' : uiLang === 'roman' ? 'Tamam zubanein' : 'All languages'}
+          >
+            <Globe2 className="h-5 w-5" aria-hidden />
+          </Button>
+          <LanguageSettings open={langSettingsOpen} onOpenChange={setLangSettingsOpen} />
 
           {/* theme toggle */}
           <Button

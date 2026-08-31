@@ -24,6 +24,7 @@ import { resolveUiLang, t } from '@/lib/i18n';
 import type { Lang, Reminder, Reminder as ReminderType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ReminderDialog, type ReminderDraft } from './reminder-dialog';
+import { AdherenceTracker, markReminderDone, unmarkReminderDone, isDoneToday } from './adherence-tracker';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -185,6 +186,12 @@ export function RemindersView() {
       setReminders((rs) =>
         rs.map((r) => (r.id === reminder.id ? { ...r, status: nextStatus } : r)),
       );
+      // Phase 2 — track adherence in localStorage
+      if (nextStatus === 'done') {
+        markReminderDone(reminder.id);
+      } else {
+        unmarkReminderDone(reminder.id);
+      }
       try {
         const res = await fetch(`/api/reminders/${encodeURIComponent(reminder.id)}`, {
           method: 'PUT',
@@ -430,6 +437,11 @@ export function RemindersView() {
           </ul>
         )}
       </div>
+
+      {/* Phase 2 — Medication adherence tracker (7-day visual) */}
+      {sorted.length > 0 ? (
+        <AdherenceTracker reminders={sorted} lang={uiLang} refreshKey={sorted.length} className="mt-4" />
+      ) : null}
 
       <ReminderDialog
         open={dialogOpen}

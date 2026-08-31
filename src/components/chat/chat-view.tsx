@@ -32,6 +32,7 @@ import { getDailyTip } from '@/data/health-tips';
 import { followUpsFor } from '@/data/follow-ups';
 import { MessageBubble } from './message-bubble';
 import { VoiceInput } from './voice-input';
+import { VoiceStatusIndicator } from './voice-status-indicator';
 import { SummaryModal } from './summary-modal';
 import { ConversationHistoryDrawer } from './conversation-history-drawer';
 import { OutcomeFollowupCard } from '@/components/outcomes/outcome-followup-card';
@@ -471,6 +472,12 @@ export function ChatView() {
             <Stethoscope className="h-3.5 w-3.5" aria-hidden />
             {t(uiLang, 'chat.doctorSummary')}
           </Button>
+        ) : null}
+        {/* Phase 2 — voice status indicator (honest about device capabilities) */}
+        {messages.length === 0 ? (
+          <div className="ms-auto">
+            <VoiceStatusIndicator />
+          </div>
         ) : null}
       </div>
 
