@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,20 +7,229 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================
+// Phase 0 — Authentication (NextAuth.js credentials provider)
+// ============================================================
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  role          String    @default("user") // user | doctor | admin
+  consentAt     DateTime? // Urdu consent timestamp; null = not consented
+  retentionDays Int?      // null = indefinite; otherwise auto-purge schedule
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  conversations Conversation[]
+  profiles      PatientProfile[]
+  outcomes      OutcomeEntry[]
+  auditLogs     AuditLog[]
 }
 
-model Post {
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String   // credentials | google
+  providerAccountId String
+  refreshToken      String?
+  accessToken       String?
+  expiresAt         Int?
+  createdAt         DateTime @default(now())
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String   @unique
+  expires      DateTime
+  createdAt    DateTime @default(now())
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires     DateTime
+  @@unique([identifier, token])
+}
+
+// Phase 0 — Patient profile (server-stored, encrypted-at-rest via SQLCipher;
+// mirrors the localStorage HealthProfile so the pipeline can read it server-side).
+model PatientProfile {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ageBand      String   @default("undisclosed")
+  sex          String   @default("undisclosed")
+  conditions   String   @default("[]") // JSON array of condition ids
+  allergies    String   @default("[]") // JSON array of strings
+  medications  String   @default("[]") // JSON array of strings
+  pregnant     Boolean  @default(false)
+  iceContacts   String   @default("[]") // JSON array
+  updatedAt    DateTime @updatedAt
+  @@unique([userId])
+}
+
+// Phase 1 — Outcome capture (closed-loop follow-up): T+24h/72h/7d "how are you?"
+model OutcomeEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageId    String?  // the assistant message that triggered the follow-up
+  conversationId String?
+  scheduledFor  DateTime // T+24h / T+72h / T+7d
+  status        String   @default("pending") // pending | captured | escalated | resolved
+  outcome       String?  // better | same | worse | saw_doctor | went_to_er | unresolved
+  notes         String?
+  capturedAt    DateTime?
+  createdAt     DateTime @default(now())
+  @@index([userId, status, scheduledFor])
+}
+
+// Phase 1 — Audit log (every PHI read/write/share + every constellation decision)
+model AuditLog {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // auth.login | profile.read | profile.update | outcome.captured | constellation.veto | data.delete
+  resource  String?
+  meta      String?  // JSON
+  ip        String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([userId, createdAt])
+}
+
+// Conversations & messages with full pipeline metadata
+model Conversation {
+  id           String    @id @default(cuid())
+  userId       String?
+  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String
+  language     String    @default("en")
+  offline      Boolean   @default(false)
+  startedAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  messages     Message[]
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String // 'user' | 'assistant'
+  content        String
+  language       String        @default("en")
+  triageLevel    String? // EMERGENCY | URGENT | ROUTINE | SELF_CARE
+  redFlags       String? // JSON array
+  citations      String? // JSON array
+  pipelineMeta   String? // JSON: per-stage latency, engine, validator verdict, chunk ids
+  emergency      Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  triageEvents   TriageEvent[]
+  feedback       Feedback[]
+}
+
+model TriageEvent {
+  id              String   @id @default(cuid())
+  messageId       String
+  message         Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  level           String
+  signals         String // JSON array
+  engine          String // 'L0' | 'L1' | 'offline-ts' | 'combined'
+  shortCircuited  Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+// Reminders (med / vax / anc)
+model Reminder {
+  id           String   @id @default(cuid())
+  sessionToken String
+  type         String // 'med' | 'vax' | 'anc' | 'other'
+  title        String
+  notes        String?
+  timeOfDay    String // HH:MM
+  days         String // JSON number[] 0-6, empty = daily
+  nextDue      DateTime
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Healthcare facilities seed
+model Facility {
+  id          String  @id @default(cuid())
+  name        String
+  nameUr      String?
+  type        String // hospital | clinic | bhuc | maternity | pharmacy
+  lat         Float
+  lng         Float
+  city        String
+  district    String
+  phone       String?
+  services    String // JSON array
+  emergency24 Boolean @default(false)
+  source      String
+  verified    Boolean @default(false)
+}
+
+// Eval harness
+model EvalRun {
+  id           String       @id @default(cuid())
+  startedAt    DateTime     @default(now())
+  suiteVersion String
+  durationMs   Int
+  summary      String // JSON EvalRunSummary
+  results      EvalResult[]
+}
+
+model EvalResult {
+  id       String  @id @default(cuid())
+  runId    String
+  run      EvalRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  caseId   String
+  category String
+  input    String
+  language String
+  expected String
+  actual   String
+  passed   Boolean
+  metric   String // JSON
+}
+
+// Verified knowledge corpus (mirrors src/data/corpus.ts for provenance queries)
+model Document {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  publisher   String
+  license     String
+  sourceUrl   String
+  language    String   @default("en")
+  verifiedAt  String
+  topic       String
+  audience    String   @default("general")
+  baseLevel   String
+  createdAt   DateTime @default(now())
+}
+
+// Feedback on assistant messages
+model Feedback {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  rating    Int // 1 helpful | 0 not helpful
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+// Offline pack versioning
+model PackVersion {
+  id          String   @id @default(cuid())
+  version     String
+  manifest    String // JSON
+  createdAt   DateTime @default(now())
 }

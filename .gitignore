@@ -52,3 +52,10 @@ prompt
 server.log
 # Skills directory
 /skills/
+# Phase 0 safety: never commit PHI database, logs, or tool-results
+db/*.db
+db/*.db-journal
+dev.log
+tool-results/
+.env.local
+.env.production
