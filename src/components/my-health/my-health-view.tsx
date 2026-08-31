@@ -26,6 +26,8 @@ import { ChronicDiseaseModule } from './chronic-disease-module';
 import { NutritionLifestyleTracker } from './nutrition-lifestyle-tracker';
 import { FamilyHealthManager } from './family-health-manager';
 import { AirQualityTracker } from './air-quality-tracker';
+import { HydrationTracker } from './hydration-tracker';
+import { MedicalCalculatorSuite } from './medical-calculators';
 import { AccountSection } from './account-section';
 import {
   clearJournal,
@@ -292,6 +294,12 @@ export function MyHealthView() {
 
         {/* Phase 2 — Air Quality + Environmental Health (AQI, pollen, asthma triggers) */}
         <AirQualityTracker lang={uiLang} />
+
+        {/* Phase 2 — Hydration/Dehydration Tracker (ORS + water + urine color chart) */}
+        <HydrationTracker lang={uiLang} />
+
+        {/* Phase 2 — Medical Calculator Suite (EDD + GFR + insulin factor) */}
+        <MedicalCalculatorSuite lang={uiLang} />
 
         {/* Account & data section (auth, retention, audit log, delete-my-data) */}
         <AccountSection />

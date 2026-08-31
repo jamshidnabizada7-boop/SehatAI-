@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -55,15 +54,7 @@ export default function Home() {
       <div className="flex min-h-0 flex-1">
         <SidebarNav />
         <main id="main" className="flex min-h-0 flex-1 flex-col">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={view}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18 }}
-              className="h-full min-h-0 flex-1"
-            >
+          <div key={view} className="h-full min-h-0 flex-1">
               {view === 'chat' ? <ChatView /> : null}
               {view === 'reminders' ? <RemindersView /> : null}
               {view === 'facilities' ? <FacilitiesView /> : null}
@@ -72,8 +63,7 @@ export default function Home() {
               {view === 'doctor-copilot' ? <DoctorCopilotView /> : null}
               {view === 'about' ? <AboutView /> : null}
               {view === 'my-health' ? <MyHealthView /> : null}
-            </motion.div>
-          </AnimatePresence>
+          </div>
         </main>
       </div>
 
