@@ -4,9 +4,11 @@ import { create } from 'zustand';
 import type {
   ChatMessage,
   Citation,
+  DrugCheckSummary,
   EmergencyStageData,
   Lang,
   PipelineStage,
+  ResponseConfidence,
   TriageStageData,
   ValidationStageData,
 } from '@/lib/types';
@@ -50,6 +52,8 @@ interface ChatState {
       citations?: Citation[];
       validation?: ValidationStageData | null;
       offline?: boolean;
+      confidence?: ResponseConfidence | null;
+      drugCheck?: DrugCheckSummary | null;
       error?: boolean;
     },
   ) => void;

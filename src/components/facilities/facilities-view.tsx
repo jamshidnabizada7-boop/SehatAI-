@@ -31,6 +31,7 @@ import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
 import type { Facility } from '@/lib/types';
 import { FACILITIES_SEED, haversineKm } from '@/data/facilities-seed';
+import { ReferralRailsCompact } from '@/components/chat/referral-rails';
 import { cn } from '@/lib/utils';
 
 const CITIES = [
@@ -174,6 +175,9 @@ export function FacilitiesView() {
             {t(uiLang, 'facilities.subtitle')}
           </p>
         </div>
+
+        {/* Phase 2 — referral rails: one-tap emergency + hospital + telemedicine deep-links */}
+        <ReferralRailsCompact lang={uiLang} />
 
         {/* controls */}
         <div className="flex flex-wrap items-center gap-2">

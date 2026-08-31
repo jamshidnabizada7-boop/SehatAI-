@@ -1,16 +1,44 @@
 'use client';
 
-import { BarChart3, Bell, Info, MapPin, MessageCircle, ClipboardList } from 'lucide-react';
+import { useMemo } from 'react';
+import { useSession } from 'next-auth/react';
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  Info,
+  MapPin,
+  MessageCircle,
+  ClipboardList,
+} from 'lucide-react';
 import { useAppStore, type View } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-const NAV_ITEMS: { view: View; icon: React.ComponentType<{ className?: string }>; labelKey: 'nav.chat' | 'nav.reminders' | 'nav.facilities' | 'nav.dashboard' | 'nav.about' | 'nav.myHealth' }[] = [
+type LabelKey =
+  | 'nav.chat'
+  | 'nav.reminders'
+  | 'nav.facilities'
+  | 'nav.dashboard'
+  | 'nav.about'
+  | 'nav.myHealth'
+  | 'nav.observability';
+
+interface NavItem {
+  view: View;
+  icon: React.ComponentType<{ className?: string }>;
+  labelKey: LabelKey;
+  /** when true the item is only rendered for admin sessions */
+  adminOnly?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { view: 'chat', icon: MessageCircle, labelKey: 'nav.chat' },
   { view: 'reminders', icon: Bell, labelKey: 'nav.reminders' },
   { view: 'facilities', icon: MapPin, labelKey: 'nav.facilities' },
   { view: 'my-health', icon: ClipboardList, labelKey: 'nav.myHealth' },
   { view: 'dashboard', icon: BarChart3, labelKey: 'nav.dashboard' },
+  { view: 'observability', icon: Activity, labelKey: 'nav.observability', adminOnly: true },
   { view: 'about', icon: Info, labelKey: 'nav.about' },
 ];
 
@@ -20,14 +48,21 @@ export function BottomNav() {
   const setView = useAppStore((s) => s.setView);
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
+  const { data: session, status } = useSession();
+  const isAdmin = status === 'authenticated' && (session?.user as { role?: string } | undefined)?.role === 'admin';
+
+  const items = useMemo(() => NAV_ITEMS.filter((it) => !it.adminOnly || isAdmin), [isAdmin]);
 
   return (
     <nav
       aria-label={t(uiLang, 'app.name')}
       className="border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
-      <ul className="grid grid-cols-6">
-        {NAV_ITEMS.map((item) => {
+      <ul
+        className="grid"
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      >
+        {items.map((item) => {
           const active = view === item.view;
           return (
             <li key={item.view}>
@@ -66,6 +101,10 @@ export function SidebarNav() {
   const setView = useAppStore((s) => s.setView);
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
+  const { data: session, status } = useSession();
+  const isAdmin = status === 'authenticated' && (session?.user as { role?: string } | undefined)?.role === 'admin';
+
+  const items = useMemo(() => NAV_ITEMS.filter((it) => !it.adminOnly || isAdmin), [isAdmin]);
 
   return (
     <nav
@@ -73,7 +112,7 @@ export function SidebarNav() {
       className="hidden w-52 shrink-0 border-e border-border bg-card/50 md:block"
     >
       <ul className="flex flex-col gap-1 p-3">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const active = view === item.view;
           return (
             <li key={item.view}>

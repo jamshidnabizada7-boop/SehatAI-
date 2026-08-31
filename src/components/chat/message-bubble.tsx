@@ -24,6 +24,8 @@ import { useAppStore } from '@/lib/store/app-store';
 import { useChatStore } from '@/lib/store/chat-store';
 import { MarkdownContent } from './markdown-content';
 import { TriageBadge } from './triage-badge';
+import { ConfidenceBadge } from './confidence-badge';
+import { DrugWarningCard } from './drug-warning-card';
 import { CitationCard, citationSummary } from './citation-card';
 import { PipelineTicker } from './pipeline-ticker';
 import { Button } from '@/components/ui/button';
@@ -255,12 +257,25 @@ export function MessageBubble({
             </div>
           ) : null}
 
-          {/* triage badge */}
-          {message.triage ? (
-            <TriageBadge
-              level={message.triage.level}
+          {/* triage badge + confidence band pill (assistant metadata row) */}
+          {message.triage || message.confidence ? (
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              {message.triage ? (
+                <TriageBadge
+                  level={message.triage.level}
+                  lang={msgLang}
+                  reason={message.triage.reason}
+                />
+              ) : null}
+              <ConfidenceBadge confidence={message.confidence} lang={msgLang} />
+            </div>
+          ) : null}
+
+          {/* medication safety alert — above the response text when present */}
+          {message.drugCheck && message.drugCheck.severity !== 'NONE' ? (
+            <DrugWarningCard
+              drugCheck={message.drugCheck}
               lang={msgLang}
-              reason={message.triage.reason}
               className="mb-2"
             />
           ) : null}

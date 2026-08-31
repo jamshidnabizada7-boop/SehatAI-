@@ -212,6 +212,8 @@ export function useChat() {
               citations: done.citations,
               validation: done.validation,
               offline: false,
+              confidence: done.confidence ?? null,
+              drugCheck: done.drugCheck ?? null,
             });
             if (done.conversationId) {
               useAppStore.getState().setConversationId(done.conversationId);

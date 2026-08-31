@@ -35,6 +35,7 @@ import { VoiceInput } from './voice-input';
 import { SummaryModal } from './summary-modal';
 import { ConversationHistoryDrawer } from './conversation-history-drawer';
 import { OutcomeFollowupCard } from '@/components/outcomes/outcome-followup-card';
+import { ReferralRails } from './referral-rails';
 import { cn } from '@/lib/utils';
 
 const WELCOME_TRILINGUAL: { tag: string; text: string; lang: Lang }[] = [
@@ -134,6 +135,14 @@ export function ChatView() {
     if (last.role !== 'assistant') return false;
     const level = last.triage?.level;
     return level === 'URGENT' || level === 'ROUTINE';
+  }, [messages, streaming]);
+
+  // Phase 2 — referral rails: show when last assistant message is URGENT/EMERGENCY
+  const lastTriageLevel = useMemo(() => {
+    if (messages.length === 0) return null;
+    const last = messages[messages.length - 1];
+    if (last.role !== 'assistant' || streaming) return null;
+    return last.triage?.level ?? null;
   }, [messages, streaming]);
 
   const doSend = useCallback(
@@ -404,6 +413,9 @@ export function ChatView() {
           </div>
         </motion.div>
       ) : null}
+
+      {/* Phase 2 — referral rails: one-tap emergency + hospital + telemedicine deep-links */}
+      <ReferralRails triageLevel={lastTriageLevel} lang={uiLang} />
 
       {/* chat toolbar */}
       <div className="flex items-center gap-2 px-4 pt-1 sm:px-6">

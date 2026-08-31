@@ -246,6 +246,47 @@ export interface ResponseConfidence {
   reasons: string[];
 }
 
+// ---------- Phase 1: Drug-interaction check (frontend-facing summary) ----------
+/** Severity scale shared by interactions, allergy hits and population flags. */
+export type DrugSeverity = 'HIGH' | 'MODERATE' | 'LOW' | 'NONE';
+
+/** One drug-drug interaction hit (from the rules engine). */
+export interface DrugInteractionHit {
+  drugA: string;
+  drugB: string;
+  severity: DrugSeverity;
+  effect: string;
+  action: string;
+  source: string;
+}
+
+/** One allergy cross-reactivity hit. */
+export interface AllergyHit {
+  allergy: string;
+  trigger: string;
+  drugClass: string;
+  severity: DrugSeverity;
+  action: string;
+}
+
+/** One special-population flag (pregnancy, renal, paediatric, …). */
+export interface FlagHit {
+  type: 'pregnancy' | 'breastfeeding' | 'renal' | 'hepatic' | 'pediatric' | 'elderly' | 'duplicate';
+  drug: string;
+  message: string;
+  severity: DrugSeverity;
+}
+
+/** Full drug-check payload — shipped on the SSE `done` event so the
+ *  DrugWarningCard can render hits/allergies/flags verbatim. */
+export interface DrugCheckSummary {
+  severity: DrugSeverity;
+  recommendation: string;
+  hits: DrugInteractionHit[];
+  allergies: AllergyHit[];
+  flags: FlagHit[];
+}
+
 export interface DoneStageData {
   messageId: string;
   conversationId: string;
@@ -258,6 +299,8 @@ export interface DoneStageData {
   latencyMs: number;
   /** Phase 1: confidence band on every response */
   confidence?: ResponseConfidence | null;
+  /** Phase 1: drug-interaction / allergy / flag payload (when present and severity !== 'NONE') */
+  drugCheck?: DrugCheckSummary | null;
 }
 
 export interface SSEEvent {
@@ -353,6 +396,10 @@ export interface ChatMessage {
   validation?: ValidationStageData | null;
   offline?: boolean;
   emergency?: EmergencyStageData | null;
+  /** Phase 1: confidence band on every assistant response. */
+  confidence?: ResponseConfidence | null;
+  /** Phase 1: drug-interaction / allergy / flag payload (when present and severity !== 'NONE'). */
+  drugCheck?: DrugCheckSummary | null;
   createdAt: number;
   streaming?: boolean;
 }

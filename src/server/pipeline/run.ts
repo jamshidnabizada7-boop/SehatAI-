@@ -41,6 +41,7 @@ import {
   type TriageLevel,
   type TriageStageData,
   type ValidationStageData,
+  type DrugCheckSummary,
 } from '@/lib/types';
 import { TRIAGE_ORDER } from '@/lib/types';
 import { llmChat, llmChatStream, llmJSON, type LlmMessage } from '@/server/llm';
@@ -2396,6 +2397,15 @@ export async function runPipeline(
     offline: usedFallback,
     latencyMs: result.latencyMs,
     confidence: result.confidence,
+    drugCheck: drugCheck
+      ? ({
+          severity: drugCheck.overallSeverity,
+          recommendation: drugCheck.recommendation,
+          hits: drugCheck.hits,
+          allergies: drugCheck.allergies,
+          flags: drugCheck.flags,
+        } as DrugCheckSummary)
+      : null,
   } as DoneStageData & { urduVersion?: string });
   return result;
 }
