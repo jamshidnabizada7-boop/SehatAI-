@@ -1579,3 +1579,26 @@ OVERALL: 41/46 items COMPLETE (89%)
 All implemented items are VISIBLE in the UI and function correctly.
 Lint clean. Dev server running. No console errors.
 Screenshot: sehatai-phase-verification.png
+
+---
+Task ID: PLAN-DOCTOR-LOGIN-SEPARATION
+Agent: Z.ai Code
+Task: User requested a written implementation plan (NO CODE) for separating doctor login from regular user login, with doctor-only features when logged in as a doctor.
+
+Work Log:
+- Read worklog.md to understand current project state (SehatAI — 41/46 items complete, Phase 0-5 built, NextAuth + Prisma + role field already exists).
+- Read src/lib/auth.ts — confirmed role field exists (user|doctor|admin) but is only set via /api/admin/promote; no doctor-specific signup/signin route exists.
+- Read src/app/auth/signin/page.tsx + src/app/auth/signup/page.tsx — confirmed single shared auth surface for all roles.
+- Read src/components/app/app-nav.tsx — confirmed Doctor Copilot is visible to ALL users (guest + patient + doctor + admin); only `adminOnly` flag exists, no `doctorOnly`.
+- Read prisma/schema.prisma — confirmed User.role exists; no DoctorProfile, no PMDC field, no accountStatus.
+- Read src/app/api/admin/promote/route.ts + src/app/api/user/me/route.ts — confirmed current role-management surface.
+- Wrote comprehensive implementation plan to /home/z/my-project/docs/doctor-login-separation-plan.md (NO application code written — user explicitly requested document only).
+
+Stage Summary:
+- Produced document: /home/z/my-project/docs/doctor-login-separation-plan.md (19 sections, ~700 lines)
+- Recommendation: Build two parallel identity surfaces (Patient Portal + Doctor Portal) sharing the same User table + NextAuth credentials provider, diverging in route + onboarding + default landing view + nav visibility + API authorization.
+- Key new schema: DoctorProfile (PMDC #), DoctorVerificationDoc (uploaded PMDC card/CNIC/degree), PatientConsentForDoctor (consent boundary), accountStatus field on User.
+- PMDC verification: manual admin-approval workflow for v1 (no public PMDC API exists); automated lookup deferred to Phase 2.
+- New helpers: requireDoctor(), requireAdmin(), requireActiveDoctor() in src/lib/auth.ts.
+- 7 implementation phases (A-G) with discrete todos; existing users are NOT affected (backwards-compatible).
+- Plan awaits user approval before any code is written.
