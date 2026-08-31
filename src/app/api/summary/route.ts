@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { llmJSON } from '@/server/llm';
 import { hasDosePattern } from '@/server/pipeline/run';
-import type { DoctorSummary, Lang, TriageLevel } from '@/lib/types';
+import type { Citation, Differential, DifferentialEntry, DoctorSummary, DrugCheckSummary, Lang, ResponseConfidence, TriageLevel } from '@/lib/types';
 import { TRIAGE_ORDER } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -49,15 +49,53 @@ function deterministicSummary(conversationId: string, rows: MessageRow[], lang: 
   const symptoms: string[] = [];
   const redFlags: string[] = [];
   const levels: TriageLevel[] = [];
+  // Phase 2 — extended fields aggregated across the conversation
+  const established = new Map<string, DifferentialEntry>();
+  const suspected = new Map<string, DifferentialEntry>();
+  const cantMiss = new Map<string, DifferentialEntry>();
+  const citations: Citation[] = [];
+  let drugCheck: DrugCheckSummary | null = null;
+  let confidence: ResponseConfidence | null = null;
+
   for (const r of assistantRows) {
     if (r.triageLevel && ['SELF_CARE', 'ROUTINE', 'URGENT', 'EMERGENCY'].includes(r.triageLevel)) {
       levels.push(r.triageLevel as TriageLevel);
     }
     try {
       const meta = r.pipelineMeta ? (JSON.parse(r.pipelineMeta) as Record<string, unknown>) : null;
-      const l1 = meta?.l1 as { symptoms?: string[]; redFlagConcerns?: string[] } | null | undefined;
+      const l1 = meta?.l1 as { symptoms?: string[]; redFlagConcerns?: string[]; conditions?: { name: string; state: string }[]; durationDays?: number | null } | null | undefined;
       if (l1?.symptoms) for (const s of l1.symptoms) if (!symptoms.includes(s)) symptoms.push(s);
       if (l1?.redFlagConcerns) for (const s of l1.redFlagConcerns) if (!redFlags.includes(s)) redFlags.push(s);
+      // Phase 2 — aggregate differential from L1 conditions
+      if (l1?.conditions) {
+        for (const c of l1.conditions) {
+          if (!c?.name) continue;
+          const entry: DifferentialEntry = { name: c.name };
+          if (c.state === 'ESTABLISHED') {
+            if (!established.has(c.name)) established.set(c.name, entry);
+          } else if (c.state === 'SUSPECTED' || c.state === 'QUESTION') {
+            if (!suspected.has(c.name)) suspected.set(c.name, { name: c.name, reason: 'A doctor must confirm or rule this out — SehatAI cannot diagnose.' });
+          }
+        }
+      }
+      // cantMiss from redFlagConcerns
+      if (l1?.redFlagConcerns) {
+        for (const c of l1.redFlagConcerns.slice(0, 5)) {
+          if (!cantMiss.has(c)) cantMiss.set(c, { name: c, reason: 'Emergency sign — rule out urgently.' });
+        }
+      }
+      // Phase 2 — pull drugCheck + confidence from pipelineMeta
+      const dc = meta?.drugCheck as DrugCheckSummary | null | undefined;
+      if (dc && dc.severity !== 'NONE' && !drugCheck) drugCheck = dc;
+      const conf = meta?.confidence as ResponseConfidence | null | undefined;
+      if (conf && !confidence) confidence = conf;
+      // Phase 2 — pull citations from pipelineMeta
+      const cites = meta?.citations as Citation[] | null | undefined;
+      if (Array.isArray(cites)) {
+        for (const c of cites) {
+          if (c?.id && !citations.some((x) => x.id === c.id)) citations.push(c);
+        }
+      }
     } catch {
       // ignore malformed meta
     }
@@ -92,6 +130,15 @@ function deterministicSummary(conversationId: string, rows: MessageRow[], lang: 
     return max === 1 ? '1 day' : `${max} days`;
   })();
 
+  const differential: Differential | null =
+    established.size || suspected.size || cantMiss.size
+      ? {
+          established: Array.from(established.values()),
+          suspected: Array.from(suspected.values()),
+          cantMiss: Array.from(cantMiss.values()),
+        }
+      : null;
+
   return {
     conversationId,
     chiefComplaint: firstUser ? firstUser.slice(0, 160) : 'No user messages in this conversation.',
@@ -102,6 +149,12 @@ function deterministicSummary(conversationId: string, rows: MessageRow[], lang: 
     guidanceGiven: assistantRows.slice(0, 4).map((r) => r.content.replace(/\s+/g, ' ').slice(0, 140)),
     language: lang,
     disclaimer: DISCLAIMER,
+    differential,
+    drugCheck,
+    confidence,
+    citations: citations.slice(0, 12),
+    generatedAt: new Date().toISOString(),
+    patientProfile: null, // populated in POST handler if user is authenticated
   };
 }
 
@@ -163,6 +216,30 @@ export async function POST(req: NextRequest) {
       ? (body.language as Lang)
       : (conversation.language as Lang) || 'en';
 
+    // Phase 2 — fetch patient profile snapshot if the conversation belongs to an authenticated user
+    let patientProfile: DoctorSummary['patientProfile'] = null;
+    if (conversation.userId) {
+      try {
+        const profile = await db.patientProfile.findUnique({ where: { userId: conversation.userId } });
+        if (profile) {
+          const parseArr = (s: string | null): string[] => {
+            if (!s) return [];
+            try { const p = JSON.parse(s); return Array.isArray(p) ? p.filter((x): x is string => typeof x === 'string') : []; } catch { return []; }
+          };
+          patientProfile = {
+            ageBand: profile.ageBand,
+            sex: profile.sex,
+            conditions: parseArr(profile.conditions),
+            allergies: parseArr(profile.allergies),
+            medications: parseArr(profile.medications),
+            pregnant: profile.pregnant,
+          };
+        }
+      } catch {
+        // non-blocking
+      }
+    }
+
     const transcript = rows
       .map((r) => `${r.role === 'user' ? 'USER' : 'ASSISTANT'}: ${r.content.replace(/\s+/g, ' ').slice(0, 900)}`)
       .join('\n');
@@ -174,11 +251,17 @@ export async function POST(req: NextRequest) {
     );
     const sanitized = sanitizeSummary(llmSummary, conversationId, lang);
 
-    if (sanitized) {
-      return NextResponse.json({ summary: sanitized });
-    }
-    // LLM failed or produced an invalid/dosed summary → deterministic fallback
-    return NextResponse.json({ summary: deterministicSummary(conversationId, rows, lang) });
+    // Phase 2 — enrich with extended fields from pipeline metadata + patient profile
+    const det = deterministicSummary(conversationId, rows, lang);
+    const enriched = sanitized ?? det;
+    enriched.differential = det.differential;
+    enriched.drugCheck = det.drugCheck;
+    enriched.confidence = det.confidence;
+    enriched.citations = det.citations;
+    enriched.generatedAt = new Date().toISOString();
+    enriched.patientProfile = patientProfile;
+
+    return NextResponse.json({ summary: enriched });
   } catch {
     return NextResponse.json({ error: 'failed to generate summary' }, { status: 500 });
   }

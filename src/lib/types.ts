@@ -475,6 +475,22 @@ export interface DoctorSummary {
   guidanceGiven: string[];
   language: Lang;
   disclaimer: string;
+  /** Phase 2 — extended fields for the FHIR-style export */
+  differential?: Differential | null;
+  drugCheck?: DrugCheckSummary | null;
+  confidence?: ResponseConfidence | null;
+  citations?: Citation[];
+  /** ISO timestamp when the summary was generated */
+  generatedAt?: string;
+  /** Patient profile snapshot at time of summary (age band, sex, conditions, allergies, meds, pregnant) */
+  patientProfile?: {
+    ageBand?: string;
+    sex?: string;
+    conditions?: string[];
+    allergies?: string[];
+    medications?: string[];
+    pregnant?: boolean;
+  } | null;
 }
 
 // ---------- Eval ----------

@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ProfileCard } from './profile-card';
 import { SymptomJournal } from './symptom-journal';
+import { HealthTimeline } from './health-timeline';
 import { AccountSection } from './account-section';
 import {
   clearJournal,
@@ -260,6 +261,9 @@ export function MyHealthView() {
             onDelete={handleDeleteEntry}
           />
         </section>
+
+        {/* Phase 2 — Health Timeline visualization (severity trend + triage distribution + recent entries) */}
+        <HealthTimeline entries={entries} lang={uiLang} />
 
         {/* Account & data section (auth, retention, audit log, delete-my-data) */}
         <AccountSection />
