@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://developer.android.com/ai/gemini-nano",
+    "name": "Gemini Nano | AI",
+    "snippet": "Apr 2, 2026 — For on-device use-cases, you can take advantage of Google's Gemini Nano foundation model. Gemini Nano runs in Android's AICore system service, ... Read more",
+    "host_name": "developer.android.com",
+    "rank": 0,
+    "date": "Apr 2, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/Android/comments/1te3wbu/gemini_intelligence_has_high_spec_requirements_on",
+    "name": "Gemini Intelligence has high spec requirements on Android",
+    "snippet": ",” 12GB or more of RAM , and support AI Core and Gemini Nano v3 or higher. The device also needs to be getting at least 5 Android OS upgrades ... Read more",
+    "host_name": "www.reddit.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.creativeworkline.at/blog/android-aicore-gemini-nano-binding-failure",
+    "name": "AICore Binding Failure on Pixel 9/10",
+    "snippet": "Jun 10, 2026 — Does supported device mean Gemini Nano is ready? No. A supported Android device can still have a stub AICore package, missing service components ... Read more",
+    "host_name": "www.creativeworkline.at",
+    "rank": 2,
+    "date": "Jun 10, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://discuss.ai.google.dev/t/how-to-deploy-aicore-gemini-nano-on-pixel-other-devices/93284",
+    "name": "How to deploy AICore/Gemini Nano on Pixel/Other devices？",
+    "snippet": "Jul 10, 2025 — Not strictly required , but AICore is designed specifically to support Gemini Nano models — which are on-device , low-latency LLMs. AICore uses ... Read more",
+    "host_name": "discuss.ai.google.dev",
+    "rank": 3,
+    "date": "Jul 10, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://x.com/techdroider/status/2055492832757235925?lang=en",
+    "name": "Strong on-device AI support (Gemini Nano v3+ with AI Core)",
+    "snippet": "Flagship processor required (top-end chipset only) - Minimum 12GB RAM -\" Must pass Google's Android 17 quality tests - At least 5 Android ...",
+    "host_name": "x.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://medium.muz.li/gemini-nano-guide-implementing-on-device-slms-in-android-16-54b9dab41811",
+    "name": "Gemini Nano Guide: Implementing On-Device SLMs in",
+    "snippet": "Feb 13, 2026 — A practical framework for Android engineers integrating Google's small language model via AICore without compromising battery life or memory ... Read more",
+    "host_name": "medium.muz.li",
+    "rank": 5,
+    "date": "Feb 13, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://programmingcentral.hashnode.dev/stop-the-low-memory-killer-mastering-memory-efficient-rag-on-android-with-gemini-nano",
+    "name": "Mastering Memory-Efficient RAG on Android with Gemini Nano",
+    "snippet": "Apr 22, 2026 — 8GB RAM devices . Gemini Nano doesn't use 32-bit floating-point numbers for its weights. too large for a mobile device . Instead, it uses 4-bit ...",
+    "host_name": "programmingcentral.hashnode.dev",
+    "rank": 6,
+    "date": "Apr 22, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://localaimaster.com/blog/gemini-nano-android-guide",
+    "name": "Gemini Nano Android: On-Device AI Guide (2026)",
+    "snippet": "Feb 6, 2026 — Gemini Nano runs fully on-device —no internet required , complete privacy · Wide device support—Pixel 8+, Samsung S24+, Xiaomi, Motorola, and more ... Read more",
+    "host_name": "localaimaster.com",
+    "rank": 7,
+    "date": "Feb 6, 2026",
+    "favicon": ""
+  }
+]

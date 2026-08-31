@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://qwenlm.github.io/blog/qwen3",
+    "name": "Qwen3: Think Deeper, Act Faster",
+    "snippet": "Apr 29, 2025 — Our flagship model , Qwen3 -235B-A22B, achieves competitive results in benchmark evaluations of coding, math, general capabilities, etc., when ... Read more",
+    "host_name": "qwenlm.github.io",
+    "rank": 0,
+    "date": "Apr 29, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co/Qwen/Qwen3-1.7B",
+    "name": "Qwen/Qwen3-1.7B",
+    "snippet": "May 14, 2025 — Qwen3 Highlights · Uniquely support of seamless switching between thinking mode · Significantly enhancement in its reasoning capabilities ... Read more",
+    "host_name": "huggingface.co",
+    "rank": 1,
+    "date": "May 14, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com/qwenLM/qwen3",
+    "name": "Qwen3 is the large language model series",
+    "snippet": "Qwen3-Thinking-2507 is the continuation of Qwen3 thinking model, with improved quality and depth of reasoning, featuring the following key enhancements:. Read more",
+    "host_name": "github.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.emergentmind.com/topics/qwen3-thinking-models",
+    "name": "Qwen3 Thinking Models Overview",
+    "snippet": "Jan 1, 2026 — Qwen3 Thinking Models are a family of LLMs utilizing hybrid Thinking and Non-Thinking modes to enable explicit, controllable reasoning with ... Read more",
+    "host_name": "www.emergentmind.com",
+    "rank": 3,
+    "date": "Jan 1, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/LocalLLaMA/comments/1kh579e/qwen_3_evaluations",
+    "name": "Qwen 3 evaluations : r/LocalLLaMA",
+    "snippet": "Qwen3-4b is perfectly adequate for tool use chatbot scenarios and capable enough to synthesize the information it retrieves. It's really ...",
+    "host_name": "www.reddit.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  }
+]

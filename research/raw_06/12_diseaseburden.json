@@ -1,0 +1,83 @@
+[
+  {
+    "url": "https://data.who.int/countries/586",
+    "name": "Pakistan - WHO Data",
+    "snippet": "Health data overview for Pakistan , containing the latest population, life expectancy and mortality data from WHO.",
+    "host_name": "data.who.int",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11662946",
+    "name": "A Health Systems Strengthening Approach to Address  - PMC",
+    "snippet": "by M Qureshi · 2024 · Cited by 6 — Pakistan has the second highest burden of HCV infection in the world, with 9.8 million people (4.3% of the population) living with HCV [4] ( ... Read more",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.paho.org/en/news/10-4-2024-who-sounds-alarm-viral-hepatitis-infections-claiming-3500-lives-each-day",
+    "name": "WHO sounds alarm on viral hepatitis infections claiming",
+    "snippet": "Apr 10, 2024 — Every day, there are 3500 people dying globally due to hepatitis B and C infections. “This report paints a troubling picture: despite progress ... Read more",
+    "host_name": "www.paho.org",
+    "rank": 2,
+    "date": "Apr 10, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://ourworldindata.org/profile/health/pakistan",
+    "name": "Pakistan - Health Country Profile",
+    "snippet": "Infectious, maternal , and nutritional diseases , such as malaria, tuberculosis , and HIV/AIDS, are more common in low- and middle-income countries. In richer ... Read more",
+    "host_name": "ourworldindata.org",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.facebook.com/MEGANewsTV1/posts/a-new-report-by-the-world-health-organization-highlights-a-sharp-rise-in-the-spr/965431486235802",
+    "name": "A new report by the World Health Organization highlights",
+    "snippet": "According to the WHO, Pakistan has the highest number of hepatitis C infections globally , with approximately 8.8 million cases, accounting for ... Read more",
+    "host_name": "www.facebook.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.cidrap.umn.edu/hepatitis/hepatitis-b-and-c-claimed-13-million-lives-2024-who-reports",
+    "name": "Hepatitis B and C claimed 1.3 million lives in 2024, WHO",
+    "snippet": "Apr 28, 2026 — An estimated 1.1 million people died from hepatitis B and 240,000 from hepatitis C in 2024 , as the viruses cause liver cirrhosis and ... Read more",
+    "host_name": "www.cidrap.umn.edu",
+    "rank": 5,
+    "date": "Apr 28, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.cdc.gov/global-health/countries/pakistan.html",
+    "name": "CDC in Pakistan | Global Health",
+    "snippet": "Pakistan continues to experience spread of all forms of viral hepatitis . The country has one of the highest hepatitis C virus (HCV) infection rates in the world ... Read more",
+    "host_name": "www.cdc.gov",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://jpma.org.pk/index.php/public_html/article/view/31929/4659",
+    "name": "Pakistan's national hepatitis strategic framework (2024-2030)",
+    "snippet": "Pakistan has a high disease burden of viral hepatitis B and. C . Blood safety, injection safety and poor infection control practices challenge efforts to combat ... Read more",
+    "host_name": "jpma.org.pk",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://smh.org.pk/public-health-issues-in-pakistan",
+    "name": "Public Health Issues in Pakistan | Major Healthcare",
+    "snippet": "Feb 20, 2026 — Causes of death in Pakistan reveal a shift toward non-communicable diseases . ... Infectious diseases (like TB and hepatitis ); Maternal and ... Read more",
+    "host_name": "smh.org.pk",
+    "rank": 8,
+    "date": "Feb 20, 2026",
+    "favicon": ""
+  }
+]

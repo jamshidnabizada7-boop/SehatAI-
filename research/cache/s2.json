@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.anthropic.com/news/claude-sonnet-4-5",
+    "name": "Introducing Claude Sonnet 4.5",
+    "snippet": "Sep 29, 2025 — Claude Sonnet 4.5 is the best coding model in the world, strongest model for building complex agents, and best model at using computers.",
+    "host_name": "www.anthropic.com",
+    "rank": 0,
+    "date": "Sep 29, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.linkedin.com/pulse/anthropics-new-claude-45-sonnet-now-4-most-intelligent-21bgc",
+    "name": "Anthropic's new Claude 4.5 Sonnet is now the #4 most",
+    "snippet": "Claude 4.5 Sonnet scores 61 on the Artificial Analysis Intelligence Index . was released in May 2025, and +2 points from Claude 4.1 Opus ( ...",
+    "host_name": "www.linkedin.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.coderabbit.ai/blog/claude-sonnet-45-better-performance-but-a-paradox",
+    "name": "Claude Sonnet 4.5: Better performance but a paradox",
+    "snippet": "Oct 3, 2025 — We benchmarked Claude Sonnet 4.5 as it narrows the gap with Opus 4.1 in code review, catching more critical bugs with 41% important hits at ...",
+    "host_name": "www.coderabbit.ai",
+    "rank": 2,
+    "date": "Oct 3, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://artificialanalysis.ai/articles/claude-opus-4-5-benchmarks-and-analysis",
+    "name": "Claude Opus 4.5 Benchmarks and Analysis",
+    "snippet": "Nov 25, 2025 — In reasoning mode, Claude Opus 4.5 scores 70 on the Artificial Analysis Intelligence Index. This is a jump of +7 points from Claude Sonnet 4.5 ...",
+    "host_name": "artificialanalysis.ai",
+    "rank": 3,
+    "date": "Nov 25, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.mindstudio.ai/blog/claude-4-1",
+    "name": "What is Anthropic Claude 4.5 and What Makes It Different",
+    "snippet": "Feb 6, 2026 — Sonnet 4.5 achieved a 77.2% score on the SWE-bench Verified coding benchmark and can maintain autonomous operation for over 30 hours on complex ... Read more",
+    "host_name": "www.mindstudio.ai",
+    "rank": 4,
+    "date": "Feb 6, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/singularity/comments/1midxtb/claude_opus_41_benchmarks",
+    "name": "Claude Opus 4.1 Benchmarks : r/singularity",
+    "snippet": "Yes, but we're not even close to saturation. This is a highly verified benchmark . 85% is the target for a mid 2025 model according to AI 2027. Read more",
+    "host_name": "www.reddit.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://benchlm.ai/models/claude-opus-4-5",
+    "name": "Claude Opus 4.5 Benchmarks, Pricing & Speed (August",
+    "snippet": "Claude Opus 4.5 scores 63.6 out of 100 and ranks #45 of 225. This profile shows 45 source-displayable benchmark rows; its strongest eligible category is ... Read more",
+    "host_name": "benchlm.ai",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.rdworldonline.com/best-coding-model-or-just-better-anthropic-launches-claude-sonnet-4-5-to-a-skeptical-crowd",
+    "name": "Claude Sonnet 4.5: Best coding model or just more",
+    "snippet": "Sep 30, 2025 — In terms of claimed benchmarks, Sonnet 4.5 leads Anthropic's own chart on SWE-bench Verified (n=500), posting 77.2% accuracy in standard runs ... Read more",
+    "host_name": "www.rdworldonline.com",
+    "rank": 7,
+    "date": "Sep 30, 2025",
+    "favicon": ""
+  }
+]

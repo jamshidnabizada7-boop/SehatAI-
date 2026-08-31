@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.reddit.com/r/LocalLLM/comments/1voqrm7/i_ran_qwen3827b_on_medical_benchmarks_including",
+    "name": "I ran Qwen3.8-27B on medical benchmarks (including MedQA",
+    "snippet": "Aug 15, 2026 · Open weights smaller models are not good enough in this field. Only GLM 5.2 was matching frontier performance. I think Qwen models are ... Which open-weights model should I use for health, career ... - Reddit Qwen 3 benchmark results(With reasoning) : r/singularity - Reddit More results from www.reddit.com",
+    "host_name": "www.reddit.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2605.01417v1",
+    "name": "Medmarks: A Comprehensive Open-Source LLM Benchmark Suite",
+    "snippet": "May 2, 2026 · Medmarks, a fully open-source evaluation suite with 30 benchmarks spanning question answering, information extraction, medical calculations, ...",
+    "host_name": "arxiv.org",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://sophont.med/blog/medmarks-alpha",
+    "name": "Medmarks v0.1, a new LLM benchmark suite of medical tasks",
+    "snippet": "Dec 22, 2025 · Qwen3 reasoning models consistently punch above their weight class, with 4B outperforming the mean Small model, 14B outperforming the mean ...",
+    "host_name": "sophont.med",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.catalyzex.com/s/Medqa%20Usmle",
+    "name": "Medqa Usmle - CatalyzeX",
+    "snippet": "The proposed multi-agent peer-reviewed reasoning method enables LLMs to act as both solvers and evaluators, yielding superior performance in MedQA.",
+    "host_name": "www.catalyzex.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://benchlm.ai/benchmarks/valsmedqa",
+    "name": "MedQA Leaderboard & Scores — August 2026 | BenchLM.ai",
+    "snippet": "Apr 16, 2026 · MedQA medqa score snapshot across 95 AI models. Evaluating language model bias in medical questions. 2026 ·25 confirmed releases. Open weight ...",
+    "host_name": "benchlm.ai",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://aclanthology.org/anthology-files/pdf/bionlp/2025.bionlp-1.24.pdf",
+    "name": "[PDF] How Well Do Medical QA Benchmarks Evaluate Clinical Capabilities",
+    "snippet": "Aug 1, 2025 · 2025) introduce open-ended questions, expert- written explanations, and multimodal data to facili- tate more comprehensive evaluations.",
+    "host_name": "aclanthology.org",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.emergentmind.com/topics/medqa-and-medmcqa",
+    "name": "MedQA & MedMCQA: Medical MCQA Benchmarks - Emergent Mind",
+    "snippet": "Dec 12, 2025 · The paper introduces MedQA and MedMCQA as large-scale MCQA benchmarks that assess LLMs on clinical reasoning and medical reading comprehension.",
+    "host_name": "www.emergentmind.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nature.com/articles/s41467-025-64769-1",
+    "name": "Quantifying the reasoning abilities of LLMs on clinical cases - Nature",
+    "snippet": "Nov 6, 2025 · We present MedR-Bench, a benchmark of 1453 structured patient cases with reference reasoning derived from clinical case reports, spanning 13 ...",
+    "host_name": "www.nature.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://arxiv.org/html/2601.21000v1",
+    "name": "An Urdu Reasoning Benchmark using Contextually",
+    "snippet": "Jan 28, 2026 — Higher Urdu language consistency correlates with improved reasoning accuracy, Gemma, Llama , and Qwen show near-complete Urdu adherence.",
+    "host_name": "arxiv.org",
+    "rank": 0,
+    "date": "Jan 28, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://link.springer.com/article/10.1186/s40537-025-01330-3",
+    "name": "benchmarking DeepSeek-R1 against ChatGPT, Gemini, Qwen",
+    "snippet": "by SA Awan · 2025 · Cited by 7 — The Qwen LLM model emphasizes multilingual and domain-specific tasks, used hybrid dense–sparse techniques and quantization. Moreover, LLaMA 3.1 ... Read more",
+    "host_name": "link.springer.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://qwenlm.github.io/blog/qwen3",
+    "name": "Qwen3: Think Deeper, Act Faster",
+    "snippet": "Our flagship model, Qwen3-235B-A22B, achieves competitive results in benchmark evaluations of coding, math, general capabilities, etc., llama.cpp, and ...",
+    "host_name": "qwenlm.github.io",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://openreview.net/pdf?id=JQHhJiiOux",
+    "name": "URDUBENCH: A Unified Benchmark for Evaluating Large",
+    "snippet": "URDUBENCH pro- 153 vides the first unified, native benchmark for Urdu 154 that jointly evaluates structural NLP, safety-critical 155 by parameter scale.",
+    "host_name": "openreview.net",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://hosn.om/blog/qwen-3-6-arabic-nlp-benchmarks.html",
+    "name": "Qwen 3.6 Arabic NLP Benchmarks, Qwen 3.8 Update - Hosn",
+    "snippet": "May 3, 2026 — The Arabic LLM evaluation landscape consolidated significantly in 2024 and 2025 . Three suites dominate sovereign procurement decks today, and a ... Read more",
+    "host_name": "hosn.om",
+    "rank": 4,
+    "date": "May 3, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.researchgate.net/publication/398873205_Meta-analysis_of_large_language_models_benchmarking_DeepSeek-R1_against_ChatGPT_Gemini_Qwen_and_LLaMA",
+    "name": "benchmarking DeepSeek-R1 against ChatGPT, Gemini,",
+    "snippet": "Big Data December 2025 13(1) Qwen is competitive in Chinese-language tasks , and LLaMA 3.1 remains the most adaptable open-source option. Qwen is strongest in ...",
+    "host_name": "www.researchgate.net",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  }
+]

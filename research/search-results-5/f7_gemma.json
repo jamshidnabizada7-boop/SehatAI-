@@ -1,0 +1,74 @@
+[
+  {
+    "url": "CAESXQHrOzAV7SZGxUst55ns-OV0NzDly4RwJfu1mYnIc3bXsoDTByRBwSIlex_3aAI3MED1QNOdcFLRWgDRl_LVTdVHEWmm0XFn7IhlcwiI4fHJwQ8vgqwaJFSs7c1bHA",
+    "name": "Gemma 4 model overview | Google AI for Developers",
+    "snippet": "Jul 8, 2026 · Gemma 4 models are available in 5 parameter sizes: E2B, E4B, 12B, 31B and 26B A4B. The models can be used with their default precision (16-bit) ...",
+    "host_name": "",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "CAESnwEB6zswFdklfIMRDJP_5pX6_OhH3uBNZe0HymEG0ShveugF0iQrf40OUsj-tCjX_iuKVClWjZlXc2s-JhpZeXitwNoZocMlmllE5YVj646sHYOaoJmC2KO9CzZIDsgbRiK06KyjNhCL3jbqlD6k9KYnCUchkSpZBdIxVpsdkD9B_3FhQeJ6A7TynlMJNVTQMevGERMkQEyB9BcQg--cJOM",
+    "name": "Gemma 3 Models Tested : Comparing 1B, 4B, 12B, and 27B Versions",
+    "snippet": "Mar 16, 2025 · Gemma 3 Models Tested : Comparing 1B, 4B, 12B, and 27B Versions ... TLDR: No surprises here, performance increases with size. A bit disappointed ... Gemma-3n 2b Rough Benchmarks on Mid-Range Android Device ... Gemma 3n vs Gemma 3 (4B/12B) Benchmarks : r/LocalLLaMA More results from www.reddit.com",
+    "host_name": "",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "CAESWwHrOzAVM2xuBpS6rds8MnDnstZpuHhf85iGP_E0qDujdMH0LksF-SxDEOgSttXc1ZzIrmKpswyGB8RhouHTe2ExXA-0zQGlk9xd_pYHbGTANSL9_2Xl814rRgQ",
+    "name": "Gemma 3 Technical Report - arXiv",
+    "snippet": "Mar 8, 2025 · Details of pre-trained performances. Gemma 2, Gemma 3. 2B, 9B, 27B, 1B, 4B, 12B, 27B. HellaS, 72.9, 81.9, 86.4, 62.3, 77.2, 84.2, 85.6. BoolQ ...",
+    "host_name": "",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "CAESZwHrOzAV_7qxYNO3UA94gP8X9PlyGvwdHAJZOMxGwrbIcI0Hn-q5N_sJde5FgIi0OAXLv0s9WfsF37fLaGCDDwlBHlI5s9PLK4c-HPzgQyeO6zHim5uOTEpnRCdgkSdxEmIbvAxVuSY",
+    "name": "Which Gemma version is the right one for you? - YouTube",
+    "snippet": "Apr 1, 2025 · Unlock the power of Google's Gemma 3 by selecting the right model for your project. Learn about the capabilities of each Gemma 3 size (27b, ...",
+    "host_name": "",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "CAESZQHrOzAV8xmGcpnCwIh4WDbRSId-z0lOpsb_OhTe0nvqlsWc0z-_T_4KGMZGUHaJviAeEJXoHzKr9Vi4YhF9uy61wvQ19fj4HxSSSwxly5zsDlr7N25upY7oU21KAMYM9b78jpQG",
+    "name": "Gemma 3 - Google DeepMind",
+    "snippet": "Scores: Gemma 2 2b (15.6%). MMLU-Pro. The MMLU benchmark is a test that measures the breadth of knowledge and problem-solving ability acquired by large ...",
+    "host_name": "",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "CAESqQEB6zswFcJXNoxUTkuLUkAvG9oVZ9-PLmewxph_UbjWICj-sdKIZs0PDwdvHrrTupKbKLrIDQEeP8lDCV2fweGxQ7F5JrrXYCaDWmb-o0QY4BlZdhkrw5aOJCD3Hhb7yWnNd4lRUqz-CYBhERHO5TnvBoQyawABrgGbokXtQu4dirxhn_9F8YKkwZB2CNzqoTUCBAhxLD4zVNHoxl4IGrGuXpjt6dlkxh0G",
+    "name": "Gemma 3 Was Dead Last. Gemma 4 Is World-Class. Here's",
+    "snippet": "Apr 11, 2026 · E2B is listed as “2.3B effective (5.1B with embeddings)” “4.5B effective provide. The E2B model runs under 1.5GB RAM on mobile hardware via ...",
+    "host_name": "",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "CAESdAHrOzAVkxrXrmXn2e4xsHBj9e7hz5jVKK6EGusd_6BHkfF-HQZswRPOUqKTRAC2H9PYvZnPbUEw8aOTOAweIvaFc-OSZ6v--fnRm5oeFU7QX1MTCzbpc7T5vOjnIjCrKlF85c6_FMj_5mOCgBRv0WJPYY6g",
+    "name": "Gemma 4 by Google: Specs, Benchmarks, and How to Run It Locally",
+    "snippet": "Apr 3, 2026 · The 31B scores 85.2% on MMLU Pro, 89.2% on AIME 2026, and ranks #3 on Arena AI. New MTP drafters deliver up to 3x faster inference with ...",
+    "host_name": "",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "CAESfQHrOzAVptKMv6C_3UDQZZZbFFydOgWchMk4nBJ8ymP7EnkVlfMby_j9DhaVD1mW2BJYJJNOVNYJPFG88sr6mV9d9FrbrtjZwxBNHgIDUCR_CqFcZFY9HZsd6RdVpgDU6erDRYW1xqlcz1KNTbnsnyDO7v2O_dE9OQ92P7Ax",
+    "name": "Google Gemma 4: A Technical Overview - Labellerr",
+    "snippet": "Apr 6, 2026 · E2B, with 2.3 billion effective parameters, τ2-bench (agentic tool use): Gemma 3 27B scored 6.6%. Gemma 4 31B scores 86.4%. This jump is the ...",
+    "host_name": "",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

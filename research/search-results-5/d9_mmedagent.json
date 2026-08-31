@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://arxiv.org/abs/2407.02483",
+    "name": "Learning to Use Medical Tools with Multi-modal Agent",
+    "snippet": "by B Li · 2024 · Cited by 197 — MMedAgent achieves superior performance across a variety of medical tasks compared to state-of-the-art open-source methods and even the closed- ...",
+    "host_name": "arxiv.org",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/abs/2506.00555",
+    "name": "MMedAgent-RL: Optimizing Multi-Agent Collaboration for",
+    "snippet": "by P Xia · 2025 · Cited by 64 — MMedAgent-RL , a reinforcement learning (RL)-based multi-agent framework that enables dynamic, optimized collaboration among medical agents.",
+    "host_name": "arxiv.org",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2407.02483v2",
+    "name": "Med-Agent",
+    "snippet": "Oct 4, 2024 — We propose MMedAgent , the first multi-modal medical AI Agent incorporating a wide spectrum of tools to handle various medical tasks across ... Read more",
+    "host_name": "arxiv.org",
+    "rank": 2,
+    "date": "Oct 4, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2506.00555v3",
+    "name": "MMedAgent-RL: Optimizing Multi-Agent Collaboration for",
+    "snippet": "Jan 26, 2026 — MMedAgent-RL , a reinforcement learning (RL)-based multi-agent framework that enables dynamic, optimized collaboration among medical agents.",
+    "host_name": "arxiv.org",
+    "rank": 3,
+    "date": "Jan 26, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.alphaxiv.org/abs/2407.02483",
+    "name": "MMedAgent: Learning to Use Medical Tools with Multi-",
+    "snippet": "MMedAgent introduces the first multi-modal AI agent for the medical domain , leveraging an instruction-tuned MLLM to orchestrate specialized medical tools ...",
+    "host_name": "www.alphaxiv.org",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.linkedin.com/posts/mu-zhou_mmedagent-learning-to-use-medical-tools-activity-7289693594284605440-wf5m",
+    "name": "Mu Zhou, PhD's Post - MMedAgent",
+    "snippet": "MMedAgent : Learning to Use Medical Tools with Multi-modal Agent MMedAgent: helping doctors look at medical images—like X-rays or MRIs—to spot ...",
+    "host_name": "www.linkedin.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2506.00555v2",
+    "name": "MMedAgent-RL: Optimizing Multi-Agent Collaboration for",
+    "snippet": "MMedAgent-RL , a reinforcement learning (RL)-based multi-agent framework that enables dynamic, optimized collaboration among medical agents.",
+    "host_name": "arxiv.org",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://underline.io/events/469/posters/18791/poster/108329-mmedagent-learning-to-use-medical-tools-with-multi-modal-agent",
+    "name": "Learning to Use Medical Tools with Multi-modal Agent",
+    "snippet": "MMedAgent : Learning to Use Medical Tools with Multi-modal Agent | Underline Reception Schedule Oral Sessions Posters and Demo Sessions Expo",
+    "host_name": "underline.io",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

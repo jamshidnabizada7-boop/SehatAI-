@@ -1,0 +1,65 @@
+[
+  {
+    "url": "https://www.reddit.com/r/LocalLLaMA/comments/1fppt99/run_llama_32_3b_on_phone_on_ios_android",
+    "name": "Run Llama 3.2 3B on Phone - on iOS & Android",
+    "snippet": "I'm getting ~15 tokens per second on Llama 3.2 3B Q4_K and ~19 when Metal is enabled (50 layers, 100 layers both about the same). Very usable!",
+    "host_name": "www.reddit.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices",
+    "name": "Llama 3.2: Revolutionizing edge AI and vision with open,",
+    "snippet": "Sep 25, 2024 — The Llama 3.2 1B and 3B models support context length of 128K tokens and are state-of-the-art in their class for on- device use cases like ...",
+    "host_name": "ai.meta.com",
+    "rank": 1,
+    "date": "Sep 25, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co/meta-llama/Llama-3.2-1B",
+    "name": "meta-llama/Llama-3.2-1B",
+    "snippet": "Sep 25, 2024 — Llama 3.2 was pretrained on up to 9 trillion tokens of data 1B and 3B Llama 3.2 models, larger models were used as token -level targets. using  ...",
+    "host_name": "huggingface.co",
+    "rank": 2,
+    "date": "Sep 25, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://medium.com/@hello_98300/full-on-device-llama-3-2-inference-on-android-c2e0509787f0",
+    "name": "Full On-Device LLaMA 3.2 Inference on Android | by AiSee",
+    "snippet": "1B and 3B variants are designed with a different goal: efficient, on- device text-only inference. For edge devices with 128MB or even 512MB of  ...",
+    "host_name": "medium.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.prompthub.us/models/llama-3-2-1b",
+    "name": "Llama 3.2 1B Model Card",
+    "snippet": "Llama 3.2 1B supports a context window of up to 128,000 tokens . 3.2 1B can generate up to 2,048 tokens in a single output. 1B was released on September 25, ...",
+    "host_name": "www.prompthub.us",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://blog.gopenai.com/building-an-on-device-ai-mobile-app-with-llama-3-2-20f7aa2e292c",
+    "name": "Building an on-device AI mobile App with LLaMA 3.2 - GoPenAI",
+    "snippet": "Oct 15, 2024 — This article explores the technical details of LLaMA 3.2 through the lens of Food-buddy, a hypothetical mobile food analysis app. I'll examine ... Read more",
+    "host_name": "blog.gopenai.com",
+    "rank": 5,
+    "date": "Oct 15, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://localaimaster.com/models/llama-3-2-3b",
+    "name": "Llama 3.2 3B: Mobile Edge AI Model Guide",
+    "snippet": "Sep 26, 2025 — Llama 3.2 3B delivers strong performance at a fraction of the size of larger models . At just ~2 GB VRAM with Q4_K_M quantization, it runs ... Read more",
+    "host_name": "localaimaster.com",
+    "rank": 6,
+    "date": "Sep 26, 2025",
+    "favicon": ""
+  }
+]

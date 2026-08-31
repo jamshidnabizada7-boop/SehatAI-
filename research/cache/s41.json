@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://kanopylabs.com/blog/lancedb-vs-chroma-vs-sqlite-vec",
+    "name": "LanceDB vs Chroma vs SQLite-vec: Embedded Vector",
+    "snippet": "LanceDB, Chroma, and SQLite-vec each take a wildly different approach. Here is how they compare on performance, developer experience, and production readiness.",
+    "host_name": "kanopylabs.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://medium.com/@stefentaime_10958/i-benchmarked-5-vector-databases-for-a-local-rag-only-one-actually-surprised-me-67d5abfd67f4",
+    "name": "I Benchmarked 5 Vector Databases for a Local RAG. Only",
+    "snippet": "Chroma , LanceDB , NumPy and VectLite 0.10.0. Chroma is the easiest to start with, except its default recall sits at 84%, VectLite gets to 96.6% ...",
+    "host_name": "medium.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/LocalLLaMA/comments/1db3pra/vector_database_for_running_embedded_on_ios",
+    "name": "Vector database for running embedded on IOS / Android?",
+    "snippet": "I've been searching for vector databases on mobile, but so far found no good paths. Would love recommendations!",
+    "host_name": "www.reddit.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.firecrawl.dev/blog/best-vector-databases",
+    "name": "Best Vector Databases in 2026: A Complete Comparison",
+    "snippet": "Aug 3, 2026 — LanceDB is an embedded vector database built on the Lance columnar format. It runs in-process with zero-copy access to data and no separate ...",
+    "host_name": "www.firecrawl.dev",
+    "rank": 3,
+    "date": "Aug 3, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://objectbox.io/262454-2",
+    "name": "On-device vector databases in 2026",
+    "snippet": "May 8, 2026 — Vector databases engineered for phones, in early February 2025 , general-purpose AI obligations from August 2025 , scheduled for 2 August 2026.  ...",
+    "host_name": "objectbox.io",
+    "rank": 4,
+    "date": "May 8, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.lancedb.com",
+    "name": "LanceDB | Multimodal Lakehouse for AI",
+    "snippet": "Lance turns long robotics videos into random-access multimodal training data with 1.7–6× faster reads and 42% lower storage use.",
+    "host_name": "www.lancedb.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  }
+]

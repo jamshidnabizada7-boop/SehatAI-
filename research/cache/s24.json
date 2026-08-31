@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://openai.com/index/healthbench",
+    "name": "Introducing HealthBench",
+    "snippet": "May 12, 2025 — HealthBench is a new evaluation benchmark for AI in healthcare which evaluates models in realistic scenarios. includes 5,000 realistic health ...",
+    "host_name": "openai.com",
+    "rank": 0,
+    "date": "May 12, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12547120",
+    "name": "HealthBench: Advancing AI evaluation in healthcare, but not",
+    "snippet": "by J Liu · 2025 · Cited by 3 — OpenAI's HealthBench represents an important advancement, encompassing 5000 multiturn synthetic clinical conversations benchmarked against 48, ...",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.alphaxiv.org/abs/2505.08775",
+    "name": "HealthBench: Evaluating Large Language Models",
+    "snippet": "May 13, 2025 — We present HealthBench , an open-source benchmark measuring the performance and safety of large language models in healthcare. Read more",
+    "host_name": "www.alphaxiv.org",
+    "rank": 2,
+    "date": "May 13, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2509.02594v1",
+    "name": "OpenAI's HealthBench in Action: Evaluating an LLM-Based",
+    "snippet": "Aug 29, 2025 — OpenAI introduced HealthBench [13] , a comprehensive benchmark comprising 5,000 realistic, open-ended conversations between large language ...",
+    "host_name": "arxiv.org",
+    "rank": 3,
+    "date": "Aug 29, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.mobihealthnews.com/news/openai-unveils-healthbench-evaluate-llms-safety-healthcare",
+    "name": "OpenAI unveils HealthBench to evaluate LLMs' safety in",
+    "snippet": "May 15, 2025 — The offering measures AI's real-world performance and safety around handling realistic medical conversations, using physician-created rubrics ... Read more",
+    "host_name": "www.mobihealthnews.com",
+    "rank": 4,
+    "date": "May 15, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/OpenAI/comments/1kl3tfs/openai_just_introduced_healthbenchfinally_a_real",
+    "name": "OpenAI just introduced HealthBench—finally a real",
+    "snippet": "OpenAI just introduced HealthBench, a new benchmark designed to evaluate how well AI systems perform in realistic healthcare scenarios. It was built with ...",
+    "host_name": "www.reddit.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  }
+]

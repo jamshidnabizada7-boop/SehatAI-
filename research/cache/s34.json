@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://ai.google.dev/gemini-api/docs/pricing",
+    "name": "Gemini Developer API pricing",
+    "snippet": "3 days ago — 1,000,000 tokens per hour (storage price ) output is priced at $30 per 1,000,000 tokens . Gemini 2.5 Flash Native Audio … for embeddings at $0.15 ...",
+    "host_name": "ai.google.dev",
+    "rank": 0,
+    "date": "Aug 28, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing",
+    "name": "Agent Platform Pricing",
+    "snippet": "*** Gemini 3.1 Flash Image charges 1120 tokens per input image, with output image costs scaling by resolution: 747 tokens ($0.045) for 512 (roughly 0.25MP), ... Read more",
+    "host_name": "cloud.google.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.cloudzero.com/blog/gemini-pricing",
+    "name": "Gemini pricing in 2026: models, plans, and thinking tokens",
+    "snippet": "Gemini API pricing ranges from $0.10 per million input tokens to $2.00 per million . Full 2026 model table, subscription plans, and costs.",
+    "host_name": "www.cloudzero.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://pricepertoken.com/pricing-page/model/google-gemini-2.5-flash",
+    "name": "Gemini 2.5 Flash API Pricing 2026 - Costs, Performance &",
+    "snippet": "Gemini 2.5 Flash was released on June 17, 2025. Pricing starts at $ 0.150 per million input tokens and $1.25 per million output tokens.",
+    "host_name": "pricepertoken.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/2-5-flash-lite",
+    "name": "Gemini 2.5 Flash-Lite | Gemini Enterprise Agent Platform",
+    "snippet": "Gemini 2.5 Flash -Lite, our most cost effective model … a 1 million - token context length. Approximately 8.4 hours, or up to 1 million tokens . Release date: July ...",
+    "host_name": "docs.cloud.google.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  }
+]

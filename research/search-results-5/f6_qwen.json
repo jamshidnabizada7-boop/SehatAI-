@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://github.com/ggml-org/llama.cpp/issues/16854",
+    "name": "Eval bug:Garbled text appears when running the Qwen3",
+    "snippet": "Oct 30, 2025 — I successfully converted the quantized Q4_0 versions of the Qwen3 - 4B , Qwen3 - 1.7B and Qwen3 - 0.6B models using the same method on the host machine ...",
+    "host_name": "github.com",
+    "rank": 0,
+    "date": "Oct 30, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://qwenlm.github.io/blog/qwen3",
+    "name": "Qwen3: Think Deeper, Act Faster",
+    "snippet": "Apr 29, 2025 — For local usage, tools such as Ollama, LMStudio, MLX, llama . cpp , and KTransformers are highly recommended an additional 5 trillion tokens .",
+    "host_name": "qwenlm.github.io",
+    "rank": 1,
+    "date": "Apr 29, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co/Ayansk11/FinSenti-Qwen3-0.6B-GGUF?local-app=pi",
+    "name": "Ayansk11/FinSenti-Qwen3-0.6B-GGUF",
+    "snippet": "This model is small enough to run entirely on-device . The Q4_K_M build is 0.37 GB on disk and needs roughly 1.0 GB of free RAM during inference, so it fits on ...",
+    "host_name": "huggingface.co",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.mindstudio.ai/blog/what-is-qwen-3-5-alibaba-open-weight-model",
+    "name": "What Is Qwen 3.5? Alibaba's Open-Weight Model That",
+    "snippet": "Mar 7, 2026 — Without a GPU, the model runs on CPU using llama . cpp under the hood. Expect 5–15 tokens per second on a mid-range Intel or AMD CPU with 16GB ...",
+    "host_name": "www.mindstudio.ai",
+    "rank": 3,
+    "date": "Mar 7, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://unsloth.ai/docs/models/tutorials/qwen3-how-to-run-and-fine-tune",
+    "name": "Qwen3 - How to Run & Fine-tune",
+    "snippet": "Apr 2, 2026 — 0.6B 1.7B 4B . To achieve inference speeds of 6+ tokens per second , we recommend your available memory should match or exceed the size of the ...",
+    "host_name": "unsloth.ai",
+    "rank": 4,
+    "date": "Apr 2, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.facebook.com/0xSojalSec/posts/you-can-now-run-qwen38-model-in-your-phones-just-1gb-262k-context-with-real-reas/1599166995071031",
+    "name": "You can now run Qwen3.8 model in your phones just 1GB.",
+    "snippet": "llama . cpp runtime. The model created approximately 3 token per second . this model runs at roughly 3 tokens per second on a phone like the ...",
+    "host_name": "www.facebook.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://builder.aws.com/content/3EnUanQQ8UpvqpD6BazDnqi6ewt",
+    "name": "Running local AI LLM anywhere: from EC2 instances to Edge",
+    "snippet": "When running llama . cpp on Android devices , it is important to understand the underlying ARM CPU architecture. An octa-core processor does not mean eight equal- ...",
+    "host_name": "builder.aws.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://boredconsultant.com/2025/06/26/Qwen3-and-Gemma3-Performance-on-Consumer-Hardware",
+    "name": "Qwen3 and Gemma3 Performance on Consumer Hardware",
+    "snippet": "Jun 26, 2025 — Qwen3 , developed by Alibaba, the performance is low at only 15t/s ( token / second ).",
+    "host_name": "boredconsultant.com",
+    "rank": 7,
+    "date": "Jun 26, 2025",
+    "favicon": ""
+  }
+]

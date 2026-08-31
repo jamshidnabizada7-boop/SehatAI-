@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://infermedica.com",
+    "name": "Infermedica's clinical AI triage for accurate patient care",
+    "snippet": "Infermedica's triage engine guides a patient from symptoms to a care recommendation — in under three minutes.",
+    "host_name": "infermedica.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://infermedica.com/product/symptom-checker",
+    "name": "Symptom Checker",
+    "snippet": "Symptom Checker is the ideal tool to assist patients in symptom analysis and triage. Choose between ready-to-use modules and your own design with Infermedica ...",
+    "host_name": "infermedica.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://infermedica.com/blog/articles/best-practices-for-symptom-checker-use",
+    "name": "Best practices for using symptom checkers in healthcare orgs",
+    "snippet": "Nov 18, 2021 — DocMorris and Infermedica virtual digital care services. DocMorris embeds Infermedica's symptom checker to enhance their virtual care services. Read more",
+    "host_name": "infermedica.com",
+    "rank": 2,
+    "date": "Nov 18, 2021",
+    "favicon": ""
+  },
+  {
+    "url": "https://infermedica.com/solutions/infermedica-api",
+    "name": "API for custom solutions",
+    "snippet": "An API -first set of tools that supports patients and providers to make healthcare decisions with confidence, from symptom to outcome.",
+    "host_name": "infermedica.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://blog.postman.com/api-network-exploration-infermedica",
+    "name": "API Network Exploration: Infermedica",
+    "snippet": "May 25, 2018 — Infermedica: “The most advanced Symptom Checker and Medical Diagnosis API.” facilitates patient journeys from triage to diagnosis . Doctors can ...",
+    "host_name": "blog.postman.com",
+    "rank": 4,
+    "date": "May 25, 2018",
+    "favicon": ""
+  },
+  {
+    "url": "https://infermedica.com/blog/articles/cigna-europe-and-infermedica-extend-their-alliance-on-symptom-checker-pilot-program",
+    "name": "Cigna Europe and Infermedica extend their alliance",
+    "snippet": "Jul 22, 2021 — Infermedica's Symptom Checker was integrated into the application developed by Cigna Europe to communicate and coordinate health services.",
+    "host_name": "infermedica.com",
+    "rank": 5,
+    "date": "Jul 22, 2021",
+    "favicon": ""
+  },
+  {
+    "url": "https://learn.microsoft.com/en-us/azure/health-bot/bot_docs/triage_symptom_checking",
+    "name": "Built-in Medical Intelligence - Healthcare agent service",
+    "snippet": "Nov 27, 2024 — Infermedica maintains a mapping of 1000 symptoms and conditions and can determine the likelihood of a condition given a set of symptoms and ...",
+    "host_name": "learn.microsoft.com",
+    "rank": 6,
+    "date": "Nov 27, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.foundahealth.com/apps/infermedica",
+    "name": "Infermedica",
+    "snippet": "Infermedica is a Medical Guidance Platform enabling early symptoms assessment & digital triage, supporting communication between physicians & patients.",
+    "host_name": "www.foundahealth.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

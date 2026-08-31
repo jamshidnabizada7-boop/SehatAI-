@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://ai.meta.com/blog/llama-4-multimodal-intelligence",
+    "name": "The Llama 4 herd: The beginning of a new era of natively",
+    "snippet": "Apr 5, 2025 — Llama 4 Maverick contains 17 billion active parameters, 128 experts, and 400 billion total parameters, offering high quality at a lower price ...",
+    "host_name": "ai.meta.com",
+    "rank": 0,
+    "date": "Apr 5, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://x.com/ArtificialAnlys/status/1910364904512758163",
+    "name": "Artificial Analysis on X: \"Llama 4 provider benchmarks",
+    "snippet": "We are now benchmarking over 10 providers of Llama 4 Scout and Maverick. larger models in total size than Llama 3.3 70B , Apr 10, 2025 Llama 4 ...",
+    "host_name": "x.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/LocalLLaMA/comments/1jskwbp/llama_4_tested_compare_scout_vs_maverick_vs_33_70b",
+    "name": "LLAMA 4 tested. Compare Scout vs Maverick vs 3.3 70B",
+    "snippet": "Scout looks on par with . Maverick looks about at 70B level. The key about Llama 4 though, is the long context and inference speed. Benchmarks ...",
+    "host_name": "www.reddit.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co/meta-llama",
+    "name": "Meta Llama",
+    "snippet": "Llama 4 Scout, Llama 4 Maverick, a. The Llama 3.3 is a text only instruct-tuned model in 70B size (text in/text out). Updated May 22, 2025 •",
+    "host_name": "huggingface.co",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com/meta-llama/llama-models/blob/main/models/llama4/MODEL_CARD.md",
+    "name": "llama-models/models/llama4/MODEL_CARD.md at main",
+    "snippet": "Apr 5, 2025 — Overview: Llama 4 Scout was pretrained on ~40 trillion tokens and Llama 4 Maverick was pretrained on ~22 trillion tokens of multimodal data ... Read more",
+    "host_name": "github.com",
+    "rank": 4,
+    "date": "Apr 5, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://rootly.com/blog/llama-4-underperforms-a-benchmark-against-coding-centric-models",
+    "name": "Llama 4 underperforms: a benchmark against coding-",
+    "snippet": "Apr 11, 2025 — Llama 4 Maverick achieved only a 70% accuracy score . Llama 3.3 70B-Versatile, the previous generation, surprisingly outperformed the latest  ...",
+    "host_name": "rootly.com",
+    "rank": 5,
+    "date": "Apr 11, 2025",
+    "favicon": ""
+  }
+]

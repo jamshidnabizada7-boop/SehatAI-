@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://dhis2.org",
+    "name": "DHIS2: Home",
+    "snippet": "Collect, visualize and analyze your data with DHIS2 , the world's largest health information management system, a global public good.",
+    "host_name": "dhis2.org",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://dhispb.com",
+    "name": "DHISPB | District Health Information System Punjab",
+    "snippet": "DHIS-2 is world's largest health information management system platform . It helps in providing right data to right people at right time to help evidence-based ...",
+    "host_name": "dhispb.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.openhealthnews.com/resources/district-health-information-system-2-dhis2",
+    "name": "District Health Information System 2 (DHIS2)",
+    "snippet": "District Health Information Software 2 (DHIS2 ) is a free and open source health management data platform used by multiple organizations, including the ...",
+    "host_name": "www.openhealthnews.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://dghs.punjab.gov.pk/district_health",
+    "name": "District Health Information System (DHIS) Program | DGHS",
+    "snippet": "DHIS provides a baseline data for district planning implementation and monitoring on major indicators of disease pattern, preventive services and physical ...",
+    "host_name": "dghs.punjab.gov.pk",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://dhis2.org/public-private-tb-pakistan",
+    "name": "Building a successful public-private system for TB control in",
+    "snippet": "Oct 17, 2024 — DHIS2 is widely used as an integrated health information platform , facilitating holistic data management across programs to provide decision ...",
+    "host_name": "dhis2.org",
+    "rank": 4,
+    "date": "Oct 17, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://dhis2.org/in-action",
+    "name": "DHIS2 In Action",
+    "snippet": "DHIS2 is most widely used as an integrated health information platform, facilitating holistic data management across programs to provide decision makers at all ...",
+    "host_name": "dhis2.org",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  }
+]

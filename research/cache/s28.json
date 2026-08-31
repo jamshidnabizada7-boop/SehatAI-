@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+    "name": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+    "snippet": "Jan 22, 2025 — DeepSeek-R1 achieves performance comparable to OpenAI-o1 across math, code, and reasoning tasks. various benchmarks, distilled 1.5B, 7B, 8B, 14 ...",
+    "host_name": "huggingface.co",
+    "rank": 0,
+    "date": "Jan 22, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/LocalLLaMA/comments/1i5q6b9/deepseekr1_and_distilled_benchmarks_color_coded",
+    "name": "DeepSeek-R1 and distilled benchmarks color coded",
+    "snippet": "What I find insane is that DeepSeek-R1-Distill-Qwen-14B is consistently on-par with o1-mini in the benchmarks, being a just a 14B model!",
+    "host_name": "www.reddit.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://llm-stats.com/models/compare/deepseek-r1-distill-qwen-14b-vs-deepseek-r1-distill-qwen-7b",
+    "name": "DeepSeek R1 Distill Qwen 14B vs",
+    "snippet": "DeepSeek R1 Distill Qwen 14B outperforms in 3 benchmarks (GPQA, LiveCodeBench, MATH-500), while DeepSeek R1 Distill Qwen 7B is better at 1 benchmark (AIME 2024) ...",
+    "host_name": "llm-stats.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2502.11164v3",
+    "name": "Quantifying the Capability Boundary of DeepSeek Models",
+    "snippet": "Feb 25, 2025 — Distillation brings the most significant improvements to Qwen2.5-Math-1.5B and Qwen2.5-Math- 7B , with score increases of 178.74% and 54.36%, ...",
+    "host_name": "arxiv.org",
+    "rank": 3,
+    "date": "Feb 25, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.promptquorum.com/local-llms/best-local-reasoning-model-deepseek-r1-2026",
+    "name": "Best Local Reasoning Model 2026: DeepSeek-R1 Ranked",
+    "snippet": "3 days ago — The DeepSeek - R1 - Distill -Qwen-32B beats OpenAI o1-mini on several reasoning benchmarks , and the 7B distill scores 55.5% on AIME 2024. Distill ...",
+    "host_name": "www.promptquorum.com",
+    "rank": 4,
+    "date": "Aug 28, 2026",
+    "favicon": ""
+  }
+]

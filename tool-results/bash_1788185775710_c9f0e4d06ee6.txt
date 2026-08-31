@@ -1,0 +1,208 @@
+## 5. The "12-Stage Safety Pipeline" — does it exist?
+
+**Short answer:** There is **NO single artifact in the repo labeled "12-stage safety pipeline"**. The phrase does not appear in any file (grep across all 70+ downloaded files: 0 matches for `12-stage`, `12 stage`, `twelve-stage`). The README describes a **5-layer** "Multi-Layer Safety Architecture" (L0 lexicon → Emergency takeover / L1 triage → RAG → Generation → L2 validation). `PROJECT.md` describes **4 universal architectural pillars** (R1 structural role isolation, R2 token-boundary RAG, R3 chief-complaint vs danger-sign separation, R4 multi-provider failover). The UI `PipelineTicker` shows **6 visible stages** (safety → language → triage → retrieval → generation → validation). The `PipelineStage` SSE enum has **9 values** (`safety | language | triage | retrieval | generation | validation | emergency | done | error`).
+
+**However**, if you count the numbered "Step" comments inside `src/server/pipeline/run.ts:runPipeline()`, you do get **~12 internal phases**. Here is the exhaustive enumeration with code locations:
+
+| # | Stage | Code location | What it actually does | Failure mode |
+|---|---|---|---|---|
+| 0 | **Conversation history loading + stream separation (R1)** | `run.ts:1001-1037` | Loads last 6 messages from `db.message` by `sessionId`/`conversationId`; `createDialogueStreams()` (`types.ts:285-331`) splits into `patientStream` (user-only, fed to L0/L1) and `historyStream` (all turns, fed to final generator) | DB read failure → silent `catch {}`, proceeds with empty history |
+| 0.5 | **Conversational intent detection (pre-L0)** | `run.ts:1044-1128` | `detectIntent()` from `intent-detection.ts` classifies greeting/farewell/gratitude/wellness_check/follow_up/repeat/health_query; non-medical intents short-circuit with templated trilingual responses | Regex miss → falls through to L0 (safe) |
+| 1 | **L0 deterministic safety engine (<5 ms, sync)** | `run.ts:1130-1176` | `matchRedFlags()` + `runL0Triage()` (`safety-engine.ts:471-845`) — red-flag patterns, severity modifiers, contextual emergencies (diabetic, trauma, overdose, altered-mental, respiratory, anaphylaxis, hypoglycemia), clarification assessment; emits `safety` SSE event | Pure regex/keyword — sophisticated but can miss paraphrased emergencies (mitigated by L1) |
+| 1b | **Language detection** | `run.ts:1139-1177` | `detectLanguage()` script heuristic; LLM refinement only if confidence < 0.8 AND not an emergency; emits `language` SSE event | LLM call adds latency on ambiguous input |
+| 2 | **Emergency short-circuit (NO LLM)** | `run.ts:1265-1279` | If `isEmergencyL0`, render pre-written template, persist, return — LLM bypassed entirely | If a real emergency is paraphrased outside the lexicon, L0 misses → L1 catches it (next stage) |
+| 3 | **L1 structured extraction (LLM, JSON)** | `run.ts:1281-1317` | `llmJSON<L1Extraction>()` with `L1_SYSTEM` prompt; `sanitizeL1()` defensive parse; `l1Escalates()` re-checks redFlagConcerns; if escalates and not informational → emergency template | LLM failure/timeout → `l1 = null` → pipeline continues with L0-only triage + conservative escalation |
+| 4 | **Final triage fusion** | `run.ts:1319-1373` | `maxSeverity(l0.level, l1Level)` with caps (informational can't be EMERGENCY from L1; vague distress floors at ROUTINE; med-prescribing floors at ROUTINE; trauma/vague distress escalate UP if L1 unavailable); emits `triage` SSE event | Conservative — tends to over-escalate rather than under- (safer failure mode) |
+| 5 | **RAG retrieval (context-aware, 4 fallbacks)** | `run.ts:1375-1430` | `retrieveCorpus()` top-3; if 0 hits: (a) L1-symptom-boost query, (b) follow-up topic injection, (c) combined patient context, (d) prior-cited chunk IDs from assistant history; emits `retrieval` SSE event | 0 hits after all fallbacks → `ABSTENTION_SYSTEM` path (citations forced empty) |
+| 6 | **Generation (LLM streaming)** | `run.ts:1434-1565` | `buildSafetyDirectives()` + `buildContextBlock()` + `GENERATION_SYSTEM`/`ABSTENTION_SYSTEM` prompt → `llmChatStream()` with coalesced SSE delta batching (40 chars or 150 ms); non-streaming `llmChat()` fallback; emits `generation` SSE events | Total LLM failure → `buildDeterministicAnswer()` / `buildMedicationRefusal()` / `buildClarificationAnswer()` purpose-built fallbacks |
+| 7 | **L2 validation (rules + LLM judge)** | `run.ts:1596-1698` | `runRuleChecks()` (noDoseAmounts, noDiagnosisClaims, noPrescriptionDirectives, languageScriptMirrored, clarifyingQuestionPresent, noFalseReassurance, urgencyConsistent, medicationRedirectPresent); if hasContext → LLM judge `{grounded, hasDisclaimerOrSafetyNet, noDoses, noDiagnosis}`; ONE regeneration with critique if first pass fails; second failure → deterministic fallback | Judge unavailable → rules-only validation continues |
+| 8 | **Citation grounding** | `run.ts:1700-1720` | `extractCitations(text, allowedIds)` strips any `[ID]` the model invented that wasn't in retrieved chunks; updates `citationsGrounded` check | Invented citations are silently stripped (good) — user sees corrected text |
+| 9 | **Roman → Urdu Nastaliq translation** | `run.ts:1722-1734` | If `lang === 'roman'`, `llmChat(TRANSLATE_SYSTEM, finalContent)` produces parallel Nastaliq version attached as `urduVersion` | Translation failure → no `urduVersion`, Roman answer still shown |
+| 10 | **Persist + emit done** | `run.ts:1746-1828` | `persistTurn()` writes `Message` + `TriageEvent` rows with full `pipelineMeta` (latencies per stage, engines used, chunk IDs, validator verdict, L1, clinical context, cited IDs, error); emits `validation` + `done` SSE events | DB write failure → message lost (but SSE already streamed the content to the user) |
+
+**Verdict on "12-stage":** The repo's pipeline is genuinely multi-stage and the count of distinct phases is in the 9-12 range depending on how you group (0+0.5 = 1 or 2; steps 6-9 are wrapped in one try/catch but are 4 distinct phases). So if someone calls it a "12-stage pipeline" they're being roughly accurate. **But the repo itself never uses that label** — the docs say 5 layers / 4 pillars / 6 visible stages / 9 SSE events. So there is **no documentation-implementation mismatch on this point** because the docs never claim "12 stages" in the first place. The "12-stage" framing in the task brief appears to be external to the repo.
+
+What IS real and impressive: the pipeline is **deterministic-first, LLM-second, fallback-always**. Every LLM call has a deterministic alternative; every stage degrades safely; the SSE stream never breaks mid-flight (the `/api/chat` route has an absolute outer `catch {}` that emits `error` + `done` with a safe fallback string).
+
+---
+
+## 6. System Prompts — full text + critique
+
+The four prompts are quoted in §4. Highlights and critique:
+
+**`L1_SYSTEM`** (`run.ts:355-386`) — the triage classifier. Strengths: forces strict JSON, has an explicit triage rubric, distinguishes ESTABLISHED vs SUSPECTED vs QUESTION vs SYMPTOM_ASSOCIATED conditions, has a "CALIBRATION — do NOT over-triage" block (minor stopped bleeding = SELF_CARE, child with fever who is drinking = SELF_CARE, informational questions = SELF_CARE, established condition with no complaint = ROUTINE). Weaknesses: the entire rubric is in English, which means low-capability models may under-extract on Roman Urdu symptom descriptions; the rubric lists specific temperatures (39°C, 39.5°C) but the L1 doesn't actually see a measured temperature unless the user states it.
+
+**`GENERATION_SYSTEM`** (`run.ts:388-407`) — 12 hard rules. Strengths: rules 8 & 9 treat retrieved context AND user input as untrusted; rule 11 explicitly handles established conditions ("acknowledge it, do NOT diagnose it again"); rule 10 forbids false reassurance. Weaknesses: rule 6 is internally tense ("include When-to-see-a-doctor for URGENT/EMERGENCY" vs "do NOT paste the full 1122 emergency list on every mild headache"); rule 7's "Keep it under ~250 words" is a soft cap the model can violate.
+
+**`ABSTENTION_SYSTEM`** (`run.ts:409-425`) — used when retrieval returns 0 hits. Notably forbids the exact phrase "I don't have verified information" (rule e) and instead requires the model to still give general empathy + home-care + redirect. This is a thoughtful anti-brushoff design.
+
+**`JUDGE_SYSTEM`** (`run.ts:427-435`) — L2 validator. Returns 4 booleans. Strength: simple, parseable, low hallucination surface. Weakness: only 4 dimensions — no check for "did the model invent a citation" (that's caught separately by `extractCitations`), no check for "did the model answer in the wrong language" (that's caught by `scriptMatches` rule check).
+
+**`TRANSLATE_SYSTEM`** (`run.ts:437`) — minimal, single-line Roman→Nastaliq translator preserving markdown + `[ID]` markers.
+
+---
+
+## 7. Emergency Handling — how chest pain / stroke / breathing / suicide are actually handled
+
+All four are handled by the **L0 lexicon short-circuit path** (`run.ts:1265-1279`), which **bypasses the LLM entirely** and renders a pre-written template. Concrete code paths:
+
+### Chest pain
+- `chest_pain_dyspnea` pattern (`lexicon.ts:20-43`) requires BOTH a chest-pain term AND a breathing-difficulty term (group-AND logic). Reason: "Chest pain together with breathing difficulty matches WHO emergency warning signs for a possible heart or lung emergency." Category: `cardiac`.
+- Also `cardiac_pressure_severe` (heavy/squeezing/pressure in chest) and `cardiac_arrest_claim` patterns.
+- Template `cardiac` (`emergency-templates.ts:12-58`): trilingual title "Possible heart emergency — act now", 4 immediate actions (Call 1122, sit down/loosen clothing, aspirin only if previously prescribed, CPR if breathing stops), 2 do-nots (don't walk/exert, don't ignore/wait).
+- `tests/safety/b-emergency.test.ts:11-15, 17-20` confirms "chest pain and difficulty breathing" → EMERGENCY cardiac, and "seene mein sakht dard hai aur saans lene mein mushkil" → EMERGENCY.
+- Per `SEHATAI_COMPREHENSIVE_TEST_RESULTS.md:34-60`, the live test "My chest feels heavy and I am sweating" returned EMERGENCY in **82 ms** with the full cardiac template.
+
+### Stroke
+- `stroke_fast` pattern (`lexicon.ts:45-63`) — single group with ~80 terms covering face droop, arm/leg weakness, slurred speech, sudden severe headache, sudden numbness one side, sudden vision loss. Reason cites "FAST stroke warning signs". Category: `stroke`.
+- Also `stroke_claim` pattern for explicit "I think I'm having a stroke".
+- Template `stroke` (`emergency-templates.ts:60-101`): "Possible stroke — every minute matters", 3 actions (Call 1122, note symptom onset time for treatment window, lay on side / nothing by mouth), 2 do-nots (no food/water/meds by mouth, don't wait).
+- Test `b-emergency.test.ts:22-26`: "my fathers face is drooping and his speech is slurred" → EMERGENCY stroke.
+
+### Breathing difficulty
+- `severe_breathing_distress`, `severe_bleeding` (with blood terms), `breathing_severe` modifier (boost 2 → EMERGENCY).
+- `runL0Triage` has a `respiratoryEmergency` path (`safety-engine.ts:501-506`): dyspnea + (fever OR elderly OR pregnant OR established chronic condition) with no other red flags → EMERGENCY.
+- `anaphylaxisReaction` (`safety-engine.ts:507`): dyspnea + food/medicine exposure → EMERGENCY anaphylaxis template.
+
+### Suicide / self-harm
+- `suicidal_ideation` pattern (`lexicon.ts:305-323`) — terms: "suicidal", "want to end my life", "kill myself", "marna chahta hoon", "khudkushi", "خودکشی". Category: `mental-health`.
+- Template `mental-health` (`emergency-templates.ts:516-553`): trilingual title, reason intro, immediate actions (stay with the person, remove means, call 1122 / local crisis line, encourage professional help), do-nots (don't leave alone, don't dismiss/judge, don't promise secrecy).
+- Tests `b-emergency.test.ts:38-41`: "I want to end my life" → `matchedCategory === 'mental-health'`; "marna chahta hoon" → EMERGENCY.
+- **Gap:** the emergency numbers list (`EMERGENCY_NUMBERS`) does NOT include a dedicated mental-health crisis line. Pakistan's `1166` is the National Health & Polio Helpline; Umang's `1152` child-protection line and the Pakistan Association for Mental Health lines are not surfaced. The template's "encourage professional help" is generic.
+
+---
+
+## 8. Medication Handling — how drug interactions / allergies / dosage are actually handled
+
+### Dosage — strongly refused
+- **Detection** (`hasDosePattern`, `run.ts:110-151`): four regex layers — (a) unit-based doses `\d+\s*(?:mg|ml|mcg|g)` with ORS/glucose whitelist windows; (b) countable forms `\d+ tablets|pills|goli|capsules|drops|spoonfuls|chammach` with age-expression exemption; (c) bare number + drug name `500 paracetamol|2 panadol|500 of amoxicillin`; (d) regimen + medicine `\d+ times a day` within 90-char window of a drug name.
+- **Refusal** (`buildMedicationRefusal`, `run.ts:953-964`): renders trilingual `MED_REFUSAL_NOTE` ("I can't recommend which medicine or what dose — it depends on your age, weight, health conditions, other medicines and allergies, and must come from a doctor or pharmacist") with `[antibiotic-awareness]` citation if that corpus item was retrieved.
+- **Validator** (`runRuleChecks`, `run.ts:315-340`): `noDoseAmounts`, `noPrescriptionDirectives`, `medicationRedirectPresent` (must end with doctor/physician/pharmacist/health facility/ڈاکٹر/فارمسسٹ) — three independent checks. LLM judge adds `noDoses` boolean.
+
+### Drug-drug interactions — NOT implemented
+- The L1 classifier tags `medications.intent = 'INTERACTION'` when the user asks "can I take X with Y" (`context-extraction.ts:256-302`).
+- `buildSafetyDirectives` (`run.ts:877-881`) responds with: "MEDICATION DECISION question (INTERACTION). Give general safety information only; the actual decision belongs to their doctor or pharmacist."
+- **There is NO drug-interaction database.** No DrugBank, RxNorm, WHO Model List, or even a static contraindication table. The app cannot tell you that "amoxicillin + warfarin increases bleeding risk" — it can only say "ask your doctor".
+- This is **safe by design** (a triage tool should not be making interaction calls) but it means the "drug interactions" feature is effectively a refusal, not a check.
+
+### Allergies — collected, not used
+- `HealthProfile.allergies[]` is collected in `profile-card.tsx` and stored in localStorage (`sehatai.profile.v1`).
+- Per the explicit safety note in `profile.ts:8-13`, **the profile is metadata-only and does NOT influence triage decisions**. So a recorded penicillin allergy will NOT trigger any special handling if the user later asks about amoxicillin.
+
+### Missed dose / overdose
+- `OVERDOSE` intent → safety directive: "MEDICATION OVERDOSE reported. Do not wait: advise contacting a doctor or the Health Helpline 1166 now, and call 1122 if the person is drowsy, confused, vomiting or unresponsive. Do not induce vomiting unless medical staff say so." (`run.ts:873-877`).
+- L0 has `overdoseEmerg = ctx.medications?.intent === 'OVERDOSE' && hasAlteredMentalStatus(norm)` → EMERGENCY (`safety-engine.ts:481-482`).
+- `MISSED_DOSE` → general safety info + redirect (`run.ts:877-881`).
+
+---
+
+## 9. Notable Strengths (honest)
+
+1. **Deterministic-first architecture.** Every LLM call has a deterministic alternative. The L0 lexicon + emergency templates + offline engine + `buildDeterministicAnswer` / `buildMedicationRefusal` / `buildClarificationAnswer` fallbacks mean the app NEVER has to hand a user an "AI is down" error — it always produces a safe, pre-verified response. This is the right design for a safety-critical product.
+
+2. **Emergency short-circuit that genuinely bypasses the LLM.** `run.ts:1265-1279` returns before any LLM call when L0 fires. 28 red-flag patterns × 23 trilingual emergency templates × 4 Pakistan emergency numbers (1122/1023/1166/115). Latency in the live test report: 68-82 ms end-to-end for chest pain and stroke.
+
+3. **Structural role isolation (R1).** `createDialogueStreams()` (`types.ts:285-331`) strictly separates the `patientStream` (user-only, fed to L0/L1/clinical-context) from the `historyStream` (all turns with roles, fed to the final generator for fluency). This means an assistant message that says "call 1122 for chest pain" can never leak back into the L1 symptom extractor and falsely escalate a later mild question. There are dedicated tests for this (`tests/e2e/universal-invariants.test.ts`, `tests/m1-structural-role-isolation.test.ts`).
+
+4. **Citation grounding with abstention.** `extractCitations(text, allowedIds)` strips invented `[ID]` markers. 0 corpus hits → `ABSTENTION_SYSTEM` → `citations: []` enforced. No "hallucinated WHO citation" risk. This is the single best RAG-safety property of the codebase.
+
+5. **Multi-provider cascade with circuit breaker.** `src/server/llm.ts` (69 KB) is production-grade: 7 tiers, per-tier circuit-breaker state machine, per-provider multi-key pools, 429-specific cooldown vs generic-failure cooldown, `AbortController`-based timeouts, fallback model lists. This is rare even in commercial apps.
+
+6. **Test suite depth.** 17 safety tests (a–w), 7 e2e tests, plus adversarial/pharmacology/multilingual/medical-corpus-audit runners. `tests/safety/o-spec-sweep.test.ts` alone is 51 KB. The 139-case golden eval set with 6 categories (triage, redflag-positive, redflag-nearmiss, refusal, grounding, multilingual-parity) is a real regression safety net, and the eval harness computes under-triage rate, false-positive rate, refusal correctness, citation rate, and P50/P95 latency.
+
+7. **Trilingual integrity enforced at the validator layer.** `scriptMatches()` rule (run.ts:285-292) actually checks the Arabic-block ratio of the model's output and fails validation if Urdu was requested but the model wrote English (or vice versa). Most multilingual apps just ask nicely in the prompt.
+
+8. **Honest offline mode.** The `"_Offline guidance — verified pack, not AI chat._"` label is a genuinely honest UX choice — the user always knows whether they're getting LLM output or deterministic pack output.
+
+---
+
+## 10. Critical Weaknesses / Bugs / Safety Holes (brutal and specific)
+
+### W1 — Patient profile is collected but NOT used in triage (HIGH SEVERITY)
+- **File:** `src/lib/profile.ts:8-13` (explicit comment).
+- **Impact:** A diabetic user who has "diabetes" in their `HealthProfile.conditions` but writes "I feel confused and shaky" (without saying "diabetes") will NOT trigger the `diabetic-emergency` L0 path, because L0 only sees the current message text. The chronic-condition catalog (`CHRONIC_CONDITIONS`) and its `canonical` field are explicitly marked "used by the future L1 patient-context block" — i.e., **future, not current**.
+- **Fix:** Inject `HealthProfile.conditions` (ESTABLISHED only) + `allergies` + `medications` into the `L1_SYSTEM` prompt and into `buildSafetyDirectives()` as an additive "PATIENT CONTEXT (from profile)" block, never in the user-facing prompt. This is the single biggest clinical safety gap.
+
+### W2 — No authentication (HIGH SEVERITY for a health app)
+- **File:** `package.json:66` declares `next-auth ^4.24.11`; grep of `src/` returns **zero** imports of `next-auth`, `getServerSession`, `signIn`, or `signOut`.
+- **Impact:** Identity = a client-generated `sessionId` string. Anyone who guesses or intercepts a `sessionId` can read that user's full conversation history (`/api/conversations?sessionId=X`) including symptoms, triage levels, and red flags. There's session-scoped authorization (a conversation's `sessionToken` must match) but no authentication of the session itself.
+- **Fix:** Wire up `next-auth` (already installed) with at least credential + phone-OTP provider, or use a server-set HttpOnly session cookie instead of a client-sent `sessionId`.
+
+### W3 — Committed SQLite database with plaintext PHI (HIGH SEVERITY)
+- **File:** `db/custom.db` (2.4 MB) is **committed to the repo**. The `.gitignore` ignores `.env*` but does NOT ignore `db/custom.db`.
+- **Impact:** Any conversation/reminder persisted during development or a demo is in the git history. Even if the current `custom.db` is clean, the pattern invites future leaks. `Message.content` (free-text health complaints), `Feedback.comment`, and `Reminder.notes` are all plaintext.
+- **Fix:** Add `db/*.db` to `.gitignore`, purge from git history, and either encrypt sensitive fields or move to a managed Postgres with row-level security. At minimum, document that the SQLite file is for local dev only and must not be deployed.
+
+### W4 — No actual drug-interaction or allergy-cross-check engine (MEDIUM SEVERITY)
+- **Files:** `context-extraction.ts:256` (INTERACTION intent detection), `profile.ts` (allergies stored but unused — see W1).
+- **Impact:** A user who records a penicillin allergy and then asks "can I take amoxicillin for my sore throat" gets the generic medication-refusal message, not a specific "amoxicillin is a penicillin — do not take" warning. For a triage tool this is borderline acceptable, but the UI implies more capability than the engine delivers.
+- **Fix:** Either remove the implication (don't ask for allergies if you won't use them) or wire allergies + a small static contraindication table (e.g. aspirin + children, NSAIDs + pregnancy, metformin + contrast dye) into `buildSafetyDirectives`.
+
+### W5 — Hardcoded eval-dashboard passcode in client bundle (MEDIUM SEVERITY)
+- **File:** `src/components/dashboard/dashboard-view.tsx:44` — `const PASSCODE = 'banoqabil';` stored in `localStorage` under `sehatai.evalUnlocked`.
+- **Impact:** Anyone can read the passcode from the JS bundle. The eval dashboard exposes raw eval inputs/outputs (which include synthetic patient complaints — not real PHI, but still). Not a clinical safety hole, but a security hygiene one.
+- **Fix:** Gate the eval dashboard by an environment-variable-flagged server check or a real auth role, not a client-side constant.
+
+### W6 — Voice TTS depends entirely on device voices (MEDIUM SEVERITY for the target population)
+- **File:** `src/hooks/use-speech.ts` uses `window.speechSynthesis`. `hasVoiceForLang()` returns `'no-voice'` if no Urdu voice is installed.
+- **Impact:** Most low-end Pakistani Android devices lack a usable Urdu Nastaliq voice. The "read aloud" button silently does nothing useful for the exact population this app serves. STT (ZAI server) works; TTS does not, reliably.
+- **Fix:** Add a server-side TTS endpoint (ZAI's `tts` or a cloud TTS) that returns an audio file the client can `<audio>` play, with client-side `speechSynthesis` as a free fallback.
+
+### W7 — Language coverage is only 3 of Pakistan's major languages (MEDIUM SEVERITY)
+- **Files:** `src/lib/i18n/{en,ur,roman}.ts`, `Lang = 'en' | 'ur' | 'roman'`.
+- **Impact:** Pakistan has ~40% Punjabi, ~15% Pashto, ~12% Sindhi, ~4% Balochi speakers (plus Saraiki, Hindko, etc.). The app is effectively English/Urdu/Roman-Urdu only. Pashto is also the lingua franca of much of Afghanistan, so the "South Asia / underserved" mission is under-served for the Pashto belt.
+- **Fix:** Add at least Pashto and Punjabi (both have ASR/TTS support in modern cloud APIs) — the architecture (trilingual `TriText` type, script-heuristic `detectLanguage`, script-mirror validator) generalizes.
+
+### W8 — No outcome tracking / closed-loop follow-up (LOW–MEDIUM SEVERITY)
+- **Files:** `src/data/follow-ups.ts` has only 1 top-level `id:` (it's a structured list, not a tracking loop); no `Outcome` Prisma model; no scheduled re-contact.
+- **Impact:** The app cannot tell whether its advice helped, cannot detect deterioration, cannot close the loop. For a "doctor dashboard" use case this is a real gap.
+- **Fix:** Add an `Outcome` model (better / same / worse / saw-doctor / went-to-1122), schedule a 24h/72h follow-up via the reminder system, and surface non-response in the doctor summary.
+
+### W9 — L0 lexicon is keyword/regex-based and can be paraphrased past (LOW–MEDIUM SEVERITY, mitigated)
+- **Files:** `src/data/lexicon.ts` (28 patterns), `safety-engine.ts:340-389` (`matchRedFlags`).
+- **Impact:** A user who writes "my chest hurts real bad and I can't catch my breath" hits `chest_pain_dyspnea` (matches "chest hurts" via "chest" proximity? — actually no: the pattern requires exact terms like "chest pain" / "pain in my chest" / "seene mein dard"). "My chest hurts real bad" alone may NOT match the chest-pain group. L1 (LLM) is the backstop, but L1 can be unavailable.
+- **Mitigation:** The `fuzzy-matcher.ts` (31 KB) and `intent-detection.ts` add some flexibility, and the L1 LLM is the real safety net. But the L0 short-circuit (the <5 ms path that bypasses the LLM) is only as good as its term list.
+- **Fix:** Expand the chest-pain group terms, or add a fuzzy synonym pass before the strict group-AND match.
+
+### W10 — Emergency numbers list omits mental-health crisis lines (LOW SEVERITY)
+- **Files:** `src/data/lexicon.ts:620-624`.
+- **Impact:** The `mental-health` emergency template fires for suicidal ideation but the `EMERGENCY_NUMBERS` list (1122/1023/1166/115) has no dedicated mental-health crisis line. Pakistan's `1166` is the National Health & Polio Helpline; the Pakistan Association for Mental Health and Umang (`1152`) lines are not surfaced.
+- **Fix:** Add a per-template `crisisLines[]` field so the mental-health template can show a dedicated crisis number.
+
+### W11 — `dev.log` and `tool-results/` committed to repo (LOW SEVERITY, hygiene)
+- **Files:** `dev.log` (493 bytes) and `tool-results/read_*.txt` (two large text dumps, 70 KB and 99 KB) are committed.
+- **Impact:** Noise in the repo; `dev.log` may contain console output from a prior session.
+- **Fix:** `.gitignore` already lists `dev.log` and `*.log` but they got committed before the ignore. `git rm --cached dev.log tool-results/` and add `tool-results/` to `.gitignore`.
+
+### W12 — `examples/websocket/` and `mini-services/` are inert placeholders
+- **Files:** `examples/websocket/{frontend.tsx, server.ts}` (standalone, not imported by the app); `mini-services/.gitkeep` (empty).
+- **Impact:** Misleading directory presence — implies a microservices architecture that doesn't exist. The app is a single Next.js monolith.
+
+---
+
+## 11. Documentation vs Implementation Mismatches
+
+| README / doc claim | Code reality | Severity |
+|---|---|---|
+| "Next.js 16 / React 19 / Tailwind v4 / Prisma 6 / Zustand" | Verified exactly in `package.json`. | ✅ Match |
+| "16 Red Flag Pattern Groups" (README §1) | Actually **28 patterns** in `RED_FLAG_PATTERNS` (`lexicon.ts:18-590`). Under-claim — code has MORE than docs. | 🟡 Minor (docs under-count) |
+| "Trilingual (English · اردو Nastaliq · Roman Urdu)" | Verified — exactly 3 languages, no Pashto/Punjabi/Sindhi/Balochi/Dari. | ✅ Match (but see W7) |
+| "Strictly prohibits medical diagnosis, prescription writing, and drug dosage recommendations" | Verified — `hasDosePattern`, `hasDiagnosisAssertion`, `hasPrescriptionDirective`, `medicationRedirectPresent` rules. | ✅ Match |
+| "Multilingual voice queries" (README §Voice Input) | STT is multilingual via ZAI; TTS depends on device voices (W6). "Voice conversation" is not implemented (push-to-talk + per-message read-aloud only). | 🟡 Over-claim (TTS reliability) |
+| "Doctor Visit Summary: One-click printable and shareable" | Verified — `summary-modal.tsx` + `qr.ts` (QR code) + printable. | ✅ Match |
+| "Evaluation Dashboard & Golden Set: 58-case golden evaluation dataset" (README §Key Features) | Actually **139 cases** in `eval-golden.ts` (47 triage + 35 redflag-positive + 19 multilingual-parity + 17 refusal + 13 redflag-nearmiss + 8 grounding). Under-claim — code has MORE. | 🟡 Minor (docs under-count) |
+| `PROJECT.md` claims 4 pillars (R1/R2/R3/R4) and lists milestones M1–M4 as "PLANNED" | Code implements all of M1 (stream separation), M2 (token-boundary RAG, `MIN_CORPUS_SCORE_THRESHOLD = 2.5`), M3 (chief-complaint vs danger-sign decoupling via `DANGER_CONCERN_TERMS` + `l1Escalates`), M4 (multi-provider cascade + circuit breaker). So the milestones are actually DONE, but `PROJECT.md` still says "PLANNED". | 🟡 Stale doc |
+| `TEST_READY.md` claims "76 Total Test Suite" across 4 tiers | The `tests/e2e/` directory has tier1–tier4 + universal-invariants + test-harness/runner/helpers — plausibly 76 tests. Not independently run by this audit. | ⚠ Unverified (would need to execute `npx tsx tests/e2e/e2e-runner.ts`) |
+| `SEHATAI_COMPREHENSIVE_TEST_RESULTS.md` claims "65 cases executed, 80% pass, 0 critical fail, hackathon readiness 94/100" | This is a manual-test report dated 2026-08-27, not an automated run. Plausible but unverifiable from code alone. | ⚠ Unverified |
+| `.env.example` declares 6 LLM tiers | Code in `llm.ts` actually wires up **7** tiers (adds ZAI as tier_zai, used for ASR + as a chat fallback). | 🟡 Minor (docs under-count) |
+| Implicit claim of "patient profile / medical history" (the my-health UI exists) | UI exists but profile is **metadata-only and does NOT influence triage** (explicit comment in `profile.ts:8-13`). | 🔴 Mismatch (W1) |
+| `next-auth` in dependencies implies auth exists | No `next-auth` usage anywhere in `src/`. Auth is effectively absent. | 🔴 Mismatch (W2) |
+| `next-intl` in dependencies implies i18n via next-intl | Project rolls its own i18n in `src/lib/i18n/`; `next-intl` is unused. | 🟡 Dead dependency |
+
+**No mismatch found on:** emergency numbers (1122/1166/115 + 1023), red-flag categories, corpus publishers (WHO/UNICEF/IFRC/MoNHSRC/IDF/Umang all real), the offline pack, the 12 hard rules in `GENERATION_SYSTEM`, the abstention/citation-grounding behavior, the SSE streaming contract.
+
+---
+
+## 12. Verdict — one-paragraph honest assessment
+
+SehatAI is a **surprisingly mature prototype / early-MVP** for a 4-day-old, single-author repo. The architecture is genuinely safety-first in a way most "AI health chatbot" repos are not: a deterministic L0 lexicon (28 red-flag patterns, 23 trilingual emergency templates) short-circuits the LLM for emergencies with sub-100 ms latency; a 7-tier multi-provider LLM cascade with a real circuit-breaker state machine provides production-grade failover; RAG retrieval uses calibrated token-boundary scoring with strict citation grounding and an honest abstention path; a 139-case golden eval set with under-triage / false-positive / refusal / citation metrics gives a real regression net; and an offline engine delivers the same deterministic safety guarantees with no network. The code is internally consistent, well-typed, and extensively tested (17 safety suites + 7 e2e tiers). However, it is **not production-ready** for three reasons that matter for a health app: (1) there is **no authentication** — `next-auth` is installed but unused, and identity is a client-sent `sessionId`; (2) the **patient profile (chronic conditions, allergies, medications) is collected in the UI but explicitly not wired into the triage pipeline**, meaning a diabetic who doesn't re-state their diabetes in every message can miss the diabetic-emergency path; and (3) the **SQLite database with plaintext PHI is committed to the repo** and `db/custom.db` is in git history. Beyond these, the voice TTS depends on device voices (unreliable on low-end Pakistani Androids), language coverage is only 3 of Pakistan's major languages (no Pashto/Punjabi/Sindhi/Balochi), there is no drug-interaction database (only intent classification + refusal), and there is no outcome-tracking closed loop. Fix W1 (profile → L1 prompt), W2 (real auth), and W3 (remove `db/custom.db` from git + encrypt PHI at rest) and this becomes a credible pilot-ready MVP; without those fixes it should be treated as an impressive hackathon/demo artifact, not a deployable clinical tool.

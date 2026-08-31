@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://arxiv.org/html/2604.06507v1",
+    "name": "Fine-tuning Whisper for Pashto ASR: strategies and scale",
+    "snippet": "Apr 7, 2026 — Whisper achieves word error rates above 100% on CommonVoice Pashto without fine-tuning, because all model sizes output Arabic, Dari , or Urdu ...",
+    "host_name": "arxiv.org",
+    "rank": 0,
+    "date": "Apr 7, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://medium.com/@sushanttwayana1/fine-tuning-whisper-large-v3-for-domain-specific-speech-recognition-47bfd9c4a0bf",
+    "name": "Fine-tuning Whisper Large-v3 for Domain-Specific Speech",
+    "snippet": "This guide documents the complete process of fine-tuning OpenAI's Whisper Large - v3 model for improved speech-to-text transcription accuracy ... Read more",
+    "host_name": "medium.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co/kingabzpro/whisper-large-v3-turbo-urdu",
+    "name": "kingabzpro/whisper-large-v3-turbo-urdu",
+    "snippet": "Jul 2, 2025 — Summary. The Word Error Rate ( WER ) of 26.23% is respectable, indicating that roughly three out of every four words are transcribed correctly. Read more",
+    "host_name": "huggingface.co",
+    "rank": 2,
+    "date": "Jul 2, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://ir.iba.edu.pk/fyp-bscs/50",
+    "name": "Awaaz se Alfaaz: Enhancing Urdu ASR through Whisper Fine",
+    "snippet": "by Z Ahmed · 2026 — We finetuned OpenAI Whisper Large - v3 and Whisper Large - v3 -Turbo using LoRA on Urdu ... Performance was measured mainly using Word Error Rate , while CER, MER, and ... Read more",
+    "host_name": "ir.iba.edu.pk",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.researchgate.net/publication/403641697_Fine-tuning_Whisper_for_Pashto_ASR_strategies_and_scale",
+    "name": "Fine-tuning Whisper for Pashto ASR: strategies and scale",
+    "snippet": "Apr 16, 2026 — Dari, or Urdu script on Pashto audio, achieving word error rates above 100 %. Urdu-to-Pashto transfer fails due to an unverified intermediate ...",
+    "host_name": "www.researchgate.net",
+    "rank": 4,
+    "date": "Apr 16, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://vexascribe.com/how-accurate-is-whisper",
+    "name": "How Accurate Is Whisper? 2026 WER Data by Language &",
+    "snippet": "May 3, 2026 — The current best version, Whisper Large-v3, achieves around 2.7% Word Error Rate (WER) on the LibriSpeech test-clean benchmark — clean audiobook ... Read more",
+    "host_name": "vexascribe.com",
+    "rank": 5,
+    "date": "May 3, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.semanticscholar.org/paper/Benchmarking-Whisper-for-Low-Resource-Speech-An-on-Sehar-Khalid/13104eddc785756132a19242ac7e74442b145693",
+    "name": "[PDF] Benchmarking Whisper for Low-Resource Speech",
+    "snippet": "Evaluating Whisper's performance on Pashto , Punjabi, and Urdu , observes a correlation between Word Error Rate and the presence of speech disfluencies.",
+    "host_name": "www.semanticscholar.org",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://trelis.substack.com/p/whisper-data-preparation-and-fine",
+    "name": "Whisper Data Preparation and Fine-tuning with Unsloth",
+    "snippet": "This method proved significantly more effective, reducing word error rate from 40% to 20% in testing. The human review process involves ... Read more",
+    "host_name": "trelis.substack.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

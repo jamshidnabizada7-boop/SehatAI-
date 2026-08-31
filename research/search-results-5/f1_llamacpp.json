@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.reddit.com/r/Android/comments/1ufw07o/has_anyone_successfully_run_a_local_llm_on",
+    "name": "Has anyone successfully run a local LLM on Android",
+    "snippet": "I've been experimenting with running a small LLM fully on-device on Android (Snapdragon 8 Gen 2, 8GB RAM) using llama.cpp via NDK/JNI. No internet connection ...",
+    "host_name": "www.reddit.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://steelph0enix.github.io/posts/llama-cpp-guide",
+    "name": "llama.cpp guide - Running LLMs locally, on any hardware",
+    "snippet": "Oct 28, 2024 — at least 8GB of free RAM is recommended , but more is better. RAM usage is very low. to ~880 tokens per second (5.3x faster).",
+    "host_name": "steelph0enix.github.io",
+    "rank": 1,
+    "date": "Oct 28, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2410.03613v1",
+    "name": "Large Language Model Performance Benchmarking on",
+    "snippet": "Oct 4, 2024 — To fully understand the current landscape of LLM deployment on mobile platforms, we conduct a comprehensive measurement study on mobile devices . Read more",
+    "host_name": "arxiv.org",
+    "rank": 2,
+    "date": "Oct 4, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com/ggml-org/llama.cpp/discussions/14356",
+    "name": "Performance of llama.cpp on Android device #14356",
+    "snippet": "Android phone equipped with Qualcomm Snapdragon 8Elite is strongly recommended. 8Elite's memory subsystem support for LP-DDR5x memory , up to 5300 MHz; 8Gen3's  ...",
+    "host_name": "github.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://medium.com/@hello_98300/full-on-device-llama-3-2-inference-on-android-c2e0509787f0",
+    "name": "Full On-Device LLaMA 3.2 Inference on Android | by AiSee",
+    "snippet": "For mobile: Use Q2_K or Q4_0 for solid performance under 2GB RAM . For laptops/desktops: Higher-precision quantizations like Q5_K_M deliver ... Read more",
+    "host_name": "medium.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.facebook.com/groups/2675412082839539/posts/2789706821410064",
+    "name": "Local LLM setup with LLaMA CPP on Ubuntu and eGPU",
+    "snippet": "What are the system requirements to run a large language model locally? ... RAM , getting a respectable ~6 tokens / second summarizing 4K of text. Read more",
+    "host_name": "www.facebook.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.sandgarden.com/learn/llama-cpp",
+    "name": "llama.cpp: A CPU-First Framework for Running",
+    "snippet": "as little as 6–8GB of RAM. llama.cpp can run a quantized LLaMA 7B model at 30 to 50 tokens per second , depending on configuration. Benchmarks show speeds ...",
+    "host_name": "www.sandgarden.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://daily.dev/blog/running-llms-locally-ollama-llama-cpp-self-hosted-ai-developers",
+    "name": "Running LLMs Locally in 2026: Ollama, llama.cpp, and Self",
+    "snippet": "Mar 24, 2026 — 90–120 tokens per second ・ make sure you have at least 100GB of free space . 16GB of VRAM can generate 80–120 tokens per second with a Llama 3 ...",
+    "host_name": "daily.dev",
+    "rank": 7,
+    "date": "Mar 24, 2026",
+    "favicon": ""
+  }
+]

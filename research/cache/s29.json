@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://research.google/blog/medgemma-our-most-capable-open-models-for-health-ai-development",
+    "name": "MedGemma: Our most capable open models for health AI",
+    "snippet": "Jul 9, 2025 — MedGemma 4B scores 64.4% on MedQA , which ranks it among the best very small (<8B) open models. 81% of MedGemma 4B–generated chest X-ray reports ...",
+    "host_name": "research.google",
+    "rank": 0,
+    "date": "Jul 9, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2507.05201v3",
+    "name": "MedGemma Technical Report",
+    "snippet": "Jul 12, 2025 — Applying RL to the MedGemma 27B resulted in a substantial improvement in its EHRQA accuracy , closing the gap with top-performing models, as ...",
+    "host_name": "arxiv.org",
+    "rank": 1,
+    "date": "Jul 12, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://developers.google.com/health-ai-developer-foundations/medgemma/model-card",
+    "name": "MedGemma 1.5 model card | Health AI Developer",
+    "snippet": "Apr 21, 2026 — MedGemma 1.5 4B delivers improved accuracy on medical text reasoning and modest improvement on standard 2D image interpretation compared to  ...",
+    "host_name": "developers.google.com",
+    "rank": 2,
+    "date": "Apr 21, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.facebook.com/Amazing.Science.Factss/posts/google-has-launched-medgemma-an-open-source-ai-designed-for-clinical-use-the-4b-/1102311245347886",
+    "name": "Google has launched MedGemma, an open-source AI",
+    "snippet": "Google has launched MedGemma, an open-source AI designed for clinical use. The 4B multimodal version reads text and medical images, while the 27B text-only ...",
+    "host_name": "www.facebook.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://innfactory.ai/en/ai-models/medgemma",
+    "name": "Google MedGemma",
+    "snippet": "MedGemma 1.5 by Google (January 2026) is an open-source AI for medical image and text analysis with 87.7% MedQA accuracy . Mid-2025 Fine-Tuning Available.  ...",
+    "host_name": "innfactory.ai",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  }
+]

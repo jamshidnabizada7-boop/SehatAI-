@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://developers.openai.com/api/docs/pricing",
+    "name": "Pricing | OpenAI API",
+    "snippet": "For gpt - 4o -mini and gpt-4.1-mini with the non-preview web search tool, search content tokens are billed as a fixed block of 8,000 input tokens per call. Read more",
+    "host_name": "developers.openai.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://azure.microsoft.com/en-us/pricing/details/azure-openai",
+    "name": "Azure OpenAI Service - Pricing",
+    "snippet": "Model Pricing (1M Tokens ) Input: $2.50 Cached Input: $0.25 Output: $15 Input: $5. Output: $30 Input: $1.25. GPT - 4o -mini-TTS- 2025 -12-15 Text Input: $0.60. GPT - 4 ...",
+    "host_name": "azure.microsoft.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.aifreeapi.com/en/posts/gpt-4o-pricing-per-million-tokens",
+    "name": "GPT-4o Pricing Per Million Tokens - AI Free API",
+    "snippet": "Jan 16, 2026 — GPT-4o costs $2.50 per million input tokens and $10.00 per million output tokens. Complete pricing breakdown, comparison with GPT-4o-mini, ...",
+    "host_name": "www.aifreeapi.com",
+    "rank": 2,
+    "date": "Jan 16, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://pricepertoken.com/pricing-page/model/openai-gpt-4o",
+    "name": "GPT 4o API Pricing 2026 - Costs, Performance & Providers",
+    "snippet": "Pricing starts at $ 2.50 per million input tokens and $10.00 per million output tokens. The model supports a context window of up to 128K tokens.",
+    "host_name": "pricepertoken.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.helicone.ai/llm-cost/provider/azure/model/gpt-4o",
+    "name": "Azure gpt-4o Pricing Calculator | API Cost Estimation",
+    "snippet": "Calculate the cost of using gpt - 4o with Helicone's free pricing tool. Input Tokens Output Tokens Share $0.0011 00055 OpenAI o3- 2025 -04-16 $0.002. Input tokens ...",
+    "host_name": "www.helicone.ai",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  }
+]

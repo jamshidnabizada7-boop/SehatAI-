@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.medrxiv.org/content/10.1101/2025.04.07.25325385v2.full-text",
+    "name": "Evaluating Large Reasoning Model Performance on",
+    "snippet": "Apr 19, 2025 — This study utilized the new MMLU- Pro benchmark , which is a more complex Q&A dataset compared to the Massive Multitask Language Understanding ( ... Read more",
+    "host_name": "www.medrxiv.org",
+    "rank": 0,
+    "date": "Apr 19, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12659330",
+    "name": "Assessment of the Efficacy of the Google Gemini 2.5 Pro",
+    "snippet": "by D Boczkowski · 2025 · Cited by 1 — The Google Gemini 2.5 Pro model achieved 103 correct answers, corresponding to an overall effectiveness of 85.83%, which is well above the 60% ... Read more",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://medium.com/@aadityaura_26777/benchmarking-large-language-models-llms-i-e-60a460d1c035",
+    "name": "Benchmarking Large Language Models (LLMs i.e. Gemini",
+    "snippet": "MultiMedQA: Evaluates complex medical reasoning across modalities by. On complex diagnostic questions from the USMLE exam, Gemini scored 67.0%, ... Read more",
+    "host_name": "medium.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://benchlm.ai/benchmarks/valsmedqa",
+    "name": "MedQA Leaderboard & Scores — August 2026",
+    "snippet": "Apr 16, 2026 — Gemini 2.5 Flash Preview 09 2025 ThinkingGoogle . 91.17%. 42. MiniMax M2.1MiniMax. 91.16%. 43. Gemini 2.5 Flash Preview 04 17 ThinkingGoogle. Read more",
+    "host_name": "benchlm.ai",
+    "rank": 3,
+    "date": "Apr 16, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-model-thinking-updates-march-2025",
+    "name": "Gemini 2.5: Our most intelligent AI model",
+    "snippet": "Mar 25, 2025 — Without test-time techniques that increase cost, like majority voting, 2.5 Pro leads in math and science benchmarks like GPQA and AIME 2025. Read more",
+    "host_name": "blog.google",
+    "rank": 4,
+    "date": "Mar 25, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/pdf/2508.15797",
+    "name": "Benchmarking the Medical Understanding and Reasoning",
+    "snippet": "by N AlDahoul · 2025 · Cited by 1 — The evaluated LLMs are: Gemini. Flash 2.5 (Team et al., 2023; Koray Kavukcuoglu,. 2025), Gemini Pro 2.5 (Team et al., 2023; Ko- ray Kavukcuoglu, ... Read more",
+    "host_name": "arxiv.org",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://aclanthology.org/2025.arabicnlp-sharedtasks.20.pdf",
+    "name": "Zero- and Few-Shot Prompting of Large Language Models",
+    "snippet": "by FME Elden · 2025 · Cited by 1 — Our best performing system, using Gemini 2.5 Pro , achieved an ac- curacy of 78% in the development set and 74% on the blind test set, securing ... Read more 14 pages",
+    "host_name": "aclanthology.org",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://research.google/blog/advancing-medical-ai-with-med-gemini",
+    "name": "Advancing medical AI with Med-Gemini",
+    "snippet": "May 15, 2024 — We benchmark the new Med- Gemini models on 14 tasks spanning text, multimodal and long-context applications, and demonstrate strong results, ... Read more",
+    "host_name": "research.google",
+    "rank": 7,
+    "date": "May 15, 2024",
+    "favicon": ""
+  }
+]

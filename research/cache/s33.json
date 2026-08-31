@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://cohere.com/blog/introducing-embed-v3",
+    "name": "Introducing Embed v3",
+    "snippet": "Nov 2, 2023 — Embed v3 is Cohere's Newest Embedding Model . We are releasing new English and multilingual Embed versions with either 1024 or 384 dimensions. Read more",
+    "host_name": "cohere.com",
+    "rank": 0,
+    "date": "Nov 2, 2023",
+    "favicon": ""
+  },
+  {
+    "url": "https://medium.com/@aniketpatil8451/comparing-cohere-amazon-titan-and-openai-embedding-models-a-deep-dive-b7a5c116b6e3",
+    "name": "Comparing Cohere, Amazon Titan, and OpenAI",
+    "snippet": "OpenAI text - embedding - 3 - large strikes a balanced approach, effectively managing typographical errors while maintaining high accuracy for ...",
+    "host_name": "medium.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://community.openai.com/t/inconsistent-pricing-for-text-embedding-3-large-between-model-card-and-pricing-page/1338277",
+    "name": "Inconsistent pricing for text-embedding-3-large between",
+    "snippet": "Aug 8, 2025 — Inconsistent pricing for text - embedding - 3 - large between model card and pricing page · Cost : $0.13 / 1M tokens · Batch API price: $0.065 / 1M ... Read more",
+    "host_name": "community.openai.com",
+    "rank": 2,
+    "date": "Aug 8, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://myengineeringpath.dev/tools/cohere-vs-openai-embeddings",
+    "name": "Cohere vs OpenAI Embeddings — Model Comparison for",
+    "snippet": "Mar 20, 2026 — Cohere Embed v3 accepts only 512 tokens. OpenAI text - embedding - 3 -small $0.02 $20 Lowest cost in the market Cohere . OpenAI text - embedding - 3 - ...",
+    "host_name": "myengineeringpath.dev",
+    "rank": 3,
+    "date": "Mar 20, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://deploybase.ai/articles/best-embedding-models",
+    "name": "Best Embedding Models & APIs in 2026",
+    "snippet": "Mar 12, 2026 — text-embedding-3-large costs $0.13 per million tokens and generates 3,072-dimensional vectors. costs $0.000015. spend $20 per day or $600 ...",
+    "host_name": "deploybase.ai",
+    "rank": 4,
+    "date": "Mar 12, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://blog.voyageai.com/2025/01/07/voyage-3-large",
+    "name": "the new state-of-the-art general-purpose embedding model",
+    "snippet": "Jan 7, 2025 — Introducing voyage-3-large , a new state-of-the-art general-purpose and multilingual embedding model. It outperforms OpenAI-v3-large and Cohere- ...",
+    "host_name": "blog.voyageai.com",
+    "rank": 5,
+    "date": "Jan 7, 2025",
+    "favicon": ""
+  }
+]

@@ -1,0 +1,65 @@
+[
+  {
+    "url": "https://msftelemedsupport.zohodesk.com/portal/api/kbArticles/854160000001575164/locale/en/attachments/t4z1u056c31047a6a448f86187cfde2430089/content?portalId=edbsn186ae384ba423ca6e5403f47ff1df85222302187ece898678654d0d3a194c96d&inline=true",
+    "name": "MSF Telemedicine - Case Management Service",
+    "snippet": "A secure case management platform that provides MSF healthcare professionals access to expert clinical and medical advice on a case-by-case basis.",
+    "host_name": "msftelemedsupport.zohodesk.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4100061",
+    "name": "Assessing the Quality of Teleconsultations in a Store  - PMC",
+    "snippet": "by R Wootton · 2014 · Cited by 23 — In 2010, MSF began to use a store-and-forward telemedicine network to assist its field staff in obtaining specialist advice (2). To date, more than 1000 cases ... Read more",
+    "host_name": "pmc.ncbi.nlm.nih.gov",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://telemedhub.org",
+    "name": "Telemedicine Hub | Doctors Without Borders/Médecins Sans",
+    "snippet": "A secure platform that provides healthcare professionals in MSF projects with access to expert clinical and medical advice on a case -by- case basis.",
+    "host_name": "telemedhub.org",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.doctorswithoutborders.ca/telemedicine",
+    "name": "Telemedicine | Doctors Without Borders / Médecins Sans",
+    "snippet": "MSF uses telemedicine software that allows medical professionals to manage remote medical information and medical consultations with maximum confidentiality.",
+    "host_name": "www.doctorswithoutborders.ca",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://reliefweb.int/report/world/msf-telemedicine-brings-care-patients-remote-areas",
+    "name": "MSF Telemedicine Brings Care to Patients in Remote Areas",
+    "snippet": "Jun 23, 2016 — Telemedicine helps to bridge gap between remote areas and large hospitals, links patients with specialists across the globe. Read more",
+    "host_name": "reliefweb.int",
+    "rank": 4,
+    "date": "Jun 23, 2016",
+    "favicon": ""
+  },
+  {
+    "url": "https://msf.org.uk/sites/default/files/PRINGLE%20MSF%20Niger%20Telemedicine%20Study%2008%20Apr%202021.pdf",
+    "name": "Evaluation of MSF's telemedicine pilot project in Madaoua,",
+    "snippet": "MSF has provided store-and-forward (asynchronous) and real-time (synchronous) telemedicine services for case consultations and input from remote specialists ,",
+    "host_name": "msf.org.uk",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://scienceportal.msf.org/api/assets/7425/download/13336",
+    "name": "Evaluation of MSF's telemedicine pilot project in Madaoua,",
+    "snippet": "by J Pringle · 2021 — Between November 2015 and. January 2020, MSF has provided store-and-forward (asynchronous) and real-time (synchronous) telemedicine services for case . Read more",
+    "host_name": "scienceportal.msf.org",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://arxiv.org/html/2604.06507v1",
+    "name": "Fine-tuning Whisper for Pashto ASR: strategies and scale",
+    "snippet": "Apr 7, 2026 — Whisper achieves word error rates above 100% on CommonVoice Pashto without fine-tuning, because all model sizes output Arabic, Dari, or Urdu ...",
+    "host_name": "arxiv.org",
+    "rank": 0,
+    "date": "Apr 7, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co/kingabzpro/whisper-large-v3-turbo-urdu",
+    "name": "kingabzpro/whisper-large-v3-turbo-urdu",
+    "snippet": "Jul 2, 2025 — The Word Error Rate (WER) of 26.23 % is respectable, indicating that roughly three out of every four words are transcribed correctly. Updated ...",
+    "host_name": "huggingface.co",
+    "rank": 1,
+    "date": "Jul 2, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://aclanthology.org/2025.chipsal-1.20",
+    "name": "Benchmarking Whisper for Low-Resource Speech",
+    "snippet": "by NU Sehar · 2025 · Cited by 22 — This paper evaluates Whisper's performance on Pashto , Punjabi, and Urdu , Significant reductions in Word Error Rate ( WER ) were achieved through few-shot fine- ...",
+    "host_name": "aclanthology.org",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://ir.iba.edu.pk/fyp-bscs/50",
+    "name": "Awaaz se Alfaaz: Enhancing Urdu ASR through Whisper Fine",
+    "snippet": "by Z Ahmed · 2026 — This project focuses on improving Automatic Speech Recognition for Urdu , still struggle with accents, background noise, AI Whisper Large - v3 . Performance was ...",
+    "host_name": "ir.iba.edu.pk",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://vexascribe.com/whisper-transcription",
+    "name": "Hosted OpenAI Whisper Large-v3 (No Python, No GPU)",
+    "snippet": "Whisper Large-v3 averages 7.44% Word Error Rate across the eight-dataset Open ASR Leaderboard, but real-world WER ranges from ~2% on clean read English to over ... Read more",
+    "host_name": "vexascribe.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.linkedin.com/posts/1abidaliawan_urdu-asr-speechrecognition-activity-7347934639333797888--LWG",
+    "name": "Abid Ali Awan's Post",
+    "snippet": "Whisper Large V3 Turbo model. This model is fine-tuned for the highest level of precision in Urdu speech recognition. WER : 26.23% | CER: 8.79%",
+    "host_name": "www.linkedin.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  }
+]

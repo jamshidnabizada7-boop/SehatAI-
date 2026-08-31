@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://gtcsys.com/insights/blogs/data-synchronization-in-pwas-offline-first-strategies-and-conflict-resolution",
+    "name": "Data Synchronization in PWAs: Offline-First Strategies and",
+    "snippet": "Oct 17, 2023 — The Background Sync API lets a service worker retry uploads after connectivity returns, even if the user has closed the tab. Sync architecture ... Read more",
+    "host_name": "gtcsys.com",
+    "rank": 0,
+    "date": "Oct 17, 2023",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.ditto.com/blog/how-to-build-robust-offline-first-apps-a-technical-guide-to-conflict-resolution-with-crdts-and-ditto",
+    "name": "How to Build Robust Offline-First Apps: A Technical Guide",
+    "snippet": "Jun 24, 2025 — How to Build Robust Offline-First Apps : A Technical Guide to Conflict Resolution with CRDTs and Ditto. We'll walk through real-world scenarios ... Read more",
+    "host_name": "www.ditto.com",
+    "rank": 1,
+    "date": "Jun 24, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.back4app.com/glossary/offline-first-data-sync",
+    "name": "Offline-First Data Sync: Local Stores, Conflicts, and Replay",
+    "snippet": "Aug 5, 2026 — Offline - first sync is an architecture where the app reads and writes a local store first, then reconciles with the server when online.",
+    "host_name": "www.back4app.com",
+    "rank": 2,
+    "date": "Aug 5, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://lobehub.com/de/skills/agents-inc-skills-web-pwa-offline-first",
+    "name": "web-pwa-offline-first - Skills",
+    "snippet": "Jul 30, 2026 — IndexedDB setup with Dexie.js and idb ; Sync queue management and background synchronization; Conflict resolution strategies (LWW, field-merge, ... Read more",
+    "host_name": "lobehub.com",
+    "rank": 3,
+    "date": "Jul 30, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://schoovaertswout.medium.com/offline-first-with-progressive-web-apps-part-3-3-background-sync-6766cda56947",
+    "name": "Offline first with progressive web apps [ Part 3 / 3 ] - Medium",
+    "snippet": "After that we integrate IndexedDB into our app. Afterwards we go over the explanation of Background sync and implement that one as well. Read more",
+    "host_name": "schoovaertswout.medium.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://wild.codes/candidate-toolkit-question/how-would-you-architect-a-pwa-for-offline-first-and-real-time-sync",
+    "name": "How would you architect a PWA for offline-first and real",
+    "snippet": "Build a production-grade PWA architecture that combines offline - first UX, robust caching strategies, real-time data sync , and safe push notifications.",
+    "host_name": "wild.codes",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://news.ycombinator.com/item?id=28717848",
+    "name": "Downsides of Offline First",
+    "snippet": "Oct 1, 2021 — The promise of CRDTs is that unlike most conflict resolution systems, you can layer over a crdt library and basically ignore all the ... Read more",
+    "host_name": "news.ycombinator.com",
+    "rank": 6,
+    "date": "Oct 1, 2021",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.brainstacktechnologies.com/offline-first-apps",
+    "name": "Offline-First Mobile App Development",
+    "snippet": "A production-ready offline - first PWA with sync , conflict resolution , and deployment support typically takes 3 to 5 months depending on form complexity ... Read more",
+    "host_name": "www.brainstacktechnologies.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

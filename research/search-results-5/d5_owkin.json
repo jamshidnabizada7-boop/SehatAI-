@@ -1,0 +1,65 @@
+[
+  {
+    "url": "https://www.owkin.com/federated-learning",
+    "name": "Federated Learning Explained",
+    "snippet": "Discover how federated learning enables secure, collaborative AI model training across multiple data providers, without compromising data privacy.",
+    "host_name": "www.owkin.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.owkin.com/newsfeed/nature-medicine-publishes-breakthrough-owkin-research-on-the-first-ever-use-of-federated-learning-to-train-deep-learning-models-on-multiple-hospitals-histopathology-data",
+    "name": "Nature Medicine publishes Owkin's breakthrough",
+    "snippet": "Jan 19, 2023 — The project used federated learning – a collaborative AI framework that preserves data privacy and security through Substra , Owkin's recently- ...",
+    "host_name": "www.owkin.com",
+    "rank": 1,
+    "date": "Jan 19, 2023",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.owkin.com/blog/federated-learning-the-most-effective-collaborative-ai-framework-for-healthcare",
+    "name": "Federated learning: the most effective collaborative AI",
+    "snippet": "Aug 2, 2022 — We developed Connect to orchestrate distributed machine learning tasks in a secure way , based on Substra, an open-source software framework",
+    "host_name": "www.owkin.com",
+    "rank": 2,
+    "date": "Aug 2, 2022",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.owkin.com/newsfeed/owkin-launches-open-science-push-by-open-sourcing-ai-software-substra-and-releasing-two-open-source-ai-innovations-at-neurips",
+    "name": "Owkin open sources AI software Substra, releases two AI",
+    "snippet": "Nov 28, 2022 — Researchers can now leverage privacy-preserving and secure federated learning software to drive cutting-edge collaborative medical research.",
+    "host_name": "www.owkin.com",
+    "rank": 3,
+    "date": "Nov 28, 2022",
+    "favicon": ""
+  },
+  {
+    "url": "https://medium.com/pytorch/how-pytorch-enables-medical-breakthroughs-with-federated-learning-at-owkin-563db4a69322",
+    "name": "How PyTorch enables medical breakthroughs with",
+    "snippet": "An overview of AI BioTech company Owkin and how their FL framework Substra is used with PyTorch to enable drug discovery.",
+    "host_name": "medium.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://lfaidata.foundation/blog/2022/11/28/owkin-launches-open-science-push-by-open-sourcing-ai-software-substra-and-releasing-two-open-source-ai-innovations-at-neurips",
+    "name": "Owkin Launches Open Science Push by Open Sourcing AI",
+    "snippet": "Nov 28, 2022 — Owkin is open sourcing Substra , its federated learning (FL) software, to allow researchers and developers to collaboratively train ML models ...",
+    "host_name": "lfaidata.foundation",
+    "rank": 5,
+    "date": "Nov 28, 2022",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.owkin.com/blog/story-of-the-1st-federated-learning-model-at-owkin",
+    "name": "Story of the 1st federated learning model at Owkin",
+    "snippet": "Jul 9, 2020 — At Owkin, our mission is to fuse AI and clinical research to unlock medical discoveries. In doing this, we connect medical researchers, ...",
+    "host_name": "www.owkin.com",
+    "rank": 6,
+    "date": "Jul 9, 2020",
+    "favicon": ""
+  }
+]

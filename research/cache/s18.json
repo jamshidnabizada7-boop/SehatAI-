@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://huggingface.co/BAAI/bge-m3/discussions/23",
+    "name": "BAAI/bge-m3 · Code and some results for comparing with other",
+    "snippet": "I made some comparisons of BGE-M3, E5-large, E5-mistral, nomic-embed, and OpenAI v3 for a multilingual data retrieval task, see code here ...",
+    "host_name": "huggingface.co",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://x.com/OpenRouter/status/1991158802482340218",
+    "name": "optimized for QA retrieval - bge-m3 / multilingual-e5-large: best for",
+    "snippet": "Nov 19, 2025 · bge-m3 / multilingual-e5-large: Encodes sentences, paragraphs, & documents across 90+ languages. Great for semantic embeddings optimized for  ...",
+    "host_name": "x.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://forum.weaviate.io/t/multilingual-embedder-for-weaviate/21196",
+    "name": "Multilingual embedder for Weaviate - Support",
+    "snippet": "May 27, 2025 · Dear friends, I need to embed millions of Italian language strings using the well tested intfloat/multilingual-e5-large model.",
+    "host_name": "forum.weaviate.io",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://medium.com/@leo_dev/bleeding-edge-open-source-multilingual-models-9e7553af9da1",
+    "name": "Bleeding Edge Open-Source Multilingual Models | by Leo - Medium",
+    "snippet": "Jun 6, 2024 · Multilingual E5 Large (ML-E5-Large) is a powerful open-source text embedding model known for its ability to handle over 100 languages.",
+    "host_name": "medium.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://neurips.cc/virtual/2025/133869",
+    "name": "Improving BGE-M3 Multilingual Dense Embeddings for Nigerian",
+    "snippet": "Multilingual dense embedding models such as Multilingual E5, LaBSE, and BGE-M3 have shown promising results on diverse benchmarks for information retrieval ...",
+    "host_name": "neurips.cc",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.predictionguard.com/options/embeddings_models",
+    "name": "Embedding Models | Prediction Guard | Docs",
+    "snippet": "BGE-M3 is a highly versatile retrieval model excelling. Capable of processing 100+ languages, ultilingual-e5 is a multilingual model for creating text  ...",
+    "host_name": "docs.predictionguard.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://bizety.com/2025/11/10/bge-e5-large-instructor-and-minilme-embedding-models",
+    "name": "BGE, E5-Large, Instructor, and MiniLMe Embedding Models",
+    "snippet": "Nov 10, 2025 · Open-source embedding models include BGE, E5-Large, INSTRUCTOR, MiniLM, and BSE. Compare retrieval quality, scalability, and compatibility.",
+    "host_name": "bizety.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2402.03216v3",
+    "name": "BGE M3-Embedding: Multi-Lingual, Multi-Functionality, Multi  - arXiv",
+    "snippet": "Feb 10, 2024 · It can support more than 100 working languages, leading to new state-of-the-art performances on multi-lingual and cross-lingual retrieval tasks.",
+    "host_name": "arxiv.org",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

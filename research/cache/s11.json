@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://arxiv.org/html/2503.19786v1",
+    "name": "Gemma 3 Technical Report",
+    "snippet": "Mar 8, 2025 — We introduce Gemma 3 , a multimodal addition to the Gemma family of lightweight open models, ranging in scale from 1 to 27 billion parameters ... Read more",
+    "host_name": "arxiv.org",
+    "rank": 0,
+    "date": "Mar 8, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co/blog/gemma3",
+    "name": "Gemma 3: Google's all new multimodal, multilingual, long",
+    "snippet": "Mar 12, 2025 — The models range from 1B to 27B parameters, have a context window up to 128k tokens, can accept images and text, and support 140+ languages.",
+    "host_name": "huggingface.co",
+    "rank": 1,
+    "date": "Mar 12, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/LocalLLaMA/comments/1jcmyuc/gemma_3_models_tested_comparing_1b_4b_12b_and_27b",
+    "name": "Gemma 3 Models Tested : Comparing 1B, 4B, 12B, and",
+    "snippet": "performance increases with size. Comparing 1B , 4B , 12B, and 27B Versions … the 27b Gemma is very very good! 3 27 excels in benchmarks .  ...",
+    "host_name": "www.reddit.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://deepmind.google/models/gemma/gemma-3",
+    "name": "Gemma 3",
+    "snippet": "Gemma 3 is a family of lightweight models capable of multimodal understanding, with unparalleled multilingual capabilities. Gemma 3 27B locally on consumer- ...",
+    "host_name": "deepmind.google",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://ai.google.dev/gemma/docs/core/model_card_3",
+    "name": "Gemma 3 model card | Google AI for Developers",
+    "snippet": "Aug 14, 2025 — The 27B model was trained with 14 trillion tokens, 4B model was trained with 4 trillion tokens, the 1B with 2 trillion tokens, 3 1B , 4B , 12B &  ...",
+    "host_name": "ai.google.dev",
+    "rank": 4,
+    "date": "Aug 14, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.api.nvidia.com/nim/reference/google-gemma-3-27b-it",
+    "name": "google / gemma-3-27b-it",
+    "snippet": "Gemma 3 has a large, 128K context window , multilingual support in over 140 languages, Using the benchmark evaluation metrics described in this document, Gemma ...",
+    "host_name": "docs.api.nvidia.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://github.com/ggml-org/llama.cpp/discussions/14356",
+    "name": "Performance of llama.cpp on Android device #14356 - GitHub",
+    "snippet": "Aug 14, 2025 · how to verify on Android phone: same as above. performance of fp32 4096x4096 mulmat on cDSP: before 05/27/2025: about 28 seconds. after relaunched the dev ... Running llama.cpp on Samsung S25 phone #11977 - GitHub \"Running llama.cpp with Adreno 830 GPU acceleration on Termux ... More results from github.com",
+    "host_name": "github.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://cactuscompute.com/compare/best-on-device-llm-framework",
+    "name": "Best On-Device LLM Framework in 2026: Complete Guide | Cactus",
+    "snippet": "Compare the top on-device LLM frameworks: Cactus, llama.cpp, MLC LLM, and ExecuTorch ... On recent flagship phones, expect 10-30 tokens per second for 7B models ...",
+    "host_name": "cactuscompute.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.qualcomm.com/developer/blog/2025/02/how-to-run-deepseek-windows-snapdragon-tutorial-llama-cpp-mlc-llm",
+    "name": "Run DeepSeek Models on Windows on Snapdragon Llama.cpp and",
+    "snippet": "Learn how to run AI models in DeepSeek-R1 through Llama.cpp and MLC-LLM tutorial using Snapdragon X Series laptops. Tutorials and code.",
+    "host_name": "www.qualcomm.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/LocalLLaMA/comments/1imy7gs/android_npu_prompt_processing_16k_tokens_using",
+    "name": "Android NPU prompt processing ~16k tokens using llama 8B! - Reddit",
+    "snippet": "Feb 11, 2025 · Just as a reference, on Snapdragon Gen 8, pure CPU prompt processing is only 20-30 tokens/sec at 8B. This hits 300 t/s which is insane for ...",
+    "host_name": "www.reddit.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://forums.developer.nvidia.com/t/prefill-speed-on-mlc-significantly-slower-than-llama-cpp-on-jetson-thor-any-optimization-suggestions/343483",
+    "name": "Prefill speed on MLC significantly slower than llama.cpp on Jetson",
+    "snippet": "Aug 29, 2025 · Performance comparison: llama.cpp: Prefill for ~10k tokens takes about 30–40 seconds. MLC: Same setup requires 1.5× longer for prefill. On the ...",
+    "host_name": "forums.developer.nvidia.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://arxiv.org/html/2410.03613v1",
+    "name": "Large Language Model Performance Benchmarking on Mobile",
+    "snippet": "Oct 4, 2024 · Unlike llama.cpp, which focuses on optimizing for mobile CPUs, MLC LLM is designed to harness the power of mobile GPUs. Leveraging TVM, MLC LLM ...",
+    "host_name": "arxiv.org",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=41PKDlGM3oU",
+    "name": "Run LLMs Locally on Qualcomm Hardware Using ExecuTorch",
+    "snippet": "Oct 30, 2025 · Join us for our next Live Build-Along Staff Engineer Derrick Johnson and Senior AI/ML Engineer Kartikey Rawat will take you through the ...",
+    "host_name": "www.youtube.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://pub.towardsai.net/on-device-ai-chat-translate-on-android-qualcomm-genie-mlc-webllm-your-phone-your-llm-49594aff3b9f",
+    "name": "On-Device AI Chat & Translate on Android (Qualcomm GENIE, MLC",
+    "snippet": "Sep 11, 2025 · Build an offline Android Chat+Translate app with llama.cpp (Adreno OpenCL), MLC-LLM, and a WebLLM/WebGPU fallback.",
+    "host_name": "pub.towardsai.net",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]
