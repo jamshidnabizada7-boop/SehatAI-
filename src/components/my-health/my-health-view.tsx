@@ -29,6 +29,7 @@ import { AirQualityTracker } from './air-quality-tracker';
 import { HydrationTracker } from './hydration-tracker';
 import { MedicalCalculatorSuite } from './medical-calculators';
 import { SleepTracker } from './sleep-tracker';
+import { HealthSummaryCard } from './health-summary-card';
 import { AccountSection } from './account-section';
 import {
   clearJournal,
@@ -234,6 +235,16 @@ export function MyHealthView() {
             onSave={handleSaveProfile}
           />
         </section>
+
+        {/* Phase 2 — Health Dashboard Summary Card (aggregate of all trackers) */}
+        <HealthSummaryCard
+          lang={uiLang}
+          summary={{
+            conditionsCount: profile?.conditions?.length ?? 0,
+            allergiesCount: profile?.allergies?.length ?? 0,
+            medicationsCount: profile?.medications?.length ?? 0,
+          }}
+        />
 
         {/* Journal section */}
         <section

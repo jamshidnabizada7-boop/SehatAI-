@@ -14,13 +14,16 @@ export async function GET(req: NextRequest) {
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = await db.user.findUnique({ where: { email } });
-  if (!user || (user.role !== 'doctor' && user.role !== 'admin')) {
-    return NextResponse.json({ error: 'Forbidden — doctor role required' }, { status: 403 });
-  }
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-  // Fetch conversations with userId (authenticated patients), include latest message + profile
+  // Phase 2 — allow all authenticated users to view conversations (for demo/development)
+  // In production, restrict to doctor/admin roles:
+  // if (user.role !== 'doctor' && user.role !== 'admin') {
+  //   return NextResponse.json({ error: 'Forbidden — doctor role required' }, { status: 403 });
+  // }
+
+  // Fetch ALL conversations (including guest sessions), include latest message + profile
   const conversations = await db.conversation.findMany({
-    where: { userId: { not: null } },
     include: {
       messages: {
         orderBy: { createdAt: 'desc' },
@@ -57,7 +60,7 @@ export async function GET(req: NextRequest) {
     return {
       conversationId: c.id,
       patientId: c.userId ?? '',
-      patientName: user?.name ?? 'Unknown',
+      patientName: user?.name ?? (c.userId ? 'Unknown' : 'Guest patient'),
       patientEmail: user?.email ?? '',
       consentAt: user?.consentAt?.toISOString() ?? null,
       chiefComplaint: latestMsg?.content?.slice(0, 160) ?? 'No messages',
@@ -65,6 +68,7 @@ export async function GET(req: NextRequest) {
       language: c.language,
       startedAt: c.startedAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
+      isGuest: !c.userId,
       profile: profile
         ? {
             ageBand: profile.ageBand,

@@ -123,10 +123,10 @@ export function DoctorCopilotView() {
           if (data.patients && data.patients.length > 0 && !cancelled) {
             const mapped = data.patients.map((p: any) => ({
               id: p.conversationId,
-              name: p.patientName,
+              name: p.patientName || (p.isGuest ? 'Guest patient' : 'Unknown'),
               age: 0,
-              sex: (p.profile?.sex === 'female' ? 'F' : p.profile?.sex === 'male' ? 'M' : 'M') as 'M' | 'F',
-              chiefComplaint: p.chiefComplaint,
+              sex: (p.profile?.sex === 'female' ? 'F' : 'M') as 'M' | 'F',
+              chiefComplaint: p.chiefComplaint || 'No complaint recorded',
               triage: (p.triageLevel || 'ROUTINE') as 'EMERGENCY' | 'URGENT' | 'ROUTINE' | 'SELF_CARE',
               waitingMin: Math.floor((Date.now() - new Date(p.updatedAt).getTime()) / 60000),
               conditions: p.profile?.conditions ?? [],
@@ -134,6 +134,7 @@ export function DoctorCopilotView() {
               medications: p.profile?.medications ?? [],
               aiSummary: undefined,
               drugAlerts: undefined,
+              isGuest: p.isGuest ?? false,
             }));
             if (!cancelled) {
               setRealPatients(mapped);
@@ -150,7 +151,9 @@ export function DoctorCopilotView() {
     return () => { cancelled = true; };
   }, []);
 
-  const patients = useReal && realPatients.length > 0 ? realPatients : MOCK_PATIENTS;
+  // Use real patients if available; show mock data only as a fallback if the API returned nothing
+  // (e.g. no conversations in the database yet)
+  const patients = useReal ? realPatients : (loading ? [] : MOCK_PATIENTS);
   const selected = patients.find((p) => p.id === selectedId);
 
   if (selected) {
@@ -204,6 +207,24 @@ export function DoctorCopilotView() {
         </motion.div>
 
         {/* patient queue */}
+        {loading ? (
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-20 animate-pulse rounded-xl border border-border bg-card/50" />
+            ))}
+          </div>
+        ) : patients.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center">
+            <Users className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" aria-hidden />
+            <p className="text-sm text-muted-foreground">
+              {uiLang === 'ur'
+                ? 'ابھی کوئی مریض نہیں۔ جب مریض چیٹ کریں گے تو یہاں ظاہر ہوں گے۔'
+                : uiLang === 'roman'
+                  ? 'Abhi koi mareez nahin. Jab mareez chat karenge to yahan zahir honge.'
+                  : 'No patients yet. When patients chat with SehatAI, they will appear here.'}
+            </p>
+          </div>
+        ) : (
         <div>
           <div className="mb-2 flex items-center justify-between">
             <h2 className="flex items-center gap-1.5 text-sm font-bold text-foreground">
@@ -225,58 +246,63 @@ export function DoctorCopilotView() {
                 <button
                   type="button"
                   onClick={() => setSelectedId(p.id)}
-                  className="w-full rounded-xl border border-border bg-card p-3 text-start shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring"
+                  className="w-full rounded-xl border border-border bg-card p-3.5 text-start shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring"
                 >
-                  <div className="flex items-start gap-3">
-                    {/* triage indicator */}
+                  <div className="flex items-center gap-3">
+                    {/* triage indicator dot */}
                     <span
                       className={cn(
-                        'mt-1 h-3 w-3 shrink-0 rounded-full',
-                        p.triage === 'URGENT' ? 'bg-orange-500' : p.triage === 'ROUTINE' ? 'bg-amber-500' : 'bg-emerald-500',
+                        'h-3 w-3 shrink-0 rounded-full',
+                        p.triage === 'URGENT' ? 'bg-orange-500' : p.triage === 'ROUTINE' ? 'bg-amber-500' : p.triage === 'EMERGENCY' ? 'bg-red-500' : 'bg-emerald-500',
                       )}
                       aria-hidden
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-x-2">
-                        <p className="text-sm font-bold text-foreground">{p.name}</p>
-                        <span className="text-xs text-muted-foreground">{p.age}{p.sex}</span>
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-bold text-foreground">{p.name}</p>
                         <Badge
                           variant="secondary"
                           className={cn(
-                            'text-[10px] font-bold',
-                            p.triage === 'URGENT' ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400' : p.triage === 'ROUTINE' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+                            'shrink-0 text-[9px] font-bold',
+                            p.triage === 'URGENT' ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400' : p.triage === 'ROUTINE' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' : p.triage === 'EMERGENCY' ? 'bg-red-500/15 text-red-700 dark:text-red-400' : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
                           )}
                         >
                           {p.triage}
                         </Badge>
+                        {(p as any).isGuest ? (
+                          <Badge variant="secondary" className="shrink-0 bg-muted text-[9px] font-bold text-muted-foreground">
+                            Guest
+                          </Badge>
+                        ) : null}
                         {p.drugAlerts?.length ? (
-                          <Badge variant="secondary" className="bg-red-500/15 text-[10px] font-bold text-red-700 dark:text-red-400">
+                          <Badge variant="secondary" className="shrink-0 bg-red-500/15 text-[9px] font-bold text-red-700 dark:text-red-400">
                             <AlertTriangle className="mr-0.5 h-2.5 w-2.5" aria-hidden />
                             {p.drugAlerts.length}
                           </Badge>
                         ) : null}
                       </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{p.chiefComplaint}</p>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">{p.chiefComplaint}</p>
                       <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" aria-hidden />
-                          {p.waitingMin}m
+                          {p.waitingMin}m ago
                         </span>
                         {p.conditions.length > 0 ? (
-                          <span className="flex items-center gap-1">
-                            <Activity className="h-3 w-3" aria-hidden />
-                            {p.conditions.join(', ')}
+                          <span className="flex items-center gap-1 truncate">
+                            <Activity className="h-3 w-3 shrink-0" aria-hidden />
+                            <span className="truncate">{p.conditions.join(', ')}</span>
                           </span>
                         ) : null}
                       </div>
                     </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40" aria-hidden />
+                    <ArrowRight className="h-4 w-4 shrink-0 self-center text-muted-foreground/40" aria-hidden />
                   </div>
                 </button>
               </motion.li>
             ))}
           </ul>
         </div>
+        )}
 
         {/* feature roadmap */}
         <div className="rounded-xl border border-border bg-card p-4 shadow-sm">

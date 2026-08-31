@@ -485,7 +485,7 @@ export function ChatView() {
         ) : null}
         {/* Phase 2 — voice status indicator (honest about device capabilities) */}
         {messages.length === 0 ? (
-          <div className="ms-auto">
+          <div className="ms-auto hidden sm:block">
             <VoiceStatusIndicator />
           </div>
         ) : null}

@@ -164,7 +164,7 @@ export function SymptomCheckerWizard({ lang, onSend, className }: SymptomWizardP
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={cn('rounded-2xl border border-violet-500/30 bg-violet-50/30 p-4 shadow-sm dark:bg-violet-950/10', className)}
+      className={cn('w-full max-w-lg rounded-2xl border border-violet-500/30 bg-violet-50/30 p-4 shadow-sm dark:bg-violet-950/10', className)}
     >
       {/* header */}
       <div className="mb-3 flex items-center gap-2">
