@@ -340,3 +340,55 @@ Stage Summary:
 - Completed this round: (1) Fixed React duplicate-key bug in emergency-templates.ts (5 duplicate categories removed). (2) Built confidence badge UI (HIGH/MEDIUM/LOW pill with popover). (3) Built drug-interaction warning card. (4) Built full observability dashboard view with KPIs + charts + auto-refresh. (5) Built referral rails (contextual in chat + compact in facilities) with 12 deep-links to PK emergency/hospital/telemedicine services. (6) Full trilingual i18n for all new features. (7) Admin-gated observability nav item.
 - Unresolved / risks: (a) The drug-warning card renders only when message.drugCheck is populated — need to verify the pipeline actually passes drugCheck in the done SSE event (the type was added but the pipeline run.ts may need to include it in the emit('done') payload — currently the drug-check result is used internally for triage escalation + the medSafetyBlock is injected into the generation prompt, but may not be surfaced as a separate drugCheck field on the done event). (b) The observability metrics show 0 runs after a dev server restart (in-memory state resets) — this is expected; the structured logs in dev.log capture every run for log aggregation. (c) Browser caching can mask code changes during QA — must clear caches + storage when verifying UI changes.
 - Priority recommendations for next round: (1) Verify + wire the drugCheck field from run.ts done event → use-chat.ts → message.drugCheck so the DrugWarningCard actually renders on HIGH-severity interactions. (2) Begin Phase 2 parallel veto constellation refactor (the single biggest architectural change per the master strategy). (3) Begin vector RAG (BGE-M3 + sqlite-vec) to replace TF-IDF fuzzy matcher. (4) Add first-aid quick-access cards to the chat empty state. (5) Add a 3-tier differential display (Glass-style Most Likely / Plausible / Can't-Miss).
+
+---
+Task ID: CRON-REVIEW-ROUND-2
+Agent: Z.ai Code (cron-triggered dev review)
+Task: Assess current project status, perform QA via agent-browser, fix bugs, add styling + new features per the master strategy Phase 2.
+
+Work Log:
+- Read worklog.md Round 1 summary. Dev server running on port 3000, lint clean, HTTP 200 in 63ms.
+- QA via agent-browser: all 6 views render correctly, no console errors. Verified the drugCheck field flow IS working end-to-end (Round 1's "unresolved risk (a)" was actually already resolved): pipeline emits drugCheck in done event → use-chat.ts passes it to finishStream → chat-store spreads it onto message → message-bubble renders <DrugWarningCard> when severity !== 'NONE'. Confirmed with a live warfarin + ibuprofen test: "⚠️ High-severity interaction" card rendered above the response with the full recommendation + "Show details" expandable.
+- No bugs found this round — the codebase is stable.
+
+Phase 2 Implementation — New Features + Styling:
+
+NEW FEATURE 1: First-Aid Quick-Access Cards (src/components/chat/first-aid-cards.tsx, 175 lines)
+- 5 tappable cards in the chat empty state (Burns & scalds, Severe bleeding, Broken bone, Seizure/fits, Electric shock)
+- Each card: color-coded icon tile (orange/red/amber/violet/yellow) + trilingual title + 1-line subtitle + chevron
+- Clicking a card pre-fills the chat input with a WHO/IFRC first-aid query (e.g. "What is the first aid for burns and scalds?")
+- Framer Motion staggered entrance (delay 0.25 + i*0.05), hover scale + chevron translate
+- Designed for low-literacy users who may not know how to phrase a first-aid query
+- Integrated into chat-view.tsx empty state, between the daily health tip and "Try asking" section
+
+NEW FEATURE 2: 3-Tier Differential Display (Glass-style, src/components/chat/differential-card.tsx, 230 lines)
+- Collapsible card that renders the L1 classifier's structured conditions[] + redFlagConcerns[] in 3 visual tiers:
+  - ESTABLISHED (emerald) — conditions the user HAS (stated/diagnosed)
+  - SUSPECTED (amber) — conditions to evaluate (NOT a diagnosis — explicit "SehatAI does not diagnose" label)
+  - CAN'T-MISS (red) — red-flag emergencies to rule out urgently
+- Collapsed by default (shows summary line + count badge + "SehatAI does not diagnose — a doctor must confirm" disclaimer)
+- Expandable via a tap (animated height + opacity transition)
+- Each tier: icon tile + uppercase heading + count badge + bulleted list of {name, reason}
+- Safety: every tier explicitly says SehatAI does NOT diagnose; the cantMiss tier is always rendered first if non-empty
+- Full data flow wired: types.ts (Differential + DifferentialEntry + DoneStageData.differential + ChatMessage.differential) → run.ts (buildDifferential helper buckets L1 conditions) → done event emits differential → use-chat.ts passes to finishStream → chat-store spreads onto message → message-bubble renders <DifferentialCard>
+- Verified live: "I think I might have diabetes" → differential.suspected = [{name: "diabetes", reason: "A doctor must confirm..."}], card renders + expands to show "COULD BE CONSIDERED · 1 · diabetes"
+
+STYLING POLISH:
+- First-aid cards use distinct color-coding per emergency type (not all the same primary color) for visual scannability
+- Differential card uses the established medical convention: green=known, amber=uncertain, red=danger
+- Both new components are collapsible to avoid overwhelming low-literacy users
+- All new components are trilingual (EN/Urdu-Nastaliq/Roman-Urdu)
+- Preserved the existing sticky footer, responsive layout, WCAG 2.2 AA touch targets (≥44px)
+
+VERIFIED via agent-browser:
+- DrugWarningCard: warfarin + ibuprofen → "⚠️ High-severity interaction" card with full recommendation + Show details (Round 1 risk resolved)
+- DifferentialCard: "I think I might have diabetes" → "Possible causes review · 1" → expand → "COULD BE CONSIDERED · 1 · diabetes"
+- FirstAidCards: 5 cards render in empty state, clicking Burns pre-fills "What is the first aid for burns and scalds?"
+- Screenshots: sehatai-drug-warning-card.png, sehatai-differential-card.png, sehatai-first-aid-cards.png in /home/z/my-project/download/
+- Lint clean (0 errors, 0 warnings). Dev server HTTP 200. No console errors.
+
+Stage Summary:
+- Current status: STABLE + ENHANCED. Phase 0 + Phase 1 fully complete. Phase 2 now includes: confidence badge, drug warning card, observability dashboard, referral rails, first-aid quick-access cards, 3-tier differential display.
+- Completed this round: (1) Verified the drugCheck field flow works end-to-end (Round 1's unresolved risk was actually resolved). (2) Built first-aid quick-access cards (5 emergencies, trilingual, color-coded, pre-fills chat). (3) Built 3-tier differential display (Glass-style, collapsible, full data flow from pipeline L1 → UI). (4) Full styling polish with medical-convention color coding + collapsible cards for low-literacy UX. (5) Wired all types + pipeline + store + hooks + components.
+- Unresolved / risks: (a) The differential currently surfaces only when the L1 classifier returns conditions or redFlagConcerns — for pure SELF_CARE/informational queries it won't render (by design, returns null). (b) The first-aid cards query the corpus via the existing chat flow — if the LLM providers are rate-limited, the deterministic fallback fires (which is still safe). (c) Browser caching can mask code changes — cleared caches during QA.
+- Priority recommendations for next round: (1) Begin Phase 2 parallel veto constellation refactor (the single biggest architectural change — refactor the linear pipeline into primary + 4 concurrent validators with veto power, per Hippocratic AI's pattern). (2) Begin vector RAG (BGE-M3 + sqlite-vec) to replace the TF-IDF fuzzy matcher for better semantic retrieval. (3) Add a "Doctor Summary" export that bundles the differential + drug-check + triage into a FHIR-style note for the patient to share with a clinician. (4) Add medication-reminder push notifications (Web Push API) wired to the existing reminders system. (5) Add a health-timeline visualization in the My Health view showing the user's symptom journal + outcomes over time.

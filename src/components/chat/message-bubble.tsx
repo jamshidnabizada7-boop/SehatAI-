@@ -26,6 +26,7 @@ import { MarkdownContent } from './markdown-content';
 import { TriageBadge } from './triage-badge';
 import { ConfidenceBadge } from './confidence-badge';
 import { DrugWarningCard } from './drug-warning-card';
+import { DifferentialCard } from './differential-card';
 import { CitationCard, citationSummary } from './citation-card';
 import { PipelineTicker } from './pipeline-ticker';
 import { Button } from '@/components/ui/button';
@@ -275,6 +276,15 @@ export function MessageBubble({
           {message.drugCheck && message.drugCheck.severity !== 'NONE' ? (
             <DrugWarningCard
               drugCheck={message.drugCheck}
+              lang={msgLang}
+              className="mb-2"
+            />
+          ) : null}
+
+          {/* Phase 2 — 3-tier differential (Glass-style, collapsible) */}
+          {message.differential ? (
+            <DifferentialCard
+              differential={message.differential}
               lang={msgLang}
               className="mb-2"
             />

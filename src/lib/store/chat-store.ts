@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import type {
   ChatMessage,
   Citation,
+  Differential,
   DrugCheckSummary,
   EmergencyStageData,
   Lang,
@@ -54,6 +55,7 @@ interface ChatState {
       offline?: boolean;
       confidence?: ResponseConfidence | null;
       drugCheck?: DrugCheckSummary | null;
+      differential?: Differential | null;
       error?: boolean;
     },
   ) => void;

@@ -36,6 +36,7 @@ import { SummaryModal } from './summary-modal';
 import { ConversationHistoryDrawer } from './conversation-history-drawer';
 import { OutcomeFollowupCard } from '@/components/outcomes/outcome-followup-card';
 import { ReferralRails } from './referral-rails';
+import { FirstAidCards } from './first-aid-cards';
 import { cn } from '@/lib/utils';
 
 const WELCOME_TRILINGUAL: { tag: string; text: string; lang: Lang }[] = [
@@ -305,6 +306,9 @@ export function ChatView() {
                 </div>
               </div>
             </motion.div>
+
+            {/* Phase 2 — first-aid quick-access cards (pre-fill chat with WHO/IFRC first-aid queries) */}
+            <FirstAidCards lang={uiLang} onSelect={(q) => fillExample(q)} />
 
             <div className="w-full max-w-lg space-y-2" aria-label={t(uiLang, 'chat.tryAsking')}>
               <p className="px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">

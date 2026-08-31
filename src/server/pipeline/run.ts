@@ -29,6 +29,8 @@ import {
   createDialogueStreams,
   type Citation,
   type DoneStageData,
+  type Differential,
+  type DifferentialEntry,
   type EmergencyStageData,
   type Lang,
   type PatientDialogueMessage,
@@ -1131,6 +1133,38 @@ function buildMedSafetyBlock(
     );
   }
   return lines.join('\n');
+}
+
+// ============================================================
+// Phase 2 — 3-tier differential (Glass-style)
+// Buckets the L1 classifier's conditions[] + redFlagConcerns[] into
+// three tiers for the DifferentialCard UI:
+//   - established: conditions the user HAS (ESTABLISHED)
+//   - suspected:   conditions the user wonders they might have (SUSPECTED/QUESTION)
+//   - cantMiss:    red-flag emergencies to rule out (from redFlagConcerns)
+// Returns null if all three buckets are empty (don't render the card).
+// ============================================================
+
+function buildDifferential(l1: L1Extraction | null): Differential | null {
+  if (!l1) return null;
+  const established: DifferentialEntry[] = (l1.conditions ?? [])
+    .filter((c) => c.state === 'ESTABLISHED')
+    .map((c) => ({ name: c.name, reason: 'You have stated you have this condition.' }));
+  const suspected: DifferentialEntry[] = (l1.conditions ?? [])
+    .filter((c) => c.state === 'SUSPECTED' || c.state === 'QUESTION')
+    .map((c) => ({
+      name: c.name,
+      reason: 'A doctor must confirm or rule this out — SehatAI cannot diagnose.',
+    }));
+  // cantMiss: surface verified redFlagConcerns as conditions to rule out
+  const cantMiss: DifferentialEntry[] = (l1.redFlagConcerns ?? [])
+    .slice(0, 5)
+    .map((concern) => ({ name: concern, reason: 'Emergency sign — rule out urgently.' }));
+
+  if (established.length === 0 && suspected.length === 0 && cantMiss.length === 0) {
+    return null;
+  }
+  return { established, suspected, cantMiss };
 }
 
 // ---------- Profile red-flag override → emergency template mapping (W1) ----------
@@ -2406,6 +2440,7 @@ export async function runPipeline(
           flags: drugCheck.flags,
         } as DrugCheckSummary)
       : null,
+    differential: buildDifferential(l1 ?? null),
   } as DoneStageData & { urduVersion?: string });
   return result;
 }

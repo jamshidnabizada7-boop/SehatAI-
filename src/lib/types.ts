@@ -287,6 +287,23 @@ export interface DrugCheckSummary {
   flags: FlagHit[];
 }
 
+/** Phase 2 — 3-tier differential (Glass-style Most Likely / Plausible / Can't-Miss).
+ *  Surfaced from the L1 classifier's conditions[] array, bucketed:
+ *  - established: conditions the user HAS (stated/diagnosed)
+ *  - suspected:   conditions the user wonders they might have
+ *  - cantMiss:    red-flag/emergency conditions to rule out (from redFlagConcerns)
+ *  Each entry: { name, reason } where reason is a short note. */
+export interface DifferentialEntry {
+  name: string;
+  reason?: string;
+}
+
+export interface Differential {
+  established: DifferentialEntry[];
+  suspected: DifferentialEntry[];
+  cantMiss: DifferentialEntry[];
+}
+
 export interface DoneStageData {
   messageId: string;
   conversationId: string;
@@ -301,6 +318,8 @@ export interface DoneStageData {
   confidence?: ResponseConfidence | null;
   /** Phase 1: drug-interaction / allergy / flag payload (when present and severity !== 'NONE') */
   drugCheck?: DrugCheckSummary | null;
+  /** Phase 2: 3-tier differential (Glass-style Most Likely / Plausible / Can't-Miss) */
+  differential?: Differential | null;
 }
 
 export interface SSEEvent {
@@ -400,6 +419,8 @@ export interface ChatMessage {
   confidence?: ResponseConfidence | null;
   /** Phase 1: drug-interaction / allergy / flag payload (when present and severity !== 'NONE'). */
   drugCheck?: DrugCheckSummary | null;
+  /** Phase 2: 3-tier differential (Glass-style Most Likely / Plausible / Can't-Miss). */
+  differential?: Differential | null;
   createdAt: number;
   streaming?: boolean;
 }
