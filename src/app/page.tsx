@@ -56,7 +56,6 @@ export default function Home() {
   const allowedViews: View[] = role === 'admin' ? ADMIN_VIEWS : role === 'doctor' ? DOCTOR_VIEWS : PATIENT_VIEWS;
   // Safe view — fall back to role default if the current view isn't allowed
   const safeView: View = allowedViews.includes(view) ? view : (DEFAULT_VIEW[role] ?? 'chat');
-  console.log('[safe-view-debug]', { role, view, safeView });
 
   // persist a session id for reminders/chat/feedback APIs
   useEffect(() => {
@@ -85,8 +84,7 @@ export default function Home() {
       url.searchParams.delete('view');
       window.history.replaceState({}, '', url.toString());
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, view]);
+  }, [role, view, allowedViews, setView]);
 
   // propagate language/dir to <html>
   useEffect(() => {
@@ -134,8 +132,7 @@ export default function Home() {
       // Doctors default to doctor-copilot on first login
       setView('doctor-copilot');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, session, router, searchParams, view, role, accountStatus]);
+  }, [status, session, router, searchParams, view, role, accountStatus, allowedViews, setView]);
 
   // Show the landing chooser for unauthenticated users
   const showLanding = status === 'unauthenticated';
