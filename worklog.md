@@ -1742,3 +1742,21 @@ Stage Summary:
 - 3 buttons in a row replace 3 separate sections — dramatically reduces page height.
 - Each button opens a modal overlay with its content.
 - Clean, compact layout: Welcome → Health tip → [First aid | Symptoms | Examples] → Triage legend.
+
+---
+Task ID: COMPETITIVE-ANALYSIS-AND-IMPROVEMENT-PLAN
+Agent: Z.ai Code
+Task: User requested comprehensive competitive research on SehatAI's opponents to make it #1 globally.
+
+Work Log:
+- Performed 10+ web searches covering: global AI symptom checkers (Ada, Buoy, Infermedica, Healthily, Ubie), Pakistan telemedicine (oladoc, Marham, Sehat Kahani, MedIQ, InstaCare, Ilaaj AI), mental health (Wysa), general AI (ChatGPT Health), multilingual/offline health apps, gamification, wearable integration.
+- Reviewed 7 existing research files (01-07) in /home/z/my-project/research/ that contained prior deep research on competitors, Pakistan market, AI models, and clinical AI vendors.
+- Reviewed SehatAI's own PROJECT.md and worklog.md to inventory all current features.
+- Wrote comprehensive competitive analysis document at /home/z/my-project/docs/competitive-analysis-and-improvement-plan.md (~500 lines, 7 sections).
+
+Stage Summary:
+- Identified 3 tiers of competitors: (1) Global AI symptom checkers (Ada, Buoy, Infermedica, Healthily, Ubie), (2) Pakistan telemedicine (oladoc, Marham, Sehat Kahani, MedIQ, InstaCare, Ilaaj AI), (3) General AI chatbots (ChatGPT Health, Gemini).
+- SehatAI has 6 of 8 unique moats that NO competitor has: trilingual safety pipeline, Pakistan emergency system, offline PWA, PMDC-verified doctor portal, patient consent management, end-to-end patient→doctor flow.
+- 18 gaps identified, prioritized as: 6 critical (native app, lab tests, medicine delivery, video consult, wearable integration, gamification), 6 high-priority (PHR import, AI image analysis, community, insurance, Urdu voice, chronic disease programs), 6 medium (blog, family manager, SOS, diet planner, pregnancy guide, doctor analytics).
+- Roadmap: Phase 1 dominate Pakistan (0-6mo), Phase 2 expand South Asia (6-12mo), Phase 3 go global (12-24mo).
+- The path to #1: SehatAI already has 6 of 8 differentiators. The remaining 2 (video consult + lab/pharmacy) are achievable in 3 months. No competitor combines all 8.
