@@ -1710,3 +1710,35 @@ Stage Summary:
 - Mobile responsive: all views render correctly on iPhone 14 viewport.
 - Screenshots saved to /home/z/my-project/download/ for verification.
 - The NEXTAUTH_SECRET fix was the key issue — without it, JWT decryption failed silently and signins didn't redirect.
+
+---
+Task ID: FIX-3-BUTTONS-ROW-MODALS
+Agent: Z.ai Code
+Task: User wants 3 buttons side by side in a row (First aid, Symptom checker, Try asking) to reduce page height. Each opens a modal.
+
+Work Log:
+- Replaced the inline FirstAidCards, SymptomCheckerWizard, and "Try asking" example queries with 3 compact buttons in a `grid-cols-3` row:
+  1. **First aid** (orange ShieldPlus icon) — opens modal with first-aid cards
+  2. **Symptoms** (violet HelpCircle icon) — opens modal with body part picker wizard
+  3. **Examples** (primary MessageCircleQuestion icon) — opens modal with 6 example queries
+- Each button is compact: icon tile on top, short label below — designed to fit 3-across on mobile
+- Added `firstAidOpen`, `symptomCheckerOpen`, `tryAskingOpen` state variables
+- Added 3 modal overlays (same pattern for all): backdrop blur + centered card + X close button + content
+  - Selecting an item in any modal auto-closes it and fills/sends the chat input
+- Also fixed: NEXTAUTH_SECRET was missing from .env again (dev server restart wiped it) — restored
+- Removed redundant `max-w-lg` from inner sections (parent already has it)
+- Changed empty state container to scrollable (`overflow-y-auto`) with consistent `gap-3`
+
+- Verified via agent-browser (iPhone 14):
+  - 3 buttons visible side by side in a row ✓
+  - All sections visible: Welcome → Health tip → 3 buttons → Triage legend ✓
+  - First-aid modal: opens with cards ✓
+  - Symptom checker modal: opens with body part picker ✓
+  - Examples modal: opens with 6 example queries ✓
+  - All modals close on outside-tap or X ✓
+  - Page height significantly reduced (3 buttons take 1 row instead of 3 separate sections)
+
+Stage Summary:
+- 3 buttons in a row replace 3 separate sections — dramatically reduces page height.
+- Each button opens a modal overlay with its content.
+- Clean, compact layout: Welcome → Health tip → [First aid | Symptoms | Examples] → Triage legend.

@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ClipboardCopy,
   HeartPulse,
+  HelpCircle,
   Lightbulb,
   MessageCircleQuestion,
   RotateCcw,
@@ -17,6 +18,7 @@ import {
   Baby,
   Brain,
   TriangleAlert,
+  X,
   History as HistoryIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,6 +80,9 @@ export function ChatView() {
 
   const [input, setInput] = useState('');
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [symptomCheckerOpen, setSymptomCheckerOpen] = useState(false);
+  const [firstAidOpen, setFirstAidOpen] = useState(false);
+  const [tryAskingOpen, setTryAskingOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -228,12 +233,12 @@ export function ChatView() {
       >
         <OutcomeFollowupCard refreshKey={assistantTurns} active={outcomeCardActive} />
         {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-4 py-6">
+          <div className="custom-scrollbar mx-auto flex w-full max-w-lg flex-col gap-3 overflow-y-auto px-4 py-4 sm:gap-4 sm:px-6">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
-              className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card text-center shadow-sm"
+              className="w-full overflow-hidden rounded-2xl border border-border bg-card text-center shadow-sm"
             >
               {/* gradient accent strip */}
               <div className="h-1.5 w-full bg-gradient-to-r from-primary via-emerald-500 to-primary" aria-hidden />
@@ -274,7 +279,7 @@ export function ChatView() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.12 }}
-              className="w-full max-w-lg rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/8 via-card to-card p-4 shadow-sm"
+              className="w-full rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/8 via-card to-card p-4 shadow-sm"
               role="note"
               aria-label={t(uiLang, 'chat.dailyTip')}
             >
@@ -311,34 +316,49 @@ export function ChatView() {
               </div>
             </motion.div>
 
-            {/* Phase 2 — first-aid quick-access cards (pre-fill chat with WHO/IFRC first-aid queries) */}
-            <FirstAidCards lang={uiLang} onSelect={(q) => fillExample(q)} />
+            {/* 3 quick-access buttons — side by side in a row to save vertical space */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* First-aid */}
+              <button
+                type="button"
+                onClick={() => setFirstAidOpen(true)}
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-2.5 text-center shadow-sm transition-all hover:border-orange-500/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring sm:p-3"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/15 text-orange-600 dark:text-orange-400">
+                  <ShieldPlus className="h-4.5 w-4.5" />
+                </span>
+                <span className="text-[10px] font-bold leading-tight text-foreground sm:text-[11px]">
+                  {uiLang === 'ur' ? 'ابتدائی امداد' : uiLang === 'roman' ? 'Ibtidai imdaad' : 'First aid'}
+                </span>
+              </button>
 
-            {/* Phase 2 — Symptom Checker Wizard (guided multi-step intake for low-literacy users) */}
-            <SymptomCheckerWizard lang={uiLang} onSend={(q) => doSend(q)} />
+              {/* Symptom checker */}
+              <button
+                type="button"
+                onClick={() => setSymptomCheckerOpen(true)}
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-2.5 text-center shadow-sm transition-all hover:border-violet-500/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring sm:p-3"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                  <HelpCircle className="h-4.5 w-4.5" />
+                </span>
+                <span className="text-[10px] font-bold leading-tight text-foreground sm:text-[11px]">
+                  {uiLang === 'ur' ? 'علامات کی جانچ' : uiLang === 'roman' ? 'Alaamaat ki jaanch' : 'Symptoms'}
+                </span>
+              </button>
 
-            <div className="w-full max-w-lg space-y-2" aria-label={t(uiLang, 'chat.tryAsking')}>
-              <p className="px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                {t(uiLang, 'chat.tryAsking')}
-              </p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {(['chat.example1', 'chat.example2', 'chat.example3', 'chat.example4', 'chat.example5', 'chat.example6'] as const).map((key, i) => {
-                  const Icon = EXAMPLE_ICONS[i];
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => fillExample(t(uiLang, key))}
-                      className="group flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 text-start text-sm text-foreground/90 shadow-sm transition-all hover:border-primary/40 hover:bg-accent/50 hover:shadow focus-visible:outline-2 focus-visible:outline-ring"
-                    >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-                        <Icon className="h-4 w-4" aria-hidden />
-                      </span>
-                      <span className="min-w-0 flex-1 leading-snug">{t(uiLang, key)}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Try asking */}
+              <button
+                type="button"
+                onClick={() => setTryAskingOpen(true)}
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-2.5 text-center shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring sm:p-3"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <MessageCircleQuestion className="h-4.5 w-4.5" />
+                </span>
+                <span className="text-[10px] font-bold leading-tight text-foreground sm:text-[11px]">
+                  {uiLang === 'ur' ? 'مثالیں' : uiLang === 'roman' ? 'Misaalein' : 'Examples'}
+                </span>
+              </button>
             </div>
 
             {/* triage legend — sets expectations on the 4-level safety model */}
@@ -346,7 +366,7 @@ export function ChatView() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.2 }}
-              className="w-full max-w-lg rounded-2xl border border-border bg-card/70 p-4 shadow-sm"
+              className="w-full rounded-2xl border border-border bg-card/70 p-4 shadow-sm"
               aria-label={t(uiLang, 'chat.triageLegend')}
             >
               <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
@@ -549,6 +569,117 @@ export function ChatView() {
 
       <SummaryModal open={summaryOpen} onOpenChange={setSummaryOpen} lang={uiLang} />
       <ConversationHistoryDrawer />
+
+      {/* First-aid Modal */}
+      <AnimatePresence>
+        {firstAidOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={() => setFirstAidOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[90vh] w-full max-w-lg overflow-y-auto custom-scrollbar rounded-2xl bg-card p-4 shadow-2xl"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-600 dark:text-orange-400">
+                    <ShieldPlus className="h-4 w-4" />
+                  </span>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {uiLang === 'ur' ? 'ابتدائی طبی امداد' : uiLang === 'roman' ? 'Ibtidai tibbi imdaad' : 'First-aid quick access'}
+                  </h3>
+                </div>
+                <button type="button" onClick={() => setFirstAidOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent" aria-label="Close">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <FirstAidCards lang={uiLang} onSelect={(q) => { fillExample(q); setFirstAidOpen(false); }} />
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {/* Symptom Checker Modal */}
+      <AnimatePresence>
+        {symptomCheckerOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={() => setSymptomCheckerOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[90vh] w-full max-w-lg overflow-y-auto custom-scrollbar rounded-2xl bg-card p-4 shadow-2xl"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                    <HelpCircle className="h-4 w-4" />
+                  </span>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {uiLang === 'ur' ? 'علامات کی جانچ' : uiLang === 'roman' ? 'Alaamaat ki jaanch' : 'Symptom checker'}
+                  </h3>
+                </div>
+                <button type="button" onClick={() => setSymptomCheckerOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent" aria-label="Close">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <SymptomCheckerWizard lang={uiLang} onSend={(q) => { doSend(q); setSymptomCheckerOpen(false); }} />
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {/* Try Asking Modal */}
+      <AnimatePresence>
+        {tryAskingOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={() => setTryAskingOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[90vh] w-full max-w-lg overflow-y-auto custom-scrollbar rounded-2xl bg-card p-4 shadow-2xl"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                    <MessageCircleQuestion className="h-4 w-4" />
+                  </span>
+                  <h3 className="text-sm font-bold text-foreground">{t(uiLang, 'chat.tryAsking')}</h3>
+                </div>
+                <button type="button" onClick={() => setTryAskingOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent" aria-label="Close">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(['chat.example1', 'chat.example2', 'chat.example3', 'chat.example4', 'chat.example5', 'chat.example6'] as const).map((key, i) => {
+                  const Icon = EXAMPLE_ICONS[i];
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => { fillExample(t(uiLang, key)); setTryAskingOpen(false); }}
+                      className="group flex w-full items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 text-start text-sm text-foreground/90 shadow-sm transition-all hover:border-primary/40 hover:bg-accent/50 hover:shadow focus-visible:outline-2 focus-visible:outline-ring"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                        <Icon className="h-4 w-4" aria-hidden />
+                      </span>
+                      <span className="min-w-0 flex-1 leading-snug">{t(uiLang, key)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
