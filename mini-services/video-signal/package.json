@@ -1,0 +1,9 @@
+{
+  "name": "sehatai-video-signal",
+  "scripts": {
+    "dev": "bun --hot index.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

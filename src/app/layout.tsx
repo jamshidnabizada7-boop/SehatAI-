@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { PwaRegister } from "@/components/app/pwa-register";
+import { CapacitorBridge } from "@/components/app/capacitor-bridge";
 import { AppSessionProvider } from "@/components/auth/session-provider";
 
 const geistSans = Geist({
@@ -66,6 +67,7 @@ export default function RootLayout({
             <Toaster />
             <SonnerToaster position="top-center" closeButton />
             <PwaRegister />
+            <CapacitorBridge />
           </AppSessionProvider>
         </ThemeProvider>
       </body>

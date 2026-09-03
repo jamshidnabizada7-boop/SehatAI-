@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import {
   Stethoscope, FileText, ClipboardCheck, Pill, AlertTriangle, Activity, Users, Clock,
   ShieldCheck, Lock, Sparkles, ArrowRight, Loader2, Download, CalendarPlus, BookOpen,
-  FlaskConical, ScrollText, CheckCircle2, XCircle,
+  FlaskConical, ScrollText, CheckCircle2, XCircle, BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,8 +23,9 @@ import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { DoctorAnalytics } from './doctor-analytics';
 
-type Tab = 'patients' | 'drug-checker' | 'followups' | 'who-dak' | 'audit';
+type Tab = 'patients' | 'drug-checker' | 'followups' | 'analytics' | 'who-dak' | 'audit';
 
 // ============================================================
 // SehatAI — Doctor Portal (Phase D expansion)
@@ -139,6 +140,7 @@ export function DoctorCopilotView() {
             { id: 'drug-checker', label: 'Drug Checker', icon: Pill },
             { id: 'followups', label: 'Follow-ups', icon: ClipboardCheck },
             { id: 'who-dak', label: 'WHO DAK', icon: BookOpen },
+            { id: 'analytics', label: 'Analytics', icon: BarChart3 },
             { id: 'audit', label: 'Audit', icon: ScrollText },
           ].map((t) => (
             <button
@@ -162,6 +164,7 @@ export function DoctorCopilotView() {
         {tab === 'drug-checker' ? <DrugCheckerTab lang={uiLang} /> : null}
         {tab === 'followups' ? <FollowupsTab lang={uiLang} /> : null}
         {tab === 'who-dak' ? <WhoDakTab lang={uiLang} /> : null}
+        {tab === 'analytics' ? <DoctorAnalytics /> : null}
         {tab === 'audit' ? <AuditTab lang={uiLang} /> : null}
       </div>
     </div>

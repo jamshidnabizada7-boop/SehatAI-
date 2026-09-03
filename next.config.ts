@@ -6,6 +6,12 @@ if (!process.env.DATABASE_URL) {
 
 const nextConfig: NextConfig = {
   ...(process.env.DOCKER_BUILD === "1" ? { output: "standalone" } : {}),
+  // Capacitor native builds use a fully static export (served from the device)
+  ...(process.env.CAPACITOR_BUILD === "1" ? {
+    output: "export" as const,
+    images: { unoptimized: true },
+    trailingSlash: true,
+  } : {}),
   typescript: {
     ignoreBuildErrors: true,
   },

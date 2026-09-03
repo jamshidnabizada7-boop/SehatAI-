@@ -31,6 +31,16 @@ model User {
   auditLogs     AuditLog[]
   pushSubscriptions PushSubscription[]
   doctorProfile DoctorProfile?
+  reviews       DoctorReview[]
+  appointments  Appointment[]
+  streak        UserStreak?
+  labTests      LabTest[]
+  medicineOrders MedicineOrder[]
+  communityPosts CommunityPost[]
+  communityReplies CommunityReply[]
+  chronicPrograms ChronicProgram[]
+  dietPlans     DietPlan[]
+  insuranceClaims InsuranceClaim[]
 }
 
 // ============================================================
@@ -57,6 +67,8 @@ model DoctorProfile {
   updatedAt      DateTime @updatedAt
   verificationDocs DoctorVerificationDoc[]
   patientConsents PatientConsentForDoctor[]
+  reviews         DoctorReview[]
+  appointments    Appointment[]
   @@index([pmdcNumber])
 }
 
@@ -325,4 +337,141 @@ model BlogPost {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   @@index([category, publishedAt])
+}
+model DoctorReview {
+  id              String   @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  patientId       String
+  patient         User     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  rating          Int      // 1-5 stars
+  comment         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([doctorProfileId])
+  @@unique([doctorProfileId, patientId]) // one review per patient per doctor
+}
+model Appointment {
+  id              String   @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  patientId       String
+  patient         User     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  scheduledAt     DateTime
+  reason          String?
+  status          String   @default("requested") // requested | confirmed | declined | cancelled | completed
+  doctorNotes     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([doctorProfileId, status])
+  @@index([patientId, status])
+}
+model UserStreak {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  totalPoints     Int      @default(0)
+  lastActiveDate  DateTime?
+  badges          String   @default("[]") // JSON array of badge IDs
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+model LabTest {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  labName         String   // Chughtai Lab | Aga Khan Lab | Dow Lab
+  testName        String   // CBC | Lipid Profile | Blood Sugar | etc.
+  status          String   @default("requested") // requested | scheduled | completed | cancelled
+  scheduledAt     DateTime?
+  reportUrl       String?  // lab report PDF URL when completed
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([userId, status])
+}
+model MedicineOrder {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pharmacyName    String   // Dawaai | InstaCare
+  items           String   // JSON array: [{ name, quantity, dosage }]
+  prescriptionUrl String?  // uploaded prescription image
+  status          String   @default("placed") // placed | confirmed | dispatched | delivered | cancelled
+  totalAmount     Int?     // PKR
+  deliveryAddress String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([userId, status])
+}
+model CommunityPost {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  content     String
+  category    String   @default("general") // general | maternal | child-health | chronic | mental-health
+  upvotes     Int      @default(0)
+  replies     Int      @default(0)
+  isModerated Boolean  @default(false)
+  isPinned    Boolean  @default(false)
+  replyList   CommunityReply[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([category, isModerated, createdAt])
+}
+model CommunityReply {
+  id          String   @id @default(cuid())
+  postId      String
+  post        CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     String
+  isModerated Boolean  @default(false)
+  isDoctorReply Boolean @default(false)
+  createdAt   DateTime @default(now())
+  @@index([postId, createdAt])
+}
+model ChronicProgram {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programType String   // diabetes | hypertension | smoking-cessation
+  currentWeek Int      @default(1)
+  totalWeeks  Int      @default(12)
+  status      String   @default("active") // active | completed | paused | cancelled
+  startDate   DateTime @default(now())
+  completedTasks String @default("[]") // JSON array of task IDs
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([userId, programType, status])
+}
+model DietPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  condition   String   // diabetes | hypertension | pregnancy | general | weight-loss
+  dailyCalories Int?
+  meals       String   // JSON: { breakfast, lunch, dinner, snacks }
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([userId, condition])
+}
+model InsuranceClaim {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        String   // Jubilee | Adamjee | EFU | IGI | Sehat Sahulat
+  policyNumber    String?
+  claimType       String   // consultation | lab-test | medicine | procedure
+  amount          Int      // PKR
+  status          String   @default("submitted") // submitted | approved | rejected | reimbursed
+  appointmentId   String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([userId, status])
 }

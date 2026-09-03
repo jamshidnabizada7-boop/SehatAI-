@@ -11,6 +11,7 @@ import {
   HeartPulse,
   Languages,
   Layers,
+  MessageSquare,
   Newspaper,
   ScanSearch,
   ShieldAlert,
@@ -27,6 +28,8 @@ import { FirstAidSection } from './first-aid-section';
 import { HealthEducationLibrary } from './health-education-library';
 import { HealthTipsBrowser } from './health-tips-browser';
 import { HealthBlog } from './health-blog';
+import { DoctorDirectory } from './doctor-directory';
+import { CommunityForum } from './community-forum';
 import { PwaInstallButton } from '@/components/app/pwa-install-button';
 import { cn } from '@/lib/utils';
 
@@ -239,6 +242,22 @@ export function AboutView() {
           </p>
         </Section>
         <HealthBlog />
+
+        {/* Doctor Directory — browse PMDC-verified doctors + reviews */}
+        <Section title="Find a verified doctor" icon={Stethoscope} delay={0.25}>
+          <p className="text-sm leading-relaxed text-foreground/90">
+            Browse PMDC-verified specialists across Pakistan. All doctors have completed our verification process.
+          </p>
+        </Section>
+        <DoctorDirectory />
+
+        {/* Community Forum — moderated peer support */}
+        <Section title="Community Forum" icon={MessageSquare} delay={0.25}>
+          <p className="text-sm leading-relaxed text-foreground/90">
+            Ask questions, share experiences, and support each other. Moderated by SehatAI.
+          </p>
+        </Section>
+        <CommunityForum />
 
         {/* glossary */}
         <GlossarySection />

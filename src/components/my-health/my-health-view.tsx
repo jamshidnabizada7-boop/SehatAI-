@@ -30,6 +30,15 @@ import { HydrationTracker } from './hydration-tracker';
 import { MedicalCalculatorSuite } from './medical-calculators';
 import { SleepTracker } from './sleep-tracker';
 import { HealthSummaryCard } from './health-summary-card';
+import { GamificationCard } from './gamification-card';
+import { WearableSync } from './wearable-sync';
+import { LabTestBooking } from './lab-test-booking';
+import { MedicineDelivery } from './medicine-delivery';
+import { ChronicPrograms } from './chronic-programs';
+import { DietPlanner } from './diet-planner';
+import { InsuranceClaims } from './insurance-claims';
+import { ConsentManager } from './consent-manager';
+import { AppointmentManager } from './appointment-manager';
 import { AccountSection } from './account-section';
 import {
   clearJournal,
@@ -244,6 +253,12 @@ export function MyHealthView() {
           medicationsCount={profile?.medications?.length ?? 0}
         />
 
+        {/* Phase 3 — Gamification: streaks, points, badges (self-contained, fetches /api/gamification) */}
+        <GamificationCard />
+
+        {/* Wearable Sync (Apple Health / Google Health Connect via Capacitor) */}
+        <WearableSync />
+
         {/* Journal section */}
         <section
           aria-labelledby="mh-journal-heading"
@@ -313,6 +328,27 @@ export function MyHealthView() {
 
         {/* Phase 2 — Sleep Quality Tracker (hours, quality rating, 7-day trend) */}
         <SleepTracker lang={uiLang} />
+
+        {/* Lab test booking */}
+        <LabTestBooking />
+
+        {/* Medicine delivery */}
+        <MedicineDelivery />
+
+        {/* Chronic disease programs */}
+        <ChronicPrograms />
+
+        {/* AI diet planner */}
+        <DietPlanner />
+
+        {/* Insurance claims */}
+        <InsuranceClaims />
+
+        {/* Consent Manager */}
+        <ConsentManager />
+
+        {/* Appointment Manager */}
+        <AppointmentManager />
 
         {/* Account & data section (auth, retention, audit log, delete-my-data) */}
         <AccountSection />

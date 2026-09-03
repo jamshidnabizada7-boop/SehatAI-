@@ -36,6 +36,7 @@ import { followUpsFor } from '@/data/follow-ups';
 import { MessageBubble } from './message-bubble';
 import { VoiceInput } from './voice-input';
 import { ImageAnalysisModal } from './image-analysis-modal';
+import { SosButton } from './sos-button';
 import { VoiceStatusIndicator } from './voice-status-indicator';
 import { SummaryModal } from './summary-modal';
 import { ConversationHistoryDrawer } from './conversation-history-drawer';
@@ -582,6 +583,7 @@ export function ChatView() {
       </div>
 
       <SummaryModal open={summaryOpen} onOpenChange={setSummaryOpen} lang={uiLang} />
+      <SosButton />
       <ImageAnalysisModal open={imageAnalysisOpen} onOpenChange={setImageAnalysisOpen} lang={uiLang} />
       <ConversationHistoryDrawer />
 
