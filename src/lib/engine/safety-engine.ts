@@ -1815,3 +1815,101 @@ export function runOfflineEngine(
     })),
   };
 }
+
+// ============================================================
+// Deterministic post-L1 triage calibration
+// ------------------------------------------------------------
+// Fixes documented over-triage patterns where the deterministic
+// layers (or an over-cautious L1) escalate informational/mild
+// presentations. Downgrade-only: every cap can only LOWER a
+// severity, never raise it, and never applies when a red-flag
+// pattern matched (those short-circuit to EMERGENCY earlier).
+// ============================================================
+
+export interface TriageCalibration {
+  level: TriageLevel;
+  signal: string;
+}
+
+const MILD_QUALIFIER = /(halka|halki|halkay|thora|thori|mild|slight|light|halka sa)/i;
+const SEVERE_QUALIFIER = /(bohot|sakht|sakhtee|severe|intense|unbearable|bardasht nahin|bardasht nahi|tez|shadid|شدید|بہت)/i;
+const ALARM_SIGNS = /(bukhar|fever|khoon|blood|bleeding|ulti|vomit|jalan|weight loss|wazan kam|raat ko paseena|night sweats)/i;
+const BREATHING_DISTRESS = /(saans lene mein (mushkil|dushwari|dikkat)|difficulty breath|breathing difficulty|(fast|rapid|quick|tez) (breathing|saans)|breathing (fast|rapid|quick)|saans (tez|chal|phool)|stridor|neela|hont neele|blue lip|cannot speak|can't speak|nahin bol pa|saans ki awaz|grunting|shortness of breath)/i;
+const HYPO_ALARM = /(behosh|unconscious|fainted|gir gaya|seizure|dora|convulsion|confus|ghabr|unresponsive|nahin hosh)/i;
+const PREGNANCY_ALARM = /(bleeding|khun|khoon|dard|pain|cramp|dizziness|chakkar|vomit|ulti|fever|bukhar|swelling|sojan|fluid|pani phatna)/i;
+
+/**
+ * Post-L1 calibration caps. Returns null when no calibration applies.
+ * Called AFTER L0 (which short-circuits true EMERGENCY red flags) and
+ * after the L1 floors — it can only reduce severity for narrow,
+ * clinically-documented patterns.
+ */
+export function calibrateTriage(params: {
+  text: string;
+  level: TriageLevel;
+  informational: boolean;
+  redFlagCount: number;
+  child: boolean;
+  pregnancy: boolean;
+  hasHighDrugSeverity: boolean;
+}): TriageCalibration | null {
+  // never touch red-flag short-circuits or high-severity drug interactions
+  if (params.redFlagCount > 0 || params.hasHighDrugSeverity) return null;
+
+  const text = params.text;
+  const downgradeIf = (target: TriageLevel, signal: string): TriageCalibration | null =>
+    TRIAGE_ORDER[params.level] > TRIAGE_ORDER[target] ? { level: target, signal } : null;
+
+  // 1) Pregnancy + informational question:
+  //    - asking ABOUT danger signs / warning signs = health education → ROUTINE
+  //    - asking for self-care advice (e.g. "what foods should I eat?") → SELF_CARE
+  //    Neither applies when alarm signs are present.
+  if (
+    params.informational &&
+    params.pregnancy &&
+    !PREGNANCY_ALARM.test(text) &&
+    !SEVERE_QUALIFIER.test(text)
+  ) {
+    if (/(danger signs|warning signs|signs of|alamaat|alamaat|khatra|khatray|when (to see|should)|kab (milna|doctor)|kis doctor|خطرے|خطرہ|اشارے|علامات|کب ڈاکٹر)/i.test(text)) {
+      return downgradeIf('ROUTINE', 'calibration:pregnancy-education');
+    }
+    return downgradeIf('SELF_CARE', 'calibration:pregnancy-informational');
+  }
+
+  // 2) Mild abdominal pain (e.g. "halka pet dard") with no severe qualifier,
+  //    fever, blood or vomiting → self-care with worsening advice.
+  if (
+    MILD_QUALIFIER.test(text) &&
+    /(pet|maeda|stomach|tummy|abdomen|abdominal|dard|pain)/i.test(text) &&
+    !SEVERE_QUALIFIER.test(text) &&
+    !ALARM_SIGNS.test(text)
+  ) {
+    return downgradeIf('SELF_CARE', 'calibration:mild-abdominal-pain');
+  }
+
+  // 3) Child night cough / wheeze WITHOUT breathing distress, high fever or
+  //    alarum terms → routine follow-up (asthma evaluation), not urgent.
+  if (
+    params.child &&
+    /(khansi|cough|seeti|wheeze|whistl)/i.test(text) &&
+    !BREATHING_DISTRESS.test(text) &&
+    !SEVERE_QUALIFIER.test(text) &&
+    !ALARM_SIGNS.test(text)
+  ) {
+    return downgradeIf('ROUTINE', 'calibration:child-cough');
+  }
+
+  // 4) Conscious hypoglycemia (low sugar + shakiness/sweating) without
+  //    unconsciousness, seizure or confusion → urgent same-day care,
+  //    not emergency (emergency is for unconscious/seizing patients).
+  //    Non-null even at URGENT so the L1 emergency escalation path is blocked.
+  if (
+    /(sugar|glucose)/i.test(text) &&
+    /(kam|low|very low|gir rahi|drop)/i.test(text) &&
+    !HYPO_ALARM.test(text)
+  ) {
+    return downgradeIf('URGENT', 'calibration:hypoglycemia-conscious');
+  }
+
+  return null;
+}

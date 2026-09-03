@@ -4,6 +4,7 @@ import { glossaryForPrompt } from '@/data/glossary';
 import { EMERGENCY_TEMPLATES, getEmergencyTemplate } from '@/data/emergency-templates';
 import { EMERGENCY_NUMBERS } from '@/data/lexicon';
 import {
+  calibrateTriage,
   detectLanguage,
   isInformationalQuery,
   matchRedFlags,
@@ -1229,7 +1230,9 @@ async function logPipelineAudit(params: {
     [key: string]: unknown;
   };
 }): Promise<void> {
-  if (!params.userId || params.persist === false) return;
+  // Guests are logged too (userId null) so observability sees ALL traffic;
+  // eval/offline runs (persist:false) are excluded by design.
+  if (params.persist === false) return;
   try {
     await db.auditLog.create({
       data: {
@@ -1725,12 +1728,27 @@ export async function runPipeline(
   if (l1) l1.triageReason = sanitizeReasonLang(l1.triageReason, lang);
   latencies.l1 = Date.now() - tL1;
 
+  // ---------- Step 3.5: deterministic post-L1 calibration ----------
+  // Downgrade-only caps for documented over-triage patterns (mild/informational
+  // presentations). Never applies to L0 red-flag short-circuits (those return
+  // earlier) and can never RAISE severity. Also blocks the L1 emergency
+  // escalation path when a cap applies.
+  const calibration = calibrateTriage({
+    text: message,
+    level: l0.level,
+    informational: isInformationalQuery(message),
+    redFlagCount: redFlagMatches.length,
+    child: ctx.populations.child,
+    pregnancy: ctx.populations.pregnancy,
+    hasHighDrugSeverity: false,
+  });
+
   // L1 escalation → emergency template, LLM bypassed for content.
   // Informational questions never emergency-escalate from concerns
   // (asking ABOUT danger signs ≠ having them).
   const informational = isInformationalQuery(message);
   const esc = l1Escalates(l1);
-  if (esc.escalate && l1 && !informational) {
+  if (esc.escalate && l1 && !informational && !calibration) {
     const templateCategory = chooseEmergencyTemplate(l1, esc.concernsText, ctx);
     const reason =
       l1.triageReason ||
@@ -1805,6 +1823,16 @@ export async function runPipeline(
   } catch {
     drugCheck = null; // rules-engine failure must never break triage
   }
+
+  // Apply the deterministic calibration cap (downgrade-only). Skipped when a
+  // high-severity drug interaction was just detected — that floor wins.
+  let calibratedSignal: string | null = null;
+  if (calibration && drugCheck?.overallSeverity !== 'HIGH') {
+    if (TRIAGE_ORDER[finalLevel] > TRIAGE_ORDER[calibration.level]) {
+      finalLevel = calibration.level;
+      calibratedSignal = calibration.signal;
+    }
+  }
   const medSafetyBlock = buildMedSafetyBlock(profile, allergyHits, drugCheck);
 
   // clarification requirement (deterministic L0, extended by L1 agreement)
@@ -1818,6 +1846,7 @@ export async function runPipeline(
   const combinedSignals = [
     ...l0.signals,
     ...(l1Level ? [`L1:${l1Level}`] : ['L1:unavailable-escalated']),
+    ...(calibratedSignal ? [calibratedSignal] : []),
     ...(l1?.symptoms ?? []).slice(0, 5).map((s) => `symptom:${s}`),
     ...(needsClarification ? ['needs-clarification'] : []),
     ...(drugCheck && drugCheck.overallSeverity !== 'NONE' ? [`drug-check:${drugCheck.overallSeverity}`] : []),

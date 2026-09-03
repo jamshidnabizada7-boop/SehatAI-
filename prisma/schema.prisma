@@ -168,14 +168,15 @@ model OutcomeEntry {
 // Phase 1 — Audit log (every PHI read/write/share + every constellation decision)
 model AuditLog {
   id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action    String   // auth.login | profile.read | profile.update | outcome.captured | constellation.veto | data.delete
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // auth.login | profile.read | profile.update | outcome.captured | constellation.veto | data.delete | pipeline.run
   resource  String?
   meta      String?  // JSON
   ip        String?
   createdAt DateTime @default(now())
   @@index([userId, createdAt])
+  @@index([action, createdAt])
 }
 
 // Phase 2 — Push notification subscriptions (Web Push API)
