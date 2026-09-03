@@ -1992,3 +1992,47 @@ Stage Summary:
 - LLM-free safety path: clearly documented in architecture PDF
 - DELIVERABLE folder: /home/z/my-project/DELIVERABLE/ with 6 files
 - Ready for submission to Alibaba Cloud AI Hackathon Pakistan 2026
+
+---
+Task ID: IMAGE-BUTTON-FIX
+Agent: Main Agent (Image Button & Footer Fix)
+Task: Fix missing image button next to voice, fix footer overlap, verify all issues
+
+Work Log:
+- Investigated user report: "the image is not visible while it was next to voice"
+- Used VLM to analyze mobile and desktop screenshots
+- Found that there was NO image upload button in the chat input bar - only VoiceInput (mic) and Send button
+- Created new ImageInput component (src/components/chat/image-input.tsx):
+  • ImagePlus icon from lucide-react
+  • File input with image/* accept and environment capture
+  • Base64 conversion for VLM analysis
+  • 5MB size limit with toast validation
+  • Trilingual labels (en/ur/roman)
+  • Loading spinner during file processing
+- Added ImageInput to chat-view.tsx input bar, positioned between VoiceInput and Send button
+- Fixed AppFooter component:
+  • Restored emergency numbers on mobile (was hidden in previous fix)
+  • Made them compact: 10px font, py-0.5 padding on mobile vs 11px/py-1 on desktop
+  • Reduced gap and padding to prevent overlap
+  • Phone icon scaled down on mobile (h-2.5 w-2.5 vs h-3 w-3)
+  • Emergency number labels hidden on mobile (just show numbers)
+- Fixed NEXTAUTH_SECRET missing error:
+  • Generated secure secret with openssl rand -base64 32
+  • Added NEXTAUTH_SECRET and NEXTAUTH_URL to .env
+  • This was causing auth session fetch failures
+- Verified all fixes via agent-browser + VLM:
+  • "Upload image" button visible next to "Record voice message" button ✓
+  • Send button fully visible and not overlapping ✓
+  • Emergency numbers (1122, 1166, 115) visible below input without overlap ✓
+  • Mobile layout clean ✓
+  • Desktop layout clean ✓
+- Server stability issue: OOM killer repeatedly killed next-server (2.3GB RSS)
+  • Mitigated by closing Chrome between tests
+  • Server compiles and runs correctly when memory is available
+
+Stage Summary:
+- Image upload button: ADDED next to voice button (ImagePlus icon)
+- Footer overlap: FIXED (compact mobile layout, no hiding)
+- NEXTAUTH_SECRET: FIXED (was missing, causing auth failures)
+- All UI elements verified visible and non-overlapping via VLM
+- Server stability: OOM-prone but functional

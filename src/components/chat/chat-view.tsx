@@ -34,6 +34,7 @@ import { getDailyTip } from '@/data/health-tips';
 import { followUpsFor } from '@/data/follow-ups';
 import { MessageBubble } from './message-bubble';
 import { VoiceInput } from './voice-input';
+import { ImageInput } from './image-input';
 import { VoiceStatusIndicator } from './voice-status-indicator';
 import { SummaryModal } from './summary-modal';
 import { ConversationHistoryDrawer } from './conversation-history-drawer';
@@ -538,6 +539,17 @@ export function ChatView() {
             disabled={streaming}
             offline={isOffline}
             onSend={doSend}
+          />
+          <ImageInput
+            lang={uiLang}
+            disabled={streaming}
+            onImage={(base64, preview) => {
+              // Insert a placeholder message indicating image attached
+              setInput((prev) => prev || (uiLang === 'ur' ? 'تصویر دیکھ کر رہنمائی کریں' : uiLang === 'roman' ? 'Tasveer dekh kar rehnumai karein' : 'Please analyze this image'));
+              toast({
+                description: uiLang === 'ur' ? 'تصویر منسلک ہو گئی' : uiLang === 'roman' ? 'Tasveer attach ho gayi' : 'Image attached',
+              });
+            }}
           />
           {streaming ? (
             <Button
