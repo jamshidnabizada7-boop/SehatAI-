@@ -22,6 +22,7 @@ export const maxDuration = 60;
 const BATCH_SIZE = 3;
 const CONCURRENCY = 3;
 const CASE_TIMEOUT_MS = 45000;
+const MAX_CASE_ATTEMPTS = 3;
 
 interface StoredSummary extends EvalRunSummary {
   status: 'running' | 'complete' | 'interrupted';
@@ -240,14 +241,31 @@ async function stepRun(runId: string) {
 
   // process next batch with a small worker pool
   const batch = pending.slice(0, BATCH_SIZE);
+  const attempts = (summary as StoredSummary & { timeouts?: Record<string, number> }).timeouts ?? {};
   const outcomes: CaseOutcome[] = [];
+  const retried: string[] = [];
+  const newAttempts: Record<string, number> = { ...attempts };
   const queue = [...batch];
   const workers = Array.from({ length: Math.min(CONCURRENCY, batch.length) }, async () => {
     for (;;) {
       const c = queue.shift();
       if (!c) break;
       try {
-        outcomes.push(await runCaseWithTimeout(c));
+        const outcome = await runCaseWithTimeout(c);
+        if (outcome.actual.includes('case timeout')) {
+          // Free-tier LLM rate limits cause transient hangs — leave the case
+          // pending so a later step retries it once the limiter cools down.
+          // After MAX_CASE_ATTEMPTS, record it as a failure so the run ends.
+          const used = (attempts[c.id] ?? 0) + 1;
+          if (used >= MAX_CASE_ATTEMPTS) {
+            outcomes.push(outcome);
+          } else {
+            newAttempts[c.id] = used;
+            retried.push(c.id);
+          }
+        } else {
+          outcomes.push(outcome);
+        }
       } catch {
         outcomes.push({
           caseId: c.id,
@@ -279,10 +297,11 @@ async function stepRun(runId: string) {
   }));
   const completed = allOutcomes.length;
   const done = completed >= GOLDEN_SET.length;
-  const stepSummary: StoredSummary = {
+  const stepSummary: StoredSummary & { timeouts?: Record<string, number> } = {
     ...computeSummary(allOutcomes),
     status: done ? 'complete' : 'running',
     completed,
+    timeouts: newAttempts,
   };
   await db.evalRun.update({
     where: { id: runId },
@@ -290,7 +309,7 @@ async function stepRun(runId: string) {
   });
   void summary;
 
-  return { done, completed, total: GOLDEN_SET.length, passed: stepSummary.passed };
+  return { done, completed, total: GOLDEN_SET.length, passed: stepSummary.passed, retried: retried.length };
 }
 
 /** POST /api/eval/run — no body: start a run. Body {runId}: process next batch. */
