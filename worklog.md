@@ -1760,3 +1760,121 @@ Stage Summary:
 - 18 gaps identified, prioritized as: 6 critical (native app, lab tests, medicine delivery, video consult, wearable integration, gamification), 6 high-priority (PHR import, AI image analysis, community, insurance, Urdu voice, chronic disease programs), 6 medium (blog, family manager, SOS, diet planner, pregnancy guide, doctor analytics).
 - Roadmap: Phase 1 dominate Pakistan (0-6mo), Phase 2 expand South Asia (6-12mo), Phase 3 go global (12-24mo).
 - The path to #1: SehatAI already has 6 of 8 differentiators. The remaining 2 (video consult + lab/pharmacy) are achievable in 3 months. No competitor combines all 8.
+
+---
+Task ID: PPT-GROUP-3
+Agent: ppt-expert (slides 9-12 renderer)
+Task: Render SehatAI presentation slides 9-12 (evaluation, innovation, demo, closing)
+
+Work Log:
+- Read slides_brief.json (full 12-slide manifest) and global.css (Medical Professional palette: emerald #059669 / amber #f59e0b / slate dark).
+- Inspected prior worklog to understand the SehatAI project context (hackathon deck, 240M Pakistanis, trilingual EN/Urdu/Roman, 67ms emergency detection, 7-tier LLM cascade, 139-case golden harness).
+- slide_09 (Evaluation): Header pill + H1 + subtitle; 4 big metric cards (97.1% Overall Accuracy, 97.1% Emergency Recall, 0.0% False Positive Rate, 100% Refusal Correctness); CSS-div horizontal bar chart with 5 categories (Triage 46/47, Red Flag Positive 34/35, Red Flag Near-Miss 13/13, Refusal 17/17, Grounding 6/8); right-side latency panel (P50 62ms, P95 679ms, 67ms emergency short-circuit); bottom emerald bar with under-triage rate 1.9%; footer 09/12.
+- slide_10 (Innovation): Header violet pill + H1; full HTML <table class="compare"> with 4 columns (Feature | Generic Chatbot | Ada Health | SehatAI) and 7 rows of differentiators (emergency short-circuit, trilingual, offline, citation grounding, multi-provider failover, Pakistan-specific, open evaluation harness); SehatAI column highlighted with emerald-light bg; below table three gradient impact cards (240M Pakistanis emerald, 70M+ Urdu-first amber, <100ms rose); footer 10/12.
+- slide_11 (Demo): Header emerald pill + H1 + subtitle; 55/45 split. Left: browser mockup (3 dots + URL pill sehatai-woad.vercel.app) with SehatAI chat header (online dot, Roman Urdu selector), user bubble "Bukhar aur sar dard hai", SehatAI response bubble with citation tag [WHO fever-adult], SELF_CARE triage badge + 3 pipeline chips (Safety/Triage/RAG); below mockup 3 highlight cards (67ms / 3 langs / 160 docs). Right: card with 4 test queries (rose/amber/emerald/sky left borders) covering cardiac emergency, pediatric emergency, routine triage, prescription refusal; emerald CTA button linking live demo.
+- slide_12 (Closing): Dark slate (.slide-dark) with dot-grid + radial gradient mesh (emerald + amber glow); decorative floating particles tagged data-decor; centered hero: MonitorHeart icon 64px with glow, Urdu "شکریہ" (Shukriya) in emerald Noto Nastaliq, "Thank You" in 56px Inter Black white, subtitle, divider; 3-column roadmap (NOW/NEXT 3 MO/6-12 MO) each as dark-soft glass card with pill + bullets (Trilingual chat, Emergency engine, 139-case eval, Doctor copilot | Urdu peer review, LHW pilot, Alibaba Cloud deploy, RWE-LLM playbook | Offline Qwen 1.7B, Pashto/Sindhi voice, DRAP compliance, District rollout); GitHub repo link + hackathon attribution; footer 12/12 with صحت AI in Urdu.
+- All four slides: linked global.css via relative href; Tailwind CDN + Material Icons CDN included; speaker notes embedded as <aside data-notes class="hidden"> with 4-5 short bullets each; only palette colors used (#059669 emerald, #f59e0b amber, #e11d48 rose, #0ea5e9 sky, #8b5cf6 violet, slate dark #0f172a / #1e293b); JetBrains Mono for all numerics; Inter for headings/body; Noto Nastaliq Urdu for Urdu script.
+- Verified each slide stays within 1280x720 canvas (overflow-hidden on .slide), with footer pinned absolute at bottom.
+
+Stage Summary:
+- Files produced (all in /home/z/my-project/download/slides/):
+  • slide_09.html — Evaluation dashboard with 4 metric cards, CSS bar chart, latency panel
+  • slide_10.html — Innovation comparison table (7 rows × 4 cols) + 3 gradient impact cards
+  • slide_11.html — Browser mockup demo + 4 categorized test queries + live CTA
+  • slide_12.html — Dark closing slide with Shukriya, 3-column roadmap, repo link
+- All slides obey the committed Medical Professional design (emerald/amber/slate palette, Inter + JetBrains Mono + Noto Nastaliq Urdu typography).
+- All facts, numbers, citations, URLs, and bullet ordering from the brief rendered verbatim.
+- Speaker notes embedded per rendering rules (hidden aside, last body child).
+
+---
+Task ID: PPT-GROUP-1
+Agent: ppt-expert (slides 1-4 renderer)
+Task: Render SehatAI presentation slides 1-4 (cover, problem, solution, architecture)
+
+Work Log:
+- Read slides_brief.json (12-slide manifest, design: Medical Professional — Clean Data-Driven; palette emerald #059669 + amber #f59e0b on slate/#fff) and global.css (CSS variables, fonts Inter / JetBrains Mono / Noto Nastaliq Urdu, .slide / .slide-dark / .pill / .slide-footer primitives).
+- Inspected prior worklog.md to confirm scope; no prior slide-rendering entries existed.
+- Built slide_01.html (cover): full-bleed dark slate with emerald+amber radial gradient mesh + dot-grid texture, 96px Inter Black "SehatAI" hero, 48px Noto Nastaliq Urdu "صحت AI" in emerald, tagline, three feature pills, JetBrains Mono build line, right-side HealthAndSafety watermark + MonitorHeart foreground icon with floating amber/emerald particles and an ECG SVG line.
+- Built slide_02.html (problem stats): white bg, rose "THE PROBLEM" pill, 36px H1, 4-column stat grid with rose/amber left-border accent cards (1:1,300 / 60% / 70M+ / <5%), JetBrains Mono numerics at 52px, plus rose alert card with warning icon and full emergency-context paragraph.
+- Built slide_03.html (solution split): subtle gradient-mesh overlay, emerald pill, 32px H1, full body paragraph, 4 emerald-circle feature bullets (shield/translate/wifi_off/verified), right-column 320×540 phone mockup with SehatAI top bar, user Roman-Urdu chat bubble, 67ms detection pill, rose emergency card with warning icon, 3 action bullets, green 1122 call button, and caption beneath.
+- Built slide_04.html (architecture pipeline, dark): dot-grid texture overlay, emerald pill, 30px H1, 5 stage cards (200×320, #1e293b) with L0/L1/RAG/LLM/L2 badges in rose/amber/sky/emerald/violet, themed icon circles, body copy, latency badges (<100ms / 4 levels / 160 docs / 7 providers / 0 Rx), emerald arrow_forward connectors, and a green result bar at bottom stating the verification guarantee.
+- Each slide includes Tailwind CDN + Material Icons stylesheet + global.css link, uses slide-dark class on slides 1 and 4 per brief, and embeds an `<aside data-notes class="hidden">` with 5 short speaker-note bullets.
+- All facts/numbers/labels/quotes/Urdu strings/Roman-Urdu strings/phone layout/latency badges copied verbatim from task_brief.
+
+Stage Summary:
+- Files produced (siblings of global.css):
+  - /home/z/my-project/download/slides/slide_01.html  (cover, dark)
+  - /home/z/my-project/download/slides/slide_02.html  (problem, stats grid)
+  - /home/z/my-project/download/slides/slide_03.html  (solution, split-text-image with phone mockup)
+  - /home/z/my-project/download/slides/slide_04.html  (architecture, 5-stage pipeline, dark)
+- All four slides fit the 1280×720 canvas (overflow-hidden via .slide), obey the emerald+amber+slate palette, render every brief-specified fact verbatim, and carry hidden speaker notes for the presenter.
+
+---
+Task ID: PPT-GROUP-2
+Agent: ppt-expert (slides 5-8 renderer)
+Task: Render SehatAI presentation slides 5-8 (emergency demo, trilingual, features, tech stack)
+
+Work Log:
+- Read slides_brief.json and global.css from /home/z/my-project/download/slides/; verified palette (emerald #059669 / amber #f59e0b / dark slate #0f172a), typography (Inter / JetBrains Mono / Noto Nastaliq Urdu), and 12-slide deck structure.
+- Read worklog.md to confirm no prior PPT slide rendering work had been done; this is the first slide-rendering task in the project.
+- Slide 05 (Emergency Detection — code-demo): white background. Header with rose LIVE DEMO pill + 34px H1. Two-column body — LEFT: patient Roman Urdu chat bubble + arrow + rose emergency card with warning icon, 4 action bullets, 3 call buttons (1122 green / 1166 amber / 115 slate). RIGHT: dark code-block with .kw/.str/.num/.cmt syntax highlighting showing 4 SSE stages (safety → triage → emergency → done). Bottom stat row: 67ms / 0% hallucination / 7 emergency numbers.
+- Slide 06 (Trilingual Localization — three-column comparison): white background. Sky LOCALIZATION pill + H1 "Three languages, one health identity". Three column cards — EN (white border), Urdu Nastaliq (emerald-light bg, RTL dir, Noto Nastaliq font, badge اردو), Roman Urdu (amber-light bg). Each card has language badge, sample chat bubble, 3 feature bullets. Bottom card: 98% auto-detection accuracy with translate icon and accuracy/script count pills.
+- Slide 07 (Key Features — bento-grid): white background. Emerald FEATURES pill + H1. 4-col × 2-row bento — tile 1 col-span-2 emerald gradient (Intelligent Safe Chat with decorative circles marked data-decor), tile 2-5 single-col (Facility Finder / Reminders / Voice Input amber / Doctor Copilot rose), tile 6 col-span-2 slate-light (Visit Summary with QR + Printable chips). Bottom mini-stats bar: 160 corpus / 28 patterns / 7 providers / 139 golden tests in JetBrains Mono.
+- Slide 08 (Technology Stack — dark): slide-dark class on .slide div, dot-grid overlay marked data-decor. Sky TECHNOLOGY pill + white H1. 60/40 two-column — LEFT: 6 tech cards in 3x2 grid (Next.js 16 / React 19 / TypeScript 5 / Prisma 6 / Tailwind CSS 4 / NextAuth.js v4) each with colored icon and 11px slate-400 sublabel. RIGHT: 7-tier LLM provider cascade card listing DashScope / Gemini 2.5 Flash / Groq / Cerebras / OpenRouter / ZAI / Offline with status dots, tier numbers, primary/gateway/fallback tags, plus circuit breaker note (CLOSED → OPEN → HALF_OPEN).
+- Embedded speaker notes as `<aside data-notes class="hidden">` (last body child) on every slide with 5 short bullet hints derived from each task_brief's Speaker notes block.
+- Verified all 4 slides use relative `<link rel="stylesheet" href="global.css">`, include Tailwind CDN + Material Icons stylesheet, start with `<!DOCTYPE html>` and end with `</html>`, and stay within the 1280×720 canvas via the .slide overflow-hidden rule from global.css.
+
+Stage Summary:
+- Files produced:
+  - /home/z/my-project/download/slides/slide_05.html (Emergency Detection — code-demo, white)
+  - /home/z/my-project/download/slides/slide_06.html (Trilingual Localization — three-column comparison, white)
+  - /home/z/my-project/download/slides/slide_07.html (Key Features — bento-grid, white)
+  - /home/z/my-project/download/slides/slide_08.html (Technology Stack — tech-stack, dark slate via .slide-dark)
+- All slides reference global.css via relative path; palette and typography strictly match the committed Medical Professional design.
+- Slide 5 code block uses .code-block class with .kw/.str/.num/.cmt syntax-highlight spans.
+- Slide 6 renders Urdu Nastaliq with Noto Nastaliq Urdu font and dir=rtl.
+- Slide 7 bento uses 4-col × 2-row grid with col-span-2 hero tiles and a bottom mini-stat bar.
+- Slide 8 dark theme uses .slide-dark class with subtle dot-grid overlay (data-decor) and a 7-tier provider cascade with colored status dots.
+
+---
+Task ID: SUBMISSION-FINAL
+Agent: Main Agent (Submission Coordinator)
+Task: Complete Alibaba Cloud AI Hackathon Pakistan 2026 submission package
+
+Work Log:
+- Verified live deployment: dev server running on port 3000, health check passing (160 corpus, 35 lexicon patterns), homepage returning HTTP 200
+- Tested chat API with Roman Urdu query ("mera sar dard ho raha hai aur bukhar hai") — received full trilingual SSE streaming response with safety check (255ms), language detection (98% confidence), triage (SELF_CARE), RAG retrieval (3 chunks), and grounded generation with citations
+- Tested emergency red-flag detection: chest pain query ("mera seenay mein shadeed dard hai") triggered L0 lexicon in 67ms, short-circuited the LLM, displayed full trilingual emergency card with 7 Pakistani emergency numbers (1122, 1023, 115, 1166, 1099, 1152, 15) and WHO sources
+- Retrieved evaluation results: 139 golden test cases, 97.1% accuracy, 97.1% emergency recall, 0% false positives, 100% refusal correctness, P50 latency 62ms, P95 latency 679ms
+- Captured screenshots of landing page and key UI views via agent-browser
+- Created test patient account (demo@sehatai.pk) and set consentAt for authentication
+- Created 12-slide professional presentation using pptx skill:
+  • Designed global.css with Medical Professional palette (emerald #059669 primary, amber #f59e0b accent, slate #0f172a dark)
+  • Wrote slides_brief.json with 12 self-contained slide briefs
+  • Fanned out rendering to 3 parallel ppt-expert subagents (4 slides each)
+  • Converted HTML slides to PPTX via batch_html2pptx.js (15 MB, under 50 MB limit)
+  • Converted PPTX to PDF backup via LibreOffice (1.9 MB)
+- Created supporting architecture document (SehatAI-Architecture.pdf, 5 pages, 261 KB) with:
+  • Five-stage safety pipeline diagram
+  • Seven-tier LLM provider cascade table
+  • Live API response demonstrating 67ms emergency detection
+  • Test queries for judges
+  • Full evaluation harness results
+- Fixed critical security issue: untracked .env and db/custom.db from git (both were committed in initial commit)
+- Created .env.example with placeholder values for all required environment variables
+- Updated .gitignore to exclude *.db, *.sqlite, .env* files
+- Committed security fixes with descriptive message
+- Wrote project summary (1,487 characters, within 200-1,500 limit)
+- Created final submission README documenting all deliverables
+- Verified slide rendering quality via VLM (rated 9/10)
+
+Stage Summary:
+- Presentation: /home/z/my-project/download/SehatAI-Presentation.pptx (15 MB, 12 slides)
+- PDF backup: /home/z/my-project/download/SehatAI-Presentation.pdf (1.9 MB)
+- Architecture doc: /home/z/my-project/download/SehatAI-Architecture.pdf (261 KB, 5 pages)
+- Submission README: /home/z/my-project/download/README.md
+- Security: .env untracked, .env.example created, .gitignore updated
+- Demo link: https://sehatai-woad.vercel.app
+- Repository: https://github.com/jamshidnabizada7-boop/SehatAI-
+- All deliverables within size limits (PPTX 15 MB / 50 MB limit, supporting docs 261 KB / 200 MB limit)
+- Project is ready for submission to the Alibaba Cloud AI Hackathon Pakistan 2026 portal

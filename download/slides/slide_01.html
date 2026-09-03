@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>SehatAI — Cover</title>
+<link rel="stylesheet" href="global.css" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #0f172a; }
+  .cover-bg {
+    background:
+      radial-gradient(at 20% 30%, rgba(5,150,105,0.22) 0px, transparent 45%),
+      radial-gradient(at 80% 70%, rgba(245,158,11,0.18) 0px, transparent 45%),
+      radial-gradient(circle, rgba(148,163,184,0.10) 1px, transparent 1px);
+    background-size: auto, auto, 28px 28px;
+    background-color: #0f172a;
+  }
+  .urdu { font-family: 'Noto Nastaliq Urdu', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .pill-dark-emerald {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 999px;
+    background: rgba(16,185,129,0.12); color: #6ee7b7;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+    border: 1px solid rgba(16,185,129,0.30);
+  }
+  .pill-feature {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px;
+    background: rgba(248,250,252,0.04); color: #cbd5e1;
+    font-size: 12px; font-weight: 500;
+    border: 1px solid rgba(148,163,184,0.20);
+  }
+  .particle { position: absolute; border-radius: 999px; }
+  .hero-watermark {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(16,185,129,0.12);
+    font-size: 320px;
+  }
+  .hero-foreground {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #10b981;
+    font-size: 110px;
+    text-shadow: 0 0 60px rgba(16,185,129,0.45);
+  }
+  .accent-line {
+    width: 64px; height: 4px; border-radius: 4px;
+    background: linear-gradient(90deg, #10b981, #f59e0b);
+  }
+</style>
+</head>
+<body>
+<div class="slide slide-dark cover-bg relative" style="font-family: 'Inter', sans-serif;">
+
+  <!-- Decorative right-side glow ring -->
+  <div data-decor aria-hidden="true" style="position:absolute; right:-120px; top:50%; transform:translateY(-50%); width:520px; height:520px; border-radius:999px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, rgba(16,185,129,0) 65%);"></div>
+
+  <div class="flex h-full" style="height: 720px;">
+
+    <!-- LEFT 60% -->
+    <div style="width: 60%; padding: 64px;" class="flex flex-col justify-center relative z-10">
+      <!-- Pill badge -->
+      <div class="mb-7">
+        <span class="pill-dark-emerald">
+          <span class="material-icons" style="font-size:14px;">verified</span>
+          Alibaba Cloud AI Hackathon Pakistan 2026
+        </span>
+      </div>
+
+      <!-- Massive title -->
+      <h1 style="font-family:'Inter',sans-serif; font-weight:900; font-size:96px; line-height:0.95; letter-spacing:-0.03em; color:#ffffff;">SehatAI</h1>
+
+      <!-- Urdu script -->
+      <div class="urdu" style="font-size:48px; color:#10b981; margin-top:14px; line-height:1.4; font-weight:700;">صحت AI</div>
+
+      <!-- Accent divider -->
+      <div class="accent-line" style="margin-top:22px; margin-bottom:18px;"></div>
+
+      <!-- Tagline -->
+      <p style="font-family:'Inter',sans-serif; font-weight:500; font-size:22px; line-height:1.45; color:#94a3b8; max-width: 620px;">
+        Safety-First AI Health Guidance &amp; Triage Platform for Pakistan
+      </p>
+
+      <!-- Feature pills -->
+      <div class="flex" style="gap:10px; margin-top:26px; flex-wrap:wrap;">
+        <span class="pill-feature">
+          <span class="material-icons" style="font-size:14px; color:#6ee7b7;">translate</span>
+          Trilingual EN · اردو · Roman Urdu
+        </span>
+        <span class="pill-feature">
+          <span class="material-icons" style="font-size:14px; color:#fbbf24;">wifi_off</span>
+          Offline-Capable PWA
+        </span>
+        <span class="pill-feature">
+          <span class="material-icons" style="font-size:14px; color:#6ee7b7;">verified</span>
+          97.1% Accuracy
+        </span>
+      </div>
+
+      <!-- Built-with footer line (in-body) -->
+      <div class="mono" style="margin-top:46px; font-size:13px; color:#64748b; letter-spacing:0.02em;">
+        Built with Next.js 16 · React 19 · TypeScript
+      </div>
+    </div>
+
+    <!-- RIGHT 40% -->
+    <div style="width: 40%; position: relative;">
+
+      <!-- Watermark icon -->
+      <div data-decor aria-hidden="true" style="position:absolute; right:0; top:0; bottom:0; left:0; display:flex; align-items:center; justify-content:center;">
+        <span class="material-icons" style="font-size:280px; color:rgba(16,185,129,0.10);">health_and_safety</span>
+      </div>
+
+      <!-- Foreground icon -->
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
+        <div style="position:relative; width:180px; height:180px; display:flex; align-items:center; justify-content:center;">
+          <div style="position:absolute; inset:-24px; border-radius:999px; background: radial-gradient(circle, rgba(16,185,129,0.20) 0%, transparent 70%);"></div>
+          <span class="material-icons" style="font-size:120px; color:#10b981; filter: drop-shadow(0 0 24px rgba(16,185,129,0.45));">monitor_heart</span>
+        </div>
+      </div>
+
+      <!-- Floating particles -->
+      <div data-decor aria-hidden="true" class="particle" style="top:18%; left:22%; width:8px; height:8px; background:#f59e0b; opacity:0.7;"></div>
+      <div data-decor aria-hidden="true" class="particle" style="top:28%; right:18%; width:6px; height:6px; background:#10b981; opacity:0.7;"></div>
+      <div data-decor aria-hidden="true" class="particle" style="top:48%; left:14%; width:5px; height:5px; background:#f59e0b; opacity:0.55;"></div>
+      <div data-decor aria-hidden="true" class="particle" style="bottom:30%; right:22%; width:10px; height:10px; background:#10b981; opacity:0.45;"></div>
+      <div data-decor aria-hidden="true" class="particle" style="bottom:22%; left:30%; width:6px; height:6px; background:#f59e0b; opacity:0.65;"></div>
+      <div data-decor aria-hidden="true" class="particle" style="top:62%; right:30%; width:7px; height:7px; background:#10b981; opacity:0.6;"></div>
+      <div data-decor aria-hidden="true" class="particle" style="top:36%; left:38%; width:4px; height:4px; background:#fbbf24; opacity:0.8;"></div>
+
+      <!-- Subtle ECG line decoration -->
+      <div data-decor aria-hidden="true" style="position:absolute; bottom:24%; left:8%; right:8%; height:32px; opacity:0.55;">
+        <svg viewBox="0 0 400 40" preserveAspectRatio="none" style="width:100%; height:100%;">
+          <polyline fill="none" stroke="#10b981" stroke-width="2" points="0,20 60,20 75,8 90,32 105,20 165,20 180,4 195,36 210,20 400,20" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer bar -->
+  <div class="slide-footer" style="background: rgba(15,23,42,0.6); border-top-color:#1e293b;">
+    <span>Submission · September 2026</span>
+    <span class="mono">01 / 12</span>
+  </div>
+
+  <aside data-notes class="hidden">
+    <ul>
+      <li>Open with the mission — SehatAI brings safety-first AI health guidance to 240M Pakistanis.</li>
+      <li>Emphasize the trilingual reach: English, Urdu Nastaliq, and Roman Urdu.</li>
+      <li>Highlight offline capability — works without internet on a PWA.</li>
+      <li>Anchor credibility: 97.1% accuracy on a 139-case golden test harness.</li>
+      <li>Set tone: safety first, vernacular first, Pakistan first.</li>
+    </ul>
+  </aside>
+</div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SehatAI — Emergency Detection</title>
+<link rel="stylesheet" href="global.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #e2e8f0; }
+  .label-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; }
+  .call-btn { display: inline-flex; align-items: center; gap: 4px; color: white; border: none; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700; font-family: var(--font-num); }
+  .stat-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-num); font-weight: 700; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <!-- HEADER -->
+  <div style="padding: 44px 64px 14px;">
+    <span class="pill pill-rose">
+      <span class="material-icons" style="font-size:14px;">flash_on</span>
+      LIVE DEMO
+    </span>
+    <h1 style="font-size:34px;font-weight:800;margin-top:10px;letter-spacing:-0.02em;line-height:1.15;">
+      Emergency detection in <span style="font-family:var(--font-num);color:var(--rose);">67</span> milliseconds
+    </h1>
+    <p style="font-size:16px;color:var(--text-muted);margin-top:4px;">When a patient types chest pain symptoms, the LLM is bypassed entirely.</p>
+  </div>
+
+  <!-- BODY: two columns -->
+  <div style="padding: 0 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+
+    <!-- LEFT: patient input + emergency card -->
+    <div>
+      <div class="label-eyebrow" style="color:var(--text-muted);margin-bottom:6px;">PATIENT INPUT (ROMAN URDU)</div>
+      <div style="background:#f1f5f9;border-radius:16px;padding:12px 14px;font-size:15px;color:var(--text);line-height:1.45;">
+        Mera seenay mein shadeed dard ho raha hai aur saans phool rahi hai
+      </div>
+
+      <div style="display:flex;justify-content:center;align-items:center;gap:6px;margin:8px 0;">
+        <span class="material-icons" style="color:var(--rose);font-size:22px;">south</span>
+        <span style="font-size:11px;font-weight:700;color:var(--rose);letter-spacing:0.08em;">SHORT-CIRCUITS LLM</span>
+      </div>
+
+      <div class="label-eyebrow" style="color:var(--rose);margin-bottom:6px;">SYSTEM RESPONSE (67ms)</div>
+      <div style="background:var(--rose-light);border:2px solid var(--rose);border-radius:16px;padding:14px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span class="material-icons" style="color:var(--rose);font-size:22px;">warning</span>
+          <span style="font-size:15px;font-weight:700;color:#9f1239;">Mumkina dil ki emergency — fori iqdam karein</span>
+        </div>
+        <p style="font-size:12.5px;color:#9f1239;margin-bottom:8px;line-height:1.4;">Seene ka dard aur saans lene mein mushkil WHO ki emergency alamaat se milti hain.</p>
+        <div style="font-size:11px;font-weight:700;color:var(--rose);margin-bottom:4px;letter-spacing:0.06em;">FORI IQDAM:</div>
+        <ul style="font-size:12.5px;color:#9f1239;padding-left:18px;margin-bottom:10px;line-height:1.55;">
+          <li>Fauran 1122 par call karein</li>
+          <li>Aaram se baith jayein, wo safai na karein</li>
+          <li>CPR shuru karein agar behosh ho</li>
+          <li>Aspirin 300mg lein agar mil jaye</li>
+        </ul>
+        <div style="display:flex;gap:6px;">
+          <button class="call-btn" style="background:var(--primary);"><span class="material-icons" style="font-size:15px;">call</span>1122</button>
+          <button class="call-btn" style="background:var(--accent);"><span class="material-icons" style="font-size:15px;">call</span>1166</button>
+          <button class="call-btn" style="background:var(--slate);"><span class="material-icons" style="font-size:15px;">call</span>115</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: SSE stream code block -->
+    <div>
+      <div class="label-eyebrow" style="color:var(--text-muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+        <span>SSE STREAM (actual API response)</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;color:var(--primary);"><span style="width:6px;height:6px;border-radius:50%;background:var(--primary);display:inline-block;"></span>LIVE</span>
+      </div>
+      <pre class="code-block" style="font-size:10.5px;line-height:1.55;padding:14px;white-space:pre;"><span class="cmt">// stage: safety  — L0 lexicon match</span>
+data: {<span class="str">"stage"</span>:<span class="str">"safety"</span>,<span class="str">"data"</span>:{<span class="str">"engine"</span>:<span class="str">"L0-lexicon"</span>,
+  <span class="str">"redFlags"</span>:[{<span class="str">"id"</span>:<span class="str">"chest_pain_dyspnea"</span>,
+  <span class="str">"category"</span>:<span class="str">"cardiac"</span>,
+  <span class="str">"reason"</span>:<span class="str">"Seene ka dard aur saans..."</span>}],
+  <span class="str">"latencyMs"</span>:<span class="num">67</span>}}
+
+<span class="cmt">// stage: triage — short-circuits LLM</span>
+data: {<span class="str">"stage"</span>:<span class="str">"triage"</span>,<span class="str">"data"</span>:{<span class="str">"level"</span>:<span class="str">"EMERGENCY"</span>,
+  <span class="str">"shortCircuited"</span>:<span class="kw">true</span>,<span class="str">"engine"</span>:<span class="str">"L0"</span>}}
+
+<span class="cmt">// stage: emergency — pre-verified template</span>
+data: {<span class="str">"stage"</span>:<span class="str">"emergency"</span>,<span class="str">"data"</span>:{
+  <span class="str">"templateCategory"</span>:<span class="str">"cardiac"</span>,
+  <span class="str">"actions"</span>:[<span class="str">"1122 par call karein"</span>,<span class="str">"CPR shuru kare"</span>],
+  <span class="str">"numbers"</span>:[{<span class="str">"label"</span>:<span class="str">"Rescue 1122"</span>,<span class="str">"number"</span>:<span class="str">"1122"</span>}]}}
+
+<span class="cmt">// stage: done — confidence logged</span>
+data: {<span class="str">"stage"</span>:<span class="str">"done"</span>,<span class="str">"data"</span>:{<span class="str">"latencyMs"</span>:<span class="num">74</span>,
+  <span class="str">"confidence"</span>:{<span class="str">"band"</span>:<span class="str">"HIGH"</span>,<span class="str">"score"</span>:<span class="num">1</span>}}}</pre>
+    </div>
+  </div>
+
+  <!-- STAT ROW -->
+  <div style="padding: 14px 64px 0; display: flex; gap: 18px; align-items: center;">
+    <span class="stat-chip" style="color:var(--primary);">
+      <span class="material-icons" style="font-size:18px;">speed</span>67ms latency
+    </span>
+    <span style="color:var(--border);">·</span>
+    <span class="stat-chip" style="color:var(--rose);">
+      <span class="material-icons" style="font-size:18px;">block</span>0% LLM hallucination risk
+    </span>
+    <span style="color:var(--border);">·</span>
+    <span class="stat-chip" style="color:var(--accent);">
+      <span class="material-icons" style="font-size:18px;">phone_in_talk</span>7 emergency numbers
+    </span>
+  </div>
+
+  <div class="slide-footer">
+    <span>SehatAI · Emergency Triage</span>
+    <span>05 / 12</span>
+  </div>
+</div>
+
+<aside data-notes class="hidden">
+  <ul>
+    <li>67ms from symptom to emergency card — LLM bypassed entirely</li>
+    <li>Deterministic, auditable, instant path — not prompt-based</li>
+    <li>Pre-verified WHO action cards shown in patient's own language</li>
+    <li>One-tap dialing to 1122 (Rescue), 1166 (Edhi), 115 (Police)</li>
+    <li>This is the core safety differentiator versus generic chatbots</li>
+  </ul>
+</aside>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SehatAI — Technology Stack</title>
+<link rel="stylesheet" href="global.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0f172a; }
+  .tech-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .tech-icon { width: 34px; height: 34px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; }
+  .provider-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; background: rgba(30,41,59,0.55); border: 1px solid #334155; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .tier-num { font-family: var(--font-num); font-weight: 700; font-size: 12px; color: #94a3b8; width: 18px; text-align: center; }
+  .provider-name { font-size: 12.5px; font-weight: 600; color: #f1f5f9; flex: 1; }
+  .provider-model { font-size: 10.5px; color: #94a3b8; }
+  .provider-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+<div class="slide slide-dark">
+  <!-- Subtle dot-grid overlay -->
+  <div data-decor aria-hidden="true" style="position:absolute;inset:0;background-image:radial-gradient(circle, rgba(148,163,184,0.07) 1px, transparent 1px);background-size:24px 24px;pointer-events:none;"></div>
+
+  <!-- HEADER -->
+  <div style="padding: 44px 64px 18px; position: relative;">
+    <span class="pill pill-sky">
+      <span class="material-icons" style="font-size:14px;">memory</span>
+      TECHNOLOGY
+    </span>
+    <h1 style="font-size:34px;font-weight:800;margin-top:10px;letter-spacing:-0.02em;line-height:1.15;color:white;">
+      Built on a modern, resilient, production-grade stack
+    </h1>
+    <p style="font-size:16px;color:#cbd5e1;margin-top:4px;">
+      <span style="font-family:var(--font-num);font-weight:600;color:#94a3b8;">Next.js 16</span> ·
+      <span style="font-family:var(--font-num);font-weight:600;color:#94a3b8;">React 19</span> ·
+      <span style="font-family:var(--font-num);font-weight:600;color:#94a3b8;">TypeScript 5</span> ·
+      <span style="font-family:var(--font-num);font-weight:600;color:#94a3b8;">Prisma</span> ·
+      <span style="font-family:var(--font-num);font-weight:600;color:#94a3b8;">Tailwind CSS 4</span>
+    </p>
+  </div>
+
+  <!-- BODY: 60/40 -->
+  <div style="padding: 0 64px; display: grid; grid-template-columns: 60fr 40fr; gap: 28px; position: relative;">
+
+    <!-- LEFT: 6 tech cards (3x2) -->
+    <div>
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.08em;margin-bottom:8px;">CORE STACK</div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+
+        <div class="tech-card">
+          <span class="tech-icon" style="background:rgba(5,150,105,0.18);"><span class="material-icons" style="color:#10b981;font-size:18px;">code</span></span>
+          <div style="font-weight:700;color:white;font-size:13px;">Next.js 16</div>
+          <div style="font-size:11px;color:#94a3b8;line-height:1.4;">App Router · SSE Streaming · Server Actions</div>
+        </div>
+
+        <div class="tech-card">
+          <span class="tech-icon" style="background:rgba(14,165,233,0.18);"><span class="material-icons" style="color:#0ea5e9;font-size:18px;">component</span></span>
+          <div style="font-weight:700;color:white;font-size:13px;">React 19</div>
+          <div style="font-size:11px;color:#94a3b8;line-height:1.4;">Concurrent rendering · Server Components</div>
+        </div>
+
+        <div class="tech-card">
+          <span class="tech-icon" style="background:rgba(245,158,11,0.18);"><span class="material-icons" style="color:#f59e0b;font-size:18px;">data_object</span></span>
+          <div style="font-weight:700;color:white;font-size:13px;">TypeScript 5</div>
+          <div style="font-size:11px;color:#94a3b8;line-height:1.4;">Strict typing · 100% type-safe</div>
+        </div>
+
+        <div class="tech-card">
+          <span class="tech-icon" style="background:rgba(225,29,72,0.18);"><span class="material-icons" style="color:#fb7185;font-size:18px;">storage</span></span>
+          <div style="font-weight:700;color:white;font-size:13px;">Prisma 6 + SQLite</div>
+          <div style="font-size:11px;color:#94a3b8;line-height:1.4;">Type-safe ORM · Local-first PHI storage</div>
+        </div>
+
+        <div class="tech-card">
+          <span class="tech-icon" style="background:rgba(139,92,246,0.2);"><span class="material-icons" style="color:#a78bfa;font-size:18px;">palette</span></span>
+          <div style="font-weight:700;color:white;font-size:13px;">Tailwind CSS 4</div>
+          <div style="font-size:11px;color:#94a3b8;line-height:1.4;">shadcn/ui · RTL support · Dark mode</div>
+        </div>
+
+        <div class="tech-card">
+          <span class="tech-icon" style="background:rgba(5,150,105,0.18);"><span class="material-icons" style="color:#10b981;font-size:18px;">security</span></span>
+          <div style="font-weight:700;color:white;font-size:13px;">NextAuth.js v4</div>
+          <div style="font-size:11px;color:#94a3b8;line-height:1.4;">Credentials + Google OAuth · Role-based</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: 7-tier LLM cascade -->
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:14px;padding:18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:15px;font-weight:800;color:white;">7-Tier LLM Provider Cascade</div>
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#10b981;background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:999px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span>HEALTHY
+        </span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:5px;">
+
+        <div class="provider-row">
+          <span class="tier-num">1</span>
+          <span class="status-dot" style="background:#10b981;"></span>
+          <div style="flex:1;min-width:0;">
+            <div class="provider-name">DashScope <span style="color:#94a3b8;font-weight:500;">· Qwen</span></div>
+          </div>
+          <span class="provider-tag" style="background:rgba(16,185,129,0.15);color:#10b981;">primary</span>
+        </div>
+
+        <div class="provider-row">
+          <span class="tier-num">2</span>
+          <span class="status-dot" style="background:#10b981;"></span>
+          <div style="flex:1;min-width:0;">
+            <div class="provider-name">Google Gemini 2.5 Flash</div>
+          </div>
+        </div>
+
+        <div class="provider-row">
+          <span class="tier-num">3</span>
+          <span class="status-dot" style="background:#0ea5e9;"></span>
+          <div style="flex:1;min-width:0;">
+            <div class="provider-name">Groq <span style="color:#94a3b8;font-weight:500;">· Llama 3.3 70B</span></div>
+          </div>
+        </div>
+
+        <div class="provider-row">
+          <span class="tier-num">4</span>
+          <span class="status-dot" style="background:#0ea5e9;"></span>
+          <div style="flex:1;min-width:0;">
+            <div class="provider-name">Cerebras <span style="color:#94a3b8;font-weight:500;">· Llama 3.1</span></div>
+          </div>
+        </div>
+
+        <div class="provider-row">
+          <span class="tier-num">5</span>
+          <span class="status-dot" style="background:#f59e0b;"></span>
+          <div style="flex:1;min-width:0;">
+            <div class="provider-name">OpenRouter <span style="color:#94a3b8;font-weight:500;">· multi</span></div>
+          </div>
+          <span class="provider-tag" style="background:rgba(245,158,11,0.15);color:#f59e0b;">gateway</span>
+        </div>
+
+        <div class="provider-row">
+          <span class="tier-num">6</span>
+          <span class="status-dot" style="background:#f59e0b;"></span>
+          <div style="flex:1;min-width:0;">
+            <div class="provider-name">ZAI Web Dev SDK</div>
+          </div>
+        </div>
+
+        <div class="provider-row" style="background:rgba(225,29,72,0.08);border-color:rgba(225,29,72,0.35);">
+          <span class="tier-num">7</span>
+          <span class="status-dot" style="background:#fb7185;"></span>
+          <div style="flex:1;min-width:0;">
+            <div class="provider-name">Offline Deterministic</div>
+          </div>
+          <span class="provider-tag" style="background:rgba(225,29,72,0.18);color:#fb7185;">fallback &lt;500ms</span>
+        </div>
+
+      </div>
+
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #334155;font-size:11px;color:#94a3b8;line-height:1.45;display:flex;align-items:flex-start;gap:6px;">
+        <span class="material-icons" style="font-size:14px;color:#0ea5e9;margin-top:1px;">electric_bolt</span>
+        <span>In-memory circuit breaker: <span style="font-family:var(--font-num);color:#cbd5e1;">CLOSED → OPEN → HALF_OPEN</span> state machine. Zero dropped SSE connections.</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="slide-footer">
+    <span>SehatAI · Technology</span>
+    <span>08 / 12</span>
+  </div>
+</div>
+
+<aside data-notes class="hidden">
+  <ul>
+    <li>Multi-provider cascade means if one API is down, system fails over automatically</li>
+    <li>Patient never sees an error — every request resolves via the cascade</li>
+    <li>Final tier is fully offline deterministic — works without internet at all</li>
+    <li>Circuit breaker pattern: CLOSED → OPEN → HALF_OPEN prevents cascade overload</li>
+    <li>Local-first SQLite PHI storage keeps patient data on-device per Pakistan DP laws</li>
+  </ul>
+</aside>
+</body>
+</html>

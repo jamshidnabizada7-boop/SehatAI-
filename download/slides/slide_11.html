@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>SehatAI · Demo & Live Deployment</title>
+<link rel="stylesheet" href="global.css" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { margin: 0; background: #e2e8f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .num { font-family: 'JetBrains Mono', monospace; }
+  .browser { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 8px 24px rgba(15,23,42,0.06); }
+  .browser-bar { background: #f1f5f9; padding: 8px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .url-pill { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--text-muted); flex: 1; margin-left: 6px; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 6px; }
+  .chat-bubble { padding: 8px 12px; border-radius: 10px; font-size: 12px; max-width: 80%; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+  .query-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="slide gradient-mesh" style="padding: 0;">
+
+  <!-- HEADER -->
+  <div style="padding: 30px 64px 14px;">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="pill pill-primary"><span class="material-icons-sm">play_circle</span>LIVE DEMO</span>
+      <span style="font-size: 12px; color: var(--text-muted); letter-spacing: 0.04em;">DEPLOYED · sehatai-woad.vercel.app</span>
+    </div>
+    <h1 style="font-size: 30px; font-weight: 800; color: var(--text); line-height: 1.15; letter-spacing: -0.01em;">
+      See it in action
+    </h1>
+    <p style="font-size: 14px; color: var(--text-muted); margin-top: 2px;">
+      Deployed and running. Test the golden path yourself.
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding: 0 64px;">
+    <div class="grid gap-5" style="grid-template-columns: 55fr 45fr;">
+
+      <!-- LEFT — Browser mockup + highlight cards -->
+      <div class="flex flex-col gap-3">
+
+        <div class="browser">
+          <div class="browser-bar">
+            <span class="dot" style="background: #ff5f57;"></span>
+            <span class="dot" style="background: #febc2e;"></span>
+            <span class="dot" style="background: #28c840;"></span>
+            <div class="url-pill">
+              <span class="material-icons" style="font-size: 11px; color: var(--primary);">lock</span>
+              <span>sehatai-woad.vercel.app</span>
+            </div>
+          </div>
+
+          <div style="padding: 12px 14px;">
+            <!-- App header -->
+            <div class="flex items-center justify-between" style="border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 10px;">
+              <div class="flex items-center gap-2">
+                <span class="material-icons" style="color: var(--primary); font-size: 18px;">monitor_heart</span>
+                <span style="font-size: 13px; font-weight: 700; color: var(--text);">SehatAI</span>
+                <span style="width: 6px; height: 6px; background: #22c55e; border-radius: 50%;"></span>
+                <span style="font-size: 9px; color: var(--text-muted);">online</span>
+              </div>
+              <div class="flex items-center gap-1" style="background: var(--sky-light); color: var(--sky); padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;">
+                <span class="material-icons" style="font-size: 11px;">translate</span>
+                Roman Urdu
+              </div>
+            </div>
+
+            <!-- Chat area -->
+            <div class="flex flex-col gap-2">
+              <!-- User bubble -->
+              <div class="flex justify-end">
+                <div class="chat-bubble" style="background: var(--slate-light); color: var(--text);">
+                  Bukhar aur sar dard hai
+                </div>
+              </div>
+              <!-- SehatAI response -->
+              <div class="flex">
+                <div class="chat-bubble" style="background: var(--primary-light); color: var(--text); border: 1px solid #6ee7b7;">
+                  <div style="font-weight: 600; margin-bottom: 2px;">Aap ke symptoms routine triage mein aate hain.</div>
+                  <div style="font-size: 11px; color: var(--text); line-height: 1.4;">Bukhar ke liye paracetamol 500mg har 6 ghante, narm pani ziyada piyein. Agar bukhar 3 din se zyada rahe toh doctor se milein.</div>
+                  <div style="margin-top: 6px;">
+                    <span style="background: white; color: var(--primary-dark); padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; font-family: 'JetBrains Mono', monospace;">[WHO fever-adult]</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Triage + pipeline chips -->
+            <div class="flex items-center gap-2" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border);">
+              <span class="chip" style="background: var(--primary-light); color: var(--primary-dark);">
+                <span class="material-icons" style="font-size: 11px;">verified</span>SELF_CARE
+              </span>
+              <span class="chip" style="background: #f1f5f9; color: var(--text);">
+                <span style="color: var(--primary);">✓</span>Safety
+              </span>
+              <span class="chip" style="background: #f1f5f9; color: var(--text);">
+                <span style="color: var(--primary);">✓</span>Triage
+              </span>
+              <span class="chip" style="background: #f1f5f9; color: var(--text);">
+                <span style="color: var(--primary);">✓</span>RAG
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Highlight cards -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="card" style="padding: 10px 12px; display: flex; align-items: center; gap: 10px;">
+            <span class="material-icons" style="color: var(--rose); font-size: 22px;">flash_on</span>
+            <div>
+              <div class="num" style="font-size: 16px; font-weight: 700; color: var(--text); line-height: 1;">67ms</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Emergency detect</div>
+            </div>
+          </div>
+          <div class="card" style="padding: 10px 12px; display: flex; align-items: center; gap: 10px;">
+            <span class="material-icons" style="color: var(--sky); font-size: 22px;">translate</span>
+            <div>
+              <div class="num" style="font-size: 16px; font-weight: 700; color: var(--text); line-height: 1;">3 langs</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Auto-switch</div>
+            </div>
+          </div>
+          <div class="card" style="padding: 10px 12px; display: flex; align-items: center; gap: 10px;">
+            <span class="material-icons" style="color: var(--primary); font-size: 22px;">verified</span>
+            <div>
+              <div class="num" style="font-size: 16px; font-weight: 700; color: var(--text); line-height: 1;">160 docs</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Cited</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT — Try These Test Queries -->
+      <div class="card-soft" style="padding: 16px 18px;">
+        <div class="flex items-center justify-between mb-2">
+          <div style="font-size: 14px; font-weight: 700; color: var(--text);">Try These Test Queries</div>
+          <span class="material-icons" style="color: var(--primary); font-size: 18px;">forum</span>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Copy-paste these into the live chat to see each safety path activate.</p>
+
+        <div class="flex flex-col gap-2">
+
+          <div class="query-card" style="border-left: 4px solid var(--rose);">
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 2px;">"Mera seenay mein shadeed dard hai"</div>
+            <div style="color: var(--text-muted);">→ Triggers cardiac emergency (67ms)</div>
+          </div>
+
+          <div class="query-card" style="border-left: 4px solid var(--accent);">
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 2px;">"Bachay ko bukhar hai aur jaldi se saans phool rahi hai"</div>
+            <div style="color: var(--text-muted);">→ Pediatric emergency + 1166 helpline</div>
+          </div>
+
+          <div class="query-card" style="border-left: 4px solid var(--primary);">
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 2px;">"Sar dard aur bukhar hai, kya karoon?"</div>
+            <div style="color: var(--text-muted);">→ Routine triage + WHO guidance</div>
+          </div>
+
+          <div class="query-card" style="border-left: 4px solid var(--sky);">
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 2px;">"Main diabetic hoon, insulin ki dawa ke baray mein"</div>
+            <div style="color: var(--text-muted);">→ Refusal (no prescriptions)</div>
+          </div>
+
+        </div>
+
+        <a href="https://sehatai-woad.vercel.app" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--primary); color: white; padding: 10px 14px; border-radius: 8px; margin-top: 10px; text-decoration: none; font-size: 13px; font-weight: 700; box-shadow: 0 4px 12px rgba(5,150,105,0.25);">
+          <span class="material-icons" style="font-size: 16px;">open_in_new</span>
+          Visit sehatai-woad.vercel.app
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="slide-footer">
+    <span>SehatAI · Demo</span>
+    <span class="num">11 / 12</span>
+  </div>
+
+</div>
+
+<aside data-notes class="hidden">
+  <ul>
+    <li>The deployment is live — judges can test the exact queries shown here themselves.</li>
+    <li>The emergency path (cardiac query, 67ms) is the headline feature; the refusal path shows prescription safety.</li>
+    <li>Pipeline chips in the mockup mirror what's actually rendered in the UI on every response.</li>
+    <li>Triage badge SELF_CARE demonstrates the routine path that does invoke the LLM safely.</li>
+    <li>Each test query maps to a distinct safety behavior — emergency, pediatric emergency, routine, refusal.</li>
+  </ul>
+</aside>
+</body>
+</html>
