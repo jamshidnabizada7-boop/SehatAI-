@@ -21,7 +21,7 @@ export const maxDuration = 60;
 
 const BATCH_SIZE = 3;
 const CONCURRENCY = 3;
-const CASE_TIMEOUT_MS = 20000;
+const CASE_TIMEOUT_MS = 45000;
 
 interface StoredSummary extends EvalRunSummary {
   status: 'running' | 'complete' | 'interrupted';
