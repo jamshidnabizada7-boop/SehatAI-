@@ -1,17 +1,26 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { GOLDEN_SET, GOLDEN_SUITE_VERSION } from '@/data/eval-golden';
 import { runPipeline, ruleRefuses } from '@/server/pipeline/run';
 import type { EvalRunSummary, GoldenCase, TriageLevel } from '@/lib/types';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 // ============================================================
-// Eval harness — POST starts a run, processing happens in the
-// background (fire-and-forget) with an in-memory concurrency
-// guard. The REAL pipeline (LLM on) runs for every golden case.
+// Eval harness — serverless-safe batch design.
+//
+// Vercel freezes a serverless function when its response is sent,
+// so fire-and-forget background processing never runs there.
+// Instead the DASHBOARD drives the run:
+//   POST /api/eval/run            → creates a run, returns {runId}
+//   POST /api/eval/run {runId}    → processes the next BATCH of cases
+//                                   inside this request, returns progress
+// The dashboard polls the step call until {done: true}.
 // ============================================================
+
+const BATCH_SIZE = 6;
+const CONCURRENCY = 4;
 
 interface StoredSummary extends EvalRunSummary {
   status: 'running' | 'complete' | 'interrupted';
@@ -28,9 +37,6 @@ interface CaseOutcome {
   passed: boolean;
   latencyMs: number;
 }
-
-// module-scope guard (survives across requests in the same server process)
-let running = false;
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
@@ -82,181 +88,220 @@ async function runCase(c: GoldenCase): Promise<CaseOutcome> {
   };
 }
 
-async function processEvalRun(runId: string) {
-  const startedAt = Date.now();
-  const outcomes: CaseOutcome[] = [];
-  let completed = 0;
-  const total = GOLDEN_SET.length;
+function computeSummary(outcomes: CaseOutcome[]): StoredSummary {
+  const passed = outcomes.filter((o) => o.passed).length;
+  const byCategory = (cat: string) => outcomes.filter((o) => o.category === cat);
+  const rate = (list: CaseOutcome[]) => (list.length === 0 ? 0 : list.filter((o) => o.passed).length / list.length);
 
-  const progress = async () => {
+  const latencies = outcomes.map((o) => o.latencyMs).sort((a, b) => a - b);
+
+  // under-triage: expected EMERGENCY or URGENT but the pipeline returned a
+  // LOWER level than expected — including EMERGENCY→URGENT slips.
+  const expectedHigh = outcomes.filter((o) => {
     try {
-      const currentSummary: StoredSummary = {
-        status: 'running',
-        total,
-        completed,
-        passed: outcomes.filter((o) => o.passed).length,
-        accuracy: 0,
-        emergencyRecall: 0,
-        underTriageRate: 0,
-        falsePositiveRate: 0,
-        refusalCorrectness: 0,
-        citationRate: 0,
-        latencyP50: 0,
-        latencyP95: 0,
-        categoryBreakdown: {},
-      };
-      await db.evalRun.update({
-        where: { id: runId },
-        data: { summary: JSON.stringify(currentSummary) },
-      });
+      const exp = JSON.parse(o.expected) as { triage?: TriageLevel };
+      return exp.triage === 'EMERGENCY' || exp.triage === 'URGENT';
     } catch {
-      // progress update is best-effort
+      return false;
     }
+  });
+  const ORDER: Record<TriageLevel, number> = { EMERGENCY: 4, URGENT: 3, ROUTINE: 2, SELF_CARE: 1 };
+  const underTriaged = expectedHigh.filter((o) => {
+    try {
+      const exp = JSON.parse(o.expected) as { triage?: TriageLevel };
+      const act = JSON.parse(o.actual) as { triage: TriageLevel };
+      return ORDER[act.triage] < ORDER[exp.triage ?? 'SELF_CARE'];
+    } catch {
+      return false;
+    }
+  });
+
+  const nearMiss = byCategory('redflag-nearmiss');
+  const falsePositives = nearMiss.filter((o) => {
+    try {
+      return (JSON.parse(o.actual) as { triage: TriageLevel }).triage === 'EMERGENCY';
+    } catch {
+      return false;
+    }
+  });
+
+  const categoryBreakdown: Record<string, { total: number; passed: number }> = {};
+  for (const cat of ['triage', 'redflag-positive', 'redflag-nearmiss', 'refusal', 'grounding', 'multilingual-parity']) {
+    const list = byCategory(cat);
+    categoryBreakdown[cat] = { total: list.length, passed: list.filter((o) => o.passed).length };
+  }
+
+  return {
+    status: 'complete',
+    total: GOLDEN_SET.length,
+    completed: outcomes.length,
+    passed,
+    accuracy: outcomes.length === 0 ? 0 : passed / outcomes.length,
+    emergencyRecall: rate(byCategory('redflag-positive')),
+    underTriageRate: expectedHigh.length === 0 ? 0 : underTriaged.length / expectedHigh.length,
+    falsePositiveRate: nearMiss.length === 0 ? 0 : falsePositives.length / nearMiss.length,
+    refusalCorrectness: rate(byCategory('refusal')),
+    citationRate: rate(byCategory('grounding')),
+    latencyP50: percentile(latencies, 0.5),
+    latencyP95: percentile(latencies, 0.95),
+    categoryBreakdown,
   };
+}
 
+async function saveOutcomes(runId: string, outcomes: CaseOutcome[]): Promise<void> {
   try {
-    const queue = [...GOLDEN_SET];
-    const CONCURRENCY = 4;
-    const workers = Array.from({ length: CONCURRENCY }, async () => {
-      for (;;) {
-        const c = queue.shift();
-        if (!c) break;
-        try {
-          outcomes.push(await runCase(c));
-        } catch {
-          outcomes.push({
-            caseId: c.id,
-            category: c.category,
-            input: c.input,
-            language: c.language,
-            expected: JSON.stringify(c.expected),
-            actual: JSON.stringify({ error: 'pipeline failure' }),
-            passed: false,
-            latencyMs: 0,
-          });
-        }
-        completed++;
-        // throttled live progress for the dashboard
-        if (completed % 5 === 0 && completed < total) await progress();
-      }
-    });
-    await Promise.all(workers);
-
-    // ---- compute metrics (only real computed numbers) ----
-    const passed = outcomes.filter((o) => o.passed).length;
-    const byCategory = (cat: string) => outcomes.filter((o) => o.category === cat);
-    const rate = (list: CaseOutcome[]) => (list.length === 0 ? 0 : list.filter((o) => o.passed).length / list.length);
-
-    const latencies = outcomes.map((o) => o.latencyMs).sort((a, b) => a - b);
-
-    // under-triage: expected EMERGENCY or URGENT but the pipeline returned a
-    // LOWER level than expected — including EMERGENCY→URGENT slips, which are
-    // under-triage for emergency cases even though the category test may pass
-    // for some case types.
-    const expectedHigh = outcomes.filter((o) => {
-      try {
-        const exp = JSON.parse(o.expected) as { triage?: TriageLevel };
-        return exp.triage === 'EMERGENCY' || exp.triage === 'URGENT';
-      } catch {
-        return false;
-      }
-    });
-    const ORDER: Record<TriageLevel, number> = { EMERGENCY: 4, URGENT: 3, ROUTINE: 2, SELF_CARE: 1 };
-    const underTriaged = expectedHigh.filter((o) => {
-      try {
-        const exp = JSON.parse(o.expected) as { triage?: TriageLevel };
-        const act = JSON.parse(o.actual) as { triage: TriageLevel };
-        return ORDER[act.triage] < ORDER[exp.triage ?? 'SELF_CARE'];
-      } catch {
-        return false;
-      }
-    });
-
-    const nearMiss = byCategory('redflag-nearmiss');
-    const falsePositives = nearMiss.filter((o) => {
-      try {
-        return (JSON.parse(o.actual) as { triage: TriageLevel }).triage === 'EMERGENCY';
-      } catch {
-        return false;
-      }
-    });
-
-    const categoryBreakdown: Record<string, { total: number; passed: number }> = {};
-    for (const cat of ['triage', 'redflag-positive', 'redflag-nearmiss', 'refusal', 'grounding', 'multilingual-parity']) {
-      const list = byCategory(cat);
-      categoryBreakdown[cat] = { total: list.length, passed: list.filter((o) => o.passed).length };
-    }
-
-    const summary: StoredSummary = {
-      status: 'complete',
-      total: outcomes.length,
-      passed,
-      accuracy: outcomes.length === 0 ? 0 : passed / outcomes.length,
-      emergencyRecall: rate(byCategory('redflag-positive')),
-      underTriageRate: expectedHigh.length === 0 ? 0 : underTriaged.length / expectedHigh.length,
-      falsePositiveRate: nearMiss.length === 0 ? 0 : falsePositives.length / nearMiss.length,
-      refusalCorrectness: rate(byCategory('refusal')),
-      citationRate: rate(byCategory('grounding')),
-      latencyP50: percentile(latencies, 0.5),
-      latencyP95: percentile(latencies, 0.95),
-      categoryBreakdown,
-    };
-
-    // persist result rows then final summary
-    try {
-      await db.evalResult.createMany({
-        data: outcomes.map((o) => ({
-          runId,
-          caseId: o.caseId,
-          category: o.category,
-          input: o.input,
-          language: o.language,
-          expected: o.expected,
-          actual: o.actual,
-          passed: o.passed,
-          metric: JSON.stringify({ latencyMs: o.latencyMs }),
-        })),
-      });
-    } catch {
-      // createMany unsupported/failure → insert one by one
-      for (const o of outcomes) {
-        await db.evalResult
-          .create({
-            data: {
-              runId,
-              caseId: o.caseId,
-              category: o.category,
-              input: o.input,
-              language: o.language,
-              expected: o.expected,
-              actual: o.actual,
-              passed: o.passed,
-              metric: JSON.stringify({ latencyMs: o.latencyMs }),
-            },
-          })
-          .catch(() => undefined);
-      }
-    }
-
-    await db.evalRun.update({
-      where: { id: runId },
-      data: {
-        durationMs: Date.now() - startedAt,
-        summary: JSON.stringify(summary),
-      },
+    await db.evalResult.createMany({
+      data: outcomes.map((o) => ({
+        runId,
+        caseId: o.caseId,
+        category: o.category,
+        input: o.input,
+        language: o.language,
+        expected: o.expected,
+        actual: o.actual,
+        passed: o.passed,
+        metric: JSON.stringify({ latencyMs: o.latencyMs }),
+      })),
     });
   } catch {
-    // mark the run as interrupted so the dashboard never shows a stuck "running"
+    // createMany unsupported/failure → insert one by one
+    for (const o of outcomes) {
+      await db.evalResult
+        .create({
+          data: {
+            runId,
+            caseId: o.caseId,
+            category: o.category,
+            input: o.input,
+            language: o.language,
+            expected: o.expected,
+            actual: o.actual,
+            passed: o.passed,
+            metric: JSON.stringify({ latencyMs: o.latencyMs }),
+          },
+        })
+        .catch(() => undefined);
+    }
+  }
+}
+
+/** Process the next batch of pending cases for a run. Returns progress. */
+async function stepRun(runId: string) {
+  const run = await db.evalRun.findUnique({ where: { id: runId } });
+  if (!run) return { error: 'run not found', done: true };
+
+  // mark stale runs (frozen serverless invocation) interrupted on first touch
+  const summary = JSON.parse(run.summary || '{}') as StoredSummary;
+  const startedAt = run.startedAt ? new Date(run.startedAt).getTime() : Date.now();
+  const durationMs = Math.max(0, Date.now() - startedAt);
+
+  const doneRows = await db.evalResult.findMany({ where: { runId }, select: { caseId: true } });
+  const doneIds = new Set(doneRows.map((r) => r.caseId));
+  const pending = GOLDEN_SET.filter((c) => !doneIds.has(c.id));
+
+  if (pending.length === 0) {
+    // all cases already processed → finalize
+    const all = await db.evalResult.findMany({ where: { runId } });
+    const outcomes: CaseOutcome[] = all.map((r) => ({
+      caseId: r.caseId,
+      category: r.category,
+      input: r.input,
+      language: r.language,
+      expected: r.expected,
+      actual: r.actual,
+      passed: r.passed,
+      latencyMs: (() => { try { return (JSON.parse(r.metric) as { latencyMs?: number }).latencyMs ?? 0; } catch { return 0; } })(),
+    }));
+    const finalSummary = { ...computeSummary(outcomes), status: 'complete' as const, completed: outcomes.length };
+    await db.evalRun.update({ where: { id: runId }, data: { durationMs, summary: JSON.stringify(finalSummary) } });
+    return { done: true, completed: outcomes.length, total: GOLDEN_SET.length };
+  }
+
+  // process next batch with a small worker pool
+  const batch = pending.slice(0, BATCH_SIZE);
+  const outcomes: CaseOutcome[] = [];
+  const queue = [...batch];
+  const workers = Array.from({ length: Math.min(CONCURRENCY, batch.length) }, async () => {
+    for (;;) {
+      const c = queue.shift();
+      if (!c) break;
+      try {
+        outcomes.push(await runCase(c));
+      } catch {
+        outcomes.push({
+          caseId: c.id,
+          category: c.category,
+          input: c.input,
+          language: c.language,
+          expected: JSON.stringify(c.expected),
+          actual: JSON.stringify({ error: 'pipeline failure' }),
+          passed: false,
+          latencyMs: 0,
+        });
+      }
+    }
+  });
+  await Promise.all(workers);
+  await saveOutcomes(runId, outcomes);
+
+  // recompute full summary from all stored results
+  const all = await db.evalResult.findMany({ where: { runId } });
+  const allOutcomes: CaseOutcome[] = all.map((r) => ({
+    caseId: r.caseId,
+    category: r.category,
+    input: r.input,
+    language: r.language,
+    expected: r.expected,
+    actual: r.actual,
+    passed: r.passed,
+    latencyMs: (() => { try { return (JSON.parse(r.metric) as { latencyMs?: number }).latencyMs ?? 0; } catch { return 0; } })(),
+  }));
+  const completed = allOutcomes.length;
+  const done = completed >= GOLDEN_SET.length;
+  const stepSummary: StoredSummary = {
+    ...computeSummary(allOutcomes),
+    status: done ? 'complete' : 'running',
+    completed,
+  };
+  await db.evalRun.update({
+    where: { id: runId },
+    data: { durationMs, summary: JSON.stringify(stepSummary) },
+  });
+  void summary;
+
+  return { done, completed, total: GOLDEN_SET.length, passed: stepSummary.passed };
+}
+
+/** POST /api/eval/run — no body: start a run. Body {runId}: process next batch. */
+export async function POST(req: NextRequest) {
+  let body: { runId?: string } = {};
+  try {
+    body = await req.json();
+  } catch {
+    // no body → start a new run
+  }
+
+  if (body.runId) {
     try {
+      const progress = await stepRun(body.runId);
+      return NextResponse.json(progress);
+    } catch {
+      return NextResponse.json({ error: 'step failed' }, { status: 500 });
+    }
+  }
+
+  try {
+    // stale 'running' runs (frozen serverless invocations) → mark interrupted
+    const stale = await db.evalRun.findMany({ where: { summary: { contains: '"status":"running"' } } });
+    for (const s of stale) {
       await db.evalRun.update({
-        where: { id: runId },
+        where: { id: s.id },
         data: {
-          durationMs: Date.now() - startedAt,
           summary: JSON.stringify({
             status: 'interrupted',
-            total,
-            completed,
-            passed: outcomes.filter((o) => o.passed).length,
+            total: GOLDEN_SET.length,
+            completed: 0,
+            passed: 0,
             accuracy: 0,
             emergencyRecall: 0,
             underTriageRate: 0,
@@ -268,19 +313,9 @@ async function processEvalRun(runId: string) {
             categoryBreakdown: {},
           } satisfies StoredSummary),
         },
-      });
-    } catch {
-      // give up quietly
+      }).catch(() => undefined);
     }
-  }
-}
 
-/** POST /api/eval/run → {runId, status:'running'} — starts background processing */
-export async function POST() {
-  if (running) {
-    return NextResponse.json({ runId: null, status: 'running', alreadyRunning: true });
-  }
-  try {
     const run = await db.evalRun.create({
       data: {
         suiteVersion: GOLDEN_SUITE_VERSION,
@@ -302,17 +337,14 @@ export async function POST() {
         } satisfies StoredSummary),
       },
     });
-    running = true;
-    void processEvalRun(run.id).finally(() => {
-      running = false;
-    });
     return NextResponse.json({ runId: run.id, status: 'running' });
   } catch {
     return NextResponse.json({ error: 'failed to start eval run' }, { status: 500 });
   }
 }
 
-/** GET /api/eval/run — is a run currently processing? */
+/** GET /api/eval/run — is a run currently processing? (kept for compatibility) */
 export async function GET() {
-  return NextResponse.json({ running });
+  const running = await db.evalRun.findFirst({ where: { summary: { contains: '"status":"running"' } } });
+  return NextResponse.json({ running: Boolean(running) });
 }

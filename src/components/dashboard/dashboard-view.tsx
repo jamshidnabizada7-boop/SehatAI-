@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity,
@@ -380,20 +380,42 @@ export function DashboardView() {
     })();
   }, [unlocked]);
 
-  // poll while an eval run is in progress
+  // Drive a serverless-safe eval run: the client POSTs {runId} every few
+  // seconds and the server processes the next batch inside that request
+  // (background work does not survive the response on Vercel).
+  const runIdRef = useRef<string | null>(null);
+
+  // poll while an eval run is in progress — each tick advances the run by one batch
   useEffect(() => {
     if (!runningEval) return;
-    const interval = setInterval(async () => {
-      const data = await loadResults();
-      const stillRunning = (data?.runs ?? []).some(
-        (r) => r.status === 'running' || r.status === 'pending',
-      );
-      if (!stillRunning) {
-        setRunningEval(false);
-        toast({ description: t(uiLang, 'dashboard.statusCompleted') });
+    let cancelled = false;
+    const tick = async () => {
+      const runId = runIdRef.current;
+      if (!runId) return;
+      try {
+        const res = await fetch('/api/eval/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ runId }),
+        });
+        if (!res.ok) throw new Error(`step ${res.status}`);
+        const progress = (await res.json()) as { done?: boolean };
+        await loadResults();
+        if (progress.done && !cancelled) {
+          setRunningEval(false);
+          runIdRef.current = null;
+          toast({ description: t(uiLang, 'dashboard.statusCompleted') });
+        }
+      } catch {
+        // transient failure — keep polling; the step endpoint is idempotent
       }
-    }, 5000);
-    return () => clearInterval(interval);
+    };
+    void tick();
+    const interval = setInterval(tick, 2500);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [runningEval, loadResults, toast, uiLang]);
 
   const runEval = useCallback(async () => {
@@ -401,9 +423,13 @@ export function DashboardView() {
     try {
       const res = await fetch('/api/eval/run', { method: 'POST' });
       if (!res.ok) throw new Error(`run ${res.status}`);
+      const start = (await res.json()) as { runId?: string };
+      if (!start.runId) throw new Error('no runId');
+      runIdRef.current = start.runId;
       await loadResults();
     } catch {
       setRunningEval(false);
+      runIdRef.current = null;
       toast({ description: t(uiLang, 'dashboard.loadFailed'), variant: 'destructive' });
     }
   }, [loadResults, toast, uiLang]);
