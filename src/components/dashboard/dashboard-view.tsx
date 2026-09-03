@@ -86,6 +86,17 @@ interface EvalRow {
   passed: boolean;
 }
 
+/** Live counts of the offline knowledge base (admin Dataset Stats panel). */
+interface DatasetStats {
+  corpus: number;
+  drugs: number;
+  interactionRules: number;
+  blogArticles: number;
+  healthTips: number;
+  glossaryTerms: number;
+  total: number;
+}
+
 function normalizeRow(raw: Record<string, unknown>): EvalRow {
   return {
     caseId: String(raw.caseId ?? 'case'),
@@ -322,6 +333,7 @@ export function DashboardView() {
   const [error, setError] = useState(false);
   const [runningEval, setRunningEval] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [datasetStats, setDatasetStats] = useState<DatasetStats | null>(null);
 
   useEffect(() => {
     try {
@@ -354,6 +366,19 @@ export function DashboardView() {
     if (!unlocked) return;
     void loadResults().finally(() => setLoading(false));
   }, [unlocked, loadResults]);
+
+  // Dataset Stats panel — live counts from /api/admin/dataset-stats
+  useEffect(() => {
+    if (!unlocked) return;
+    void (async () => {
+      try {
+        const res = await fetch('/api/admin/dataset-stats', { cache: 'no-store' });
+        if (res.ok) setDatasetStats(await res.json());
+      } catch {
+        // panel stays hidden on failure — non-critical
+      }
+    })();
+  }, [unlocked]);
 
   // poll while an eval run is in progress
   useEffect(() => {
@@ -457,6 +482,42 @@ export function DashboardView() {
             {t(uiLang, 'dashboard.banner')}
           </p>
         </div>
+
+        {/* Dataset Stats — live counts of the offline knowledge base */}
+        {datasetStats ? (
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <h2 className="mb-3 text-sm font-bold tracking-tight text-foreground">
+              Current Dataset Stats
+            </h2>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-start text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                  <th className="py-1.5 text-start font-semibold">Dataset</th>
+                  <th className="py-1.5 text-end font-semibold">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: 'Corpus items (trilingual)', value: datasetStats.corpus },
+                  { label: 'Drugs in database', value: datasetStats.drugs },
+                  { label: 'Drug interaction rules', value: datasetStats.interactionRules },
+                  { label: 'Blog articles', value: datasetStats.blogArticles },
+                  { label: 'Health tips', value: datasetStats.healthTips },
+                  { label: 'Glossary terms', value: datasetStats.glossaryTerms },
+                ].map((row) => (
+                  <tr key={row.label} className="border-t border-border/60">
+                    <td className="py-1.5 text-foreground/90">{row.label}</td>
+                    <td className="py-1.5 text-end font-bold tabular-nums text-foreground">{row.value}</td>
+                  </tr>
+                ))}
+                <tr className="border-t-2 border-border">
+                  <td className="py-1.5 font-bold text-foreground">TOTAL</td>
+                  <td className="py-1.5 text-end font-extrabold tabular-nums text-primary">{datasetStats.total}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : null}
 
         {loading ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

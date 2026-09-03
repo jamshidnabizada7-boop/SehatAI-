@@ -14,7 +14,7 @@
 // Interface stays the same: retrieve(query, k) → CorpusItem[]
 // ============================================================
 
-import { CORPUS } from '@/data/corpus';
+import { EXPANDED_CORPUS as CORPUS } from '@/data/expanded';
 import type { CorpusItem } from '@/lib/types';
 
 // ---------- Vector utilities ----------

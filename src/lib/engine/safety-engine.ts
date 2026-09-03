@@ -1,5 +1,5 @@
 import { RED_FLAG_PATTERNS, SEVERITY_MODIFIERS } from '@/data/lexicon';
-import { CORPUS } from '@/data/corpus';
+import { EXPANDED_CORPUS as CORPUS } from '@/data/expanded';
 import { getEmergencyTemplate } from '@/data/emergency-templates';
 import type { ClinicalContext, Lang, RedFlagPattern, TriageLevel } from '@/lib/types';
 import { TRIAGE_ORDER } from '@/lib/types';

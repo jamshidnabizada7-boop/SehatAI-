@@ -309,3 +309,20 @@ model PackVersion {
   manifest    String // JSON
   createdAt   DateTime @default(now())
 }
+
+// SehatAI — Health Blog (health education articles, Pakistan-specific)
+model BlogPost {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  content     String // markdown
+  category    String // nutrition | maternal | child-health | chronic | emergency | seasonal
+  tags        String   @default("[]") // JSON array
+  authorName  String   @default("SehatAI Editorial")
+  imageUrl    String?
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([category, publishedAt])
+}

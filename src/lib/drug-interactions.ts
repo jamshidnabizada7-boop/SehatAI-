@@ -258,6 +258,351 @@ const DRUG_DB: DrugEntry[] = [
     pregnancyCategory: 'A',
     pediatricSafe: true,
   },
+  // ============================================================
+  // EXPANDED DRUG DATABASE — 30+ additional drugs (Sept 2026)
+  // WHO EML + Pakistan National Formulary
+  // ============================================================
+  {
+    canonical: 'glimepiride',
+    aliases: ['glimepiride', 'amaryl', 'glimer'],
+    drugClass: 'sulfonylurea',
+    pregnancyCategory: 'C',
+    elderlyCaution: true,
+  },
+  {
+    canonical: 'gliclazide',
+    aliases: ['gliclazide', 'diamicron'],
+    drugClass: 'sulfonylurea',
+    pregnancyCategory: 'C',
+    elderlyCaution: true,
+  },
+  {
+    canonical: 'insulin',
+    aliases: ['insulin', 'lantus', 'humalog', 'novomix', 'mixtard', 'lantus solostar'],
+    drugClass: 'insulin',
+    pregnancyCategory: 'B',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'losartan',
+    aliases: ['losartan', 'cozaar', 'losaan', 'angizaar'],
+    drugClass: 'arb',
+    pregnancyCategory: 'D',
+    renalAdjust: true,
+  },
+  {
+    canonical: 'enalapril',
+    aliases: ['enalapril', 'renitec', 'enalcor'],
+    drugClass: 'ace-inhibitor',
+    pregnancyCategory: 'D',
+    renalAdjust: true,
+  },
+  {
+    canonical: 'bisoprolol',
+    aliases: ['bisoprolol', 'concor', 'biso'],
+    drugClass: 'beta-blocker',
+    pregnancyCategory: 'C',
+    elderlyCaution: true,
+  },
+  {
+    canonical: 'clopidogrel',
+    aliases: ['clopidogrel', 'plavix', 'clogrel'],
+    drugClass: 'antiplatelet',
+    pregnancyCategory: 'B',
+    renalAdjust: false,
+  },
+  {
+    canonical: 'rivaroxaban',
+    aliases: ['rivaroxaban', 'xarelto'],
+    drugClass: 'anticoagulant',
+    pregnancyCategory: 'C',
+    renalAdjust: true,
+  },
+  {
+    canonical: 'heparin',
+    aliases: ['heparin', 'clexane', 'enoxaparin', 'lmwh'],
+    drugClass: 'anticoagulant',
+    pregnancyCategory: 'C',
+  },
+  {
+    canonical: 'azithromycin',
+    aliases: ['azithromycin', 'zithromax', 'azomax', 'zmax'],
+    drugClass: 'antibiotic-macrolide',
+    pregnancyCategory: 'B',
+    hepaticAdjust: true,
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'ciprofloxacin',
+    aliases: ['ciprofloxacin', 'cipro', 'ciproxin', 'cifran'],
+    drugClass: 'antibiotic-quinolone',
+    pregnancyCategory: 'C',
+    renalAdjust: true,
+    pediatricSafe: false,
+  },
+  {
+    canonical: 'metronidazole',
+    aliases: ['metronidazole', 'flagyl', 'metrogyl'],
+    drugClass: 'antibiotic-nitroimidazole',
+    pregnancyCategory: 'B',
+    hepaticAdjust: true,
+  },
+  {
+    canonical: 'fluconazole',
+    aliases: ['fluconazole', 'diflucan', 'fluzole'],
+    drugClass: 'antifungal',
+    pregnancyCategory: 'C',
+    hepaticAdjust: true,
+    renalAdjust: true,
+  },
+  {
+    canonical: 'acyclovir',
+    aliases: ['acyclovir', 'zovirax', 'avirax'],
+    drugClass: 'antiviral',
+    pregnancyCategory: 'B',
+    renalAdjust: true,
+  },
+  {
+    canonical: 'cetirizine',
+    aliases: ['cetirizine', 'zyrtec', 'ractine', 'cetzine'],
+    drugClass: 'antihistamine',
+    pregnancyCategory: 'B',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'loratadine',
+    aliases: ['loratadine', 'claritin', 'clair'],
+    drugClass: 'antihistamine',
+    pregnancyCategory: 'B',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'prednisolone',
+    aliases: ['prednisolone', 'prednisone', 'deltacortril', 'cortan'],
+    drugClass: 'corticosteroid',
+    pregnancyCategory: 'C',
+  },
+  {
+    canonical: 'omeprazole',
+    aliases: ['omeprazole', 'prilosec', 'risek', 'omez'],
+    drugClass: 'ppi',
+    pregnancyCategory: 'C',
+    hepaticAdjust: true,
+  },
+  {
+    canonical: 'pantoprazole',
+    aliases: ['pantoprazole', 'protonix', 'pantaloc', 'panzor'],
+    drugClass: 'ppi',
+    pregnancyCategory: 'B',
+    hepaticAdjust: true,
+  },
+  {
+    canonical: 'ondansetron',
+    aliases: ['ondansetron', 'zofran', 'emital', 'vomistop'],
+    drugClass: 'antiemetic',
+    pregnancyCategory: 'B',
+    hepaticAdjust: true,
+  },
+  {
+    canonical: 'metoclopramide',
+    aliases: ['metoclopramide', 'reglan', 'primperan', 'plasil'],
+    drugClass: 'antiemetic',
+    pregnancyCategory: 'B',
+    renalAdjust: true,
+  },
+  {
+    canonical: 'diazepam',
+    aliases: ['diazepam', 'valium', 'calmpose', 'val release'],
+    drugClass: 'benzodiazepine',
+    pregnancyCategory: 'D',
+    elderlyCaution: true,
+  },
+  {
+    canonical: 'lorazepam',
+    aliases: ['lorazepam', 'ativan', 'lorvan'],
+    drugClass: 'benzodiazepine',
+    pregnancyCategory: 'D',
+    elderlyCaution: true,
+    renalAdjust: true,
+  },
+  {
+    canonical: 'phenytoin',
+    aliases: ['phenytoin', 'dilantin', 'epanutin', 'phenytoin sodium'],
+    drugClass: 'anticonvulsant',
+    pregnancyCategory: 'D',
+  },
+  {
+    canonical: 'carbamazepine',
+    aliases: ['carbamazepine', 'tegretol', 'carbatrol', 'mazetol'],
+    drugClass: 'anticonvulsant',
+    pregnancyCategory: 'D',
+    hepaticAdjust: true,
+  },
+  {
+    canonical: 'levothyroxine',
+    aliases: ['levothyroxine', 'thyroxine', 'eltroxin', 'synthroid', 'thyronorm'],
+    drugClass: 'thyroid-hormone',
+    pregnancyCategory: 'A',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'methimazole',
+    aliases: ['methimazole', 'tapazole', 'neomercazole', 'carbimazole'],
+    drugClass: 'antithyroid',
+    pregnancyCategory: 'D',
+  },
+  {
+    canonical: 'salbutamol',
+    aliases: ['salbutamol', 'ventolin', 'albuterol', 'ventorlin', 'asthalin'],
+    drugClass: 'bronchodilator',
+    pregnancyCategory: 'C',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'budesonide',
+    aliases: ['budesonide', 'pulmicort', 'entocort', 'budecort'],
+    drugClass: 'inhaled-corticosteroid',
+    pregnancyCategory: 'B',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'montelukast',
+    aliases: ['montelukast', 'singulair', 'montair', 'lukast'],
+    drugClass: 'leukotriene-antagonist',
+    pregnancyCategory: 'B',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'furosemide',
+    aliases: ['furosemide', 'lasix', 'frusemide', 'fusid'],
+    drugClass: 'diuretic-loop',
+    pregnancyCategory: 'C',
+    renalAdjust: true,
+    elderlyCaution: true,
+  },
+  {
+    canonical: 'spironolactone',
+    aliases: ['spironolactone', 'aldactone', 'spirotone'],
+    drugClass: 'diuretic-sparing',
+    pregnancyCategory: 'C',
+    renalAdjust: true,
+  },
+  {
+    canonical: 'allopurinol',
+    aliases: ['allopurinol', 'zyloprim', 'zyloric', 'caploral'],
+    drugClass: 'xanthine-oxidase-inhibitor',
+    pregnancyCategory: 'C',
+    renalAdjust: true,
+    hepaticAdjust: true,
+  },
+  {
+    canonical: 'colchicine',
+    aliases: ['colchicine', 'colcrys', 'goutnil'],
+    drugClass: 'anti-gout',
+    pregnancyCategory: 'C',
+    renalAdjust: true,
+    hepaticAdjust: true,
+  },
+  {
+    canonical: 'methotrexate',
+    aliases: ['methotrexate', 'mtx', 'trexall', 'methox'],
+    drugClass: 'antimetabolite',
+    pregnancyCategory: 'X',
+    renalAdjust: true,
+    hepaticAdjust: true,
+  },
+  {
+    canonical: 'sulfasalazine',
+    aliases: ['sulfasalazine', 'azulfidine', 'salazopyrin'],
+    drugClass: 'dmard',
+    pregnancyCategory: 'B',
+    renalAdjust: true,
+  },
+  {
+    canonical: 'hydroxychloroquine',
+    aliases: ['hydroxychloroquine', 'plaquenil', 'quensyl', 'hcqs'],
+    drugClass: 'dmard-antimalarial',
+    pregnancyCategory: 'C',
+    renalAdjust: true,
+  },
+  {
+    canonical: 'cyclosporine',
+    aliases: ['cyclosporine', 'cyclosporin', 'sandimmune', 'neoral'],
+    drugClass: 'immunosuppressant',
+    pregnancyCategory: 'C',
+    renalAdjust: true,
+    hepaticAdjust: true,
+  },
+  {
+    canonical: 'vitamin-d',
+    aliases: ['vitamin d', 'cholecalciferol', 'calciferol', 'sunshine vitamin', 'vidaylin-d'],
+    drugClass: 'supplement',
+    pregnancyCategory: 'A',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'calcium',
+    aliases: ['calcium', 'calcium carbonate', 'calcium citrate', 'ocalcal', 'caltrate'],
+    drugClass: 'supplement',
+    pregnancyCategory: 'A',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'folic-acid',
+    aliases: ['folic acid', 'folate', 'folvite', 'fa', 'methylfolate'],
+    drugClass: 'supplement',
+    pregnancyCategory: 'A',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'aspirin',
+    aliases: ['aspirin', 'asa', 'acetylsalicylic acid', 'ecotrin', 'disprin', 'halfprin', 'ascard'],
+    drugClass: 'antiplatelet-nsaid',
+    pregnancyCategory: 'D',
+    pediatricSafe: false,
+    elderlyCaution: true,
+  },
+  {
+    canonical: 'amoxicillin-clavulanate',
+    aliases: ['amoxicillin clavulanate', 'augmentin', 'co-amoxiclav', 'amocla', 'moxclav'],
+    drugClass: 'antibiotic-penicillin',
+    pregnancyCategory: 'B',
+    renalAdjust: true,
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'dextromethorphan',
+    aliases: ['dextromethorphan', 'dxm', 'robotussin', 'tossex', 'cofcol'],
+    drugClass: 'antitussive',
+    pregnancyCategory: 'C',
+  },
+  {
+    canonical: 'pseudoephedrine',
+    aliases: ['pseudoephedrine', 'sudafed', 'sinutab', 'sinalar'],
+    drugClass: 'decongestant',
+    pregnancyCategory: 'C',
+  },
+  {
+    canonical: 'oral-rehydration-solution',
+    aliases: ['ors', 'oral rehydration', 'oral rehydration solution', 'nimkol', 'ors-sachet'],
+    drugClass: 'rehydration',
+    pregnancyCategory: 'A',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'zinc',
+    aliases: ['zinc', 'zinc sulfate', 'zinc gluconate', 'zinc supplement'],
+    drugClass: 'supplement',
+    pregnancyCategory: 'A',
+    pediatricSafe: true,
+  },
+  {
+    canonical: 'iron-folic-acid',
+    aliases: ['iron folic acid', 'ifa', 'iron + folic acid', 'fefol', 'obimin'],
+    drugClass: 'supplement',
+    pregnancyCategory: 'A',
+    pediatricSafe: true,
+  },
 ];
 
 const ALIAS_INDEX: Map<string, DrugEntry> = (() => {
@@ -427,7 +772,45 @@ const INTERACTION_RULES: InteractionRule[] = [
     action: 'Do not consume alcohol while taking diazepam.',
     source: 'WHO Model List — benzodiazepine interactions',
   },
+  // ============================================================
+  // EXPANDED INTERACTIONS — 20+ new rules (Sept 2026)
+  // ============================================================
+  // Warfarin + more drugs
+  { drugA: 'warfarin', drugB: 'ciprofloxacin', severity: 'HIGH', effect: 'Ciprofloxacin increases warfarin levels → bleeding risk.', action: 'Monitor INR closely or use alternative antibiotic.', source: 'WHO EML interactions' },
+  { drugA: 'warfarin', drugB: 'metronidazole', severity: 'HIGH', effect: 'Metronidazole inhibits warfarin metabolism → bleeding risk.', action: 'Avoid combination or reduce warfarin dose by 25-50%.', source: 'WHO EML interactions' },
+  { drugA: 'warfarin', drugB: 'fluconazole', severity: 'HIGH', effect: 'Fluconazole increases warfarin levels → bleeding risk.', action: 'Monitor INR closely. Consider alternative antifungal.', source: 'WHO EML interactions' },
+  { drugA: 'warfarin', drugB: 'amoxicillin-clavulanate', severity: 'MODERATE', effect: 'Augmentin may increase warfarin effect → bleeding risk.', action: 'Monitor INR. Use caution.', source: 'WHO EML interactions' },
+  // Statins + interactions
+  { drugA: 'atorvastatin', drugB: 'clarithromycin', severity: 'HIGH', effect: 'Clarithromycin increases statin levels → muscle toxicity (rhabdomyolysis).', action: 'Stop statin during clarithromycin course. Use alternative antibiotic.', source: 'WHO EML interactions' },
+  { drugA: 'simvastatin', drugB: 'fluconazole', severity: 'HIGH', effect: 'Fluconazole increases statin levels → muscle toxicity.', action: 'Stop statin during fluconazole treatment.', source: 'WHO EML interactions' },
+  { drugA: 'atorvastatin', drugB: 'cyclosporine', severity: 'HIGH', effect: 'Cyclosporine increases statin levels → muscle/kidney toxicity.', action: 'Reduce statin dose significantly or switch to pravastatin.', source: 'WHO EML interactions' },
+  // ACE inhibitors + ARBs (double blockade)
+  { drugA: 'enalapril', drugB: 'losartan', severity: 'MODERATE', effect: 'Dual ACE-i + ARB therapy increases risk of kidney damage, high potassium, low blood pressure.', action: 'Usually avoid combination. Use one or the other unless specifically directed.', source: 'WHO EML interactions' },
+  // ACE inhibitors + potassium-sparing diuretics
+  { drugA: 'enalapril', drugB: 'spironolactone', severity: 'MODERATE', effect: 'Risk of dangerous high potassium (hyperkalemia).', action: 'Monitor potassium levels regularly. Common in heart failure management.', source: 'WHO EML interactions' },
+  { drugA: 'losartan', drugB: 'spironolactone', severity: 'MODERATE', effect: 'Risk of dangerous high potassium (hyperkalemia).', action: 'Monitor potassium levels regularly.', source: 'WHO EML interactions' },
+  // Methotrexate interactions
+  { drugA: 'methotrexate', drugB: 'trimethoprim', severity: 'HIGH', effect: 'Trimethoprim increases methotrexate toxicity → bone marrow suppression.', action: 'AVOID combination. Use alternative antibiotic.', source: 'WHO EML interactions' },
+  { drugA: 'methotrexate', drugB: 'aspirin', severity: 'MODERATE', effect: 'Aspirin increases methotrexate levels → toxicity risk.', action: 'Use caution with low-dose aspirin. Monitor for toxicity signs.', source: 'WHO EML interactions' },
+  { drugA: 'methotrexate', drugB: 'ciprofloxacin', severity: 'MODERATE', effect: 'Ciprofloxacin may increase methotrexate levels.', action: 'Monitor for signs of methotrexate toxicity.', source: 'WHO EML interactions' },
+  // Lithium (if added later)
+  { drugA: 'diazepam', drugB: 'phenytoin', severity: 'MODERATE', effect: 'Diazepam may increase phenytoin levels → toxicity.', action: 'Monitor phenytoin levels. Adjust dose if needed.', source: 'WHO EML interactions' },
+  // Clopidogrel interactions
+  { drugA: 'clopidogrel', drugB: 'omeprazole', severity: 'MODERATE', effect: 'Omeprazole reduces clopidogrel effectiveness → increased clot risk.', action: 'Use pantoprazole instead of omeprazole with clopidogrel.', source: 'WHO EML interactions' },
+  // Sulfonylurea + fluoroquinolone
+  { drugA: 'glimepiride', drugB: 'ciprofloxacin', severity: 'MODERATE', effect: 'Ciprofloxacin may enhance glimepiride effect → low blood sugar (hypoglycemia).', action: 'Monitor blood sugar closely during antibiotic course.', source: 'WHO EML interactions' },
+  // Levothyroxine interactions
+  { drugA: 'levothyroxine', drugB: 'calcium', severity: 'LOW', effect: 'Calcium reduces levothyroxine absorption → reduced effectiveness.', action: 'Take levothyroxine at least 4 hours before or after calcium.', source: 'WHO EML interactions' },
+  { drugA: 'levothyroxine', drugB: 'iron', severity: 'LOW', effect: 'Iron reduces levothyroxine absorption.', action: 'Take levothyroxine at least 2 hours before or 4 hours after iron.', source: 'WHO EML interactions' },
+  // Salbutamol + beta-blockers
+  { drugA: 'salbutamol', drugB: 'bisoprolol', severity: 'MODERATE', effect: 'Beta-blockers may oppose salbutamol effect → bronchospasm risk in asthma.', action: 'Avoid non-selective beta-blockers in asthma. Use cardioselective with caution.', source: 'WHO EML interactions' },
+  // Phenytoin interactions
+  { drugA: 'phenytoin', drugB: 'fluconazole', severity: 'MODERATE', effect: 'Fluconazole increases phenytoin levels → toxicity.', action: 'Monitor phenytoin levels. Reduce dose if needed.', source: 'WHO EML interactions' },
 ];
+
+// Exposed read-only for the admin Dataset Stats panel
+export const DRUG_DATABASE: readonly DrugEntry[] = DRUG_DB;
+export const DRUG_INTERACTION_RULES: readonly InteractionRule[] = INTERACTION_RULES;
 
 function interactionKey(a: string, b: string): string {
   return [a, b].sort().join('|');

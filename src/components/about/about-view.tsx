@@ -11,6 +11,7 @@ import {
   HeartPulse,
   Languages,
   Layers,
+  Newspaper,
   ScanSearch,
   ShieldAlert,
   ShieldCheck,
@@ -25,6 +26,7 @@ import { GlossarySection } from './glossary-section';
 import { FirstAidSection } from './first-aid-section';
 import { HealthEducationLibrary } from './health-education-library';
 import { HealthTipsBrowser } from './health-tips-browser';
+import { HealthBlog } from './health-blog';
 import { PwaInstallButton } from '@/components/app/pwa-install-button';
 import { cn } from '@/lib/utils';
 
@@ -229,6 +231,14 @@ export function AboutView() {
 
         {/* Phase 2 — Health Tips Browser (browse + bookmark 15 daily tips) */}
         <HealthTipsBrowser lang={uiLang} />
+
+        {/* Health Blog — Pakistan-specific health education articles */}
+        <Section title="Health Blog" icon={Newspaper} delay={0.25}>
+          <p className="text-sm leading-relaxed text-foreground/90">
+            Pakistan-specific health articles — monsoon diseases, desi diet, heat stroke, pregnancy, vaccination, and more.
+          </p>
+        </Section>
+        <HealthBlog />
 
         {/* glossary */}
         <GlossarySection />
