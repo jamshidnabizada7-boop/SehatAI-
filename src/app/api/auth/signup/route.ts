@@ -98,13 +98,22 @@ export async function POST(req: NextRequest) {
   }
 
   // Check existing user
-  const existing = await db.user.findUnique({ where: { email } });
-  if (existing) {
-    // Do not leak existence — return generic
-    return NextResponse.json({ error: 'Cannot create account with these details.' }, { status: 409 });
+  try {
+    const existing = await db.user.findUnique({ where: { email } });
+    if (existing) {
+      // Do not leak existence — return generic
+      return NextResponse.json({ error: 'Cannot create account with these details.' }, { status: 409 });
+    }
+  } catch (e) {
+    return NextResponse.json({ debug: 'findUnique failed', msg: String(e) }, { status: 500 });
   }
 
-  const passwordHash = await hashPassword(password);
+  let passwordHash: string;
+  try {
+    passwordHash = await hashPassword(password);
+  } catch (e) {
+    return NextResponse.json({ debug: 'hash failed', msg: String(e) }, { status: 500 });
+  }
 
   if (intendedRole === 'doctor') {
     const doctorData = doctor as Record<string, unknown>;
@@ -156,16 +165,21 @@ export async function POST(req: NextRequest) {
   }
 
   // Patient signup path (existing behavior)
-  const user = await db.user.create({
-    data: {
-      email,
-      name,
-      passwordHash,
-      consentAt: consent ? new Date() : null,
-      role: 'user',
-      accountStatus: 'active',
-    },
-  });
+  let user;
+  try {
+    user = await db.user.create({
+      data: {
+        email,
+        name,
+        passwordHash,
+        consentAt: consent ? new Date() : null,
+        role: 'user',
+        accountStatus: 'active',
+      },
+    });
+  } catch (e) {
+    return NextResponse.json({ debug: 'user.create failed', msg: String(e) }, { status: 500 });
+  }
 
   // Create empty PatientProfile
   await db.patientProfile.create({ data: { userId: user.id } });
