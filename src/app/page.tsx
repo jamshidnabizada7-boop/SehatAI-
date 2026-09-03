@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppStore, type View } from '@/lib/store/app-store';
@@ -33,7 +33,7 @@ const DEFAULT_VIEW: Record<string, View> = {
   admin: 'dashboard',
 };
 
-export default function Home() {
+function HomeContent() {
   const view = useAppStore((s) => s.view);
   const setView = useAppStore((s) => s.setView);
   const langPref = useAppStore((s) => s.langPref);
@@ -177,5 +177,14 @@ export default function Home() {
       <EmergencyOverlay />
       <GlobalSearch />
     </div>
+  );
+}
+
+// useSearchParams() requires a Suspense boundary for static prerendering
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }
