@@ -59,3 +59,9 @@ dev.log
 tool-results/
 .env.local
 .env.production
+
+# Database files (contain PHI)
+*.db
+*.sqlite
+*.sqlite3
+db/*.db
