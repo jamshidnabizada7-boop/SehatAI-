@@ -38,6 +38,7 @@ export default function Home() {
   const setView = useAppStore((s) => s.setView);
   const langPref = useAppStore((s) => s.langPref);
   const ensureSession = useAppStore((s) => s.ensureSession);
+  const guestMode = useAppStore((s) => s.guestMode);
   const uiLang = resolveUiLang(langPref);
   const isRtl = uiLang === 'ur';
   const { status, data: session } = useSession();
@@ -134,8 +135,8 @@ export default function Home() {
     }
   }, [status, session, router, searchParams, view, role, accountStatus, allowedViews, setView]);
 
-  // Show the landing chooser for unauthenticated users
-  const showLanding = status === 'unauthenticated';
+  // Show the landing chooser for unauthenticated users who haven't chosen guest mode
+  const showLanding = status === 'unauthenticated' && !guestMode;
 
   return (
     <div

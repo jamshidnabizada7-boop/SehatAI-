@@ -100,6 +100,7 @@ function formatWhen(iso: string): string {
 export function AccountSection() {
   const { status, data: session } = useSession();
   const langPref = useAppStore((s) => s.langPref);
+  const setGuestMode = useAppStore((s) => s.setGuestMode);
   const uiLang = resolveUiLang(langPref);
   const isRtl = uiLang === 'ur';
 
@@ -182,6 +183,9 @@ export function AccountSection() {
       // also wipe the device-local profile + journal mirrors
       clearProfile();
       clearJournal();
+      // guest mode was for the pre-login landing — clear it so sign-out
+      // lands back on the landing chooser
+      setGuestMode(false);
       // sign out (clears the orphaned JWT) and land on the guest home
       await signOut({ redirect: false });
       window.location.href = '/';
@@ -189,7 +193,7 @@ export function AccountSection() {
       toast.error(t(uiLang, 'settings.deleteFailed'));
       setDeleting(false);
     }
-  }, [deleting, uiLang]);
+  }, [deleting, uiLang, setGuestMode]);
 
   // ---- signed out: prompt ----
   if (status !== 'authenticated') {
@@ -347,7 +351,10 @@ export function AccountSection() {
             <Button
               variant="outline"
               className="h-10 gap-1.5 rounded-xl border-border px-4 text-sm font-semibold"
-              onClick={() => void signOut({ callbackUrl: '/' })}
+              onClick={() => {
+                setGuestMode(false);
+                void signOut({ callbackUrl: '/' });
+              }}
             >
               <LogOut className="h-4 w-4" aria-hidden />
               {t(uiLang, 'settings.signOutLabel')}

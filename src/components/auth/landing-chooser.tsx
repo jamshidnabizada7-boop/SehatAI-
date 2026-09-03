@@ -4,15 +4,19 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { HeartPulse, Stethoscope, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useAppStore } from '@/lib/store/app-store';
 
 /**
  * Landing chooser — shown when the user is unauthenticated and lands on `/`.
  * Two large cards: "I am a patient" and "I am a doctor".
  *
- * When the user IS authenticated, this returns null and the main app renders.
+ * When the user IS authenticated (or chose guest mode), this returns null
+ * and the main app renders.
  */
 export function LandingChooser() {
   const { status } = useSession();
+  const setGuestMode = useAppStore((s) => s.setGuestMode);
+  const setView = useAppStore((s) => s.setView);
 
   if (status !== 'unauthenticated') return null;
 
@@ -83,13 +87,24 @@ export function LandingChooser() {
       </div>
 
       <div className="mt-6 flex items-center justify-center gap-4 text-xs text-muted-foreground">
-        <Link href="/" className="font-semibold text-primary hover:underline">
+        <button
+          type="button"
+          onClick={() => setGuestMode(true)}
+          className="font-semibold text-primary hover:underline"
+        >
           Continue as guest
-        </Link>
+        </button>
         <span aria-hidden>·</span>
-        <Link href="/about" className="font-semibold text-muted-foreground hover:underline">
+        <button
+          type="button"
+          onClick={() => {
+            setGuestMode(true);
+            setView('about');
+          }}
+          className="font-semibold text-muted-foreground hover:underline"
+        >
           Learn more
-        </Link>
+        </button>
       </div>
     </motion.section>
   );
