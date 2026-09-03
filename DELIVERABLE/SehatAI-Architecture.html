@@ -207,8 +207,17 @@ tr:nth-child(even) td { background: #f8fafc; }
   <strong>Critical safety invariant:</strong> When L0 detects a red flag, the LLM is <em>never invoked</em>. A pre-verified, trilingual emergency action card is displayed immediately with one-tap dialing to 1122 (Rescue), 1166 (Health Helpline), and 115 (Edhi Ambulance).
 </div>
 
+<h2>The LLM-Free Safety Path — Why It Matters</h2>
+<p>SehatAI's defining innovation is the <strong>deterministic-first safety architecture</strong>. For life-threatening emergencies, the system bypasses the LLM entirely — the L0 lexicon engine uses pattern matching across 28 red-flag categories in English, Urdu Nastaliq, and Roman Urdu to detect emergencies in under 100 milliseconds. This approach eliminates three critical risks that plague LLM-based health chatbots:</p>
+<ol>
+  <li><strong>Hallucination risk:</strong> An LLM might generate plausible but incorrect emergency advice. SehatAI's emergency cards are pre-verified by WHO/IFRC clinical guidelines — no generation, no hallucination.</li>
+  <li><strong>Latency risk:</strong> LLM generation takes 600-3000ms. In a cardiac emergency, every second counts. SehatAI's deterministic path delivers the full emergency action card in 67-74ms.</li>
+  <li><strong>Availability risk:</strong> LLM APIs can be down, rate-limited, or slow. The deterministic safety engine has zero external dependencies and works offline.</li>
+</ol>
+<p>For non-emergency queries, the LLM is used — but only after RAG grounding and with L2 validation that blocks prescriptions, dosages, and diagnoses. This hybrid architecture gives SehatAI the intelligence of LLMs for routine guidance, with the safety of deterministic systems for emergencies.</p>
+
 <h2>Seven-Tier LLM Provider Cascade</h2>
-<p>To ensure zero-downtime availability, SehatAI implements a multi-provider failover cascade with an in-memory circuit breaker state machine (CLOSED → OPEN → HALF_OPEN).</p>
+<p>To ensure zero-downtime availability for non-emergency queries, SehatAI implements a multi-provider failover cascade with an in-memory circuit breaker state machine (CLOSED → OPEN → HALF_OPEN). If any provider fails, returns errors, or exceeds latency thresholds, the circuit breaker opens and the next tier is tried automatically — the patient never sees an error.</p>
 
 <table>
   <thead>

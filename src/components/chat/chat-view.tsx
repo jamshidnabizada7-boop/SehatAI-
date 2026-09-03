@@ -512,7 +512,7 @@ export function ChatView() {
       </div>
 
       {/* input bar */}
-      <div className="relative px-4 pt-2 pb-3 sm:px-6">
+      <div className="relative z-10 shrink-0 px-4 pt-2 pb-3 sm:px-6">
         {/* Phase 2 — Medication pre-send checker (client-side drug detection) */}
         <div className="mb-1.5">
           <MedPreSendChecker text={input} lang={uiLang} />

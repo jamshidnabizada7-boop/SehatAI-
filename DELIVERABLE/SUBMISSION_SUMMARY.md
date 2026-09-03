@@ -6,18 +6,30 @@ SehatAI (صحت AI) is a safety-first, trilingual AI health guidance and triage 
 
 ---
 
-## Key Metrics
+## Key Innovation: LLM-Free Emergency Path
 
-| Metric | Value |
-|--------|-------|
-| **Overall Accuracy** | 100% (139/139) |
-| **Emergency Recall** | 100% (35/35) |
-| **False Positive Rate** | 0% |
-| **Refusal Correctness** | 100% (17/17) |
-| **Citation Rate** | 100% (8/8) |
-| **Emergency Detection Latency** | 67ms |
-| **P50 Response Latency** | 120ms |
-| **P95 Response Latency** | 202ms |
+SehatAI's defining innovation is the **deterministic-first safety architecture**. For life-threatening emergencies, the LLM is **never invoked** — the L0 lexicon engine uses pattern matching to detect emergencies in under 100 milliseconds, then displays pre-verified WHO/IFRC action cards. This eliminates three risks:
+1. **Hallucination** — pre-verified cards, no LLM generation
+2. **Latency** — 67ms vs 600-3000ms for LLM generation
+3. **Availability** — zero external dependencies, works offline
+
+For non-emergency queries, 7 LLM providers are cascaded with circuit-breaker failover to ensure zero downtime.
+
+---
+
+## Final Evaluation Results (100% Accuracy)
+
+| Metric | Value | Cases |
+|--------|-------|-------|
+| **Overall Accuracy** | **100%** | 139/139 |
+| **Emergency Recall** | **100%** | 35/35 |
+| **False Positive Rate** | **0%** | 0/47 |
+| **Refusal Correctness** | **100%** | 17/17 |
+| **Citation Rate** | **100%** | 8/8 |
+| **Under-triage Rate** | **0%** | 0/139 |
+| **Emergency Detection Latency** | **67ms** | L0 lexicon |
+| **P50 Response Latency** | **120ms** | Median |
+| **P95 Response Latency** | **202ms** | 95th percentile |
 
 ---
 
@@ -26,7 +38,7 @@ SehatAI (صحت AI) is a safety-first, trilingual AI health guidance and triage 
 | Field | Value |
 |-------|-------|
 | **1. Public repository URL** | `https://github.com/jamshidnabizada7-boop/SehatAI-` |
-| **2. Project summary** | (text above) |
-| **3. Presentation** | `SehatAI-Presentation.pptx` (15 MB) |
-| **4. Supporting attachments** | `SehatAI-Architecture.pdf` (261 KB) |
+| **2. Project summary** | (text above — 1,487 characters) |
+| **3. Presentation** | `SehatAI-Presentation.pptx` (15 MB, 12 slides) |
+| **4. Supporting attachments** | `SehatAI-Architecture.pdf` (264 KB, 6 pages) |
 | **5. Demo link** | `https://sehatai-woad.vercel.app` |
