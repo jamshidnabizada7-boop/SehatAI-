@@ -2133,7 +2133,17 @@ export async function runPipeline(
         citations = fb.citations;
       } else if (needsClarification) {
         finalContent = buildClarificationAnswer(clarificationReasons, lang);
-        citations = [];
+        // Even in clarification mode, include corpus citations if we have hits —
+        // the user may find the cited source helpful while they clarify.
+        const clarificationHits = hits.filter((h) => h.score > 0).slice(0, 2);
+        citations = clarificationHits.map((h) => ({
+          id: h.item.id,
+          title: h.item.source.title,
+          publisher: h.item.source.publisher,
+          url: h.item.source.url,
+          license: h.item.source.license,
+          verifiedAt: h.item.source.verifiedAt,
+        }));
       } else {
         const fb = buildDeterministicAnswer(hits, lang, 'connection');
         finalContent = fb.content;

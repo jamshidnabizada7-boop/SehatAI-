@@ -249,7 +249,7 @@ export function detectLanguage(text: string): { language: Lang; confidence: numb
 /** Split text into clauses by punctuation and contrasting conjunctions */
 export function splitIntoClauses(text: string): string[] {
   return text
-    .split(/[.,;:!?\n()\-—–]|(?:\b(?:but|however|although|though|except|lekin|magar|par|lekan|balkay|balke)\b)/i)
+    .split(/[.,;:!?\n()\-—–]|(?:\b(?:but|however|although|though|except|lekin|magar|par|lekan|balkay|balke|aur)\b|اور)/i)
     .map((c) => c.trim())
     .filter(Boolean);
 }
@@ -554,7 +554,14 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
   const informational = isInformationalQuery(text);
   if (retrievals.length > 0 && retrievals[0].score >= 2) {
     const base = retrievals[0].item.baseLevel;
-    level = informational ? minSeverity(base, 'ROUTINE') : minSeverity(base, 'URGENT');
+    // For informational queries:
+    // - SELF_CARE base → SELF_CARE (e.g. pregnancy nutrition advice)
+    // - ROUTINE/URGENT/EMERGENCY base → ROUTINE (cap informational at ROUTINE;
+    //   asking "what are the danger signs?" is never itself an emergency)
+    // For symptom reports: floor at URGENT to ensure clinical engagement.
+    level = informational
+      ? (base === 'SELF_CARE' ? 'SELF_CARE' : 'ROUTINE')
+      : minSeverity(base, 'URGENT');
     signals.push(`topic:${retrievals[0].item.topic}`);
   }
   if (informational) signals.push('informational-question');
@@ -626,10 +633,13 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
   }
   // special-population statement alone (no complaint) → general guidance at
   // ROUTINE (engage with guidance + questions, never a bare SELF_CARE shrug)
+  // BUT: if the query is informational AND has a corpus match with a lower
+  // base level (e.g. pregnancy nutrition = SELF_CARE), respect that level.
   const populationOnly =
     (ctx.populations.pregnancy || ctx.populations.child || ctx.populations.elderly) &&
     !hasActiveComplaint &&
-    ctx.conditions.length === 0;
+    ctx.conditions.length === 0 &&
+    !(informational && retrievals.length > 0 && retrievals[0].score >= 2 && retrievals[0].item.baseLevel === 'SELF_CARE');
   if (populationOnly) {
     level = minSeverity(maxSeverityLevel(level, 'ROUTINE'), 'ROUTINE');
     signals.push('population-context');

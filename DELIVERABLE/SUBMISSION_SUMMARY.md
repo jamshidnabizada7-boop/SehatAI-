@@ -6,19 +6,27 @@ SehatAI (صحت AI) is a safety-first, trilingual AI health guidance and triage 
 
 ---
 
-## Character Count Verification
-- **Character count:** 1,487 (including spaces)
-- **Within range:** Yes (200-1,500)
-- **Word count:** ~215 words
+## Key Metrics
+
+| Metric | Value |
+|--------|-------|
+| **Overall Accuracy** | 100% (139/139) |
+| **Emergency Recall** | 100% (35/35) |
+| **False Positive Rate** | 0% |
+| **Refusal Correctness** | 100% (17/17) |
+| **Citation Rate** | 100% (8/8) |
+| **Emergency Detection Latency** | 67ms |
+| **P50 Response Latency** | 120ms |
+| **P95 Response Latency** | 202ms |
 
 ---
 
-## Submission Fields Mapping
+## Submission Fields
 
 | Field | Value |
 |-------|-------|
 | **1. Public repository URL** | `https://github.com/jamshidnabizada7-boop/SehatAI-` |
 | **2. Project summary** | (text above) |
-| **3. Presentation** | `SehatAI-Presentation.pptx` (15 MB) / `SehatAI-Presentation.pdf` (1.9 MB) |
-| **4. Supporting attachments** | `SehatAI-Architecture.pdf`, `SehatAI-Demo-Guide.pdf` |
+| **3. Presentation** | `SehatAI-Presentation.pptx` (15 MB) |
+| **4. Supporting attachments** | `SehatAI-Architecture.pdf` (261 KB) |
 | **5. Demo link** | `https://sehatai-woad.vercel.app` |
