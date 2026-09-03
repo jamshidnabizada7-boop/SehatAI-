@@ -6,6 +6,7 @@ import {
   ClipboardCopy,
   HeartPulse,
   HelpCircle,
+  ImagePlus,
   Lightbulb,
   MessageCircleQuestion,
   RotateCcw,
@@ -34,7 +35,7 @@ import { getDailyTip } from '@/data/health-tips';
 import { followUpsFor } from '@/data/follow-ups';
 import { MessageBubble } from './message-bubble';
 import { VoiceInput } from './voice-input';
-import { ImageInput } from './image-input';
+import { ImageAnalysisModal } from './image-analysis-modal';
 import { VoiceStatusIndicator } from './voice-status-indicator';
 import { SummaryModal } from './summary-modal';
 import { ConversationHistoryDrawer } from './conversation-history-drawer';
@@ -84,6 +85,7 @@ export function ChatView() {
   const [symptomCheckerOpen, setSymptomCheckerOpen] = useState(false);
   const [firstAidOpen, setFirstAidOpen] = useState(false);
   const [tryAskingOpen, setTryAskingOpen] = useState(false);
+  const [imageAnalysisOpen, setImageAnalysisOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -540,17 +542,17 @@ export function ChatView() {
             offline={isOffline}
             onSend={doSend}
           />
-          <ImageInput
-            lang={uiLang}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setImageAnalysisOpen(true)}
             disabled={streaming}
-            onImage={(base64, preview) => {
-              // Insert a placeholder message indicating image attached
-              setInput((prev) => prev || (uiLang === 'ur' ? 'تصویر دیکھ کر رہنمائی کریں' : uiLang === 'roman' ? 'Tasveer dekh kar rehnumai karein' : 'Please analyze this image'));
-              toast({
-                description: uiLang === 'ur' ? 'تصویر منسلک ہو گئی' : uiLang === 'roman' ? 'Tasveer attach ho gayi' : 'Image attached',
-              });
-            }}
-          />
+            className="h-11 w-11 shrink-0 rounded-xl hover:border-violet-500/50 hover:text-violet-600"
+            aria-label={uiLang === 'ur' ? 'AI تصویری تجزیہ' : uiLang === 'roman' ? 'AI tasveeri tajziya' : 'AI image analysis'}
+          >
+            <ImagePlus className="h-5 w-5" aria-hidden />
+          </Button>
           {streaming ? (
             <Button
               type="button"
@@ -580,6 +582,7 @@ export function ChatView() {
       </div>
 
       <SummaryModal open={summaryOpen} onOpenChange={setSummaryOpen} lang={uiLang} />
+      <ImageAnalysisModal open={imageAnalysisOpen} onOpenChange={setImageAnalysisOpen} lang={uiLang} />
       <ConversationHistoryDrawer />
 
       {/* First-aid Modal */}
