@@ -1902,13 +1902,14 @@ export function calibrateTriage(params: {
   // 4) Conscious hypoglycemia (low sugar + shakiness/sweating) without
   //    unconsciousness, seizure or confusion → urgent same-day care,
   //    not emergency (emergency is for unconscious/seizing patients).
-  //    Non-null even at URGENT so the L1 emergency escalation path is blocked.
+  //    Returned even when the level is already URGENT so the L1 emergency
+  //    escalation path stays blocked.
   if (
     /(sugar|glucose)/i.test(text) &&
     /(kam|low|very low|gir rahi|drop)/i.test(text) &&
     !HYPO_ALARM.test(text)
   ) {
-    return downgradeIf('URGENT', 'calibration:hypoglycemia-conscious');
+    return { level: 'URGENT', signal: 'calibration:hypoglycemia-conscious' };
   }
 
   return null;
