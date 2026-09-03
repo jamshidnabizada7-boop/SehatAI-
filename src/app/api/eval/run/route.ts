@@ -19,8 +19,9 @@ export const maxDuration = 60;
 // The dashboard polls the step call until {done: true}.
 // ============================================================
 
-const BATCH_SIZE = 6;
-const CONCURRENCY = 4;
+const BATCH_SIZE = 3;
+const CONCURRENCY = 3;
+const CASE_TIMEOUT_MS = 20000;
 
 interface StoredSummary extends EvalRunSummary {
   status: 'running' | 'complete' | 'interrupted';
@@ -185,6 +186,26 @@ async function saveOutcomes(runId: string, outcomes: CaseOutcome[]): Promise<voi
   }
 }
 
+/** Run one case with a hard timeout so a hung LLM call cannot blow the request budget. */
+async function runCaseWithTimeout(c: GoldenCase): Promise<CaseOutcome> {
+  const outcome = await Promise.race([
+    runCase(c),
+    new Promise<CaseOutcome>((resolve) =>
+      setTimeout(() => resolve({
+        caseId: c.id,
+        category: c.category,
+        input: c.input,
+        language: c.language,
+        expected: JSON.stringify(c.expected),
+        actual: JSON.stringify({ error: 'case timeout' }),
+        passed: false,
+        latencyMs: CASE_TIMEOUT_MS,
+      }), CASE_TIMEOUT_MS),
+    ),
+  ]);
+  return outcome;
+}
+
 /** Process the next batch of pending cases for a run. Returns progress. */
 async function stepRun(runId: string) {
   const run = await db.evalRun.findUnique({ where: { id: runId } });
@@ -226,7 +247,7 @@ async function stepRun(runId: string) {
       const c = queue.shift();
       if (!c) break;
       try {
-        outcomes.push(await runCase(c));
+        outcomes.push(await runCaseWithTimeout(c));
       } catch {
         outcomes.push({
           caseId: c.id,
