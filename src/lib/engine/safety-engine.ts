@@ -1889,6 +1889,8 @@ export function calibrateTriage(params: {
 
   // 3) Child night cough / wheeze WITHOUT breathing distress, high fever or
   //    alarum terms → routine follow-up (asthma evaluation), not urgent.
+  //    Returned even when already ROUTINE so the L1 emergency escalation
+  //    path stays blocked (LLMs frequently over-escalate pediatric wheeze).
   if (
     params.child &&
     /(khansi|cough|seeti|wheeze|whistl)/i.test(text) &&
@@ -1896,7 +1898,7 @@ export function calibrateTriage(params: {
     !SEVERE_QUALIFIER.test(text) &&
     !ALARM_SIGNS.test(text)
   ) {
-    return downgradeIf('ROUTINE', 'calibration:child-cough');
+    return { level: 'ROUTINE', signal: 'calibration:child-cough' };
   }
 
   // 4) Conscious hypoglycemia (low sugar + shakiness/sweating) without
