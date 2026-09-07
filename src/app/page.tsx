@@ -7,7 +7,7 @@ import { useAppStore, type View } from '@/lib/store/app-store';
 import { resolveUiLang } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { AppHeader } from '@/components/app/app-header';
-import { BottomNav, SidebarNav } from '@/components/app/app-nav';
+import { SidebarNav, MobileNavDrawer } from '@/components/app/app-nav';
 import { AppFooter } from '@/components/app/app-footer';
 import { OfflineBanner } from '@/components/app/offline-banner';
 import { AuthBanner } from '@/components/auth/auth-banner';
@@ -173,7 +173,7 @@ function HomeContent() {
       </div>
 
       <AppFooter />
-      {!showLanding ? <BottomNav /> : null}
+      <MobileNavDrawer />
       <EmergencyOverlay />
       <GlobalSearch />
     </div>

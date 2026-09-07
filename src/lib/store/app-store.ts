@@ -28,6 +28,8 @@ interface AppState {
   guestMode: boolean;
   /** global search dialog open state */
   searchOpen: boolean;
+  /** mobile side navigation drawer open state (ChatGPT-style) */
+  navOpen: boolean;
   /** pending search query for the About view — set by the global search
    *  dialog when the user picks a first-aid or glossary result. The
    *  consuming section reads it once and clears it. */
@@ -40,6 +42,7 @@ interface AppState {
   ensureSession: () => string;
   setConversationId: (id: string | null) => void;
   setSearchOpen: (open: boolean) => void;
+  setNavOpen: (open: boolean) => void;
   setPendingAboutQuery: (query: { firstAid?: string; glossary?: string } | null) => void;
 }
 
@@ -67,6 +70,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   conversationId: null,
   guestMode: loadGuestMode(),
   searchOpen: false,
+  navOpen: false,
   pendingAboutQuery: null,
 
   setView: (view) => set({ view }),
@@ -92,5 +96,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   setConversationId: (conversationId) => set({ conversationId }),
   setSearchOpen: (searchOpen) => set({ searchOpen }),
+  setNavOpen: (navOpen) => set({ navOpen }),
   setPendingAboutQuery: (pendingAboutQuery) => set({ pendingAboutQuery }),
 }));

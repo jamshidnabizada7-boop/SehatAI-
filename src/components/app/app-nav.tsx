@@ -1,16 +1,20 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useSession } from 'next-auth/react';
+import { useEffect, useMemo } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import Link from 'next/link';
 import {
   Activity,
   BarChart3,
   Bell,
   Info,
+  LogIn,
+  LogOut,
   MapPin,
   MessageCircle,
   ClipboardList,
   Stethoscope,
+  X,
 } from 'lucide-react';
 import { useAppStore, type View } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
@@ -69,60 +73,49 @@ function useVisibleNavItems() {
   }, [session, status]);
 }
 
-/** Bottom tab navigation (mobile). 44px+ touch targets. */
-export function BottomNav() {
+interface NavListProps {
+  onNavigate?: () => void;
+}
+
+/** Shared nav item list (used by the desktop rail and the mobile drawer). */
+function NavList({ onNavigate, items }: NavListProps & { items: NavItem[] }) {
   const view = useAppStore((s) => s.view);
   const setView = useAppStore((s) => s.setView);
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
-  const items = useVisibleNavItems();
 
   return (
-    <nav
-      aria-label={t(uiLang, 'app.name')}
-      className="border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
-    >
-      <ul
-        className="grid"
-        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
-      >
-        {items.map((item) => {
-          const active = view === item.view;
-          return (
-            <li key={item.view}>
-              <button
-                type="button"
-                onClick={() => setView(item.view)}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'flex min-h-[60px] w-full flex-col items-center justify-center gap-0.5 px-0.5 py-2 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring',
-                  active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                <span
-                  className={cn(
-                    'flex h-7 w-11 items-center justify-center rounded-full transition-colors',
-                    active && 'bg-primary/12',
-                  )}
-                >
-                  <item.icon className="h-5 w-5" aria-hidden />
-                </span>
-                <span className="text-[10px] font-semibold leading-none">
-                  {t(uiLang, item.labelKey)}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <ul className="flex flex-col gap-1 p-3">
+      {items.map((item) => {
+        const active = view === item.view;
+        return (
+          <li key={item.view}>
+            <button
+              type="button"
+              onClick={() => {
+                setView(item.view);
+                onNavigate?.();
+              }}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring',
+                active
+                  ? 'bg-primary/12 text-primary'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+            >
+              <item.icon className="h-5 w-5 shrink-0" aria-hidden />
+              {t(uiLang, item.labelKey)}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
 /** Left sidebar rail (desktop). */
 export function SidebarNav() {
-  const view = useAppStore((s) => s.view);
-  const setView = useAppStore((s) => s.setView);
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
   const items = useVisibleNavItems();
@@ -132,29 +125,125 @@ export function SidebarNav() {
       aria-label={t(uiLang, 'app.name')}
       className="hidden w-52 shrink-0 border-e border-border bg-card/50 md:block"
     >
-      <ul className="flex flex-col gap-1 p-3">
-        {items.map((item) => {
-          const active = view === item.view;
-          return (
-            <li key={item.view}>
+      <NavList items={items} />
+    </nav>
+  );
+}
+
+/**
+ * Mobile side navigation drawer (ChatGPT-style).
+ * Slides in from the start edge over an overlay; holds the same nav items
+ * as the desktop rail plus sign-in / sign-out at the bottom.
+ */
+export function MobileNavDrawer() {
+  const navOpen = useAppStore((s) => s.navOpen);
+  const setNavOpen = useAppStore((s) => s.setNavOpen);
+  const langPref = useAppStore((s) => s.langPref);
+  const uiLang = resolveUiLang(langPref);
+  const items = useVisibleNavItems();
+  const { data: session, status } = useSession();
+  const isRtl = uiLang === 'ur';
+
+  // close on Escape
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setNavOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navOpen, setNavOpen]);
+
+  // lock body scroll while open
+  useEffect(() => {
+    if (!navOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [navOpen]);
+
+  if (!navOpen) return null;
+
+  const userName = (session?.user as { name?: string | null } | undefined)?.name ?? null;
+  const userEmail = (session?.user as { email?: string | null } | undefined)?.email ?? null;
+
+  return (
+    <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label={t(uiLang, 'app.name')}>
+      {/* overlay */}
+      <button
+        type="button"
+        aria-label={uiLang === 'ur' ? 'بند کریں' : uiLang === 'roman' ? 'Band karein' : 'Close menu'}
+        onClick={() => setNavOpen(false)}
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+      />
+      {/* panel */}
+      <div
+        className={cn(
+          'absolute bottom-0 top-0 flex w-72 max-w-[82vw] flex-col border-e border-border bg-background shadow-xl',
+          isRtl ? 'right-0' : 'left-0',
+        )}
+      >
+        {/* panel header */}
+        <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
+          <span className="flex items-center gap-1.5 text-base font-extrabold tracking-tight text-foreground">
+            Sehat<span className="text-primary">AI</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setNavOpen(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label={uiLang === 'ur' ? 'بند کریں' : uiLang === 'roman' ? 'Band karein' : 'Close menu'}
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+
+        {/* nav items */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <NavList items={items} onNavigate={() => setNavOpen(false)} />
+        </div>
+
+        {/* account footer — sign in / sign out */}
+        <div className="border-t border-border p-3">
+          {status === 'authenticated' ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex min-w-0 items-center gap-2.5 rounded-xl bg-muted/40 px-3 py-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                  {(userName ?? userEmail ?? 'U').slice(0, 1).toUpperCase()}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold text-foreground">{userName ?? 'User'}</span>
+                  {userEmail ? (
+                    <span className="block truncate text-[11px] text-muted-foreground">{userEmail}</span>
+                  ) : null}
+                </span>
+              </div>
               <button
                 type="button"
-                onClick={() => setView(item.view)}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring',
-                  active
-                    ? 'bg-primary/12 text-primary'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-                )}
+                onClick={() => {
+                  setNavOpen(false);
+                  void signOut({ callbackUrl: '/' });
+                }}
+                className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-500/10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring dark:text-red-400"
               >
-                <item.icon className="h-5 w-5 shrink-0" aria-hidden />
-                {t(uiLang, item.labelKey)}
+                <LogOut className="h-5 w-5 shrink-0" aria-hidden />
+                {t(uiLang, 'settings.signOutLabel')}
               </button>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+            </div>
+          ) : (
+            <Link
+              href="/auth/signin"
+              onClick={() => setNavOpen(false)}
+              className="flex min-h-11 w-full items-center gap-3 rounded-xl bg-primary px-3 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+            >
+              <LogIn className="h-5 w-5 shrink-0" aria-hidden />
+              {t(uiLang, 'auth.bannerCta')}
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

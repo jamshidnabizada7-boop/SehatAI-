@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTheme } from 'next-themes';
-import { Globe2, HeartPulse, Moon, Search, Sun, Wifi, WifiOff, Stethoscope, ShieldCheck, Clock, ShieldAlert } from 'lucide-react';
+import { Globe2, HeartPulse, Menu, Moon, Search, Sun, Wifi, WifiOff, Stethoscope, ShieldCheck, Clock, ShieldAlert } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -72,6 +72,7 @@ export function AppHeader() {
   const simulatedOffline = useAppStore((s) => s.simulatedOffline);
   const setSimulatedOffline = useAppStore((s) => s.setSimulatedOffline);
   const setSearchOpen = useAppStore((s) => s.setSearchOpen);
+  const setNavOpen = useAppStore((s) => s.setNavOpen);
   const uiLang = resolveUiLang(langPref);
   const { toast } = useToast();
 
@@ -94,6 +95,17 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="flex h-14 items-center gap-2 px-3 sm:px-4">
+        {/* mobile side-drawer toggle (ChatGPT-style) */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setNavOpen(true)}
+          className="h-10 w-10 shrink-0 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+          aria-label={uiLang === 'ur' ? 'مینو کھولیں' : uiLang === 'roman' ? 'Menu kholein' : 'Open menu'}
+        >
+          <Menu className="h-5 w-5" aria-hidden />
+        </Button>
+
         {/* logo */}
         <div className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm">
