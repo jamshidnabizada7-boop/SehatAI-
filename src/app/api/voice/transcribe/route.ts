@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getZAI } from '@/server/llm';
+import { getGroq } from '@/server/llm';
+import { toFile } from 'groq-sdk';
 import { detectLanguage } from '@/lib/engine/safety-engine';
 
 export const runtime = 'nodejs';
@@ -46,11 +47,24 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const zai = await getZAI();
+    const groq = getGroq();
+    if (!groq) {
+      return NextResponse.json({ text: '', error: 'transcription provider unavailable' });
+    }
+
+    const buffer = Buffer.from(audioBase64, 'base64');
+    const mimeType = typeof body.mimeType === 'string' && body.mimeType ? body.mimeType : 'audio/webm';
+    const ext = mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a' : mimeType.includes('wav') ? 'wav' : 'webm';
+    const file = await toFile(buffer, `audio.${ext}`, { type: mimeType });
+
     const resp = (await withTimeout(
-      zai.audio.asr.create({ file_base64: audioBase64 }),
+      groq.audio.transcriptions.create({
+        file,
+        model: 'whisper-large-v3',
+      }),
       45000,
     )) as { text?: string } | null;
+
     const text = typeof resp?.text === 'string' ? resp.text.trim() : '';
     if (!text) {
       return NextResponse.json({ text: '', error: 'transcription failed' });

@@ -1,4 +1,3 @@
-import ZAI from 'z-ai-web-dev-sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
 import { CORPUS } from '@/data/corpus';
@@ -12,7 +11,6 @@ import { CLARIFICATION_QUESTIONS } from '@/lib/engine/context-extraction';
 //   Tier 0: Primary Qwen/DashScope (qwen-plus, qwen-max, qwen-turbo)
 //   Tier 1: Ultra-fast Google Gemini (gemini-2.5-flash, gemini-2.5-flash-lite, gemini-3.5-flash-lite)
 //   Tier 2: Redundant high-speed Groq (qwen/qwen3.8-27b, openai/gpt-oss-120b, openai/gpt-oss-20b)
-//   Tier 2b: ZAI support tier
 //   Tier 3: Deterministic Offline Safety Engine
 //
 // In-Memory Circuit Breaker State Machine:
@@ -24,8 +22,6 @@ import { CLARIFICATION_QUESTIONS } from '@/lib/engine/context-extraction';
 // EVERY function here is fail-safe: it returns null on any
 // failure and NEVER throws unhandled exceptions to callers.
 // ============================================================
-
-type ZAIInstance = Awaited<ReturnType<typeof ZAI.create>>;
 
 export type ProviderTier = 'tier0_qwen' | 'tier1_gemini' | 'tier2_groq' | 'tier3_offline';
 export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
@@ -89,7 +85,6 @@ export class ProviderCircuitBreaker {
     this.initTier('tier_cerebras');
     this.initTier('tier_openrouter');
     this.initTier('tier_mistral');
-    this.initTier('tier_zai');
   }
 
   private initTier(tier: string): void {
@@ -307,8 +302,6 @@ export function isRateLimitError(err: unknown): boolean {
 // Client Singletons & Pools
 // ------------------------------------------------------------
 
-let zaiInstance: ZAIInstance | null = null;
-let zaiPromise: Promise<ZAIInstance> | null = null;
 let dashScopePool: ApiKeyPool | null = null;
 let geminiPool: ApiKeyPool | null = null;
 let groqPool: ApiKeyPool | null = null;
@@ -378,8 +371,6 @@ export function resetClientsForTesting(): void {
   cerebrasPool?.reset();
   openRouterPool?.reset();
   mistralPool?.reset();
-  zaiInstance = null;
-  zaiPromise = null;
   circuitBreaker.reset();
 }
 
@@ -444,19 +435,6 @@ export function getGroq(): Groq | null {
   return new Groq({ apiKey: keys[0] });
 }
 
-/** Singleton ZAI client (per server module graph). */
-export async function getZAI(): Promise<ZAIInstance | null> {
-  if (zaiInstance) return zaiInstance;
-  if (!zaiPromise) {
-    zaiPromise = ZAI.create()
-      .then((z) => {
-        zaiInstance = z;
-        return z;
-      })
-      .catch(() => null as unknown as ZAIInstance);
-  }
-  return zaiPromise;
-}
 
 // ------------------------------------------------------------
 // Non-Leaky Abort-Backed Timeout Mechanism
@@ -690,7 +668,7 @@ export function extractJsonBlock(text: string): string | null {
 
 // ------------------------------------------------------------
 // Multi-Provider Non-Streaming Chat Completion (`llmChat`)
-// Cascade: 1. Gemini -> 2. Groq -> 3. ZAI -> 4. null
+// Cascade: 0. DashScope -> 1. Gemini -> 2. Groq -> 3. null
 // ------------------------------------------------------------
 
 export async function llmChat(
@@ -994,41 +972,12 @@ export async function llmChat(
     }
   }
 
-  // Tier 6: ZAI Support Tier
-  if (circuitBreaker.isAvailable('tier_zai')) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const zai = await getZAI();
-        if (!zai) break;
-        const text = await runWithAbortTimeout(
-          async () => {
-            const completion = (await zai.chat.completions.create({
-              messages,
-              thinking: { type: 'disabled' },
-            })) as ChatCompletionLike | null;
-            return completion?.choices?.[0]?.message?.content;
-          },
-          Math.min(timeoutMs, 8000),
-          'zaiChat',
-          parentSignal,
-        );
-
-        if (typeof text === 'string' && text.trim().length > 0) {
-          circuitBreaker.recordSuccess('tier_zai');
-          return text.trim();
-        }
-      } catch (err) {
-        circuitBreaker.recordFailure('tier_zai', err);
-      }
-    }
-  }
-
   return null;
 }
 
 // ------------------------------------------------------------
 // Multi-Provider Streaming Chat Completion (`llmChatStream`)
-// Cascade: 1. Gemini -> 2. Groq -> 3. ZAI -> 4. null
+// Cascade: 0. DashScope -> 1. Gemini -> 2. Groq -> 3. null
 // ------------------------------------------------------------
 
 export async function llmChatStream(
@@ -1537,79 +1486,6 @@ export async function llmChatStream(
         circuitBreaker.recordFailure('tier_mistral', new Error('All Mistral keys exhausted'));
         break;
       }
-    }
-  }
-
-  // Tier 2b: ZAI Streaming
-  if (circuitBreaker.isAvailable('tier_zai')) {
-    try {
-      const zai = await getZAI();
-      if (zai) {
-        const fullText = await runWithAbortTimeout(
-          async (signal) => {
-            const result = (await zai.chat.completions.create({
-              messages,
-              stream: true,
-              thinking: { type: 'disabled' },
-            })) as unknown;
-
-            if (result && typeof (result as ReadableStream).getReader === 'function') {
-              let full = '';
-              const reader = (result as ReadableStream<Uint8Array>).getReader();
-              const decoder = new TextDecoder();
-              let buffer = '';
-              while (true) {
-                if (signal.aborted) {
-                  reader.cancel().catch(() => {});
-                  throw new Error('ZAI stream aborted');
-                }
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop() ?? '';
-                for (const rawLine of lines) {
-                  const line = rawLine.trim();
-                  if (!line.startsWith('data:')) continue;
-                  const payload = line.slice(5).trim();
-                  if (!payload || payload === '[DONE]') continue;
-                  try {
-                    const obj = JSON.parse(payload) as {
-                      choices?: { delta?: { content?: string } }[];
-                    };
-                    const delta = obj.choices?.[0]?.delta?.content;
-                    if (typeof delta === 'string' && delta.length > 0) {
-                      full += delta;
-                      onDelta(delta);
-                    }
-                  } catch {
-                    // skip malformed SSE line
-                  }
-                }
-              }
-              return full.trim();
-            }
-
-            const completion = result as ChatCompletionLike | null;
-            const text = completion?.choices?.[0]?.message?.content;
-            if (typeof text === 'string' && text.trim().length > 0) {
-              onDelta(text);
-              return text.trim();
-            }
-            return '';
-          },
-          timeoutMs,
-          'zaiStream',
-          parentSignal,
-        );
-
-        if (fullText && fullText.trim().length > 0) {
-          circuitBreaker.recordSuccess('tier_zai');
-          return fullText;
-        }
-      }
-    } catch (err) {
-      circuitBreaker.recordFailure('tier_zai', err);
     }
   }
 

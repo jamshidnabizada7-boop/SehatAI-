@@ -27,7 +27,7 @@ import {
   llmChat,
   llmChatStream,
   llmJSON,
-} from '../src/server/llm';
+} from '../../src/server/llm';
 
 let passed = 0;
 let failed = 0;
@@ -306,7 +306,6 @@ async function runTests() {
     // Trip circuits to simulate total provider outage
     circuitBreaker.forceState('tier1_gemini', 'OPEN', 60000);
     circuitBreaker.forceState('tier2_groq', 'OPEN', 60000);
-    circuitBreaker.forceState('tier_zai', 'OPEN', 60000);
 
     const chatResult = await llmChat([{ role: 'user', content: 'test query' }], { timeoutMs: 100 });
     assert(chatResult === null, 'llmChat safely returns null when providers are tripped');

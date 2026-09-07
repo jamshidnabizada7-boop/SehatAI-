@@ -68,3 +68,4 @@ db/*.db
 
 .vercel
 .env*
+.agents/
