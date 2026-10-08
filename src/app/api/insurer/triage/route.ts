@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Run L0 triage (deterministic, fast)
-  const l0Result = runL0Triage(symptoms, 'auto');
+  const l0Result = runL0Triage(symptoms);
   const redFlags = matchRedFlags(symptoms);
 
   // Determine triage level
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       shortCircuited: l0Result.shortCircuited,
       signals: l0Result.signals,
       hasRedFlags,
-      redFlagCategories: redFlags.map((r) => r.category),
+      redFlagCategories: redFlags.map((r) => r.pattern.category),
     },
     recommendation: {
       careSetting: setting.setting,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getServerSession } from '@/lib/auth';
 import { llmJSON } from '@/server/llm';
 import { hasDosePattern } from '@/server/pipeline/run';
 import type { Citation, Differential, DifferentialEntry, DoctorSummary, DrugCheckSummary, Lang, ResponseConfidence, TriageLevel } from '@/lib/types';
@@ -185,9 +186,9 @@ function sanitizeSummary(raw: unknown, conversationId: string, lang: Lang): Doct
   return summary;
 }
 
-/** POST /api/summary {conversationId, language?} → DoctorSummary */
+/** POST /api/summary {conversationId, language?, sessionId?} → DoctorSummary */
 export async function POST(req: NextRequest) {
-  let body: { conversationId?: unknown; language?: unknown };
+  let body: { conversationId?: unknown; language?: unknown; sessionId?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -207,6 +208,34 @@ export async function POST(req: NextRequest) {
     if (!conversation) {
       return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
     }
+
+    const session = await getServerSession();
+    const sessionUserId = session?.user && (session.user as { id?: string }).id;
+    const isOwnerUser = Boolean(sessionUserId && conversation.userId === sessionUserId);
+    const isAdmin = session?.user && (session.user as { role?: string }).role === 'admin';
+    const guestSessionId = typeof body.sessionId === 'string' ? body.sessionId.trim() : '';
+    const isGuestOwner = Boolean(!conversation.userId && guestSessionId && conversation.sessionToken === guestSessionId);
+
+    let isAuthorizedDoctor = false;
+    if (session?.user && (session.user as { role?: string }).role === 'doctor' && sessionUserId) {
+      const doctorProfile = await db.doctorProfile.findUnique({ where: { userId: sessionUserId } });
+      if (doctorProfile?.pmdcVerifiedAt && conversation.userId) {
+        const consent = await db.patientConsentForDoctor.findFirst({
+          where: { doctorId: doctorProfile.id, patientId: conversation.userId, revokedAt: null },
+        });
+        const appointment = await db.appointment.findFirst({
+          where: { doctorProfileId: doctorProfile.id, patientId: conversation.userId },
+        });
+        if (consent || appointment) {
+          isAuthorizedDoctor = true;
+        }
+      }
+    }
+
+    if (!isOwnerUser && !isGuestOwner && !isAdmin && !isAuthorizedDoctor) {
+      return NextResponse.json({ error: 'Unauthorized to access this summary' }, { status: 403 });
+    }
+
     const rows = conversation.messages as unknown as MessageRow[];
     if (rows.length === 0) {
       return NextResponse.json({ error: 'conversation has no messages' }, { status: 404 });

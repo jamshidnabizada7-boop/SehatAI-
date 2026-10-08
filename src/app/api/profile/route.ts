@@ -47,11 +47,11 @@ export async function GET() {
   const profile = sanitizeProfileServer({
     ageBand: row.ageBand as any,
     sex: row.sex as any,
-    conditions: safeParseArr(row.conditions),
-    allergies: safeParseArr(row.allergies),
-    medications: safeParseArr(row.medications),
+    conditions: safeParseArr<string>(row.conditions),
+    allergies: safeParseArr<string>(row.allergies),
+    medications: safeParseArr<string>(row.medications),
     pregnant: row.pregnant,
-    iceContacts: safeParseArr(row.iceContacts),
+    iceContacts: safeParseArr<any>(row.iceContacts),
     updatedAt: row.updatedAt.getTime(),
   });
   await db.auditLog.create({
@@ -130,11 +130,11 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({ ok: true, updatedAt: row.updatedAt.toISOString() });
 }
 
-function safeParseArr(s: string | null | undefined): unknown[] {
+function safeParseArr<T = unknown>(s: string | null | undefined): T[] {
   if (!s) return [];
   try {
     const p = JSON.parse(s);
-    return Array.isArray(p) ? p : [];
+    return Array.isArray(p) ? (p as T[]) : [];
   } catch {
     return [];
   }

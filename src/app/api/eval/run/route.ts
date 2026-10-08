@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
 import { GOLDEN_SET, GOLDEN_SUITE_VERSION } from '@/data/eval-golden';
 import { runPipeline, ruleRefuses } from '@/server/pipeline/run';
 import type { EvalRunSummary, GoldenCase, TriageLevel } from '@/lib/types';
@@ -314,6 +315,13 @@ async function stepRun(runId: string) {
 
 /** POST /api/eval/run — no body: start a run. Body {runId}: process next batch. */
 export async function POST(req: NextRequest) {
+  try {
+    await requireAdmin();
+  } catch (e: unknown) {
+    const status = (e as { status?: number }).status ?? 403;
+    return NextResponse.json({ error: (e as Error).message || 'Forbidden — admin role required' }, { status });
+  }
+
   let body: { runId?: string } = {};
   try {
     body = await req.json();
@@ -385,6 +393,12 @@ export async function POST(req: NextRequest) {
 
 /** GET /api/eval/run — is a run currently processing? (kept for compatibility) */
 export async function GET() {
+  try {
+    await requireAdmin();
+  } catch (e: unknown) {
+    const status = (e as { status?: number }).status ?? 403;
+    return NextResponse.json({ error: (e as Error).message || 'Forbidden — admin role required' }, { status });
+  }
   const running = await db.evalRun.findFirst({ where: { summary: { contains: '"status":"running"' } } });
   return NextResponse.json({ running: Boolean(running) });
 }

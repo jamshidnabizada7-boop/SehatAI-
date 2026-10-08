@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getServerSession } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
 interface ConversationRow {
   id: string;
+  userId: string | null;
   sessionToken: string;
   language: string;
   offline: boolean;
@@ -38,8 +40,9 @@ interface ChatMessageDto {
 
 /**
  * GET /api/conversations/[id]?sessionId=X
- * Returns the conversation messages (verifies ownership via sessionId).
- * Triage/citation metadata is loaded but content is returned verbatim.
+ * Returns the conversation messages.
+ * Authorized for conversation owner, guest creator (matching sessionId when userId is null),
+ * admin, or active doctor with patient consent/appointment.
  */
 export async function GET(
   req: NextRequest,
@@ -49,9 +52,6 @@ export async function GET(
     const { id } = await ctx.params;
     const sp = req.nextUrl.searchParams;
     const sessionId = (sp.get('sessionId') ?? '').trim();
-    if (!sessionId) {
-      return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
-    }
 
     const conv = (await db.conversation.findUnique({
       where: { id },
@@ -63,8 +63,30 @@ export async function GET(
     if (!conv) {
       return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
     }
-    if (conv.sessionToken !== sessionId) {
-      // don't leak other sessions' content
+
+    const session = await getServerSession();
+    const sessionUserId = session?.user && (session.user as { id?: string }).id;
+    const isOwnerUser = Boolean(sessionUserId && conv.userId === sessionUserId);
+    const isAdmin = session?.user && (session.user as { role?: string }).role === 'admin';
+    const isGuestOwner = Boolean(!conv.userId && sessionId && conv.sessionToken === sessionId);
+
+    let isAuthorizedDoctor = false;
+    if (session?.user && (session.user as { role?: string }).role === 'doctor' && sessionUserId) {
+      const doctorProfile = await db.doctorProfile.findUnique({ where: { userId: sessionUserId } });
+      if (doctorProfile?.pmdcVerifiedAt && conv.userId) {
+        const consent = await db.patientConsentForDoctor.findFirst({
+          where: { doctorId: doctorProfile.id, patientId: conv.userId, revokedAt: null },
+        });
+        const appointment = await db.appointment.findFirst({
+          where: { doctorProfileId: doctorProfile.id, patientId: conv.userId },
+        });
+        if (consent || appointment) {
+          isAuthorizedDoctor = true;
+        }
+      }
+    }
+
+    if (!isOwnerUser && !isGuestOwner && !isAdmin && !isAuthorizedDoctor) {
       return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
     }
 
@@ -96,6 +118,7 @@ export async function GET(
 /**
  * DELETE /api/conversations/[id]?sessionId=X
  * Permanently deletes a conversation and all its messages (cascade).
+ * Allowed for conversation owner, guest creator (matching sessionId when userId is null), or admin.
  */
 export async function DELETE(
   req: NextRequest,
@@ -105,15 +128,22 @@ export async function DELETE(
     const { id } = await ctx.params;
     const sp = req.nextUrl.searchParams;
     const sessionId = (sp.get('sessionId') ?? '').trim();
-    if (!sessionId) {
-      return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
-    }
 
     const existing = await db.conversation.findUnique({
       where: { id },
-      select: { sessionToken: true },
+      select: { sessionToken: true, userId: true },
     });
-    if (!existing || existing.sessionToken !== sessionId) {
+    if (!existing) {
+      return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
+    }
+
+    const session = await getServerSession();
+    const sessionUserId = session?.user && (session.user as { id?: string }).id;
+    const isOwnerUser = Boolean(sessionUserId && existing.userId === sessionUserId);
+    const isAdmin = session?.user && (session.user as { role?: string }).role === 'admin';
+    const isGuestOwner = Boolean(!existing.userId && sessionId && existing.sessionToken === sessionId);
+
+    if (!isOwnerUser && !isGuestOwner && !isAdmin) {
       return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
     }
 
@@ -123,3 +153,4 @@ export async function DELETE(
     return NextResponse.json({ error: 'failed to delete conversation' }, { status: 500 });
   }
 }
+

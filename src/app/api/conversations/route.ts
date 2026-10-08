@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getServerSession } from '@/lib/auth';
 import {
   shapeConversationListItem,
   sortConversationsNewestFirst,
@@ -30,19 +31,30 @@ interface MessageRow {
  * GET /api/conversations?sessionId=X&limit=50
  * Lists conversations for a session, newest first, with a preview of the
  * last user message + the highest triage level reached.
+ * If authenticated, lists all conversations belonging to the user.
+ * If guest, requires sessionId and scopes to unowned (userId is null) conversations.
  */
 export async function GET(req: NextRequest) {
   try {
     const sp = req.nextUrl.searchParams;
     const sessionId = (sp.get('sessionId') ?? '').trim();
-    if (!sessionId) {
-      return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
-    }
     const limitRaw = parseInt(sp.get('limit') ?? '50', 10);
     const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : 50;
 
+    const session = await getServerSession();
+    let whereClause: { userId: string } | { sessionToken: string; userId: null };
+
+    if (session?.user && (session.user as { id?: string }).id) {
+      whereClause = { userId: (session.user as { id: string }).id };
+    } else {
+      if (!sessionId) {
+        return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
+      }
+      whereClause = { sessionToken: sessionId, userId: null };
+    }
+
     const rows = (await db.conversation.findMany({
-      where: { sessionToken: sessionId },
+      where: whereClause,
       orderBy: { updatedAt: 'desc' },
       take: limit,
       include: {
@@ -60,3 +72,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ conversations: [], count: 0, error: 'failed to load conversations' }, { status: 200 });
   }
 }
+

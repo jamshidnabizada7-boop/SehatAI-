@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
 // In-memory key cache (dev only — use env vars in production)
 let cachedKeys: { publicKey: string; privateKey: string } | null = null;
 
-function getVapidKeys() {
+function getVapidKeys(): { publicKey: string; privateKey: string } {
   // Use env vars if available
   if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     return {
@@ -23,7 +23,7 @@ function getVapidKeys() {
     cachedKeys = webpush.generateVAPIDKeys();
     console.log('[push] Generated VAPID keys (dev) — set VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY for production');
   }
-  return cachedKeys;
+  return cachedKeys!;
 }
 
 // Configure web-push
