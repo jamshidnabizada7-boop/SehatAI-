@@ -1,0 +1,1032 @@
+'use client';
+
+// ============================================================
+// Care Connect §8 — consultation workspace (patient + doctor).
+// One component, role-aware:
+//  - secure messaging (SSE realtime, §21/§25) with corrections
+//  - translation with original preserved + risk confirmation (§34/§35)
+//  - join call (signed token, low-bandwidth fallback, §26/§28)
+//  - doctor: AI handoff review (§31), private notes (§42),
+//    SOAP draft, prescription builder with safety checks (§39/§40)
+//  - patient: view patient summary, prescription, review (§44), refund (§49)
+// ============================================================
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAppStore } from '@/lib/store/app-store';
+import { resolveUiLang, t } from '@/lib/i18n';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { formatMoney } from '@/lib/care/money';
+import { cn } from '@/lib/utils';
+import { Phone, Video, MessageSquare, CheckCheck, Languages, ShieldAlert, FileText, Star, Undo2, CreditCard, Mic, MicOff, VideoOff, PhoneOff, Loader2 } from 'lucide-react';
+
+export interface ConsultationDetail {
+  id: string;
+  type: 'TEXT' | 'AUDIO' | 'VIDEO';
+  status: string;
+  priceMinor: number | null;
+  currency: string | null;
+  scheduledAt: string | null;
+  windowClosesAt: string | null;
+  doctor: { id: string; name: string; specialty: string };
+  patient: { id: string; name: string };
+  payment: { status: string; amountMinor: number; currency: string } | null;
+  handoff: { status: string; content: string | null; label: string | null } | null;
+  notes: Array<{ id: string; type: string; visibility: string; content: string }>;
+  prescriptions: Array<{ id: string; status: string; issuedAt: string | null; items: Array<{ medicine: string; strength?: string | null; frequency?: string | null; durationDays?: number | null; instructions?: string | null }> }>;
+  review: { overall: number; comment: string | null } | null;
+  viewerRole: 'PATIENT' | 'DOCTOR' | 'STAFF';
+  canMessage: boolean;
+}
+export interface ChatMsg {
+  id: string;
+  senderRole: string;
+  senderName: string;
+  kind: string;
+  body: string;
+  language: string;
+  correctedById?: string | null;
+  translations?: Array<{ id: string; translatedText: string; targetLanguage: string; needsConfirmation: boolean }>;
+  createdAt: string;
+}
+
+export function ConsultationWorkspace({ consultationId, onBack }: { consultationId: string; onBack: () => void }) {
+  const langPref = useAppStore((s) => s.langPref);
+  const uiLang = resolveUiLang(langPref);
+  const T = useCallback((key: Parameters<typeof t>[1]) => t(uiLang, key), [uiLang]);
+
+  const [detail, setDetail] = useState<ConsultationDetail | null>(null);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [draft, setDraft] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showTranslate, setShowTranslate] = useState<Record<string, boolean>>({});
+  const [activeCall, setActiveCall] = useState<ActiveCallData | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const isDoctor = detail?.viewerRole === 'DOCTOR';
+  const isPatient = detail?.viewerRole === 'PATIENT';
+
+  // §27/§28 — WebRTC join-call event listener
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const customEvent = e as CustomEvent<ActiveCallData>;
+      if (customEvent.detail) {
+        setActiveCall(customEvent.detail);
+      }
+    };
+    window.addEventListener('care:join-call', handler);
+    return () => window.removeEventListener('care:join-call', handler);
+  }, []);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/care/consultations/${consultationId}`);
+      const json = await res.json();
+      if (!res.ok) { setError(json.error ?? 'ERROR'); return; }
+      setDetail(json.consultation);
+      const msgsRes = await fetch(`/api/care/consultations/${consultationId}/messages`);
+      const msgsJson = await msgsRes.json();
+      setMessages(msgsJson.messages ?? []);
+    } catch {
+      setError('NETWORK');
+    }
+  }, [consultationId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  // §25 — realtime stream
+  useEffect(() => {
+    if (!detail) return;
+    const es = new EventSource(`/api/care/consultations/${consultationId}/messages/stream`);
+    es.onmessage = (ev) => {
+      try {
+        const event = JSON.parse(ev.data) as { kind: string };
+        if (event.kind === 'message') {
+          void fetch(`/api/care/consultations/${consultationId}/messages`)
+            .then((r) => r.json())
+            .then((j) => setMessages(j.messages ?? []));
+        }
+      } catch { /* ignore malformed */ }
+    };
+    return () => es.close();
+  }, [consultationId, detail]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  async function action(payload: Record<string, unknown>) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/care/consultations/${consultationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok) setError(json.error ?? 'ERROR');
+      await load();
+    } catch {
+      setError('NETWORK');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function send() {
+    if (!draft.trim()) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/care/consultations/${consultationId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: draft }),
+      });
+      const json = await res.json();
+      if (!res.ok) setError(json.error ?? 'ERROR');
+      else setDraft('');
+      const msgsRes = await fetch(`/api/care/consultations/${consultationId}/messages`);
+      setMessages((await msgsRes.json()).messages ?? []);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function translate(messageId: string) {
+    try {
+      const res = await fetch(`/api/care/consultations/${consultationId}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId, targetLanguage: isDoctor ? 'en' : uiLang === 'ur' ? 'en' : 'ur' }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setMessages((msgs) => msgs.map((m) => (m.id === messageId ? { ...m, translations: [...(m.translations ?? []), json.translation] } : m)));
+        setShowTranslate((s) => ({ ...s, [messageId]: true }));
+      } else setError(json.error ?? 'ERROR');
+    } catch { setError('NETWORK'); }
+  }
+
+  async function confirmTranslation(translationId: string) {
+    await fetch(`/api/care/consultations/${consultationId}/translate`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ translationId }),
+    });
+    setShowTranslate((s) => ({ ...s, [translationId]: true }));
+  }
+
+  async function joinCall() {
+    try {
+      const res = await fetch(`/api/care/consultations/${consultationId}/join`, { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error ?? 'ERROR'); return; }
+      setActiveCall(json);
+      window.dispatchEvent(new CustomEvent('care:join-call', { detail: json }));
+      setError(null);
+    } catch { setError('NETWORK'); }
+  }
+
+  async function handlePay() {
+    setBusy(true);
+    setError(null);
+    try {
+      const idemKey = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `pay-${Date.now()}`;
+      const res = await fetch('/api/care/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idemKey,
+        },
+        body: JSON.stringify({ consultationId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? 'PAYMENT_FAILED');
+        return;
+      }
+
+      // In development / mock provider: feed signed webhook confirm (§100)
+      const isMock =
+        json.payment?.provider === 'mock' ||
+        json.provider?.toLowerCase().includes('mock') ||
+        json.provider?.toLowerCase().includes('test') ||
+        (json.checkoutUrl && (json.checkoutUrl.startsWith('/') || json.checkoutUrl.includes('mock_payment')));
+      if (isMock && json.payment?.id) {
+        const confirmRes = await fetch('/api/care/payments/mock/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentId: json.payment.id, outcome: 'succeeded' }),
+        });
+        if (confirmRes.ok) {
+          await load();
+          return;
+        } else {
+          const cJson = await confirmRes.json().catch(() => ({}));
+          setError(cJson.error ?? 'MOCK_CONFIRM_FAILED');
+          return;
+        }
+      }
+
+      // In production with real provider: redirect to hosted checkoutUrl (§57)
+      if (json.checkoutUrl) {
+        window.location.href = json.checkoutUrl;
+      } else {
+        await load();
+      }
+    } catch {
+      setError('NETWORK');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function requestRefund() {
+    setBusy(true);
+    try {
+      const res = await fetch('/api/care/refunds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ consultationId, reason: 'patient_cancelled' }),
+      });
+      const json = await res.json();
+      if (!res.ok) setError(json.error ?? 'ERROR');
+      await load();
+    } finally { setBusy(false); }
+  }
+
+  async function submitReview(rating: number) {
+    setBusy(true);
+    try {
+      await fetch(`/api/care/consultations/${consultationId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ overall: rating }),
+      });
+      await load();
+    } finally { setBusy(false); }
+  }
+
+  if (!detail) {
+    return <div className="p-6 text-sm text-muted-foreground">{error ?? 'Loading…'}</div>;
+  }
+
+  const statusColors: Record<string, string> = {
+    COMPLETED: 'bg-green-100 text-green-800',
+    IN_PROGRESS: 'bg-blue-100 text-blue-800',
+    WAITING: 'bg-amber-100 text-amber-800',
+    REQUESTED: 'bg-amber-100 text-amber-800',
+    SCHEDULED: 'bg-blue-100 text-blue-800',
+    PAYMENT_PENDING: 'bg-muted text-muted-foreground',
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      <header className="flex flex-wrap items-center gap-2 border-b p-3">
+        <Button variant="ghost" size="sm" onClick={onBack} className="min-h-11" aria-label="back">
+          <Undo2 className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-semibold">
+            {isDoctor ? detail.patient.name : detail.doctor.name}
+            <span className="text-muted-foreground"> · {detail.doctor.specialty}</span>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {detail.type} · {formatMoney({ amountMinor: detail.priceMinor ?? 0, currency: detail.currency ?? 'PKR' })}
+            {detail.payment ? ` · payment: ${detail.payment.status}` : ''}
+          </div>
+        </div>
+        <Badge className={cn('text-[11px]', statusColors[detail.status])}>{detail.status}</Badge>
+        {isPatient && detail.status === 'PAYMENT_PENDING' && (!detail.payment || detail.payment.status !== 'PAID') ? (
+          <Button size="sm" className="min-h-11 font-semibold" disabled={busy} onClick={() => void handlePay()}>
+            <CreditCard className="mr-1 h-4 w-4" />
+            {T('care.payAndBook')}
+          </Button>
+        ) : null}
+        {detail.type !== 'TEXT' && detail.status !== 'PAYMENT_PENDING' ? (
+          <Button size="sm" className="min-h-11" onClick={() => void joinCall()}>
+            {detail.type === 'VIDEO' ? <Video className="mr-1 h-4 w-4" /> : <Phone className="mr-1 h-4 w-4" />}
+            {T('care.joinCall')}
+          </Button>
+        ) : null}
+      </header>
+
+      {error ? <p role="alert" className="bg-destructive/10 p-2 text-center text-xs text-destructive">{error}</p> : null}
+
+      {/* §10 — Patient payment prompt banner */}
+      {isPatient && detail.status === 'PAYMENT_PENDING' && (!detail.payment || detail.payment.status !== 'PAID') ? (
+        <Card className="mx-3 mt-3 border-amber-300 bg-amber-50/60 dark:bg-amber-950/20">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div>
+              <p className="font-semibold text-amber-900 dark:text-amber-200">{T('care.paymentPending')}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatMoney({ amountMinor: detail.priceMinor ?? 0, currency: detail.currency ?? 'PKR' })}
+              </p>
+            </div>
+            <Button disabled={busy} onClick={() => void handlePay()} className="min-h-11 font-semibold">
+              <CreditCard className="mr-1 h-4 w-4" />
+              {T('care.payAndBook')}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Doctor tools: AI handoff + notes + prescriptions */}
+      {isDoctor ? <DoctorTools consultationId={consultationId} detail={detail} T={T} onChanged={load} /> : null}
+
+      {/* Patient tools: prescription + summary view */}
+      {isPatient && detail.prescriptions.length > 0 ? (
+        <Card className="mx-3 mt-3">
+          <CardContent className="p-3">
+            <div className="mb-1 flex items-center gap-1 text-sm font-semibold"><FileText className="h-4 w-4" /> {T('care.prescription')}</div>
+            {detail.prescriptions.map((p) => (
+              <div key={p.id} className="text-xs">
+                {p.items.map((item, i) => (
+                  <div key={i} className="text-muted-foreground">
+                    💊 {item.medicine} {item.strength ?? ''} {item.frequency ?? ''} {item.durationDays ? `· ${item.durationDays}d` : ''}
+                  </div>
+                ))}
+                <Badge variant="outline" className="mt-1 text-[10px]">{p.status}</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* §21 secure messages */}
+      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <ul className="flex flex-col gap-2" aria-label={T('care.consultation')}>
+          {messages.map((m) => {
+            const mine = (isDoctor && m.senderRole === 'DOCTOR') || (isPatient && m.senderRole === 'PATIENT') || m.senderRole === 'SYSTEM';
+            return (
+              <li key={m.id} className={cn('max-w-[85%]', mine ? 'self-end' : 'self-start')}>
+                <div className={cn('rounded-2xl px-3 py-2 text-sm', m.senderRole === 'SYSTEM' ? 'bg-muted text-muted-foreground text-xs' : mine ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
+                  {m.kind === 'correction' ? '✏️ ' : ''}{m.body}
+                </div>
+                {m.senderRole !== 'SYSTEM' ? (
+                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {m.correctedById ? <span className="italic">corrected</span> : null}
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-0.5 hover:underline"
+                      onClick={() => void translate(m.id)}
+                    >
+                      <Languages className="h-3 w-3" /> {T('care.translate')}
+                    </button>
+                    {(m.translations ?? []).map((tr) => (
+                      <span key={tr.id} className="inline-flex items-center gap-1 rounded bg-accent px-1">
+                        {showTranslate[tr.id] ? m.body : tr.translatedText}
+                        {tr.needsConfirmation ? (
+                          <button type="button" className="text-amber-600 hover:underline" onClick={() => void confirmTranslation(tr.id)} title={T('care.confirmTranslation')}>
+                            <ShieldAlert className="h-3 w-3 inline" /> ✓
+                          </button>
+                        ) : null}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
+          <div ref={bottomRef} />
+        </ul>
+      </div>
+
+      {/* composer / window state */}
+      {detail.canMessage ? (
+        <footer className="flex items-center gap-2 border-t p-3">
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
+            placeholder={T('care.messagePlaceholder')}
+            className="min-h-11"
+            disabled={busy}
+          />
+          <Button onClick={() => void send()} disabled={busy || !draft.trim()} className="min-h-11">
+            <MessageSquare className="mr-1 h-4 w-4" />{T('care.sendMessage')}
+          </Button>
+        </footer>
+      ) : (
+        <footer className="border-t p-3 text-center text-xs text-muted-foreground">{T('care.windowClosed')}</footer>
+      )}
+
+      {/* lifecycle actions */}
+      <footer className="flex flex-wrap gap-2 border-t p-3">
+        {isDoctor && ['REQUESTED'].includes(detail.status) ? (
+          <>
+            <Button size="sm" className="min-h-11" disabled={busy} onClick={() => void action({ action: 'accept' })}>{T('care.accept')}</Button>
+            <Button size="sm" variant="outline" className="min-h-11" disabled={busy} onClick={() => void action({ action: 'decline' })}>{T('care.decline')}</Button>
+          </>
+        ) : null}
+        {isDoctor && ['WAITING', 'SCHEDULED'].includes(detail.status) ? (
+          <Button size="sm" className="min-h-11" disabled={busy} onClick={() => void action({ action: 'complete' })}>{T('care.completeConsultation')}</Button>
+        ) : null}
+        {isPatient && detail.status === 'PAYMENT_PENDING' && (!detail.payment || detail.payment.status !== 'PAID') ? (
+          <Button size="sm" className="min-h-11 font-semibold" disabled={busy} onClick={() => void handlePay()}>
+            <CreditCard className="mr-1 h-4 w-4" />
+            {T('care.payAndBook')}
+          </Button>
+        ) : null}
+        {isPatient && ['PAYMENT_PENDING', 'PAID', 'REQUESTED', 'SCHEDULED', 'WAITING'].includes(detail.status) ? (
+          <Button size="sm" variant="outline" className="min-h-11" disabled={busy} onClick={() => void action({ action: 'cancel', reason: 'patient_cancelled' })}>{T('care.cancel')}</Button>
+        ) : null}
+        {isPatient && detail.status === 'COMPLETED' && !detail.review ? (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground">{T('care.rateConsultation')}:</span>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} type="button" onClick={() => void submitReview(n)} aria-label={`${n} stars`} className="min-h-11 px-1">
+                <Star className={cn('h-5 w-5', n <= 4 ? 'text-amber-500' : 'text-amber-500')} />
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {isPatient && detail.review ? (
+          <Badge variant="secondary"><CheckCheck className="mr-1 h-3 w-3" />{detail.review.overall}★</Badge>
+        ) : null}
+        {isPatient && ['PAYMENT_PENDING', 'PAID', 'REQUESTED', 'SCHEDULED', 'WAITING', 'COMPLETED'].includes(detail.status) ? (
+          <Button size="sm" variant="ghost" className="min-h-11" disabled={busy} onClick={() => void requestRefund()}>{T('care.requestRefund')}</Button>
+        ) : null}
+      </footer>
+
+      {activeCall ? (
+        <CareCallModal
+          call={activeCall}
+          consultationId={consultationId}
+          initialType={detail.type}
+          onClose={() => setActiveCall(null)}
+          T={T}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------
+// Doctor clinical tools: AI handoff review + private notes + Rx builder
+// ------------------------------------------------------------
+function DoctorTools({ consultationId, detail, T, onChanged }: {
+  consultationId: string;
+  detail: ConsultationDetail;
+  T: (key: Parameters<typeof t>[1]) => string;
+  onChanged: () => Promise<void>;
+}) {
+  const [tab, setTab] = useState<'handoff' | 'note' | 'rx' | null>(null);
+  const [handoff, setHandoff] = useState<{ status: string; label: string; content: Record<string, unknown> } | null>(null);
+  const [note, setNote] = useState('');
+  const [noteVisibility, setNoteVisibility] = useState<'PRIVATE_NOTE' | 'PATIENT_SUMMARY'>('PRIVATE_NOTE');
+  const [rxItems, setRxItems] = useState<Array<{ medicine: string; strength: string; frequency: string; durationDays: number }>>([{ medicine: '', strength: '', frequency: '', durationDays: 5 }]);
+  const [safety, setSafety] = useState<Record<string, unknown> | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const loadHandoff = useCallback(async () => {
+    const res = await fetch(`/api/care/consultations/${consultationId}/handoff`);
+    const json = await res.json();
+    if (res.ok) setHandoff(json.handoff);
+  }, [consultationId]);
+
+  useEffect(() => {
+    if (tab === 'handoff' && !handoff) void loadHandoff();
+  }, [tab, handoff, loadHandoff]);
+
+  async function handoffAction(action: 'ACCEPT' | 'EDIT' | 'REJECT') {
+    setBusy(true);
+    try {
+      await fetch(`/api/care/consultations/${consultationId}/handoff`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      await loadHandoff();
+      await onChanged();
+    } finally { setBusy(false); }
+  }
+
+  async function saveNote() {
+    setBusy(true);
+    try {
+      await fetch(`/api/care/consultations/${consultationId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'SOAP', visibility: noteVisibility, content: note }),
+      });
+      setNote('');
+      await onChanged();
+    } finally { setBusy(false); }
+  }
+
+  async function draftRx() {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/care/consultations/${consultationId}/prescriptions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: rxItems.filter((i) => i.medicine.trim()) }),
+      });
+      const json = await res.json();
+      setSafety(res.ok ? json.safety : { error: json.error });
+      await onChanged();
+    } finally { setBusy(false); }
+  }
+
+  async function signRx(prescriptionId: string, needsOverride: boolean) {
+    setBusy(true);
+    try {
+      let overrideReason: string | undefined;
+      if (needsOverride) {
+        overrideReason = window.prompt('HIGH-severity warnings — document the reason for overriding (logged):') ?? undefined;
+        if (!overrideReason) return;
+      }
+      const res = await fetch(`/api/care/consultations/${consultationId}/prescriptions`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sign', prescriptionId, overrideReason }),
+      });
+      const json = await res.json();
+      if (!res.ok) window.alert(json.error);
+      await onChanged();
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="border-b p-2">
+      <div className="flex gap-1">
+        <Button size="sm" variant={tab === 'handoff' ? 'default' : 'outline'} className="min-h-11" onClick={() => setTab(tab === 'handoff' ? null : 'handoff')}>🤖 {T('care.aiHandoff')}</Button>
+        <Button size="sm" variant={tab === 'note' ? 'default' : 'outline'} className="min-h-11" onClick={() => setTab(tab === 'note' ? null : 'note')}>📝 {T('care.clinicalNote')}</Button>
+        <Button size="sm" variant={tab === 'rx' ? 'default' : 'outline'} className="min-h-11" onClick={() => setTab(tab === 'rx' ? null : 'rx')}>💊 {T('care.prescription')}</Button>
+      </div>
+
+      {tab === 'handoff' && handoff ? (
+        <Card className="mt-2">
+          <CardContent className="p-3 text-xs">
+            <Badge variant="outline" className="mb-2 border-amber-500 text-amber-600">{handoff.label}</Badge>
+            <pre className="whitespace-pre-wrap rounded bg-muted/50 p-2 text-[11px]">{JSON.stringify(handoff.content, null, 2)}</pre>
+            <div className="mt-2 flex gap-1">
+              <Button size="sm" className="min-h-11" disabled={busy} onClick={() => void handoffAction('ACCEPT')}>{T('care.acceptHandoff')}</Button>
+              <Button size="sm" variant="outline" className="min-h-11" disabled={busy} onClick={() => void handoffAction('EDIT')}>{T('care.editHandoff')}</Button>
+              <Button size="sm" variant="ghost" className="min-h-11" disabled={busy} onClick={() => void handoffAction('REJECT')}>{T('care.decline')}</Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {tab === 'note' ? (
+        <Card className="mt-2">
+          <CardContent className="p-3">
+            <div className="mb-1 flex items-center gap-2 text-xs">
+              <select
+                value={noteVisibility}
+                onChange={(e) => setNoteVisibility(e.target.value as 'PRIVATE_NOTE' | 'PATIENT_SUMMARY')}
+                className="rounded border bg-background p-1 text-xs"
+                aria-label="note visibility"
+              >
+                <option value="PRIVATE_NOTE">{T('care.clinicalNote')}</option>
+                <option value="PATIENT_SUMMARY">{T('care.patientSummary')}</option>
+              </select>
+            </div>
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="text-xs" placeholder="S / O / A / P…" />
+            <Button size="sm" className="mt-2 min-h-11" disabled={busy || !note.trim()} onClick={() => void saveNote()}>Save {T('care.summary')}</Button>
+            {detail.notes.length > 0 ? (
+              <ul className="mt-2 flex flex-col gap-1 text-[11px] text-muted-foreground">
+                {detail.notes.map((n) => (
+                  <li key={n.id} className="rounded bg-muted/50 p-1">
+                    <b>{n.visibility === 'PRIVATE_NOTE' ? '🔒' : '👁'} {n.type}</b>: {n.content.slice(0, 160)}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {tab === 'rx' ? (
+        <Card className="mt-2">
+          <CardContent className="p-3 text-xs">
+            {rxItems.map((item, i) => (
+              <div key={i} className="mb-2 grid grid-cols-4 gap-1">
+                <Input value={item.medicine} onChange={(e) => setRxItems((arr) => arr.map((x, j) => (j === i ? { ...x, medicine: e.target.value } : x)))} placeholder="medicine" className="min-h-11 text-xs" />
+                <Input value={item.strength} onChange={(e) => setRxItems((arr) => arr.map((x, j) => (j === i ? { ...x, strength: e.target.value } : x)))} placeholder="500 mg" className="min-h-11 text-xs" />
+                <Input value={item.frequency} onChange={(e) => setRxItems((arr) => arr.map((x, j) => (j === i ? { ...x, frequency: e.target.value } : x)))} placeholder="2x/day" className="min-h-11 text-xs" />
+                <Input type="number" value={item.durationDays} onChange={(e) => setRxItems((arr) => arr.map((x, j) => (j === i ? { ...x, durationDays: Number(e.target.value) } : x)))} placeholder="days" className="min-h-11 text-xs" />
+              </div>
+            ))}
+            <div className="flex gap-1">
+              <Button size="sm" variant="outline" className="min-h-11" disabled={busy} onClick={() => setRxItems((a) => [...a, { medicine: '', strength: '', frequency: '', durationDays: 5 }])}>+ item</Button>
+              <Button size="sm" className="min-h-11" disabled={busy} onClick={() => void draftRx()}>{T('care.safetyCheck')}</Button>
+            </div>
+            {safety ? (
+              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-muted/50 p-2 text-[10px]">{JSON.stringify(safety, null, 2)}</pre>
+            ) : null}
+            {detail.prescriptions.filter((p) => p.status === 'DRAFT').map((p) => (
+              <Button key={p.id} size="sm" className="mt-2 min-h-11" disabled={busy} onClick={() => void signRx(p.id, JSON.stringify(safety ?? {}).includes('"HIGH"'))}>
+                ✍️ {T('care.signPrescription')}
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  );
+}
+
+// ============================================================
+// Care Connect §27/§28 — WebRTC video/audio call modal
+// Reuses the WebRTC signaling protocol (mini-services/video-signal)
+// with full fallback ladder: VIDEO → AUDIO → TEXT.
+// ============================================================
+export interface ActiveCallData {
+  callId: string;
+  roomId: string;
+  provider?: string;
+  token?: string;
+  expiresAt?: string;
+  signalingUrl?: string | null;
+  iceServers?: Array<{ urls: string }>;
+  recording?: boolean;
+}
+
+function CareCallModal({
+  call,
+  consultationId,
+  initialType,
+  onClose,
+  T,
+}: {
+  call: ActiveCallData;
+  consultationId: string;
+  initialType: 'AUDIO' | 'VIDEO' | 'TEXT';
+  onClose: () => void;
+  T: (key: Parameters<typeof t>[1]) => string;
+}) {
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const disconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [mode, setMode] = useState<'VIDEO' | 'AUDIO'>(initialType === 'AUDIO' ? 'AUDIO' : 'VIDEO');
+  const [status, setStatus] = useState<'connecting' | 'waiting' | 'connected' | 'fell_back' | 'ended'>('connecting');
+  const [micOn, setMicOn] = useState(true);
+  const [camOn, setCamOn] = useState(initialType !== 'AUDIO');
+  const [statusText, setStatusText] = useState('Connecting…');
+
+  const cleanup = useCallback(() => {
+    if (disconnectTimerRef.current) {
+      clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
+    }
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
+    }
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (wsRef.current) {
+      try {
+        wsRef.current.send(JSON.stringify({ type: 'leave', room: call.roomId }));
+      } catch { /* ignore */ }
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+  }, [call.roomId]);
+
+  const reportState = useCallback(async (state: 'ACTIVE' | 'ENDED' | 'FAILED' | 'FELL_BACK', fallbackTo?: 'AUDIO' | 'TEXT', reason?: string) => {
+    try {
+      await fetch(`/api/care/consultations/${consultationId}/calls`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          callId: call.callId,
+          state,
+          fallbackTo,
+          reason,
+        }),
+      });
+    } catch { /* best effort */ }
+  }, [call.callId, consultationId]);
+
+  const handleLeave = useCallback(async () => {
+    cleanup();
+    setStatus('ended');
+    await reportState('ENDED');
+    onClose();
+  }, [cleanup, reportState, onClose]);
+
+  const handleFallbackToAudio = useCallback(async () => {
+    setMode('AUDIO');
+    setCamOn(false);
+    if (localStreamRef.current) {
+      localStreamRef.current.getVideoTracks().forEach((t) => {
+        t.enabled = false;
+        t.stop();
+      });
+    }
+    setStatus('fell_back');
+    setStatusText('Switched to audio-only connection (fallback)');
+    await reportState('FELL_BACK', 'AUDIO', 'bandwidth_or_connection_failure');
+  }, [reportState]);
+
+  const handleFallbackToText = useCallback(async () => {
+    cleanup();
+    await reportState('FELL_BACK', 'TEXT', 'call_unreachable');
+    onClose();
+  }, [cleanup, reportState, onClose]);
+
+  const createPeerConnection = useCallback((stream: MediaStream) => {
+    const iceServers = call.iceServers && call.iceServers.length > 0
+      ? call.iceServers
+      : [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }];
+
+    const pc = new RTCPeerConnection({ iceServers });
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate && wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'ice', candidate: event.candidate }));
+      }
+    };
+
+    pc.ontrack = (event) => {
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+      }
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = event.streams[0];
+      }
+      setStatus('connected');
+      setStatusText('Connected');
+      if (disconnectTimerRef.current) {
+        clearTimeout(disconnectTimerRef.current);
+        disconnectTimerRef.current = null;
+      }
+      void reportState('ACTIVE');
+    };
+
+    pc.onconnectionstatechange = () => {
+      const s = pc.connectionState;
+      if (s === 'connected') {
+        setStatus('connected');
+        setStatusText('Connected');
+        if (disconnectTimerRef.current) {
+          clearTimeout(disconnectTimerRef.current);
+          disconnectTimerRef.current = null;
+        }
+      } else if (s === 'disconnected') {
+        setStatusText('Reconnecting…');
+        if (!disconnectTimerRef.current) {
+          disconnectTimerRef.current = setTimeout(() => {
+            if (mode === 'VIDEO') {
+              void handleFallbackToAudio();
+            } else {
+              void handleFallbackToText();
+            }
+          }, 5000);
+        }
+      } else if (s === 'failed') {
+        setStatusText('Connection failed');
+        if (mode === 'VIDEO') {
+          void handleFallbackToAudio();
+        } else {
+          void handleFallbackToText();
+        }
+      }
+    };
+
+    stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+    return pc;
+  }, [call.iceServers, mode, handleFallbackToAudio, handleFallbackToText, reportState]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function start() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: mode === 'VIDEO' ? { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } : false,
+          audio: true,
+        });
+        if (!active) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        localStreamRef.current = stream;
+        if (localVideoRef.current && mode === 'VIDEO') {
+          localVideoRef.current.srcObject = stream;
+        }
+
+        const wsUrl = call.signalingUrl
+          ? call.signalingUrl
+          : (typeof window !== 'undefined'
+              ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/?XTransformPort=3004`
+              : 'ws://localhost:3004');
+
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          ws.send(JSON.stringify({ type: 'join', room: call.roomId }));
+          setStatus('waiting');
+          setStatusText('Waiting for other participant…');
+        };
+
+        ws.onmessage = async (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            switch (msg.type) {
+              case 'room-full': {
+                if (!pcRef.current) {
+                  const pc = createPeerConnection(stream);
+                  pcRef.current = pc;
+                  const offer = await pc.createOffer();
+                  await pc.setLocalDescription(offer);
+                  ws.send(JSON.stringify({ type: 'offer', sdp: offer }));
+                }
+                break;
+              }
+              case 'peer-joined':
+                break;
+              case 'offer': {
+                if (!pcRef.current) {
+                  const pc = createPeerConnection(stream);
+                  pcRef.current = pc;
+                }
+                await pcRef.current.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+                const answer = await pcRef.current.createAnswer();
+                await pcRef.current.setLocalDescription(answer);
+                ws.send(JSON.stringify({ type: 'answer', sdp: answer }));
+                break;
+              }
+              case 'answer': {
+                if (pcRef.current) {
+                  await pcRef.current.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+                }
+                break;
+              }
+              case 'ice': {
+                if (pcRef.current && msg.candidate) {
+                  await pcRef.current.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(() => {});
+                }
+                break;
+              }
+              case 'peer-left':
+              case 'leave': {
+                setStatus('waiting');
+                setStatusText('Other participant left the call');
+                if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+                if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+                break;
+              }
+            }
+          } catch { /* ignore parse error */ }
+        };
+
+        ws.onerror = () => {
+          setStatusText('Signaling connection error');
+        };
+      } catch (_err) {
+        setStatusText('Could not access microphone or camera');
+      }
+    }
+
+    void start();
+
+    return () => {
+      active = false;
+      cleanup();
+    };
+  }, [call.roomId, call.signalingUrl, mode, createPeerConnection, cleanup]);
+
+  function toggleMic() {
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach((t) => {
+        t.enabled = !micOn;
+      });
+      setMicOn(!micOn);
+    }
+  }
+
+  function toggleCam() {
+    if (localStreamRef.current) {
+      localStreamRef.current.getVideoTracks().forEach((t) => {
+        t.enabled = !camOn;
+      });
+      setCamOn(!camOn);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Telemedicine call">
+      <div className="relative flex flex-col h-[85vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-neutral-900 text-white shadow-2xl">
+        <header className="flex items-center justify-between border-b border-neutral-800 p-4">
+          <div className="flex items-center gap-2">
+            <span className={cn('h-3 w-3 rounded-full', status === 'connected' ? 'bg-green-500 animate-pulse' : 'bg-amber-500')} />
+            <span className="text-sm font-semibold">{mode === 'VIDEO' ? 'Care Video Call' : 'Care Audio Call'}</span>
+            <Badge variant="outline" className="text-xs border-neutral-700 text-neutral-300">{statusText}</Badge>
+          </div>
+          <Button variant="destructive" size="sm" onClick={() => void handleLeave()} className="min-h-10">
+            <PhoneOff className="mr-1 h-4 w-4" /> Leave
+          </Button>
+        </header>
+
+        {/* Media viewports */}
+        <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
+          {mode === 'VIDEO' ? (
+            <>
+              <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
+              <video
+                ref={localVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className={cn(
+                  'absolute bottom-4 right-4 h-32 w-44 rounded-xl border-2 border-neutral-700 object-cover shadow-lg',
+                  !camOn && 'hidden'
+                )}
+              />
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-800 text-neutral-300">
+                <Phone className="h-10 w-10 animate-bounce" />
+              </div>
+              <p className="text-sm text-neutral-400">Audio call in progress</p>
+              <audio ref={remoteAudioRef} autoPlay />
+            </div>
+          )}
+
+          {status !== 'connected' && mode === 'VIDEO' ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/60 p-4 text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-neutral-400 mb-2" />
+              <p className="text-sm font-medium">{statusText}</p>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Control toolbar */}
+        <footer className="flex items-center justify-center gap-3 border-t border-neutral-800 p-4 bg-neutral-950">
+          <Button
+            variant={micOn ? 'secondary' : 'destructive'}
+            size="icon"
+            className="h-12 w-12 rounded-full"
+            onClick={toggleMic}
+            title={micOn ? 'Mute Mic' : 'Unmute Mic'}
+          >
+            {micOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+          </Button>
+
+          {mode === 'VIDEO' ? (
+            <Button
+              variant={camOn ? 'secondary' : 'destructive'}
+              size="icon"
+              className="h-12 w-12 rounded-full"
+              onClick={toggleCam}
+              title={camOn ? 'Turn Off Camera' : 'Turn On Camera'}
+            >
+              {camOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+            </Button>
+          ) : null}
+
+          {mode === 'VIDEO' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-11 border-neutral-700 text-neutral-200"
+              onClick={() => void handleFallbackToAudio()}
+              title="Switch to Audio Only"
+            >
+              <Phone className="mr-1 h-4 w-4" /> Fallback to Audio
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-11 border-neutral-700 text-neutral-200"
+              onClick={() => void handleFallbackToText()}
+              title="Switch to Messaging"
+            >
+              <MessageSquare className="mr-1 h-4 w-4" /> Fallback to Text
+            </Button>
+          )}
+
+          <Button
+            variant="destructive"
+            size="icon"
+            className="h-12 w-12 rounded-full"
+            onClick={() => void handleLeave()}
+            title="End Call"
+          >
+            <PhoneOff className="h-5 w-5" />
+          </Button>
+        </footer>
+      </div>
+    </div>
+  );
+}

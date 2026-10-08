@@ -28,7 +28,8 @@ type LabelKey =
   | 'nav.about'
   | 'nav.myHealth'
   | 'nav.observability'
-  | 'nav.doctorCopilot';
+  | 'nav.doctorCopilot'
+  | 'nav.careConnect';
 
 interface NavItem {
   view: View;
@@ -49,6 +50,7 @@ const NAV_ITEMS: NavItem[] = [
   { view: 'reminders', icon: Bell, labelKey: 'nav.reminders', patientOnly: true },
   { view: 'facilities', icon: MapPin, labelKey: 'nav.facilities' },
   { view: 'my-health', icon: ClipboardList, labelKey: 'nav.myHealth', patientOnly: true },
+  { view: 'care', icon: Stethoscope, labelKey: 'nav.careConnect' },
   { view: 'doctor-copilot', icon: Stethoscope, labelKey: 'nav.doctorCopilot', doctorOnly: true, requireActiveDoctor: true },
   { view: 'dashboard', icon: BarChart3, labelKey: 'nav.dashboard', adminOnly: true },
   { view: 'observability', icon: Activity, labelKey: 'nav.observability', adminOnly: true },

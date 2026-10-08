@@ -1,0 +1,104 @@
+// Care Connect §18 — Doctor profile detail for patients.
+// Shows services/prices, robust rating summary (§45), languages,
+// jurisdictions licensed in, and continuity marker (§65).
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { getCareSession } from '@/lib/care/care-auth';
+import { robustRating } from '@/server/care/marketplace';
+import { careFlag } from '@/lib/care/flags';
+export const runtime = 'nodejs';
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const enabled = await careFlag('CARE_ENABLED');
+  if (!enabled) return NextResponse.json({ error: 'CARE_DISABLED' }, { status: 404 });
+  const { id } = await params;
+
+  const doctor = await db.doctorProfile.findUnique({
+    where: { id },
+    include: {
+      user: { select: { name: true, accountStatus: true } },
+      services: { where: { enabled: true }, orderBy: { priceMinor: 'asc' } },
+      careReviews: {
+        where: { state: 'PUBLISHED' },
+        include: { patient: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      },
+      jurisdictions: { where: { status: 'LICENSED' }, select: { countryCode: true } },
+      _count: { select: { consultations: { where: { status: 'COMPLETED' } } } },
+    },
+  });
+  if (!doctor || doctor.pmdcVerifiedAt == null) {
+    return NextResponse.json({ error: 'DOCTOR_NOT_FOUND' }, { status: 404 });
+  }
+
+  const session = await getCareSession();
+  let favorite = false;
+  let consultedBefore = false;
+  if (session) {
+    favorite = (await db.doctorFavorite.findUnique({
+      where: { patientId_doctorProfileId: { patientId: session.id, doctorProfileId: id } },
+    })) != null;
+    consultedBefore =
+      (await db.consultation.count({
+        where: { patientId: session.id, doctorProfileId: id, status: 'COMPLETED' },
+      })) > 0;
+  }
+
+  return NextResponse.json({
+    doctor: {
+      id: doctor.id,
+      name: doctor.user.name,
+      specialty: doctor.specialty,
+      subSpecialty: doctor.subSpecialty,
+      bio: doctor.bio,
+      yearsExperience: doctor.yearsExperience,
+      facilityName: doctor.facilityName,
+      facilityCity: doctor.facilityCity,
+      country: doctor.country,
+      languages: safeArray(doctor.languages),
+      gender: doctor.gender,
+      avatarUrl: doctor.avatarUrl,
+      pmdcVerified: true,
+      onlineNow: doctor.onlineNow && doctor.onlineNowUntil != null && doctor.onlineNowUntil > new Date(),
+      licensedIn: doctor.jurisdictions.map((j) => j.countryCode),
+      services: doctor.services.map((s) => ({
+        id: s.id,
+        type: s.type,
+        title: s.title,
+        priceMinor: s.priceMinor,
+        currency: s.currency,
+        durationMinutes: s.durationMinutes,
+        windowHours: s.windowHours,
+      })),
+      rating: robustRating(doctor.careReviews.map((r) => ({ overall: r.overall, createdAt: r.createdAt }))),
+      completedConsultations: doctor._count.consultations,
+      reviews: doctor.careReviews.map((r) => ({
+        id: r.id,
+        rating: r.overall,
+        communication: r.communication,
+        helpfulness: r.helpfulness,
+        waitTime: r.waitTime,
+        comment: r.comment,
+        patientName: maskName(r.patient.name),
+        at: r.createdAt,
+      })),
+      consultedBefore,
+      favorite,
+    },
+  });
+}
+
+function safeArray(v: string | null): string[] {
+  try {
+    const p = JSON.parse(v ?? '[]');
+    return Array.isArray(p) ? p.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+function maskName(name: string | null): string {
+  if (!name) return 'Patient';
+  const parts = name.trim().split(/\s+/);
+  return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`;
+}

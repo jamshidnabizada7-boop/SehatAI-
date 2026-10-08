@@ -13,7 +13,16 @@ async function main() {
   // tests rely on).
   const existingDocs = await db.document.findMany({ select: { slug: true } });
   const existingSlugs = new Set(existingDocs.map((d) => d.slug));
-  for (const item of CORPUS) {
+  // Dedupe by id (keep first occurrence) — a handful of ids appear twice in
+  // the raw array while Document.slug is unique. The in-memory corpus used by
+  // retrieval is intentionally left untouched to preserve ranking behavior.
+  const seenIds = new Set<string>();
+  const corpusUnique = CORPUS.filter((item) => {
+    if (seenIds.has(item.id)) return false;
+    seenIds.add(item.id);
+    return true;
+  });
+  for (const item of corpusUnique) {
     if (existingSlugs.has(item.id)) {
       await db.document.update({
         where: { slug: item.id },
@@ -45,13 +54,13 @@ async function main() {
       });
     }
   }
-  const codeIds = new Set(CORPUS.map((c) => c.id));
+  const codeIds = new Set(corpusUnique.map((c) => c.id));
   for (const slug of existingSlugs) {
     if (!codeIds.has(slug)) {
       await db.document.delete({ where: { slug } });
     }
   }
-  console.log(`Documents synced (${CORPUS.length} in code)`);
+  console.log(`Documents synced (${corpusUnique.length} in code)`);
 
   // Facilities — idempotent SYNC: upserts every facility from FACILITIES_SEED
   // (so newly added Alkhidmat Foundation hospitals, labs, and blood banks appear)

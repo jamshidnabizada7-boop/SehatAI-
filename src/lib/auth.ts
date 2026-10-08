@@ -46,11 +46,23 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
         const email = credentials.email.trim().toLowerCase();
+        // Care Connect §56 — per-account brute-force limiter (DB-backed,
+        // additive; failure of the limiter never blocks legitimate logins).
+        try {
+          const { rateLimit } = await import('@/lib/care/rate-limit');
+          const rl = await rateLimit(`login:${email}`, 10, 300);
+          if (!rl.allowed) return null;
+        } catch { /* fail-open */ }
         const user = await prisma.user.findUnique({ where: { email } });
         // To prevent user enumeration, return null both for "no user" and "bad password"
         if (!user || !user.passwordHash) return null;
         const ok = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!ok) return null;
+        // Care Connect §55 — enforce TOTP when enrolled (doctors/finance/admins).
+        if (user.totpSecret && user.totpEnabledAt) {
+          const { verifyTotp } = await import('@/lib/care/totp');
+          if (!verifyTotp(user.totpSecret, String((credentials as { totp?: string }).totp ?? ''))) return null;
+        }
         // Audit log
         try {
           await prisma.auditLog.create({

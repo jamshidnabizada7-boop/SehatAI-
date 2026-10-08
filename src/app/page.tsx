@@ -20,11 +20,12 @@ import { ObservabilityView } from '@/components/dashboard/observability-view';
 import { DoctorCopilotView } from '@/components/doctor-copilot/doctor-copilot-view';
 import { AboutView } from '@/components/about/about-view';
 import { MyHealthView } from '@/components/my-health/my-health-view';
+import { CareConnectView } from '@/components/care/care-connect-view';
 import { EmergencyOverlay } from '@/components/chat/emergency-overlay';
 import { GlobalSearch } from '@/components/app/global-search';
 
-const PATIENT_VIEWS: View[] = ['chat', 'reminders', 'facilities', 'about', 'my-health'];
-const DOCTOR_VIEWS: View[] = ['chat', 'facilities', 'doctor-copilot', 'about'];
+const PATIENT_VIEWS: View[] = ['chat', 'reminders', 'facilities', 'about', 'my-health', 'care'];
+const DOCTOR_VIEWS: View[] = ['chat', 'facilities', 'doctor-copilot', 'about', 'care'];
 const ADMIN_VIEWS: View[] = ['chat', 'facilities', 'doctor-copilot', 'dashboard', 'observability', 'about'];
 
 const DEFAULT_VIEW: Record<string, View> = {
@@ -166,6 +167,7 @@ function HomeContent() {
                 {safeView === 'doctor-copilot' ? <DoctorCopilotView /> : null}
                 {safeView === 'about' ? <AboutView /> : null}
                 {safeView === 'my-health' ? <MyHealthView /> : null}
+                {safeView === 'care' ? <CareConnectView /> : null}
               </>
             )}
           </div>
