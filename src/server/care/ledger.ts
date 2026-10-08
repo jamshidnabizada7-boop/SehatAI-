@@ -64,11 +64,10 @@ export async function getOrCreateAccount(opts: {
   tx?: Parameters<Parameters<typeof db.$transaction>[0]>[0];
 }) {
   const code = ACCOUNT_CODE[opts.kind](opts.currency.toUpperCase(), opts.ownerDoctorProfileId);
-  const client = opts.tx ?? db;
-  const existing = await client.ledgerAccount.findUnique({ where: { code } });
+  const existing = await db.ledgerAccount.findUnique({ where: { code } });
   if (existing) return existing;
   try {
-    return await client.ledgerAccount.create({
+    return await db.ledgerAccount.create({
       data: {
         code,
         kind: opts.kind,
@@ -77,8 +76,8 @@ export async function getOrCreateAccount(opts: {
       },
     });
   } catch {
-    // concurrent creation — re-read
-    return client.ledgerAccount.findUniqueOrThrow({ where: { code } });
+    // concurrent creation — re-read from db
+    return db.ledgerAccount.findUniqueOrThrow({ where: { code } });
   }
 }
 
@@ -107,65 +106,94 @@ export async function postTransaction(input: PostTransactionInput): Promise<{ po
     }
   }
 
-  try {
-    return await db.$transaction(async (tx) => {
-      // Idempotency probe: leg keys are deterministic `${key}:${index}` —
-      // if leg 0 exists, this transaction was already posted → replay, skip.
-      const existing = await tx.ledgerEntry.findFirst({
-        where: { idempotencyKey: `${input.idempotencyKey}:0` },
-        select: { id: true },
+  // Pre-resolve all accounts outside interactive transaction to prevent
+  // PostgreSQL 25P02 aborted transaction block errors under concurrent posting
+  const accountsByCode = new Map<string, { id: string }>();
+  for (const leg of input.legs) {
+    const code = ACCOUNT_CODE[leg.accountKind](leg.currency.toUpperCase(), leg.ownerDoctorProfileId);
+    if (!accountsByCode.has(code)) {
+      const account = await getOrCreateAccount({
+        kind: leg.accountKind,
+        currency: leg.currency,
+        ownerDoctorProfileId: leg.ownerDoctorProfileId ?? null,
       });
-      if (existing) return { posted: false, reference: input.reference };
+      accountsByCode.set(code, account);
+    }
+  }
 
-      for (const [index, leg] of input.legs.entries()) {
-        const account = await getOrCreateAccount({
-          kind: leg.accountKind,
-          currency: leg.currency,
-          ownerDoctorProfileId: leg.ownerDoctorProfileId ?? null,
-          tx,
-        });
-        await tx.ledgerEntry.create({
-          data: {
-            accountId: account.id,
-            direction: leg.direction,
-            amountMinor: leg.amountMinor,
-            currency: leg.currency.toUpperCase(),
-            consultationId: input.consultationId,
-            paymentId: input.paymentId,
-            payoutId: input.payoutId,
-            refundId: input.refundId,
-            reference: input.reference,
-            idempotencyKey: `${input.idempotencyKey}:${index}`,
-            memo: leg.memo,
-          },
-        });
-      }
-      return { posted: true, reference: input.reference };
-    }, { timeout: 15_000 });
-  } catch (err: any) {
-    if (err && typeof err === 'object' && err.code === 'P2002') {
-      const target = err.meta?.target;
-      const isTargetIdempotencyKey =
-        (Array.isArray(target) && target.includes('idempotencyKey')) ||
-        (typeof target === 'string' &&
-          (target === 'idempotencyKey' ||
-           target === 'LedgerEntry_idempotencyKey_key' ||
-           target.endsWith('_idempotencyKey_key')));
-
-      if (isTargetIdempotencyKey) {
-        // Double-check: verify that a ledger entry with this exact idempotencyKey actually exists in the DB.
-        // If it does not exist, then this is not an intended idempotency skip and must be thrown.
-        const confirmed = await db.ledgerEntry.findFirst({
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await db.$transaction(async (tx) => {
+        // Idempotency probe: leg keys are deterministic `${key}:${index}` —
+        // if leg 0 exists, this transaction was already posted → replay, skip.
+        const existing = await tx.ledgerEntry.findFirst({
           where: { idempotencyKey: `${input.idempotencyKey}:0` },
           select: { id: true },
         });
-        if (confirmed) {
-          return { posted: false, reference: input.reference };
+        if (existing) return { posted: false, reference: input.reference };
+
+        for (const [index, leg] of input.legs.entries()) {
+          const code = ACCOUNT_CODE[leg.accountKind](leg.currency.toUpperCase(), leg.ownerDoctorProfileId);
+          const account = accountsByCode.get(code)!;
+          await tx.ledgerEntry.create({
+            data: {
+              accountId: account.id,
+              direction: leg.direction,
+              amountMinor: leg.amountMinor,
+              currency: leg.currency.toUpperCase(),
+              consultationId: input.consultationId,
+              paymentId: input.paymentId,
+              payoutId: input.payoutId,
+              refundId: input.refundId,
+              reference: input.reference,
+              idempotencyKey: `${input.idempotencyKey}:${index}`,
+              memo: leg.memo,
+            },
+          });
+        }
+        return { posted: true, reference: input.reference };
+      }, { timeout: 15_000 });
+    } catch (err: any) {
+      if (err && typeof err === 'object' && err.code === 'P2002') {
+        const target = err.meta?.target;
+        const isTargetIdempotencyKey =
+          (Array.isArray(target) && target.includes('idempotencyKey')) ||
+          (typeof target === 'string' &&
+            (target === 'idempotencyKey' ||
+             target === 'LedgerEntry_idempotencyKey_key' ||
+             target.endsWith('_idempotencyKey_key')));
+
+        if (isTargetIdempotencyKey) {
+          // Double-check: verify that a ledger entry with this exact idempotencyKey actually exists in the DB.
+          // If it does not exist, then this is not an intended idempotency skip and must be thrown.
+          const confirmed = await db.ledgerEntry.findFirst({
+            where: { idempotencyKey: `${input.idempotencyKey}:0` },
+            select: { id: true },
+          });
+          if (confirmed) {
+            return { posted: false, reference: input.reference };
+          }
         }
       }
+
+      // Retry on transient PostgreSQL write conflicts / deadlocks (P2034, 40P01, 40001)
+      const isTransient =
+        err?.code === 'P2034' ||
+        err?.message?.includes('40P01') ||
+        err?.message?.includes('40001') ||
+        err?.message?.includes('deadlock') ||
+        err?.message?.includes('could not serialize access');
+      if (isTransient && attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 50 + Math.random() * 50));
+        continue;
+      }
+
+      throw err;
     }
-    throw err;
   }
+
+  throw new LedgerError('TRANSACTION_FAILED');
 }
 
 export interface LedgerBalance {

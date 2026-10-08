@@ -3,6 +3,7 @@
 **Canonical Repository:** `D:\SehatAI-UNIFIED`  
 **Target Branch:** `production-activation`  
 **Starting HEAD SHA:** `d88cd96b04ef99c2291799a402c5072af1e846bc`  
+**Ending HEAD SHA:** `823cafd9ec9d2bbf81be557cb989ba6f487c11bd`  
 **Verification Date:** 2026-10-08  
 **Verification Environment:** Windows 11 host with local ext4 loopback cluster (`/mnt/host/d/pgdata.img`), PostgreSQL 18.6 (`x86_64-alpine-linux-musl`), Node.js v24.19.0, Bun v1.4.0, Prisma 6.19.2.
 
@@ -61,17 +62,15 @@ This exposed the local database cluster to unauthenticated network access from a
 - **Wrong Password Rejection:**
   Attempting to execute queries with invalid password:
   ```powershell
-  $env:DATABASE_URL="postgresql://postgres:wrong_pw@127.0.0.1:5432/sehatai_test"
-  "SELECT 1;" | bun x prisma db execute --stdin
+  wsl -e psql "postgresql://postgres:wrongpassword@127.0.0.1:5432/sehatai_test" -c "SELECT 1;"
   ```
-  Result: **REJECTED (Exit 1)** — `Error: P1000 Authentication failed against database server`.
+  Result: **REJECTED (Exit 1)** — `FATAL: password authentication failed for user "postgres"`.
 - **Authenticated Localhost Connection:**
   Connecting with configured SCRAM-SHA-256 credentials:
   ```powershell
-  $env:DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/sehatai_test"
-  "SELECT current_database(), current_user;" | bun x prisma db execute --stdin
+  wsl -e psql "postgresql://postgres:postgres@127.0.0.1:5432/sehatai_test" -c "SELECT current_database(), current_user;"
   ```
-  Result: **SUCCESS (Exit 0)** — `Script executed successfully`.
+  Result: **SUCCESS (Exit 0)** — `current_database: sehatai_test | current_user: postgres`.
 
 ---
 
@@ -86,21 +85,20 @@ The hackathon prototype originally used SQLite for zero-setup developer machines
    - Removed `prisma/schema.postgresql.prisma` (`git rm prisma/schema.postgresql.prisma`).
    - Cleaned up UTF-8 comment encodings repo-wide.
 2. **Version-Controlled PostgreSQL Migration:**
-   - Generated initial canonical migration via `bun x prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script`.
-   - Sanitized Windows UTF-8 BOM to prevent PostgreSQL parser errors (`\u{feff}`).
-   - Saved version-controlled migration: `prisma/migrations/20261008000000_init_postgresql/migration.sql` (1,813 lines of SQL DDL).
+   - Authored canonical initial migration: `prisma/migrations/20261008000000_init_postgresql/migration.sql` (1,813 lines of SQL DDL).
+   - Created `prisma/migrations/migration_lock.toml` locking provider connector to `postgresql` (`provider = "postgresql"`), enabling `prisma migrate diff` tooling to identify migrations connector without error.
 3. **Fresh Disposable Database Verification (Reproducibility Without `db push`):**
-   - Created fresh PostgreSQL database `sehatai_fresh_migration_test`.
+   - Created fresh PostgreSQL database `sehatai_fresh_test_p1`.
    - Deployed migration sequence:
      ```powershell
-     $env:DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/sehatai_fresh_migration_test"
+     $env:DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/sehatai_fresh_test_p1"
      bun x prisma migrate deploy
      ```
    - Result:
      `Applying migration 20261008000000_init_postgresql`  
      `All migrations have been successfully applied.`
    - Database catalog inventory check (`SELECT count(*) FROM pg_tables WHERE schemaname = 'public';`): Exactly **79 tables** created (78 domain models + 1 `_prisma_migrations` table).
-   - `bun x prisma migrate status`: `Database schema is up to date!`.
+   - Diff validation (`bun x prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-url "$DATABASE_URL" --exit-code`): `No difference detected.`
 4. **Existing Data Preservation & Migration Baselining:**
    - Baselined existing database `sehatai_test` using `bun x prisma migrate resolve --applied 20261008000000_init_postgresql`.
    - Verified existing data retained without disruption.
@@ -126,17 +124,17 @@ The hackathon prototype originally used SQLite for zero-setup developer machines
    - `119`: `Police Emergency (Afghanistan)` (Coverage: `Nationwide`, Source: `Ministry of Interior / Afghan National Police`)
    - `166`: `Afghan Health & Psycho-social Helpline` (Coverage: `Nationwide`, Source: `Ministry of Public Health (MoPH) / WHO`)
    - `410`: `Awaaz Afghanistan Humanitarian Helpline` (Coverage: `Nationwide`, Source: `UNHCR / UNOPS / WFP / WHO Awaaz Inter-agency Call Center`)
-2. **Province-Specific Routing:**
-   - Extended `getEmergencyNumbers(countryCode, regionOrCity)`:
-     - When province is outside Kabul (e.g., Herat, Kandahar, Balkh/Mazar, Nangarhar/Jalalabad), the primary medical recommendation is: `Provincial Hospital Emergency (Direct Transport)` with explicit advisory: `Centralized ambulance dispatch unavailable outside Kabul`.
-     - When location is unknown or general AF, returns Kabul Ambulance with explicit coverage annotation `Kabul City only`.
+2. **Province-Specific Routing & Unicode-Safe Detection:**
+   - Fixed regex boundary flaw (`\b` failing on non-ASCII characters). Replaced with Unicode-aware boundary matching `/(?:^|[^\p{L}\p{N}])(...)(?:$|[^\p{L}\p{N}])/iu` covering Dari/Pashto/Urdu transliterations (`افغانستان`, `کابل`, `هرات`, `ہرات`, `قندهار`, `قندھار`, `مزار`, `جلال آباد`).
+   - When province is outside Kabul (e.g., Herat, Kandahar, Balkh/Mazar), the system directs callers directly to provincial hospital emergency departments and pairs the verified MoPH health helpline `166`.
+   - Filtered `Reference Only` notes from callable acute emergency pairs to eliminate confusion for provincial callers.
 3. **Medical Pairing Logic in `buildEmergencyContent`:**
-   - Updated call-line generation to filter only medical/ambulance services for medical emergencies, preventing erroneous pairing of `102` (Ambulance) with `112` (Fire Department).
+   - Updated call-line generation to filter medical/ambulance services, preventing erroneous pairing of `102` (Ambulance) with `112` (Fire Department).
 4. **Anti-Leakage Safeguard in `src/server/pipeline/run.ts`:**
    - Completely sanitized Pakistan emergency numbers (`1122`, `1023`, `115`, `1166`, `15`) and ambulance entity names from non-PK user responses.
 
 ### 3. Verification Evidence
-Dedicated test suite: `tests/safety/afghanistan-emergency-audit.test.ts` (8/8 tests passed).
+Dedicated test suite: `tests/safety/afghanistan-emergency-audit.test.ts` (10/10 tests passed).
 
 ---
 
@@ -149,16 +147,18 @@ Dedicated test suite: `tests/safety/afghanistan-emergency-audit.test.ts` (8/8 te
   2. Perform an explicit database check (`db.ledgerEntry.findFirst({ where: { idempotencyKey: ... } })`) to confirm that the identical idempotency key was indeed already written by a concurrent transaction before returning `{ posted: false }`.
   3. Any other unique constraint violation (e.g. `LedgerAccount.code`) is strictly re-thrown.
 
-### 2. Double-Refund Elimination via Row Lock
-- **Risk Investigated:** In `src/server/care/refund-service.ts`, `computeRefundEligibility` aggregated prior refunds outside a database transaction. Concurrent requests could both read `alreadyRefunding = 0` and both issue full refunds for the same payment.
-- **Hardening Applied:** Wrapped refund creation inside `db.$transaction` with an explicit row lock on `Payment` (`await tx.payment.update(...)`). Concurrent callers are serialized; subsequent callers observe the committed refund and fail with 409 `REFUND_EXCEEDS_PAYMENT`.
+### 2. Elimination of PostgreSQL 25P02 Transaction Abortion on Concurrent Ledger Postings
+- **Bug Diagnosed:** In prior code, `getOrCreateAccount` was invoked with the transaction client `tx` inside `db.$transaction`. If multiple concurrent transactions posted to new ledger accounts simultaneously, transaction 2's insert failed with a unique constraint error. In PostgreSQL, any statement error inside an interactive transaction aborts the entire transaction block (`25P02: current transaction is aborted, commands ignored until end of transaction block`). The catch block's subsequent query on `tx` failed fatally with 25P02.
+- **Fix Applied:** Pre-resolved and created all ledger master accounts using the root client `db` outside the interactive transaction block before starting `db.$transaction`. Added exponential backoff retries for transient PostgreSQL serialization and deadlock errors (`P2034`, `40P01`, `40001`).
 
-### 3. Double-Payout Elimination via DoctorProfile Row Lock
-- **Risk Investigated:** In `src/server/care/payout-service.ts`, concurrent payout requests evaluated available balances outside the transaction, risking race conditions on doctor earnings.
-- **Hardening Applied:** Wrapped payout creation inside `db.$transaction` with an explicit row lock on `DoctorProfile` (`await tx.doctorProfile.update(...)`) and in-transaction re-verification of available earnings. Subsequent callers observe 0 available earnings and fail with 409 `NOTHING_AVAILABLE`.
+### 3. Double-Refund Elimination via Row Lock
+- Wrapped refund creation inside `db.$transaction` with an explicit row lock on `Payment` (`await tx.payment.update(...)`). Concurrent callers are serialized; subsequent callers observe the committed refund and fail with 409 `REFUND_EXCEEDS_PAYMENT`.
 
-### 4. Verification Evidence
-Comprehensive suite: `tests/care/postgres-concurrency.test.ts` (10/10 tests passed):
+### 4. Double-Payout Elimination via DoctorProfile Row Lock
+- Wrapped payout creation inside `db.$transaction` with an explicit row lock on `DoctorProfile` (`await tx.doctorProfile.update(...)`) and in-transaction re-verification of available earnings. Subsequent callers observe 0 available earnings and fail with 409 `NOTHING_AVAILABLE`.
+
+### 5. Verification Evidence
+Comprehensive suite: `tests/care/postgres-concurrency.test.ts` (11/11 tests passed):
 1. Simultaneous slot booking (3-way race): exactly 1 succeeds, 2 fail with 409 `SLOT_ALREADY_BOOKED`.
 2. Concurrent duplicate webhooks (4 parallel identical events): exactly 1 processes, 3 return `duplicate: true`.
 3. Concurrent ledger transactions: exactly 1 posts, 2 return `posted: false`.
@@ -167,8 +167,9 @@ Comprehensive suite: `tests/care/postgres-concurrency.test.ts` (10/10 tests pass
 6. Ledger replay: subsequent submissions return `posted: false`; balances remain unchanged.
 7. Currency mismatch across legs: strictly rejected with `LedgerError`.
 8. Amount mismatch (debits != credits): strictly rejected with `LedgerError`.
-9. P2002 precision: unrelated unique constraint errors (e.g. duplicate `LedgerAccount.code`) are NOT swallowed.
+9. P2002 precision: unrelated unique constraint errors (e.g. duplicate `LedgerAccount.code`) are NOT swallowed by `postTransaction`.
 10. Repeated concurrency & deadlock resistance: 10 parallel transactions execute cleanly without deadlocks.
+11. Concurrent new account creation during `postTransaction` commits without PostgreSQL `25P02` abort.
 
 ---
 
@@ -198,13 +199,13 @@ All gates were executed on `D:\SehatAI-UNIFIED` against the real running Postgre
 |---|---|---|---|---|
 | **TypeScript Checking** | `bun run typecheck` | 0 | **PASS** | 0 errors across entire repository (`tsc --noEmit`). |
 | **ESLint Validation** | `bun run lint` | 0 | **PASS** | Clean lint verification across all routes, components, and mini-services. |
-| **Prisma Generation** | `bun x prisma generate` | 0 | **PASS** | Generated native PostgreSQL Prisma Client v6.19.2 in 1.50s. |
-| **Medical Safety Suite** | `bun test tests/tests/safety/ tests/safety/` | 0 | **PASS** | **573 passed / 0 failed** across 22 test files (including Afghanistan emergency routing). |
-| **Care Connect Suite** | `bun test tests/care/` | 0 | **PASS** | **76 passed / 0 failed** across 3 test files (unit, integration, postgres concurrency). |
+| **Prisma Generation** | `bun x prisma generate` | 0 | **PASS** | Generated native PostgreSQL Prisma Client v6.19.2 in 455ms. |
+| **Medical Safety Suite** | `bun test tests/tests/safety/ tests/safety/` | 0 | **PASS** | **575 passed / 0 failed** across 22 test files (including Afghanistan emergency routing). |
+| **Care Connect Suite** | `bun test tests/care/` | 0 | **PASS** | **77 passed / 0 failed** across 3 test files (unit, integration, postgres concurrency). |
 | **Security Red-Team Suite** | `bun test tests/security/` | 0 | **PASS** | **18 passed / 0 failed** (100% DB-backed authorization & isolation tests). |
-| **PostgreSQL Concurrency** | `bun test tests/care/postgres-concurrency.test.ts` | 0 | **PASS** | **10 passed / 0 failed** (all concurrency races, ledger replays, and invariants verified). |
+| **PostgreSQL Concurrency** | `bun test tests/care/postgres-concurrency.test.ts` | 0 | **PASS** | **11 passed / 0 failed** (all concurrency races, ledger replays, account init, and invariants verified). |
 | **Commercial Smoke E2E** | `bun run tests/care/care-smoke.ts` | 0 | **PASS** | Full booking → checkout → mock confirm → doctor earning → refund → reversal verified (`SMOKE OK`). |
-| **Production Build** | `DOCKER_BUILD=1 bun run build` | 0 | **PASS** | **94 / 94 routes generated** in standalone production mode in 52s. |
+| **Production Build** | `DOCKER_BUILD=1 bun run build` | 0 | **PASS** | **94 / 94 routes generated** in standalone production mode in 37s. |
 
 ---
 
@@ -214,16 +215,17 @@ All gates were executed on `D:\SehatAI-UNIFIED` against the real running Postgre
 |---|---|---|
 | `prisma/schema.prisma` | Modified | Updated datasource to `provider = "postgresql"`. Authoritative production schema. |
 | `prisma/schema.postgresql.prisma` | Deleted | Redundant divergent schema removed. |
+| `prisma/migrations/migration_lock.toml` | Created | Locked migrations connector to `postgresql` for Prisma migration tooling. |
 | `prisma/migrations/20261008000000_init_postgresql/migration.sql` | Created | Canonical version-controlled migration (1,813 lines of SQL DDL). |
 | `scripts/setup-pg.sh` | Deleted | Insecure reusable script with `0.0.0.0/0 trust` removed. |
 | `scripts/start-pg.sh` | Modified | Secured startup script with loopback mount and SCRAM-SHA-256 enforcement. |
 | `src/data/lexicon.ts` | Modified | Corrected Afghanistan emergency numbers (112 = Fire, 102 = Kabul Ambulance, 166 = Helpline, 410 = Awaaz). Supported province routing. |
-| `src/server/pipeline/run.ts` | Modified | Added province/city routing; sanitized Pakistan emergency numbers from Afghan responses; restricted emergency pairing to medical contacts. |
-| `src/server/care/ledger.ts` | Modified | Hardened P2002 error handling to strictly inspect target field and verify DB record existence. |
+| `src/server/pipeline/run.ts` | Modified | Added Unicode-safe province/city routing; sanitized Pakistan emergency numbers from Afghan responses; restricted emergency pairing to medical contacts. |
+| `src/server/care/ledger.ts` | Modified | Hardened P2002 error handling; eliminated PostgreSQL 25P02 transaction abortion on concurrent account creation by pre-resolving accounts via `db`; added deadlock/conflict retries. |
 | `src/server/care/refund-service.ts` | Modified | Serialized concurrent refunds via transaction and `Payment` row lock (preventing double refunds). |
 | `src/server/care/payout-service.ts` | Modified | Serialized concurrent payouts via transaction and `DoctorProfile` row lock (preventing double payouts). |
-| `tests/care/postgres-concurrency.test.ts` | Modified | Expanded to 10 comprehensive commercial concurrency and financial invariant tests. |
-| `tests/safety/afghanistan-emergency-audit.test.ts` | Created | Dedicated primary source audit suite for Afghanistan emergency contacts and routing. |
+| `tests/care/postgres-concurrency.test.ts` | Modified | Expanded to 11 comprehensive commercial concurrency, account init, and financial invariant tests. |
+| `tests/safety/afghanistan-emergency-audit.test.ts` | Created | Dedicated primary source audit suite for Afghanistan emergency contacts, native script routing, and non-Kabul hospital dispatch. |
 | `docs/RELEASE_BLOCKERS_FINAL_VERIFICATION.md` | Created | Final release-blocking verification report. |
 
 ---

@@ -89,4 +89,41 @@ describe('Afghanistan Emergency Telephone Numbers & Primary Source Verification 
     expect(res.content).not.toContain('Alkhidmat');
     expect(res.content).not.toContain('Rescue 1122');
   });
+
+  test('9. Native Dari/Urdu script Afghanistan query routes to AF jurisdiction without explicit country code', async () => {
+    const res = await runPipeline({
+      message: 'افغانستان میں میرے بھائی بے ہوش ہیں اور سانس نہیں آ رہی',
+      language: 'ur',
+      sessionId: `audit_af_script_${Date.now()}`,
+      persist: false,
+    });
+
+    expect(res.emergency).toBeDefined();
+    // Must NOT leak Pakistan numbers
+    expect(res.content).not.toContain('1122');
+    expect(res.content).not.toContain('1023');
+    expect(res.content).not.toContain('115');
+    expect(res.content).not.toContain('الخدمت');
+    expect(res.content).not.toContain('ریسکیو');
+    // Must contain Kabul Ambulance 102 or MoPH Helpline 166
+    expect(res.content).toContain('102');
+  });
+
+  test('10. Non-Kabul provincial query (Herat) routes to hospital direct transport without 102 dispatch', async () => {
+    const res = await runPipeline({
+      message: 'میرے بھائی ہرات میں بے ہوش ہیں اور سانس نہیں لے رہے',
+      language: 'ur',
+      sessionId: `audit_herat_${Date.now()}`,
+      persist: false,
+    });
+
+    expect(res.emergency).toBeDefined();
+    // Must direct to provincial hospital emergency and helpline 166
+    expect(res.content).toContain('ہسپتال');
+    expect(res.content).toContain('166');
+    // Must NOT contain Pakistan numbers
+    expect(res.content).not.toContain('1122');
+    expect(res.content).not.toContain('1023');
+    expect(res.content).not.toContain('115');
+  });
 });

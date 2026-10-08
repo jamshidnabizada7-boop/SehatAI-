@@ -521,16 +521,35 @@ function buildEmergencyContent(
   lines.push('');
 
   const nums = emergencyNumbers && emergencyNumbers.length > 0 ? emergencyNumbers : EMERGENCY_NUMBERS;
-  // For medical emergencies, only pair secondary contact if it is actually an ambulance or medical service
+  // For medical emergencies, only pair secondary contact if it is actually an ambulance or medical service.
+  // Exclude non-local reference notes (e.g. Kabul Ambulance reference note for provincial callers)
   const medicalNums = nums.filter((n) => {
     const l = n.label.toLowerCase();
-    return l.includes('ambulance') || l.includes('hospital') || l.includes('medical') || l.includes('rescue');
+    if (l.includes('reference only')) return false;
+    return l.includes('ambulance') || l.includes('hospital') || l.includes('medical') || l.includes('rescue') || l.includes('health');
   });
   const p1 = medicalNums[0] ?? nums[0];
   const p2 = medicalNums[1]; // only if there is a second medical/ambulance service
 
   let callLine: string;
-  if (p1 && p2) {
+  // Check if p1 is direct hospital transport rather than a dialable dispatch phone number
+  const isDirectTransport = p1 && (p1.number.toLowerCase().includes('direct') || p1.number.toLowerCase().includes('hospital') || !/^\+?\d[\d\s/-]{1,}$/.test(p1.number));
+  if (isDirectTransport) {
+    const helpline = nums.find((n) => n.number === '166' || n.label.toLowerCase().includes('help')) ?? p2;
+    if (helpline && /^\+?\d[\d\s/-]{1,}$/.test(helpline.number)) {
+      callLine = lang === 'ur'
+        ? `🏥 فوری اقدام: فوری طور پر قریبی ہسپتال کے شعبہ ایمرجنسی پہنچیں (صوبوں میں ایمبولینس سروس دستیاب نہیں)۔ طبی رہنمائی کے لیے: ${helpline.number} (${helpline.label}) پر کال کریں۔`
+        : lang === 'roman'
+          ? `🏥 Fori iqdam: Foran qareebi hospital emergency pohnchein (soobon mein centralized ambulance dispatch dastiyab nahi). Sehat helpline: ${helpline.number} (${helpline.label}) par call karein.`
+          : `🏥 Immediate action: Proceed directly to the nearest provincial/regional hospital emergency room (centralized ambulance dispatch is unavailable outside Kabul). For health helpline: call ${helpline.number} (${helpline.label}).`;
+    } else {
+      callLine = lang === 'ur'
+        ? `🏥 فوری اقدام: فوری طور پر قریبی صوبائی ہسپتال کے شعبہ ایمرجنسی پہنچیں۔`
+        : lang === 'roman'
+          ? `🏥 Fori iqdam: Foran qareebi hospital emergency pohnchein.`
+          : `🏥 Immediate action: Proceed directly to the nearest hospital emergency room.`;
+    }
+  } else if (p1 && p2 && /^\+?\d[\d\s/-]{1,}$/.test(p2.number)) {
     callLine = lang === 'ur'
       ? `📞 فوراً کال کریں: ${p1.number} (${p1.label}) یا ${p2.number} (${p2.label})`
       : lang === 'roman'
@@ -1409,14 +1428,17 @@ export async function runPipeline(
   const allergyHits = allergyCrossCheck(profile, message);
 
   // Jurisdiction-aware emergency routing: detect user's jurisdiction for regional emergency numbers
+  const afLocationRegex = /(?:^|[^\p{L}\p{N}])(afghanistan|kabul|herat|kandahar|mazar|jalalabad|افغانستان|کابل|هرات|ہرات|قندھار|قندهار|مزار|جلال\s*آباد|جلال\s*اباد)(?:$|[^\p{L}\p{N}])/iu;
+  const afRegionRegex = /(?:^|[^\p{L}\p{N}])(kabul|herat|kandahar|mazar|jalalabad|کابل|هرات|ہرات|قندھار|قندهار|مزار|جلال\s*آباد|جلال\s*اباد)(?:$|[^\p{L}\p{N}])/iu;
+
   const resolvedCountry =
     input.country ??
     input.jurisdiction ??
-    (/\b(afghanistan|kabul|herat|kandahar|mazar|jalalabad|افغانستان|کابل)\b/i.test(message) ? 'AF' : 'PK');
+    (afLocationRegex.test(message) ? 'AF' : 'PK');
   const resolvedRegion =
     (input as { city?: string; region?: string }).city ??
     (input as { city?: string; region?: string }).region ??
-    (message.match(/\b(kabul|herat|kandahar|mazar|jalalabad|کابل|هرات|قندهار|مزار)\b/i)?.[1] ?? undefined);
+    (message.match(afRegionRegex)?.[1] ?? undefined);
   const emergencyNumbers = getEmergencyNumbers(resolvedCountry, resolvedRegion);
 
   // ---------- Step 0: Conversation History Loading & Stream Separation (M1 / R1) ----------
@@ -1685,22 +1707,58 @@ export async function runPipeline(
     const rawActions = tpl.immediateActions.map((a) => a[lang]);
     const actions = rawActions.map((act) => {
       if (resolvedCountry !== 'PK' && emergencyNumbers.length > 0) {
+        const isAF = resolvedCountry === 'AF' || resolvedCountry === 'AFG' || resolvedCountry === 'AFGHANISTAN';
+        const isKabulOrUnknown = !resolvedRegion || resolvedRegion.toLowerCase().includes('kabul') || resolvedRegion.includes('کابل');
         const p1 = emergencyNumbers[0]!;
-        const ambulanceLabel = `${p1.number} (${p1.label})`;
-        return act
+
+        let ambulanceLabel: string;
+        if (lang === 'ur') {
+          if (isAF) {
+            ambulanceLabel = isKabulOrUnknown ? 'کابل ایمبولینس (102)' : 'قریبی ہسپتال ایمرجنسی';
+          } else {
+            ambulanceLabel = 'مقامی ایمرجنسی خدمات';
+          }
+        } else if (lang === 'roman') {
+          if (isAF) {
+            ambulanceLabel = isKabulOrUnknown ? '102 (Kabul Ambulance Service)' : 'qareebi hospital emergency';
+          } else {
+            ambulanceLabel = 'local emergency services';
+          }
+        } else {
+          if (isAF) {
+            ambulanceLabel = isKabulOrUnknown ? '102 (Kabul Ambulance Service)' : 'nearest hospital emergency department';
+          } else {
+            ambulanceLabel = `${p1.number} (${p1.label})`;
+          }
+        }
+
+        let adapted = act
           .replace(/1122(?:\s*\([^)]*\))?\s*(?:or|ya|یا)\s*1023(?:\s*\([^)]*\))?/gi, ambulanceLabel)
           .replace(/1122(?:\s*\([^)]*\))?\s*(?:or|ya|یا)\s*115(?:\s*\([^)]*\))?/gi, ambulanceLabel)
           .replace(/1023\s*\([^)]*\)/gi, ambulanceLabel)
           .replace(/1122\s*\([^)]*\)/gi, ambulanceLabel)
           .replace(/115\s*\([^)]*\)/gi, ambulanceLabel)
-          .replace(/\b1122\b/g, p1.number)
-          .replace(/\b1023\b/g, p1.number)
-          .replace(/\b115\b/g, p1.number)
+          .replace(/\b1122\b/g, isAF ? (isKabulOrUnknown ? '102' : '166') : p1.number)
+          .replace(/\b1023\b/g, isAF ? (isKabulOrUnknown ? '102' : '166') : p1.number)
+          .replace(/\b115\b/g, isAF ? (isKabulOrUnknown ? '102' : '166') : p1.number)
           .replace(/\bRescue 1122\b/gi, ambulanceLabel)
           .replace(/\bAlkhidmat Ambulance\b/gi, ambulanceLabel)
-          .replace(/\bEdhi Ambulance\b/gi, ambulanceLabel)
-          .replace(/الخدمت ایمبولینس/g, 'کابل ایمبولینس')
-          .replace(/ریسکیو 1122/g, 'کابل ایمبولینس (102)');
+          .replace(/\bEdhi Ambulance\b/gi, ambulanceLabel);
+
+        if (isAF && isKabulOrUnknown) {
+          adapted = adapted
+            .replace(/الخدمت ایمبولینس/g, 'کابل ایمبولینس')
+            .replace(/ریسکیو 1122/g, 'کابل ایمبولینس (102)');
+        } else if (isAF && !isKabulOrUnknown) {
+          adapted = adapted
+            .replace(/الخدمت ایمبولینس/g, 'قریبی ہسپتال ایمرجنسی')
+            .replace(/ریسکیو 1122/g, 'قریبی ہسپتال ایمرجنسی');
+        } else {
+          adapted = adapted
+            .replace(/الخدمت ایمبولینس/g, 'مقامی ایمرجنسی خدمات')
+            .replace(/ریسکیو 1122/g, 'مقامی ایمرجنسی خدمات');
+        }
+        return adapted;
       }
       return act;
     });
@@ -2139,7 +2197,9 @@ export async function runPipeline(
         preVetoLevel = 'EMERGENCY';
         const emTemplate = getEmergencyTemplate('general-emergency') ?? getEmergencyTemplate('unconscious') ?? EMERGENCY_TEMPLATES[0]!;
         const langKey = lang === 'ur' ? 'ur' : lang === 'roman' ? 'roman' : 'en';
-        const primaryNumber = emergencyNumbers[0]?.number ?? '1122';
+        const isAF = resolvedCountry === 'AF' || resolvedCountry === 'AFG' || resolvedCountry === 'AFGHANISTAN';
+        const isKabulOrUnknown = !resolvedRegion || resolvedRegion.toLowerCase().includes('kabul') || resolvedRegion.includes('کابل');
+        const primaryNumber = isAF ? (isKabulOrUnknown ? '102' : '166') : (emergencyNumbers[0]?.number ?? '1122');
         const emDirective = lang === 'ur'
           ? `فوری طور پر ${primaryNumber} پر کال کریں۔`
           : lang === 'roman'
@@ -2825,7 +2885,9 @@ export async function runPipeline(
         const templateCategory = redFlagMatches[0]?.pattern.category ?? 'general-emergency';
         const emTemplate = getEmergencyTemplate(templateCategory) ?? getEmergencyTemplate('unconscious') ?? EMERGENCY_TEMPLATES[0]!;
         const langKey = lang === 'ur' ? 'ur' : lang === 'roman' ? 'roman' : 'en';
-        const primaryNumber = emergencyNumbers[0]?.number ?? '1122';
+        const isAF = resolvedCountry === 'AF' || resolvedCountry === 'AFG' || resolvedCountry === 'AFGHANISTAN';
+        const isKabulOrUnknown = !resolvedRegion || resolvedRegion.toLowerCase().includes('kabul') || resolvedRegion.includes('کابل');
+        const primaryNumber = isAF ? (isKabulOrUnknown ? '102' : '166') : (emergencyNumbers[0]?.number ?? '1122');
         const emDirective = lang === 'ur'
           ? `فوری طور پر ${primaryNumber} پر کال کریں۔`
           : lang === 'roman'
@@ -2883,8 +2945,10 @@ export async function runPipeline(
   }
 
   if (resolvedCountry !== 'PK' && emergencyNumbers.length > 0) {
-    const primary = emergencyNumbers[0]?.number ?? '112';
-    const helpline = emergencyNumbers.find(n => n.label.toLowerCase().includes('help'))?.number ?? primary;
+    const isAF = resolvedCountry === 'AF' || resolvedCountry === 'AFG' || resolvedCountry === 'AFGHANISTAN';
+    const isKabulOrUnknown = !resolvedRegion || resolvedRegion.toLowerCase().includes('kabul') || resolvedRegion.includes('کابل');
+    const primary = isAF ? (isKabulOrUnknown ? '102' : '166') : (emergencyNumbers[0]?.number ?? '112 / 911');
+    const helpline = emergencyNumbers.find(n => n.number === '166' || n.label.toLowerCase().includes('help'))?.number ?? primary;
     
     if (result.content) {
       result.content = result.content

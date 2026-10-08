@@ -395,6 +395,28 @@ describe('PostgreSQL Advanced Concurrency, Isolation & Financial Invariants (P3)
     expect((caughtError as { code: string }).code).toBe('P2002');
     // Ensure this unrelated P2002 was not swallowed
     expect((caughtError as { meta: { target: string[] | string } }).meta.target).toBeDefined();
+
+    // Verify postTransaction does NOT swallow P2002 if the target is unrelated or entry does not exist
+    const unrelatedP2002 = new Error('Unique constraint failed on the fields: (`code`)');
+    (unrelatedP2002 as any).code = 'P2002';
+    (unrelatedP2002 as any).meta = { target: ['code'] };
+
+    const origTx = db.$transaction;
+    try {
+      (db as any).$transaction = async () => { throw unrelatedP2002; };
+      await expect(
+        postTransaction({
+          reference: `ref_unrelated_p2002_${stamp}`,
+          idempotencyKey: `idem_unrelated_p2002_${stamp}`,
+          legs: [
+            { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 500, currency: 'PKR' },
+            { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 500, currency: 'PKR' },
+          ],
+        }),
+      ).rejects.toThrow();
+    } finally {
+      (db as any).$transaction = origTx;
+    }
   });
 
   test('10. Repeated concurrency & deadlock resistance: 10 parallel transactions execute without hang', async () => {
@@ -411,5 +433,42 @@ describe('PostgreSQL Advanced Concurrency, Isolation & Financial Invariants (P3)
 
     const results = await Promise.all(tasks);
     expect(results.every((r) => r.posted)).toBe(true);
+  });
+
+  test('11. Concurrent new account creation during postTransaction commits without PostgreSQL 25P02 abort', async () => {
+    const ccy = `RACE_${Date.now()}`;
+    const t1 = postTransaction({
+      idempotencyKey: `idem_race_acc_1_${stamp}`,
+      reference: `ref_race_acc_1_${stamp}`,
+      legs: [
+        { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 5000, currency: ccy },
+        { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 5000, currency: ccy },
+      ],
+    });
+    const t2 = postTransaction({
+      idempotencyKey: `idem_race_acc_2_${stamp}`,
+      reference: `ref_race_acc_2_${stamp}`,
+      legs: [
+        { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 7500, currency: ccy },
+        { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 7500, currency: ccy },
+      ],
+    });
+    const t3 = postTransaction({
+      idempotencyKey: `idem_race_acc_3_${stamp}`,
+      reference: `ref_race_acc_3_${stamp}`,
+      legs: [
+        { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 2500, currency: ccy },
+        { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 2500, currency: ccy },
+      ],
+    });
+
+    const results = await Promise.all([t1, t2, t3]);
+    expect(results.every((r) => r.posted)).toBe(true);
+
+    const balCash = await balanceOf(`platform:cash:${ccy}`);
+    expect(balCash?.debitMinor).toBe(15000);
+
+    const balSuspense = await balanceOf(`suspense:${ccy}`);
+    expect(balSuspense?.creditMinor).toBe(15000);
   });
 });
