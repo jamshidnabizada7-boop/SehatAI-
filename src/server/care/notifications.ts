@@ -1,9 +1,9 @@
 // ============================================================
 // Care Connect §62 — Notification service.
 // Creates in-app Notification rows; push/email/SMS delivery is
-// provider-abstracted (Phase 16 sends via web-push; email/SMS are
-// BLOCKED BY EXTERNAL PROVIDER adapters). Lock-screen privacy is
-// enforced here: NEVER put clinical details in title/body (§62).
+// provider-abstracted. Lock-screen privacy is enforced here:
+// NEVER put clinical details in title/body (§62).
+// Implements §17 Durable Outbox pattern for fault-tolerant delivery.
 // ============================================================
 import { db } from '@/lib/db';
 import { deliverPendingPush } from './push-delivery';
@@ -45,7 +45,7 @@ export async function notify(opts: {
   data?: Record<string, unknown>;
 }): Promise<void> {
   const safe = PRIVACY_SAFE_TEXT[opts.type] ?? { title: 'Care Connect', body: 'You have an update in Care Connect.' };
-  await db.notification.create({
+  const notif = await db.notification.create({
     data: {
       userId: opts.userId,
       type: opts.type,
@@ -57,6 +57,25 @@ export async function notify(opts: {
       state: 'PENDING',
     },
   });
+
+  // §17 / §62 Durable Outbox: persist message for asynchronous/worker delivery
+  await db.notificationOutbox.create({
+    data: {
+      notificationId: notif.id,
+      channel: opts.channel ?? 'push',
+      payloadJson: JSON.stringify({
+        userId: opts.userId,
+        notificationId: notif.id,
+        title: safe.title,
+        body: safe.body,
+        consultationId: opts.consultationId,
+        type: opts.type,
+      }),
+      status: 'PENDING',
+    },
+  }).catch(() => undefined);
+
+  // Optimistic dispatch in current request lifecycle; failure will be retried by outbox worker
   void deliverPendingPush(opts.userId).catch(() => undefined);
 }
 

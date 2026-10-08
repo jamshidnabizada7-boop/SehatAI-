@@ -60,3 +60,64 @@ export async function deliverPendingPush(userId: string): Promise<{ sent: number
   }
   return { sent, failed };
 }
+
+/**
+ * Durable outbox worker (§17): processes queued notifications from NotificationOutbox.
+ * Supports retries with exponential backoff and dead-letter routing.
+ * Survives process restarts and temporary push gateway failures.
+ */
+export async function processNotificationOutbox(batchSize = 20): Promise<{ processed: number; delivered: number; deadLetter: number }> {
+  const now = new Date();
+  const queue = await db.notificationOutbox.findMany({
+    where: {
+      status: 'PENDING',
+      nextAttemptAt: { lte: now },
+    },
+    orderBy: { createdAt: 'asc' },
+    take: batchSize,
+  });
+
+  let processed = 0;
+  let delivered = 0;
+  let deadLetter = 0;
+
+  for (const item of queue) {
+    processed++;
+    try {
+      const payload = JSON.parse(item.payloadJson) as { userId: string; title: string; body: string; consultationId?: string; type?: string };
+      const res = await deliverPendingPush(payload.userId);
+      if (res.sent > 0 || res.failed === 0) {
+        await db.notificationOutbox.update({
+          where: { id: item.id },
+          data: { status: 'DELIVERED', updatedAt: new Date() },
+        });
+        delivered++;
+      } else {
+        throw new Error('Push dispatch had failures');
+      }
+    } catch (err: unknown) {
+      const nextAttempt = item.attempts + 1;
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (nextAttempt >= item.maxAttempts) {
+        await db.notificationOutbox.update({
+          where: { id: item.id },
+          data: { status: 'DEAD_LETTER', lastError: errorMessage, attempts: nextAttempt, updatedAt: new Date() },
+        });
+        deadLetter++;
+      } else {
+        const backoffSeconds = Math.pow(2, nextAttempt) * 30; // 60s, 120s, 240s...
+        await db.notificationOutbox.update({
+          where: { id: item.id },
+          data: {
+            attempts: nextAttempt,
+            lastError: errorMessage,
+            nextAttemptAt: new Date(Date.now() + backoffSeconds * 1000),
+            updatedAt: new Date(),
+          },
+        });
+      }
+    }
+  }
+
+  return { processed, delivered, deadLetter };
+}

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getCareSession();
     if (!session) return NextResponse.json({ error: 'UNAUTHENTICATED' }, { status: 401 });
-    if (process.env.NODE_ENV === 'production' && process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true') {
+    if (process.env.NODE_ENV === 'production') {
       return NextResponse.json({ error: 'MOCK_FORBIDDEN_IN_PRODUCTION' }, { status: 403 });
     }
     if (getPaymentProvider().name !== 'mock') {

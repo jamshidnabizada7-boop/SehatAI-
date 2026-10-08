@@ -139,3 +139,36 @@ export function liveKitConfigured(): boolean {
 export function newCallIdempotencyKey(): string {
   return `call_${randomUUID()}`;
 }
+
+/** Section 16 WebRTC Provider Abstraction */
+export interface VideoProvider {
+  name: string;
+  isProductionReady: boolean;
+  issueToken(opts: { consultationId: string; userId: string; role: 'PATIENT' | 'DOCTOR' }): Promise<RoomToken> | RoomToken;
+}
+
+export class MiniSignalProvider implements VideoProvider {
+  name = 'minisignal-dev';
+  isProductionReady = false; // DEVELOPMENT ONLY — requires managed WebRTC/LiveKit/TURN for production (§16)
+  issueToken(opts: { consultationId: string; userId: string; role: 'PATIENT' | 'DOCTOR' }): RoomToken {
+    return issueRoomToken(opts);
+  }
+}
+
+export class LiveKitVideoProvider implements VideoProvider {
+  name = 'livekit-prod';
+  isProductionReady = true;
+  issueToken(opts: { consultationId: string; userId: string; role: 'PATIENT' | 'DOCTOR' }): RoomToken {
+    if (!liveKitConfigured()) {
+      throw new Error('LiveKit credentials not configured');
+    }
+    return issueRoomToken(opts);
+  }
+}
+
+export function getVideoProvider(): VideoProvider {
+  if (process.env.CARE_VIDEO_PROVIDER === 'livekit' && liveKitConfigured()) {
+    return new LiveKitVideoProvider();
+  }
+  return new MiniSignalProvider();
+}

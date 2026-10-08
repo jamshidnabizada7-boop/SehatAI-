@@ -14,8 +14,14 @@ const PROVIDERS: Record<string, PaymentProvider> = {
 
 export function getPaymentProvider(name?: string | null): PaymentProvider {
   const key = (name ?? process.env.CARE_PAYMENT_PROVIDER ?? 'mock').toLowerCase();
+  if (process.env.NODE_ENV === 'production' && key === 'mock') {
+    throw new ProviderNotConfiguredError('Mock payment provider is strictly barred in production.');
+  }
   const provider = PROVIDERS[key];
   if (!provider) throw new ProviderNotConfiguredError(`unknown provider: ${key}`);
+  if (process.env.NODE_ENV === 'production' && !provider.isConfigured) {
+    throw new ProviderNotConfiguredError(`Payment provider ${key} is not configured with required production credentials.`);
+  }
   return provider;
 }
 
