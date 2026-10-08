@@ -1,3 +1,6 @@
+> [!WARNING] DRAFT — REQUIRES LEGAL COUNSEL REVIEW
+> This document is an engineering draft prepared for architectural validation and requires comprehensive review by licensed legal counsel before production regulatory reliance.
+
 # SehatAI Care Connect — Acceptable Use Policy
 
 > **DRAFT — REQUIRES COUNSEL REVIEW BEFORE ANY COMMERCIAL LAUNCH**  

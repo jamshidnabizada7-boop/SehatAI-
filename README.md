@@ -1,7 +1,7 @@
 # SehatAI (صحت AI) 🏥🇵🇰
 
-> **Safety-First AI Health Guidance & Triage Platform for Pakistan**  
-> Multilingual (English · اردو Nastaliq · Roman Urdu) | Offline-Capable | Evidence-Grounded RAG | Instant Emergency Triage
+> **Unified Clinical AI Health Guidance & Verified Doctor Telemedicine Platform**  
+> Multilingual (English · اردو Nastaliq · Roman Urdu) | Deterministic Emergency Safety | Care Connect Telemedicine Marketplace | Double-Entry Financial Ledger | Offline-Capable PWA
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.1-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
@@ -14,82 +14,64 @@
 
 ## 🌟 Overview
 
-**SehatAI** is a safety-first, trilingual health guidance PWA designed to bridge critical healthcare gaps in Pakistan. Built with strict clinical safety guardrails, it provides immediate triage, evidence-grounded health information, facility discovery, and offline-accessible emergency assistance in **English**, **Urdu (اردو Nastaliq)**, and **Roman Urdu**.
+**SehatAI** is an authoritative, end-to-end digital health platform designed for regional accessibility and patient safety across Pakistan and surrounding corridors.
+
+It bridges acute triage and formal clinical care across two tightly integrated pillars:
+1. **Core AI Health Assistant**: Deterministic zero-latency L0 emergency triage (<5ms), multilingual grounded RAG, constellation validator consensus with strict veto enforcement, offline emergency cards, and real-time inference telemetry via the Judge Inspector.
+2. **Care Connect Marketplace**: PMDC-verified doctor discovery, real-time availability booking, multi-party escrow payments, immutable double-entry financial ledger, WebRTC audio/video consultations, secure clinical messaging, structured AI clinical intake & handoffs, and durable notification outbox delivery.
 
 ---
 
-## 🛡️ Multi-Layer Safety Architecture
+## 🛡️ Unified Platform Architecture
 
 ```
-User Query (Text / Voice)
-       │
-       ▼
-┌────────────────────────────────────────────────────────┐
-│  L0 Safety Lexicon Engine (<5ms short-circuit)        │
-│  - 16 Red Flag Pattern Groups                          │
-│  - Direct match across English, Urdu & Roman Urdu      │
-└───────────────────────┬────────────────────────────────┘
-                        │
-       ┌────────────────┴────────────────┐
-       ▼                                 ▼
-[ RED FLAG DETECTED ]           [ NO RED FLAG DETECTED ]
-       │                                 │
-       ▼                                 ▼
-┌───────────────────────────┐   ┌───────────────────────────────┐
-│ Emergency Screen Takeover │   │ L1 Pre-LLM Triage Classifier  │
-│ - Pre-written Cards       │   │ (Urgent / Routine / Self-Care)│
-│ - Bypass LLM Generation   │   └──────────────┬────────────────┘
-│ - 1-tap Call: 1122 / 1166 │                  │
-└───────────────────────────┘                  ▼
-                                ┌───────────────────────────────┐
-                                │ RAG Grounded Retrieval        │
-                                │ (WHO / UNICEF / MoNHSRC Docs) │
-                                └──────────────┬────────────────┘
-                                               │
-                                               ▼
-                                ┌───────────────────────────────┐
-                                │ Grounded LLM Response Gen     │
-                                └──────────────┬────────────────┘
-                                               │
-                                               ▼
-                                ┌───────────────────────────────┐
-                                │ L2 Safety & Medical Validator │
-                                │ (Checks no dosages / Rx)      │
-                                └──────────────┬────────────────┘
-                                               │
-                                               ▼
-                                   Safe, Verified Response
+                                  [ PATIENT USER ]
+                                         │
+                   ┌─────────────────────┴─────────────────────┐
+                   ▼                                           ▼
+       [ AI Health Assistant ]                       [ Care Connect Marketplace ]
+       - Trilingual Input (EN / UR / Roman)          - Verified Doctor Discovery
+       - L0 Red-Flag Bypass (<5ms)                   - Specialty & Jurisdiction Matching
+       - Constellation Veto Safety Pipeline          - Telemedicine Consent Tracking
+       - Offline PWA Emergency Guidance              - Slot Booking & Multi-channel Checkout
+                   │                                           │
+                   ▼                                           ▼
+       ┌────────────────────────┐                   ┌────────────────────────┐
+       │ Deterministic Safety   │                   │ Escrow & Ledger Core   │
+       │ - 1122 / 1166 Fallback │                   │ - Immutable Journal    │
+       │ - Dosage & Rx Redact   │                   │ - Minor Units & BPS Fee│
+       │ - Strict Abstention    │                   │ - Refund & Payout Guard│
+       └────────────────────────┘                   └────────────────────────┘
+                   │                                           │
+                   └─────────────────┬─────────────────────────┘
+                                     ▼
+                        [ Doctor Care Dashboard ]
+                        - Clinical Handoff Review (AI Intake)
+                        - WebRTC Audio / Video Consultations
+                        - Private SOAP Notes & Prescriptions
+                        - Wallet Balance & Payout History
 ```
-
-### 1. Zero-Latency L0 Lexicon (<5ms)
-- Automatically detects severe conditions (cardiac arrest, stroke symptoms, severe bleeding, convulsions, maternal hemorrhage, neonatal danger signs, poisoning, snakebites, anaphylaxis).
-- **Life-threatening emergencies completely bypass the generative LLM** to eliminate hallucination risk.
-- Displays pre-verified trilingual emergency action cards with one-tap dialing for:
-  - **1122**: Emergency Rescue Service
-  - **1166**: National Health & Polio Helpline
-  - **115**: Edhi Ambulance Service
-
-### 2. RAG & Grounded Citations
-- Responses are grounded in official verified guidelines (WHO, UNICEF, IFRC, MoNHSRC Pakistan).
-- Strictly prohibits medical diagnosis, prescription writing, and drug dosage recommendations.
-
-### 3. Trilingual Localization & RTL Support
-- Full bidirectional support (RTL for Urdu Nastaliq script, LTR for English and Roman Urdu).
-- Language mirroring and script switching (Urdu ⇄ Roman Urdu).
-
-### 4. Honest Offline Capability
-- Bundled offline safety engine and emergency protocol pack to provide deterministic, verified first-aid guidance even without internet access.
 
 ---
 
-## ✨ Key Features
+## ✨ Key Capabilities
 
-- **💬 Intelligent Safe Chat**: Real-time Server-Sent Events (SSE) streaming with multi-stage progress (Safety Check → Triage → Retrieval → Generation → Validation).
-- **🎙️ Voice Input (ASR)**: Speech-to-text input supporting multilingual voice queries.
-- **📍 Nearby Healthcare Finder**: Comprehensive directory of Basic Health Units (BHUs), Rural Health Centers (RHCs), Tehsil/District Headquarters (THQ/DHQ), Tertiary Hospitals, and 24/7 Pharmacies with GPS distance calculations.
-- **⏰ Medication & Vaccine Reminders**: Track maternal antenatal visits, EPI childhood immunization schedules, and daily prescriptions.
-- **📋 Doctor Visit Summary**: One-click printable and shareable structured clinical summaries of symptoms and timelines for healthcare providers.
-- **🧪 Evaluation Dashboard & Golden Set**: Live evaluation harness testing safety benchmark cases (false-positive prevention, refusal tests, red flag sensitivity).
+### 1. Deterministic Multi-Tier Safety Pipeline
+- **Zero-Latency L0 Lexicon (<5ms)**: 16 red flag pattern categories detect life threats (cardiac, stroke, sepsis, maternal hemorrhage, neonatal distress, poison) and immediately bypass the LLM with pre-rendered action cards and one-tap emergency calling (`1122`, `1166`, `115`).
+- **Constellation Consensus with Critical Veto**: Multi-validator pipeline (`red-flag-recheck`, `medication-safety`, `clinical-grounding`). Any critical veto triggers deterministic safe fallback rather than returning hallucinated outputs.
+- **Judge Inspector Panel**: Real-time diagnostic panel exposing model cascade hierarchy, latency, validator votes, grounding citations, and confidence bands without leaking internal chain-of-thought tokens.
+
+### 2. Commercial Care Connect Subsystem
+- **PMDC Doctor Directory**: Verified credentials, sub-specialties, consulting fees, languages, and availability scheduling.
+- **Telemedicine Jurisdiction Engine**: Validates declared patient physical location against doctor licensing boundaries and regional telemedicine regulations prior to booking.
+- **Immutable Financial Ledger**: All doctor wallet balances derive strictly from double-entry ledger transactions (`HELD_IN_ESCROW`, `COMMISSION_EARNED`, `DOCTOR_PENDING`, `DOCTOR_AVAILABLE`, `REFUNDED`). Minor integer units (`priceMinor`) and basis point commissions prevent floating-point rounding errors.
+- **WebRTC Video/Audio Provider Abstraction**: Supports local development signaling with fallback ladders (`VIDEO` → `AUDIO` → `TEXT CHAT`), architected for zero-loss handoff to managed production WebRTC (LiveKit).
+- **Durable Notification Outbox**: Enqueues notifications to `NotificationOutbox` to guarantee delivery across serverless timeouts, network failures, and client disconnections.
+
+### 3. Patient Privacy & Storage Security
+- **No PHI in Public Paths**: PMDC credentials, medical certificates, and consultation attachments are stored in private storage (`storage/`) outside web root, protected by magic-byte verification, size limits, and authenticated streaming endpoints.
+- **Immediate Role Revocation**: `requireUser()` performs live database verification to promptly revoke access for suspended doctors or demoted administrator sessions.
+- **Strict Content Security**: Production security headers enforce HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `camera=(self), microphone=(self)` permissions policies.
 
 ---
 
@@ -98,101 +80,80 @@ User Query (Text / Voice)
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router, Server Actions, SSE Streaming)
 - **Frontend**: [React 19](https://react.dev/), [Tailwind CSS v4](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/)
 - **State Management**: [Zustand](https://github.com/pmndrs/zustand)
-- **Database & ORM**: [Prisma ORM](https://www.prisma.io/) with SQLite
-- **Animation & Icons**: [Framer Motion](https://www.framer.com/motion/), [Lucide React](https://lucide.dev/)
-- **Charts & Visuals**: [Recharts](https://recharts.org/)
+- **Database & ORM**: [Prisma ORM](https://www.prisma.io/) (PostgreSQL in production; SQLite local dev)
+- **Realtime & Calling**: WebRTC with low-bandwidth fallback ladder
+- **Authentication**: NextAuth.js credentials provider with TOTP 2FA for privileged roles
+- **Testing**: Bun Test Suite, TSX integration runners
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quickstart & Local Development
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18.18+ or v20+) or [Bun](https://bun.sh/)
+### 1. Prerequisites
+- [Bun](https://bun.sh/) (v1.2+) or [Node.js](https://nodejs.org/) (v22+)
 - Git
 
-### Installation
+### 2. Setup
+```bash
+# Clone the repository
+git clone https://github.com/jamshidnabizada7-boop/SehatAI-.git
+cd SehatAI-
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/jamshidnabizada7-boop/SehatAI.git
-   cd SehatAI
-   ```
+# Install dependencies
+bun install
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   # or
-   bun install
-   ```
+# Configure environment
+cp .env.example .env
+```
 
-3. **Set up the Database**:
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
+### 3. Initialize Database
+```bash
+# Generate Prisma Client
+bun run prisma generate
 
-4. **Seed the Knowledge Base & Facilities**:
-   ```bash
-   npx prisma db seed
-   # or
-   bun prisma/seed.ts
-   ```
+# Push schema to local SQLite development database
+bun run prisma db push
 
-5. **Start the Development Server**:
-   ```bash
-   npm run dev
-   # or
-   bun dev
-   ```
+# Seed core health facilities, medical corpus, and Care Connect doctors
+bun x tsx prisma/seed.ts
+bun x tsx prisma/seed-care.ts
+```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 📁 Project Structure
-
-```text
-├── src/
-│   ├── app/                 # Next.js App Router (pages & API endpoints)
-│   │   ├── api/chat/        # Streaming SSE chat handler
-│   │   ├── api/eval/        # Evaluation harness endpoints
-│   │   ├── api/facilities/  # Health facility lookup API
-│   │   ├── api/reminders/   # User reminders API
-│   │   ├── api/summary/     # Doctor visit summary export
-│   │   └── api/voice/       # Voice transcription endpoint
-│   ├── components/          # Modular React UI components
-│   │   ├── about/           # About view & safety architecture breakdown
-│   │   ├── app/             # App shell, navigation, offline banner
-│   │   ├── chat/            # Chat interface & emergency overlay
-│   │   ├── dashboard/       # Golden set eval metrics & logs
-│   │   ├── facilities/      # Healthcare locator & filters
-│   │   ├── reminders/       # Vaccine & medication reminders
-│   │   └── ui/              # shadcn/ui components
-│   ├── data/                # Clinical knowledge & safety data
-│   │   ├── corpus.ts        # Verified medical corpus (WHO/UNICEF/MoNHSRC)
-│   │   ├── emergency-templates.ts # Pre-verified emergency guidance cards
-│   │   ├── eval-golden.ts   # 58-case golden evaluation dataset
-│   │   ├── facilities-seed.ts # Nationwide healthcare facility dataset
-│   │   ├── glossary.ts      # 110+ trilingual medical terms
-│   │   └── lexicon.ts       # 16 red-flag pattern groups
-│   ├── hooks/               # Custom React hooks (voice, speech, media)
-│   └── lib/                 # Core engine, types, and utilities
-│       ├── engine/          # L0 safety engine & RAG retrieval
-│       └── store/           # Zustand global state store
-├── prisma/                  # Database schema & migrations
-└── public/                  # Static assets & PWA icons
+### 4. Run Development Server
+```bash
+bun dev
+# Application will run at http://localhost:3000
 ```
 
 ---
 
-## ⚖️ Medical Disclaimer
+## 🧪 Testing & Quality Verification
 
-> **SehatAI is an informational triage and guidance tool, not a medical practitioner.**  
-> It does not provide medical diagnosis, prescribe drugs, or determine medication dosages. In any medical emergency, users should immediately contact **Rescue 1122**, **1166**, or visit the nearest emergency healthcare center.
+Run repository-wide verification suites:
+
+```bash
+# 1. Full repository TypeScript check (0 errors required)
+bun run typecheck
+
+# 2. ESLint code standard check
+bun run lint
+
+# 3. Medical Safety & Invariant Tests
+bun run test:safety
+
+# 4. Care Connect Unit & Integration Tests
+bun run test:care
+
+# 5. Care Connect Commercial Loop Smoke Test
+bun x tsx tests/care/care-smoke.ts
+
+# 6. Production Next.js Build
+bun run build
+```
 
 ---
 
-## 📄 License
+## 📄 License & Legal Notice
 
-This project is licensed under the [MIT License](LICENSE).
+- **Software License**: Licensed under the [MIT License](LICENSE).
+- **Clinical & Legal Disclaimer**: SehatAI provides automated triage and health information for educational and preliminary support. It is not a substitute for professional medical judgment. Emergency cases must always seek in-person emergency care (`1122`). All documents under `docs/legal/` are drafts requiring licensed legal counsel review before commercial deployment.
