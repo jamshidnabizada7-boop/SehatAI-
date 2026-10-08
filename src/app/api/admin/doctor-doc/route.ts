@@ -20,9 +20,11 @@ export async function GET(req: NextRequest) {
   const doc = await db.doctorVerificationDoc.findUnique({ where: { id: docId } });
   if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 });
 
-  // The fileUrl is a relative path like /uploads/doctor-docs/{userId}/...-{filename}
+  // The fileUrl is a relative path like /storage/doctor-docs/{userId}/...-{filename} or legacy /uploads/...
   // We map it to the absolute path on disk
-  const absPath = path.join(process.cwd(), 'public', doc.fileUrl);
+  const absPath = doc.fileUrl.startsWith('/uploads/')
+    ? path.join(process.cwd(), 'public', doc.fileUrl)
+    : path.join(process.cwd(), doc.fileUrl.replace(/^\//, ''));
   try {
     const buf = await fs.readFile(absPath);
     return new NextResponse(buf, {

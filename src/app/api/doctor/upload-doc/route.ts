@@ -22,7 +22,26 @@ const ALLOWED_DOC_TYPES = ['pmdc_card', 'cnic', 'degree', 'experience_letter'];
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 
-const UPLOAD_ROOT = path.join(process.cwd(), 'public', 'uploads', 'doctor-docs');
+const UPLOAD_ROOT = path.join(process.cwd(), 'storage', 'doctor-docs');
+
+function validateMagicBytes(buf: Uint8Array, mime: string): boolean {
+  if (buf.length < 12) return false;
+  if (mime === 'image/jpeg') {
+    return buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+  }
+  if (mime === 'image/png') {
+    return buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  }
+  if (mime === 'application/pdf') {
+    return buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46; // %PDF
+  }
+  if (mime === 'image/webp') {
+    const isRiff = buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46; // RIFF
+    const isWebp = buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50; // WEBP
+    return isRiff && isWebp;
+  }
+  return false;
+}
 
 export async function POST(req: NextRequest) {
   let user;
@@ -56,21 +75,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'File too large (max 8 MB)' }, { status: 400 });
   }
 
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!validateMagicBytes(bytes, file.type)) {
+    return NextResponse.json({ error: 'File contents do not match declared file type' }, { status: 400 });
+  }
+
   const profile = await db.doctorProfile.findUnique({ where: { userId: user.id } });
   if (!profile) {
     return NextResponse.json({ error: 'Doctor profile not found' }, { status: 404 });
   }
 
-  // Save file to /public/uploads/doctor-docs/{userId}/{rand}-{safeFileName}
+  // Save file to private /storage/doctor-docs/{userId}/{rand}-{safeFileName}
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-]/g, '_').slice(-80);
   const rand = crypto.randomBytes(6).toString('hex');
   const dir = path.join(UPLOAD_ROOT, user.id);
   await fs.mkdir(dir, { recursive: true });
   const fileName = `${rand}-${safeName}`;
   const filePath = path.join(dir, fileName);
-  const bytes = new Uint8Array(await file.arrayBuffer());
   await fs.writeFile(filePath, bytes);
-  const fileUrl = `/uploads/doctor-docs/${user.id}/${fileName}`;
+  const fileUrl = `/storage/doctor-docs/${user.id}/${fileName}`;
 
   const doc = await db.doctorVerificationDoc.create({
     data: {
