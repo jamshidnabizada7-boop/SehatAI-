@@ -825,10 +825,11 @@ export const EMERGENCY_NUMBERS_PK: EmergencyContact[] = [
 ];
 
 export const EMERGENCY_NUMBERS_AF: EmergencyContact[] = [
-  { label: 'Kabul Ambulance Service', number: '102', coverage: 'Kabul City only', source: 'Ministry of Public Health', verifiedAt: '2026-10-08' },
-  { label: 'General Ambulance', number: '112', coverage: 'Varies by region (Afghanistan)', source: 'General Knowledge', verifiedAt: '2026-10-08' },
-  { label: 'Police Emergency (Afghanistan)', number: '119', coverage: 'Nationwide (Afghanistan)', source: 'Government of Afghanistan', verifiedAt: '2026-10-08' },
-  { label: 'Afghan Health Crisis Helpline', number: '166', coverage: 'Nationwide (Afghanistan)', source: 'Ministry of Public Health', verifiedAt: '2026-10-08' },
+  { label: 'Kabul Ambulance Service', number: '102', coverage: 'Kabul City only', source: 'Ministry of Public Health (MoPH)', verifiedAt: '2026-10-08' },
+  { label: 'Fire Department (Afghanistan)', number: '112', coverage: 'Nationwide fire dispatch (Afghanistan)', source: 'U.S. State Department Travel Advisory / Directorate of Fire & Disaster Management', verifiedAt: '2026-10-08' },
+  { label: 'Police Emergency (Afghanistan)', number: '119', coverage: 'Nationwide (Afghanistan)', source: 'Ministry of Interior / Afghan National Police', verifiedAt: '2026-10-08' },
+  { label: 'Afghan Health & Psycho-social Helpline', number: '166', coverage: 'Nationwide (Afghanistan)', source: 'Ministry of Public Health (MoPH) / WHO', verifiedAt: '2026-10-08' },
+  { label: 'Awaaz Afghanistan Humanitarian Helpline', number: '410', coverage: 'Nationwide (Afghanistan - toll-free)', source: 'UNHCR / UNOPS / WFP / WHO Awaaz Inter-agency Call Center', verifiedAt: '2026-10-08' },
 ];
 
 export const EMERGENCY_NUMBERS_INTL: EmergencyContact[] = [
@@ -836,9 +837,18 @@ export const EMERGENCY_NUMBERS_INTL: EmergencyContact[] = [
   { label: 'Nearest Hospital Emergency Department', number: 'Local EMS', coverage: 'Global', source: 'General Knowledge', verifiedAt: '2026-10-08' },
 ];
 
-export function getEmergencyNumbers(countryCode?: string | null): EmergencyContact[] {
+export function getEmergencyNumbers(countryCode?: string | null, regionOrCity?: string | null): EmergencyContact[] {
   const code = (countryCode ?? 'PK').trim().toUpperCase();
   if (code === 'AF' || code === 'AFG' || code === 'AFGHANISTAN') {
+    const region = (regionOrCity ?? '').trim().toLowerCase();
+    if (region && !region.includes('kabul') && !region.includes('کابل')) {
+      // Province/city outside Kabul: centralized ambulance dispatch (102) is not present.
+      return [
+        { label: 'Provincial Hospital Emergency (Direct Transport)', number: 'Local Regional/Provincial Hospital', coverage: `${regionOrCity} (Centralized ambulance dispatch unavailable outside Kabul)`, source: 'Ministry of Public Health (MoPH) / U.S. State Department Guidance', verifiedAt: '2026-10-08' },
+        ...EMERGENCY_NUMBERS_AF.filter(n => n.number !== '102'),
+        { label: 'Kabul Ambulance Service (Reference Only)', number: '102', coverage: 'Kabul City only — not available in provinces', source: 'Ministry of Public Health (MoPH)', verifiedAt: '2026-10-08' },
+      ];
+    }
     return EMERGENCY_NUMBERS_AF;
   }
   if (code === 'PK' || code === 'PAK' || code === 'PAKISTAN') {
@@ -852,3 +862,4 @@ export function getEmergencyNumbers(countryCode?: string | null): EmergencyConta
 }
 
 export const EMERGENCY_NUMBERS = EMERGENCY_NUMBERS_PK;
+

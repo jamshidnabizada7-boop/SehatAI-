@@ -521,8 +521,13 @@ function buildEmergencyContent(
   lines.push('');
 
   const nums = emergencyNumbers && emergencyNumbers.length > 0 ? emergencyNumbers : EMERGENCY_NUMBERS;
-  const p1 = nums[0];
-  const p2 = nums[1];
+  // For medical emergencies, only pair secondary contact if it is actually an ambulance or medical service
+  const medicalNums = nums.filter((n) => {
+    const l = n.label.toLowerCase();
+    return l.includes('ambulance') || l.includes('hospital') || l.includes('medical') || l.includes('rescue');
+  });
+  const p1 = medicalNums[0] ?? nums[0];
+  const p2 = medicalNums[1]; // only if there is a second medical/ambulance service
 
   let callLine: string;
   if (p1 && p2) {
@@ -1408,7 +1413,11 @@ export async function runPipeline(
     input.country ??
     input.jurisdiction ??
     (/\b(afghanistan|kabul|herat|kandahar|mazar|jalalabad|افغانستان|کابل)\b/i.test(message) ? 'AF' : 'PK');
-  const emergencyNumbers = getEmergencyNumbers(resolvedCountry);
+  const resolvedRegion =
+    (input as { city?: string; region?: string }).city ??
+    (input as { city?: string; region?: string }).region ??
+    (message.match(/\b(kabul|herat|kandahar|mazar|jalalabad|کابل|هرات|قندهار|مزار)\b/i)?.[1] ?? undefined);
+  const emergencyNumbers = getEmergencyNumbers(resolvedCountry, resolvedRegion);
 
   // ---------- Step 0: Conversation History Loading & Stream Separation (M1 / R1) ----------
   let rawHistoryMessages: Array<{ role: string; content: string; triageLevel?: string | null; emergency?: boolean; createdAt?: Date | string }> = [];
@@ -1677,12 +1686,21 @@ export async function runPipeline(
     const actions = rawActions.map((act) => {
       if (resolvedCountry !== 'PK' && emergencyNumbers.length > 0) {
         const p1 = emergencyNumbers[0]!;
-        const p2 = emergencyNumbers[1];
+        const ambulanceLabel = `${p1.number} (${p1.label})`;
         return act
-          .replace(/1122\s*\([^)]*\)\s*(?:or|ya|یا)\s*1023\s*\([^)]*\)/gi, `${p1.number} (${p1.label})${p2 ? ` / ${p2.number} (${p2.label})` : ''}`)
-          .replace(/1122\s*(?:or|ya|یا)\s*1023/gi, `${p1.number}${p2 ? ` / ${p2.number}` : ''}`)
+          .replace(/1122(?:\s*\([^)]*\))?\s*(?:or|ya|یا)\s*1023(?:\s*\([^)]*\))?/gi, ambulanceLabel)
+          .replace(/1122(?:\s*\([^)]*\))?\s*(?:or|ya|یا)\s*115(?:\s*\([^)]*\))?/gi, ambulanceLabel)
+          .replace(/1023\s*\([^)]*\)/gi, ambulanceLabel)
+          .replace(/1122\s*\([^)]*\)/gi, ambulanceLabel)
+          .replace(/115\s*\([^)]*\)/gi, ambulanceLabel)
           .replace(/\b1122\b/g, p1.number)
-          .replace(/\b1023\b/g, p2 ? p2.number : p1.number);
+          .replace(/\b1023\b/g, p1.number)
+          .replace(/\b115\b/g, p1.number)
+          .replace(/\bRescue 1122\b/gi, ambulanceLabel)
+          .replace(/\bAlkhidmat Ambulance\b/gi, ambulanceLabel)
+          .replace(/\bEdhi Ambulance\b/gi, ambulanceLabel)
+          .replace(/الخدمت ایمبولینس/g, 'کابل ایمبولینس')
+          .replace(/ریسکیو 1122/g, 'کابل ایمبولینس (102)');
       }
       return act;
     });
@@ -2865,17 +2883,21 @@ export async function runPipeline(
   }
 
   if (resolvedCountry !== 'PK' && emergencyNumbers.length > 0) {
-    const primary = emergencyNumbers[0]?.number ?? '1122';
+    const primary = emergencyNumbers[0]?.number ?? '112';
     const helpline = emergencyNumbers.find(n => n.label.toLowerCase().includes('help'))?.number ?? primary;
     
     if (result.content) {
       result.content = result.content
         .replace(/\b1122\b/g, primary)
+        .replace(/\b1023\b/g, primary)
+        .replace(/\b115\b/g, primary)
         .replace(/\b1166\b/g, helpline);
     }
     if (result.urduVersion) {
       result.urduVersion = result.urduVersion
         .replace(/\b1122\b/g, primary)
+        .replace(/\b1023\b/g, primary)
+        .replace(/\b115\b/g, primary)
         .replace(/\b1166\b/g, helpline);
     }
   }

@@ -3,10 +3,7 @@ generator client {
 }
 
 datasource db {
-  // LOCAL DEVELOPMENT: sqlite (no server needed).
-  // PRODUCTION: switch to "postgresql" (Neon) — schema contains no
-  // postgres-only constructs; see docs/CARE_CONNECT_CURRENT_STATE.md.
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

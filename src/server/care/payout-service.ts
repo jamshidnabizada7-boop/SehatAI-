@@ -98,24 +98,35 @@ export async function requestPayout(opts: { doctorProfileId: string; doctorUserI
   if (!method?.payoutMethod) throw new PayoutError('PAYOUT_METHOD_REQUIRED');
 
   const payout = await db.$transaction(async (tx) => {
+    // Acquire row-level lock on DoctorProfile to serialize concurrent payout requests
+    await tx.doctorProfile.update({
+      where: { id: opts.doctorProfileId },
+      data: { updatedAt: new Date() },
+    });
+
+    // Re-verify available earnings under lock inside transaction
+    const earnings = await tx.doctorEarning.findMany({
+      where: { doctorProfileId: opts.doctorProfileId, currency, state: 'AVAILABLE' },
+      orderBy: { availableAt: 'asc' },
+    });
+    const currentAvailableMinor = earnings.reduce((sum, e) => sum + e.netMinor, 0);
+    if (currentAvailableMinor <= 0) {
+      throw new PayoutError('NOTHING_AVAILABLE', 409);
+    }
+
     const created = await tx.payout.create({
       data: {
         doctorProfileId: opts.doctorProfileId,
         state: 'PENDING',
-        amountMinor: wallet.availableMinor,
+        amountMinor: currentAvailableMinor,
         currency,
         method: method.payoutMethod,
         requestedById: opts.doctorUserId,
         idempotencyKey: `payout_${randomUUID()}`,
       },
     });
-    // Claim the available balance atomically: move AVAILABLE → clearing,
-    // flip only AVAILABLE earnings rows for this payout.
-    const earnings = await tx.doctorEarning.findMany({
-      where: { doctorProfileId: opts.doctorProfileId, currency, state: 'AVAILABLE' },
-      orderBy: { availableAt: 'asc' },
-    });
-    let remaining = wallet.availableMinor;
+
+    let remaining = currentAvailableMinor;
     for (const earning of earnings) {
       if (remaining <= 0) break;
       const take = Math.min(remaining, earning.netMinor);

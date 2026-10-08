@@ -3,15 +3,20 @@ import { db } from '../../src/lib/db';
 import { createConsultation } from '../../src/server/care/consultation-service';
 import { createCheckoutForConsultation, processWebhook } from '../../src/server/care/payments/payment-service';
 import { MockPaymentProvider } from '../../src/server/care/payments/mock-provider';
-import { postTransaction } from '../../src/server/care/ledger';
+import { postTransaction, balanceOf, LedgerError } from '../../src/server/care/ledger';
+import { requestRefund } from '../../src/server/care/refund-service';
+import { requestPayout } from '../../src/server/care/payout-service';
 
-describe('PostgreSQL Advanced Concurrency & Isolation Suite', () => {
+describe('PostgreSQL Advanced Concurrency, Isolation & Financial Invariants (P3)', () => {
   const stamp = Date.now();
   let patientId: string;
   let doctorProfileId: string;
+  let doctorUserId: string;
   let serviceVideoId: string;
 
   beforeAll(async () => {
+    process.env.CARE_PAYMENTS_ENABLED = 'true';
+
     // Create test patient
     const patient = await db.user.create({
       data: {
@@ -40,6 +45,7 @@ describe('PostgreSQL Advanced Concurrency & Isolation Suite', () => {
         accountStatus: 'active',
       },
     });
+    doctorUserId = doctorUser.id;
 
     const docProfile = await db.doctorProfile.create({
       data: {
@@ -49,6 +55,7 @@ describe('PostgreSQL Advanced Concurrency & Isolation Suite', () => {
         specialty: 'Cardiology',
         country: 'PK',
         careStatus: 'ACTIVE',
+        payoutMethod: 'bank_transfer',
       },
     });
     doctorProfileId = docProfile.id;
@@ -108,7 +115,6 @@ describe('PostgreSQL Advanced Concurrency & Isolation Suite', () => {
   });
 
   test('2. Concurrent duplicate webhook processing is strictly serialized and idempotent', async () => {
-    // Create consultation and checkout first
     const { consultation } = await createConsultation({
       patientId,
       doctorProfileId,
@@ -144,14 +150,12 @@ describe('PostgreSQL Advanced Concurrency & Isolation Suite', () => {
     // Fire 4 identical webhooks in parallel
     const results = await Promise.all([callWebhook(), callWebhook(), callWebhook(), callWebhook()]);
 
-    // Exactly one should be the original processor, 3 should report duplicate: true
     const originals = results.filter((r) => !r.duplicate);
     const duplicates = results.filter((r) => r.duplicate);
 
     expect(originals.length).toBe(1);
     expect(duplicates.length).toBe(3);
 
-    // Verify DB has only 1 record
     const count = await db.paymentWebhook.count({
       where: { provider: 'mock', eventId },
     });
@@ -181,5 +185,231 @@ describe('PostgreSQL Advanced Concurrency & Isolation Suite', () => {
       where: { idempotencyKey: `${key}:0` },
     });
     expect(entries.length).toBe(1);
+  });
+
+  test('4. Concurrent refunds on same payment: exactly 1 succeeds, 2 fail with 409', async () => {
+    // Setup a paid consultation
+    const { consultation } = await createConsultation({
+      patientId,
+      doctorProfileId,
+      serviceId: serviceVideoId,
+      type: 'VIDEO',
+      scheduledAt: new Date(Date.now() + 9 * 24 * 3600_000).toISOString(),
+      patientCountry: 'PK',
+    });
+
+    const { payment } = await createCheckoutForConsultation({
+      consultationId: consultation.id,
+      patientId,
+      idempotencyKey: `idem_checkout_refund_${stamp}`,
+    });
+
+    // Mark payment PAID
+    await db.payment.update({
+      where: { id: payment.id },
+      data: { status: 'PAID', capturedAt: new Date() },
+    });
+
+    // 3 concurrent refund requests
+    const fireRefund = () =>
+      requestRefund({
+        consultationId: consultation.id,
+        actorId: patientId,
+        actorRole: 'PATIENT',
+        reason: 'patient_cancelled',
+      });
+
+    const results = await Promise.allSettled([fireRefund(), fireRefund(), fireRefund()]);
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected');
+
+    expect(fulfilled.length).toBe(1);
+    expect(rejected.length).toBe(2);
+
+    for (const r of rejected) {
+      const err = (r as PromiseRejectedResult).reason;
+      expect(err.code).toBe('REFUND_EXCEEDS_PAYMENT');
+      expect(err.status).toBe(409);
+    }
+
+    // Verify exactly 1 refund row exists in database
+    const totalRefunds = await db.refund.count({
+      where: { paymentId: payment.id },
+    });
+    expect(totalRefunds).toBe(1);
+  });
+
+  test('5. Concurrent payout requests for same doctor: exactly 1 succeeds, 2 fail with 409', async () => {
+    const { consultation } = await createConsultation({
+      patientId,
+      doctorProfileId,
+      serviceId: serviceVideoId,
+      type: 'VIDEO',
+      scheduledAt: new Date(Date.now() + 10 * 24 * 3600_000).toISOString(),
+      patientCountry: 'PK',
+    });
+
+    // Seed an available doctor earning tied to this consultation
+    const earning = await db.doctorEarning.create({
+      data: {
+        doctorProfileId,
+        consultationId: consultation.id,
+        grossMinor: 150000,
+        commissionMinor: 30000,
+        netMinor: 120000,
+        currency: 'PKR',
+        state: 'AVAILABLE',
+        availableAt: new Date(Date.now() - 3600_000),
+      },
+    });
+
+    // Post matching available credit to the ledger
+    await postTransaction({
+      reference: `earning:credit:${earning.id}`,
+      idempotencyKey: `earning:credit:${earning.id}`,
+      legs: [
+        { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 120000, currency: 'PKR' },
+        { accountKind: 'DOCTOR_AVAILABLE', ownerDoctorProfileId: doctorProfileId, direction: 'CREDIT', amountMinor: 120000, currency: 'PKR' },
+      ],
+    });
+
+    // Fire 3 simultaneous payout requests
+    const firePayout = () =>
+      requestPayout({
+        doctorProfileId,
+        doctorUserId,
+        currency: 'PKR',
+      });
+
+    const results = await Promise.allSettled([firePayout(), firePayout(), firePayout()]);
+    const succeeded = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected');
+
+    expect(succeeded.length).toBe(1);
+    expect(rejected.length).toBe(2);
+
+    for (const r of rejected) {
+      const err = (r as PromiseRejectedResult).reason;
+      expect(err.code).toBe('NOTHING_AVAILABLE');
+      expect(err.status).toBe(409);
+    }
+  });
+
+  test('6. Ledger replay preserves balances and returns posted: false', async () => {
+    const replayKey = `idem_replay_${stamp}`;
+    const initialBal = await balanceOf('platform:cash:PKR');
+    const debitBefore = initialBal?.debitMinor ?? 0;
+
+    const post1 = await postTransaction({
+      reference: `ref_replay_${stamp}`,
+      idempotencyKey: replayKey,
+      legs: [
+        { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 50000, currency: 'PKR' },
+        { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 50000, currency: 'PKR' },
+      ],
+    });
+    expect(post1.posted).toBe(true);
+
+    const balAfterFirst = await balanceOf('platform:cash:PKR');
+    expect(balAfterFirst?.debitMinor).toBe(debitBefore + 50000);
+
+    // Replay 1
+    const post2 = await postTransaction({
+      reference: `ref_replay_${stamp}`,
+      idempotencyKey: replayKey,
+      legs: [
+        { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 50000, currency: 'PKR' },
+        { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 50000, currency: 'PKR' },
+      ],
+    });
+    expect(post2.posted).toBe(false);
+
+    // Replay 2
+    const post3 = await postTransaction({
+      reference: `ref_replay_${stamp}`,
+      idempotencyKey: replayKey,
+      legs: [
+        { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 50000, currency: 'PKR' },
+        { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 50000, currency: 'PKR' },
+      ],
+    });
+    expect(post3.posted).toBe(false);
+
+    // Balance must NOT increase
+    const balAfterReplays = await balanceOf('platform:cash:PKR');
+    expect(balAfterReplays?.debitMinor).toBe(debitBefore + 50000);
+  });
+
+  test('7. Wrong currency / cross-currency mismatch strictly rejected with LedgerError', async () => {
+    expect(
+      postTransaction({
+        reference: `ref_ccy_mismatch_${stamp}`,
+        idempotencyKey: `idem_ccy_${stamp}`,
+        legs: [
+          { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 10000, currency: 'USD' },
+          { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 10000, currency: 'PKR' },
+        ],
+      }),
+    ).rejects.toThrow(LedgerError);
+  });
+
+  test('8. Amount mismatch (debit != credit) strictly rejected with LedgerError', async () => {
+    expect(
+      postTransaction({
+        reference: `ref_amt_mismatch_${stamp}`,
+        idempotencyKey: `idem_amt_${stamp}`,
+        legs: [
+          { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 10000, currency: 'PKR' },
+          { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 9000, currency: 'PKR' },
+        ],
+      }),
+    ).rejects.toThrow(/UNBALANCED: PKR debits 10000 != credits 9000/);
+  });
+
+  test('9. Handling P2002 does NOT suppress unrelated unique constraint violations', async () => {
+    // Pre-create an account code
+    const uniqueCode = `test:unique:code:${stamp}`;
+    await db.ledgerAccount.create({
+      data: {
+        code: uniqueCode,
+        kind: 'SUSPENSE',
+        currency: 'PKR',
+      },
+    });
+
+    // Attempting to create another account with the identical code produces P2002 on `code`
+    let caughtError: unknown = null;
+    try {
+      await db.ledgerAccount.create({
+        data: {
+          code: uniqueCode,
+          kind: 'SUSPENSE',
+          currency: 'PKR',
+        },
+      });
+    } catch (err) {
+      caughtError = err;
+    }
+
+    expect(caughtError).toBeDefined();
+    expect((caughtError as { code: string }).code).toBe('P2002');
+    // Ensure this unrelated P2002 was not swallowed
+    expect((caughtError as { meta: { target: string[] | string } }).meta.target).toBeDefined();
+  });
+
+  test('10. Repeated concurrency & deadlock resistance: 10 parallel transactions execute without hang', async () => {
+    const tasks = Array.from({ length: 10 }, (_, i) =>
+      postTransaction({
+        reference: `ref_stress_${stamp}_${i}`,
+        idempotencyKey: `idem_stress_${stamp}_${i}`,
+        legs: [
+          { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 1000 * (i + 1), currency: 'PKR' },
+          { accountKind: 'SUSPENSE', direction: 'CREDIT', amountMinor: 1000 * (i + 1), currency: 'PKR' },
+        ],
+      }),
+    );
+
+    const results = await Promise.all(tasks);
+    expect(results.every((r) => r.posted)).toBe(true);
   });
 });

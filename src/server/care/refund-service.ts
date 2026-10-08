@@ -77,26 +77,35 @@ export async function requestRefund(opts: {
   if (refundMinor <= 0) throw new RefundError('NOT_REFUNDABLE', 409);
 
   // Duplicate refund guard: Σ refunds must never exceed the payment.
-  const priorRefunds = await db.refund.aggregate({
-    where: { paymentId: payment.id, state: { in: ['REQUESTED', 'REFUND_PENDING', 'REFUNDED'] } },
-    _sum: { amountMinor: true },
-  });
-  const alreadyRefunding = priorRefunds._sum.amountMinor ?? 0;
-  if (alreadyRefunding + refundMinor > payment.amountMinor) {
-    throw new RefundError('REFUND_EXCEEDS_PAYMENT', 409);
-  }
+  // We execute this check and row creation inside a transaction with an explicit row lock on Payment.
+  const refund = await db.$transaction(async (tx) => {
+    // Acquire row-level lock on Payment to serialize concurrent refund attempts
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: { updatedAt: new Date() },
+    });
 
-  const refund = await db.refund.create({
-    data: {
-      paymentId: payment.id,
-      consultationId: opts.consultationId,
-      amountMinor: refundMinor,
-      currency: payment.currency,
-      reason: opts.reason,
-      state: 'REQUESTED',
-      policyVersion,
-      requestedById: opts.actorId,
-    },
+    const priorRefunds = await tx.refund.aggregate({
+      where: { paymentId: payment.id, state: { in: ['REQUESTED', 'REFUND_PENDING', 'REFUNDED'] } },
+      _sum: { amountMinor: true },
+    });
+    const alreadyRefunding = priorRefunds._sum.amountMinor ?? 0;
+    if (alreadyRefunding + refundMinor > payment.amountMinor) {
+      throw new RefundError('REFUND_EXCEEDS_PAYMENT', 409);
+    }
+
+    return tx.refund.create({
+      data: {
+        paymentId: payment.id,
+        consultationId: opts.consultationId,
+        amountMinor: refundMinor,
+        currency: payment.currency,
+        reason: opts.reason,
+        state: 'REQUESTED',
+        policyVersion,
+        requestedById: opts.actorId,
+      },
+    });
   });
 
   await transitionRefund(refund.id, 'REFUND_PENDING');

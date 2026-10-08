@@ -143,8 +143,26 @@ export async function postTransaction(input: PostTransactionInput): Promise<{ po
       return { posted: true, reference: input.reference };
     }, { timeout: 15_000 });
   } catch (err: any) {
-    if (err.code === 'P2002' && (err.meta?.target?.includes('idempotencyKey') || String(err).includes('idempotencyKey'))) {
-      return { posted: false, reference: input.reference };
+    if (err && typeof err === 'object' && err.code === 'P2002') {
+      const target = err.meta?.target;
+      const isTargetIdempotencyKey =
+        (Array.isArray(target) && target.includes('idempotencyKey')) ||
+        (typeof target === 'string' &&
+          (target === 'idempotencyKey' ||
+           target === 'LedgerEntry_idempotencyKey_key' ||
+           target.endsWith('_idempotencyKey_key')));
+
+      if (isTargetIdempotencyKey) {
+        // Double-check: verify that a ledger entry with this exact idempotencyKey actually exists in the DB.
+        // If it does not exist, then this is not an intended idempotency skip and must be thrown.
+        const confirmed = await db.ledgerEntry.findFirst({
+          where: { idempotencyKey: `${input.idempotencyKey}:0` },
+          select: { id: true },
+        });
+        if (confirmed) {
+          return { posted: false, reference: input.reference };
+        }
+      }
     }
     throw err;
   }
