@@ -165,7 +165,14 @@ export async function createCheckoutForConsultation(opts: { consultationId: stri
     consultationId: consultation.id, to: 'PAYMENT_PENDING', actorId: opts.patientId, actorRole: 'PATIENT',
   }).catch(() => undefined); // already PAYMENT_PENDING — transition machine allows no-op same-state
 
-  return { payment: updated, checkoutUrl: session.checkoutUrl, breakdown, provider: provider.uiLabel };
+  return {
+    payment: updated,
+    checkoutUrl: session.checkoutUrl,
+    breakdown,
+    provider: provider.uiLabel,
+    isMockPayment: provider.name === 'mock',
+    mockNotice: provider.name === 'mock' ? 'SIMULATION ONLY: No real money is charged.' : null,
+  };
 }
 
 async function flagEnabled(): Promise<boolean> {

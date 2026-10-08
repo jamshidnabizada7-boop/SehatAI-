@@ -22,6 +22,7 @@ export interface MarketplaceFilters {
   patientId?: string | null; // for "consulted before" continuity (§65)
   sort?: 'relevance' | 'price_asc' | 'price_desc' | 'rating';
   sponsoredFirst?: boolean; // caller opts in; result is always labeled
+  includeTest?: boolean; // prevents test doctors from appearing as real services unless explicitly enabled
 }
 
 export interface MarketplaceDoctor {
@@ -50,6 +51,33 @@ export interface MarketplaceDoctor {
   consultedBefore: boolean;
   favorite: boolean;
   sponsored: boolean; // always false until a paid-placement product exists; if true, UI MUST label
+  isTestProfile?: boolean;
+  testDisclaimer?: string | null;
+}
+
+/** Check whether a doctor profile represents an internal test fixture. */
+export function isTestDoctorProfile(doctor: {
+  pmdcNumber?: string | null;
+  user?: { email?: string | null; name?: string | null } | null;
+}): boolean {
+  const pmdc = (doctor.pmdcNumber ?? '').toUpperCase();
+  const email = (doctor.user?.email ?? '').toLowerCase();
+  const name = (doctor.user?.name ?? '').toLowerCase();
+
+  const isTestEmail = /@(test\.local|local\.test|t\.local|example\.com)$/i.test(email);
+  const isTestPmdc = /^(TEST|RED|PAY|SUSP|LOCK|IT|SMOKE|PG|PMDC-SUSP|PMDC-COMP|PMDC-LEDGER)/i.test(pmdc);
+  const isTestName =
+    name.startsWith('[test]') ||
+    name === 'test doctor' ||
+    name === 'doc a' ||
+    name === 'doc b' ||
+    name === 'dr it' ||
+    name === 'dr smoke' ||
+    name === 'active doc' ||
+    name === 'suspended doc' ||
+    name === 'ledger doc';
+
+  return isTestEmail || isTestPmdc || isTestName;
 }
 
 // §45 Bayesian average: avoids "one 5-star review outranks hundreds".
@@ -98,7 +126,7 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
   const candidates = await db.doctorProfile.findMany({
     where,
     include: {
-      user: { select: { name: true, id: true } },
+      user: { select: { name: true, id: true, email: true } },
       services: { where: { enabled: true } },
       careReviews: {
         where: { state: 'PUBLISHED' },
@@ -114,6 +142,12 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
 
   // Post-filters that need loaded relations:
   let rows = candidates;
+
+  // Prevent internal test doctors from appearing as real clinical services (§18)
+  if (!filters.includeTest) {
+    rows = rows.filter((d) => !isTestDoctorProfile(d));
+  }
+
   if (filters.language) {
     rows = rows.filter((d) => safeJsonArray(d.languages).includes(filters.language!));
   }
@@ -147,9 +181,14 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
   const results: MarketplaceDoctor[] = rows.map((d) => {
     const rating = robustRating(d.careReviews.map((r) => ({ overall: r.overall, createdAt: r.createdAt })));
     const cheapest = [...d.services].sort((a, b) => a.priceMinor - b.priceMinor)[0];
+    const isTest = isTestDoctorProfile(d);
     return {
       doctorProfileId: d.id,
-      name: d.user.name ?? 'Doctor',
+      name: isTest
+        ? (d.user.name?.startsWith('[TEST]') ? d.user.name : `[TEST] ${d.user.name ?? 'Doctor'}`)
+        : (d.user.name ?? 'Doctor'),
+      isTestProfile: isTest,
+      testDisclaimer: isTest ? 'TEST PROFILE — NOT A REAL CLINICAL SERVICE' : null,
       avatarUrl: d.avatarUrl,
       specialty: d.specialty,
       subSpecialty: d.subSpecialty,

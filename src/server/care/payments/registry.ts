@@ -14,7 +14,7 @@ const PROVIDERS: Record<string, PaymentProvider> = {
 
 export function getPaymentProvider(name?: string | null): PaymentProvider {
   const key = (name ?? process.env.CARE_PAYMENT_PROVIDER ?? 'mock').toLowerCase();
-  if (process.env.NODE_ENV === 'production' && key === 'mock') {
+  if (key === 'mock' && process.env.NODE_ENV === 'production' && process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true') {
     throw new ProviderNotConfiguredError('Mock payment provider is strictly barred in production.');
   }
   const provider = PROVIDERS[key];
@@ -25,8 +25,13 @@ export function getPaymentProvider(name?: string | null): PaymentProvider {
   return provider;
 }
 
-export function listProviders(): Array<{ name: string; configured: boolean; uiLabel: string }> {
-  return Object.values(PROVIDERS).map((p) => ({ name: p.name, configured: p.isConfigured, uiLabel: p.uiLabel }));
+export function listProviders(): Array<{ name: string; configured: boolean; uiLabel: string; isMock: boolean }> {
+  return Object.values(PROVIDERS).map((p) => ({
+    name: p.name,
+    configured: p.isConfigured,
+    uiLabel: p.uiLabel,
+    isMock: p.name === 'mock',
+  }));
 }
 
 export { MockPaymentProvider };

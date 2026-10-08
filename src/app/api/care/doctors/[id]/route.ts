@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCareSession } from '@/lib/care/care-auth';
-import { robustRating } from '@/server/care/marketplace';
+import { robustRating, isTestDoctorProfile } from '@/server/care/marketplace';
 import { careFlag } from '@/lib/care/flags';
 export const runtime = 'nodejs';
 
@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const doctor = await db.doctorProfile.findUnique({
     where: { id },
     include: {
-      user: { select: { name: true, accountStatus: true } },
+      user: { select: { name: true, accountStatus: true, email: true } },
       services: { where: { enabled: true }, orderBy: { priceMinor: 'asc' } },
       careReviews: {
         where: { state: 'PUBLISHED' },
@@ -29,6 +29,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
   if (!doctor || doctor.pmdcVerifiedAt == null) {
+    return NextResponse.json({ error: 'DOCTOR_NOT_FOUND' }, { status: 404 });
+  }
+
+  const isTest = isTestDoctorProfile(doctor);
+  // Prevent test doctors from appearing as real services in production or public rollout
+  if (isTest && (process.env.NODE_ENV === 'production' || process.env.CARE_ROLLOUT_STAGE === '5') && process.env.CARE_ALLOW_TEST_DOCTORS !== 'true') {
     return NextResponse.json({ error: 'DOCTOR_NOT_FOUND' }, { status: 404 });
   }
 
@@ -48,7 +54,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json({
     doctor: {
       id: doctor.id,
-      name: doctor.user.name,
+      name: isTest
+        ? (doctor.user.name?.startsWith('[TEST]') ? doctor.user.name : `[TEST] ${doctor.user.name ?? 'Doctor'}`)
+        : doctor.user.name,
+      isTestProfile: isTest,
+      testDisclaimer: isTest ? 'TEST PROFILE — NOT A REAL CLINICAL SERVICE' : null,
       specialty: doctor.specialty,
       subSpecialty: doctor.subSpecialty,
       bio: doctor.bio,
