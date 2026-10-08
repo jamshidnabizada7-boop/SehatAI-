@@ -82,7 +82,7 @@ export function useSpeech() {
         }
         const utter = new SpeechSynthesisUtterance(chunks[index]);
         utter.lang = tag;
-        if (voice) utter.voice = voice;
+        if (voice) utter.voice = voice as unknown as SpeechSynthesisVoice;
         utter.rate = rate;
         utter.onend = () => speakNext(index + 1);
         utter.onerror = () => setSpeakingId(null);

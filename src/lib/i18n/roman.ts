@@ -183,6 +183,7 @@ export const roman: Dict = {
     assistant: 'SehatAI',
     emptyConversation: 'Guftagu saaf kar di gayi',
     dailyTip: 'Aaj ka sehat mashwara',
+    transcript: 'Guftagu ka record',
     copyTranscript: 'Guftagu copy karein',
     transcriptCopied: 'Guftagu clipboard par copy ho gayi',
     transcriptEmpty: 'Abhi copy karne ko kuch nahin',

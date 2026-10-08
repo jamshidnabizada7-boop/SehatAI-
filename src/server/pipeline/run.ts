@@ -801,6 +801,7 @@ function sanitizeL1(raw: unknown): L1Extraction | null {
 interface PersistPayload {
   sessionId: string;
   conversationId?: string;
+  userId?: string | null;
   lang: Lang;
   userContent: string;
   assistantContent: string;
@@ -824,11 +825,35 @@ async function persistTurn(p: PersistPayload): Promise<{ messageId: string; conv
     let conversationId = p.conversationId ?? '';
     if (conversationId) {
       const existing = await db.conversation.findUnique({ where: { id: conversationId } });
-      if (!existing) conversationId = '';
+      if (!existing) {
+        conversationId = '';
+      } else {
+        // Enforce ownership boundary: prevent cross-user and cross-session injection
+        if (p.userId) {
+          if (existing.userId && existing.userId !== p.userId) {
+            conversationId = ''; // Reject appending to another user's conversation
+          } else if (!existing.userId && existing.sessionToken === p.sessionId) {
+            // Claim previously unauthenticated conversation under the same verified session
+            await db.conversation.update({ where: { id: conversationId }, data: { userId: p.userId } }).catch(() => undefined);
+          } else if (!existing.userId) {
+            conversationId = ''; // Do not append to arbitrary guest conversations
+          }
+        } else {
+          // Guest user: only permitted if conversation has no userId AND matches sessionToken
+          if (existing.userId || existing.sessionToken !== p.sessionId) {
+            conversationId = ''; // Reject cross-guest injection
+          }
+        }
+      }
     }
     if (!conversationId) {
       const conv = await db.conversation.create({
-        data: { sessionToken: p.sessionId, language: p.lang, offline: false },
+        data: {
+          sessionToken: p.sessionId,
+          userId: p.userId || null,
+          language: p.lang,
+          offline: false,
+        },
       });
       conversationId = conv.id;
     }
@@ -1353,7 +1378,7 @@ export async function runPipeline(
   let rawHistoryMessages: Array<{ role: string; content: string; triageLevel?: string | null; emergency?: boolean; createdAt?: Date | string }> = [];
   if (Array.isArray(input.history)) {
     rawHistoryMessages = input.history as typeof rawHistoryMessages;
-  } else {
+  } else if (input.persist !== false) {
     try {
       let convId = input.conversationId;
       if (!convId && input.sessionId) {
@@ -1432,6 +1457,7 @@ export async function runPipeline(
     const persisted = await persistTurn({
       sessionId: input.sessionId,
       conversationId: input.conversationId,
+      userId,
       lang: convLang,
       userContent: message,
       assistantContent: content,
@@ -1497,9 +1523,29 @@ export async function runPipeline(
 
   // ---------- Step 1: L0 (sync, <5ms) — includes clinical context ----------
   const tL0 = Date.now();
-  const redFlagMatches = matchRedFlags(message);
-  const l0 = runL0Triage(message);
+  let redFlagMatches = matchRedFlags(message);
+  let l0 = runL0Triage(message);
   const ctx = l0.context ?? extractClinicalContext(combinedPatientContext);
+
+  if (l0.level !== 'EMERGENCY' && priorPatientMessages.length > 0) {
+    const priorWasEmergency = rawHistoryMessages.slice(-2).some((m) => m.emergency === true || m.triageLevel === 'EMERGENCY');
+    const combinedL0 = runL0Triage(combinedPatientContext);
+    if (combinedL0.level === 'EMERGENCY') {
+      l0 = combinedL0;
+      redFlagMatches = matchRedFlags(combinedPatientContext);
+    } else if (priorWasEmergency) {
+      const priorUserMsg = priorPatientMessages.find((m) => runL0Triage(m.content).level === 'EMERGENCY');
+      const priorCat = priorUserMsg ? runL0Triage(priorUserMsg.content).matchedCategory : combinedL0.matchedCategory;
+      l0 = {
+        level: 'EMERGENCY',
+        reason: l0.reason || combinedL0.reason || 'Emergency follow-up care required.',
+        signals: [...l0.signals, 'history:active-emergency'],
+        engine: 'L0',
+        shortCircuited: true,
+        matchedCategory: priorCat || 'general-emergency',
+      };
+    }
+  }
   latencies.l0 = Date.now() - tL0;
 
   const isEmergencyL0 = l0.level === 'EMERGENCY';
@@ -1604,6 +1650,7 @@ export async function runPipeline(
     const persisted = await persistTurn({
       sessionId: input.sessionId,
       conversationId: input.conversationId,
+      userId,
       lang,
       userContent: message,
       assistantContent: content,
@@ -2436,6 +2483,7 @@ export async function runPipeline(
   const persisted = await persistTurn({
     sessionId: input.sessionId,
     conversationId: input.conversationId,
+    userId,
     lang,
     userContent: message,
     assistantContent: finalContent,
@@ -2538,6 +2586,46 @@ export async function runPipeline(
     // Adjust confidence based on constellation agreement
     finalConfidence = adjustConfidence(finalConfidence, constellationResult);
     result.confidence = finalConfidence;
+
+    // Veto Enforcement: if any critical validator vetoes, enforce clinical safety fallback
+    if (constellationResult.mustAbstain) {
+      const redFlagVeto = constellationResult.results.find((r) => r.veto && r.name === 'red-flag-recheck');
+      const medVeto = constellationResult.results.find((r) => r.veto && r.name === 'medication-safety');
+
+      if (redFlagVeto) {
+        result.triage.level = 'EMERGENCY';
+        const templateCategory = redFlagMatches[0]?.pattern.category ?? 'general-emergency';
+        const emTemplate = getEmergencyTemplate(templateCategory) ?? getEmergencyTemplate('unconscious') ?? EMERGENCY_TEMPLATES[0]!;
+        const langKey = lang === 'ur' ? 'ur' : lang === 'roman' ? 'roman' : 'en';
+        const emGuidance = [
+          `🚨 **${emTemplate.title[langKey]}**`,
+          emTemplate.reasonIntro[langKey],
+          ...emTemplate.immediateActions.map((a) => '• ' + a[langKey]),
+          lang === 'ur' ? 'فوری طور پر 1122 پر کال کریں۔' : lang === 'roman' ? 'Foran 1122 par call karein.' : 'CALL 1122 IMMEDIATELY.',
+        ].join('\n\n');
+        result.content = emGuidance;
+        finalContent = emGuidance;
+        result.emergency = {
+          templateCategory,
+          title: emTemplate.title[lang],
+          reason: 'Constellation validator detected emergency red flag',
+          matchedPatternId: redFlagMatches[0]?.pattern.id ?? 'constellation-veto',
+          actions: emTemplate.immediateActions.map((a) => a[lang]),
+          doNot: emTemplate.doNot.map((d) => d[lang]),
+          numbers: EMERGENCY_NUMBERS,
+          sources: emTemplate.sources,
+        };
+      } else if (medVeto) {
+        const medWarning = lang === 'ur'
+          ? 'توجہ: ادویات کا ممکنہ خطرناک تعامل سامنے آیا ہے۔ یہ دوا ایک ساتھ نہ لیں اور فوراً اپنے معالج یا فارماسسٹ سے رجوع کریں۔'
+          : lang === 'roman'
+          ? 'Tawajah: Dawao ka khatarnak interact samne aaya hai. Yeh dawa aik saath na lein aur fori doctor ya pharmacist se rabta karein.'
+          : 'Warning: A potentially dangerous medication interaction was detected. Do not take these medications together and consult a doctor or pharmacist immediately.';
+        result.content = medWarning;
+        finalContent = medWarning;
+      }
+    }
+
     // Log constellation result (no PHI)
     structuredLog('info', 'constellation.run', {
       approved: constellationResult.approved,

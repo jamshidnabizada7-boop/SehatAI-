@@ -363,7 +363,7 @@ const TRAUMA_MECHANISMS: { key: string; terms: string[] }[] = [
     terms: [
       'i fell', 'fell down', 'fell from', 'fell off', 'have fallen', 'has fallen', 'fell on',
       'fell and', 'gir gaya', 'gir gayi', 'gir gaye', 'gira hoon', 'giri hoon', 'gira tha',
-      'girna', 'گر گیا', 'گر گئی', 'گرا ہوں', 'گرنا', 'سیڑھیوں سے گر',
+      'girna', 'گر گیا', 'گر گئی', 'گرا ہوں', 'گرنا', 'سیڑھیوں سے گر', 'گرنے', 'گرنے کے بعد', 'چھت سے گر', 'چھت سے گرنے',
     ],
   },
   {
@@ -376,7 +376,7 @@ const TRAUMA_MECHANISMS: { key: string; terms: string[] }[] = [
   },
   {
     key: 'burn',
-    terms: ['burned', 'burnt', 'scald', 'boiling water', 'jal gaya', 'jala hai', 'جل گیا', 'جلنے', 'سیدھا پانی سے'],
+    terms: ['burned', 'burnt', 'scald', 'boiling water', 'jal gaya', 'jala hai', 'جل گیا', 'جلنے', 'سیدھا پانی سے', 'جل جانا', 'سلنڈر', 'دھماکے'],
   },
   {
     key: 'electrical',
@@ -411,7 +411,7 @@ const TRAUMA_SIGNS: { key: string; terms: string[] }[] = [
       'numb', 'numbness', 'cannot feel', "can't feel", 'cant feel', 'could not feel', 'no feeling in',
       'mehsoos nahi', 'sun ho gaya', 'sun ho gayi', 'sun ho gaye', 'sunn ho gaya', 'sunn ho gayi',
       'sunn ho gaye', 'haath sun', 'paon sun', 'baazu sun', 'سن ہو گیا', 'سن ہو گئی', 'سن ہو گئے',
-      'ہاتھ سن', 'پاؤں سن', 'بازو سن', 'محسوس نہیں',
+      'ہاتھ سن', 'پاؤں سن', 'بازو سن', 'محسوس نہیں', 'بے حس', 'بےحس', 'ہاتھ پاؤں بے حس',
     ],
   },
   {

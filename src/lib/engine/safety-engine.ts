@@ -149,6 +149,10 @@ export function resolveEmergencyCategory(hits: LexiconMatch[], ctx: ClinicalCont
   if (diabeticEmergency) return 'diabetic-emergency';
   // 3) among lexicon hits pick highest clinical priority
   if (hits.length > 0) {
+    if (ctx.populations.child) {
+      const pedHit = hits.find((h) => h.pattern.category === 'pediatric');
+      if (pedHit) return 'pediatric';
+    }
     const rank = (cat: string) => {
       const i = CATEGORY_PRIORITY.indexOf(cat);
       return i < 0 ? CATEGORY_PRIORITY.length : i;
@@ -185,7 +189,7 @@ export function termMatches(normText: string, term: string): boolean {
   if (hasTokenBoundaryMatch(normText, t)) return true;
 
   // proximity: all term words as distinct whole tokens within a window of (n + 3) tokens
-  const words = t.split(' ').filter((w) => w.length > 1);
+  const words = t.split(' ').filter((w) => w.length > 1 || /\d/.test(w));
   if (words.length === 0) return false;
   const tokens = normText.split(' ').filter(Boolean);
   const tokenSet = new Set(tokens);
@@ -249,7 +253,7 @@ export function detectLanguage(text: string): { language: Lang; confidence: numb
 /** Split text into clauses by punctuation and contrasting conjunctions */
 export function splitIntoClauses(text: string): string[] {
   return text
-    .split(/[.,;:!?\n()\-—–]|(?:\b(?:but|however|although|though|except|lekin|magar|par|lekan|balkay|balke|aur)\b|اور)/i)
+    .split(/[.,;:!?\n()\-—–\u06D4\u061F\u060C\u061B]|(?:\b(?:but|however|although|though|except|lekin|magar|par|lekan|balkay|balke|aur)\b|اور|لیکن|مگر|پر|بلکہ)/i)
     .map((c) => c.trim())
     .filter(Boolean);
 }
@@ -258,9 +262,15 @@ export function splitIntoClauses(text: string): string[] {
 const PRE_NEGATION_RE =
   /\b(no|not|without|denies|denied|negative for|free of|zero|never had|never|no sign of|no signs of|rule out|koi|bina|bager|baghair|bina kisi|baghair kisi|kisi bhi)\b|کوئی|بغیر|نہ/i;
 
+const PRE_NEGATION_ANCHORED_RE =
+  /(?:\b(no|not|without|denies|denied|negative for|free of|zero|never had|never|no sign of|no signs of|rule out|koi|bina|bager|baghair|bina kisi|baghair kisi|kisi bhi)\b\s*(?:any|further|other|new)?|کوئی|بغیر|نہ)\s*$/i;
+
 /** Trailing negation markers in English, Roman Urdu, and Urdu */
 const POST_NEGATION_RE =
   /\b(nahi hai|nahin hai|nhi hai|nahi|nahin|nhi|nahi hora|nahi horaha|nahi ho raha|nahi hua|nahi hui|nahi hota|nahi hoti|nahi hote|nahi hotay|absent|not present|ruled out|negative|stopped|has stopped|is gone|resolved|theek hai|theek ho gaya|bilkul theek)\b|نہیں ہے|نہیں ہیں|نہیں ہو رہا|نہیں ہو رہی|نہیں ہوئی|نہیں ہوا|نہیں|ختم ہو گیا|ٹھیک ہے/i;
+
+const POST_NEGATION_ANCHORED_RE =
+  /^\s*(?:is|was|are|bhi|to|bilkul|hai|tha)?\s*(?:nahi hai|nahin hai|nhi hai|nahi|nahin|nhi|nahi hora|nahi horaha|nahi ho raha|nahi hua|nahi hui|nahi hota|nahi hoti|nahi hote|nahi hotay|absent|not present|ruled out|negative|stopped|has stopped|is gone|resolved|theek hai|theek ho gaya|bilkul theek)\b|^\s*(?:بھی|تو|بالکل|ہے|تھا)?\s*(?:نہیں ہے|نہیں ہیں|نہیں ہو رہا|نہیں ہو رہی|نہیں ہوئی|نہیں ہوا|نہیں|ختم ہو گیا|ٹھیک ہے)/i;
 
 /** Any negation marker in a clause */
 const CLAUSE_NEGATION_RE =
@@ -278,7 +288,7 @@ const INTRINSIC_DANGER_TERMS = new Set([
   'bleeding wont stop', "bleeding won't stop", 'bleeding will not stop', 'bleeding does not stop',
   'nosebleed wont stop', "nosebleed won't stop", 'nosebleed will not stop',
   'khoon nahi ruk raha', 'khoon nahi ruk', 'nak se khoon nahi ruk', 'خون نہیں رک رہا',
-  'unconscious', 'not waking up', 'wont wake up', "won't wake up", 'no response', 'not responding', 'wont respond', "won't respond",
+  'unconscious', 'not waking', 'not waking after', 'not waking up', 'wont wake up', "won't wake up", 'no response', 'not responding', 'wont respond', "won't respond",
   'lost consciousness', 'hosh nahi aa raha', 'hosh nahi hai', 'ہوش نہیں ہے', 'ہوش نہیں آ رہا',
   'cant drink', "can't drink", 'cannot drink', 'not drinking', 'wont drink', "won't drink", 'refusing to drink', 'unable to drink', 'not feeding',
   'cant wake', "can't wake", 'cant wake up', "can't wake up", 'cant move', "can't move", 'not moving', 'barely moving',
@@ -308,25 +318,25 @@ export function isTermAffirmedInNormClause(normClause: string, rawTerm: string, 
   if (termIdx !== -1) {
     const before = normClause.slice(0, termIdx).trim();
     const after = normClause.slice(termIdx + normTerm.length).trim();
-    if (before && PRE_NEGATION_RE.test(before)) {
+
+    // Direct pre-negation: check immediately preceding context (after conjunctions)
+    const directBefore = before.split(/\b(and|aur|but|lekin|or|ya|after|following|since)\b|اور|لیکن|مگر|یا/i).pop()!.trim();
+    if (directBefore && PRE_NEGATION_ANCHORED_RE.test(directBefore)) {
       return false;
     }
-    if (after && POST_NEGATION_RE.test(after)) {
+
+    // Direct post-negation: check immediately following tokens before any conjunction or clause break
+    const directAfter = after.split(/\b(and|aur|but|lekin|or|ya|with|ke sath|saath)\b|اور|لیکن|مگر|یا/i)[0].trim();
+    if (directAfter && POST_NEGATION_ANCHORED_RE.test(directAfter)) {
       return false;
     }
-  } else {
-    if (CLAUSE_NEGATION_RE.test(normClause)) {
-      return false;
-    }
+
+    return true;
   }
 
-  if (PRE_NEGATION_RE.test(normClause) || POST_NEGATION_RE.test(normClause)) {
-    if (/^\s*(no|not|without|denies|koi|bina|baghair)\b/i.test(normClause)) {
-      return false;
-    }
-    if (/\b(nahi|nahin|nhi|nahi hai|nahin hai)\s*$/i.test(normClause)) {
-      return false;
-    }
+  // Fallback when termIdx === -1 (matched via termMatches token search)
+  if (CLAUSE_NEGATION_RE.test(normClause)) {
+    return false;
   }
 
   return true;
@@ -396,7 +406,7 @@ export function matchModifiers(rawText: string): string[] {
     for (const term of mod.terms) {
       const normTerm = normalizeText(term);
       for (const normClause of normClauses) {
-        if (normClause.includes(normTerm) && !CLAUSE_NEGATION_RE.test(normClause)) {
+        if (isTermAffirmedInNormClause(normClause, term, normTerm)) {
           modHit = true;
           break;
         }
@@ -415,11 +425,11 @@ export { RED_FLAG_PATTERNS, SEVERITY_MODIFIERS } from '@/data/lexicon';
 
 /** breathing-difficulty patterns (trilingual, spelling-tolerant) */
 const DYSPNEA_RE =
-  /(difficulty breathing|shortness of breath|cant breathe|can't breathe|cannot breathe|trouble breathing|breathless|breathing difficulty|breathing is really hard|breathing hard|struggling to breathe|struggling to breath|struggling for breath|unable to breathe|gasping|gasping for air|cant catch my breath|can't catch my breath|cant catch breath|can't catch breath|catching my breath|cant get enough air|can't get enough air|cant get a full breath|wheezing badly|wheezing severe|wheezing a lot|cant get air|can't get air|winded|winded just|breathless just walking|breathless walking|saans lene mein mushkil|saans lene mein takleef|saans nahi aa rah|saans nhi aa rah|saans phool|sanse nahi aa rah|saans ki takleef|saans nahi aa rahi|saans phul rahi|سانس لینے میں مشکل|سانس نہیں آ رہی|سانس پھول|سانس نہیں آ رہی)/i;
+  /(difficulty breathing|shortness of breath|cant breathe|can't breathe|cannot breathe|trouble breathing|breathless|breathing difficulty|breathing is really hard|breathing hard|struggling to breathe|struggling to breath|struggling for breath|unable to breathe|gasping|gasping for air|cant catch my breath|can't catch my breath|cant catch breath|can't catch breath|catching my breath|cant get enough air|can't get enough air|cant get a full breath|wheezing badly|wheezing severe|wheezing a lot|cant get air|can't get air|winded|winded just|breathless just walking|breathless walking|saans lene mein mushkil|saans lene mein takleef|saans nahi aa rah|saans nhi aa rah|saans phool|sanse nahi aa rah|saans ki takleef|saans nahi aa rahi|saans phul rahi|saans band|saans ruk|سانس لینے میں مشکل|سانس نہیں آ رہی|سانس پھول|سانس نہیں آ رہی|سانس بند|سانس رک|سانس بند ہونا|سانس نہیں لے پا رہا)/i;
 
 /** food / medicine exposure context (anaphylaxis driver) */
 const EXPOSURE_RE =
-  /(\bate|\beaten|\beating\b|\bfood\b|khana|khaya|kha liya|kha li|allerg|medicine|dawa|dawai|tablet|goli|capsule|took|taken|taking|antibiotic|penicillin|brufen|aspirin|injection|لگا|دوا|گولی|کھا)/i;
+  /(\bate|\beaten|\beating\b|\bfood\b|khana|khaya|kha liya|kha li|allerg|medicine|dawa|dawai|tablet|goli|capsule|took|taken|taking|antibiotic|penicillin|brufen|aspirin|injection|makhi|sting|dank|insect|bee|کیڑے|ڈنک|مکھی|لگا|دوا|گولی|کھا)/i;
 
 /** heat-illness context (heat stroke driver) */
 const HEAT_RE =
@@ -437,6 +447,13 @@ const FLUID_INTOLERANCE_RE =
 /** rapidly worsening skin/wound signs → urgent wound assessment */
 const WOUND_SEVERITY_RE =
   /(turning black|turning blue around|black around the wound|black skin around|spreading rapidly|spreading fast|spreading quickly|spreading redness|red streaks|red streaking)/i;
+
+export const MILD_QUALIFIER = /(halka|halki|halkay|thora|thori|mild|slight|light|halka sa)/i;
+export const SEVERE_QUALIFIER = /(bohot|sakht|sakhtee|severe|intense|unbearable|bardasht nahin|bardasht nahi|tez|shadid|شدید|بہت)/i;
+export const ALARM_SIGNS = /(bukhar|fever|khoon|blood|bleeding|ulti|vomit|jalan|weight loss|wazan kam|raat ko paseena|night sweats)/i;
+export const BREATHING_DISTRESS = /(saans lene mein (mushkil|dushwari|dikkat)|difficulty breath|breathing difficulty|(fast|rapid|quick|tez) (breathing|saans)|breathing (fast|rapid|quick)|saans (tez|chal|phool)|stridor|neela|hont neele|blue lip|cannot speak|can't speak|nahin bol pa|saans ki awaz|grunting|shortness of breath)/i;
+export const HYPO_ALARM = /(behosh|unconscious|fainted|gir gaya|seizure|dora|convulsion|confus|ghabr|unresponsive|nahin hosh)/i;
+export const PREGNANCY_ALARM = /(bleeding|khun|khoon|dard|pain|cramp|dizziness|chakkar|vomit|ulti|fever|bukhar|swelling|sojan|fluid|pani phatna)/i;
 
 /**
  * Full L0 triage scoring (deterministic, no LLM).
@@ -504,7 +521,7 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
     (hasFeverNow || ctx.populations.elderly || ctx.populations.pregnancy ||
       ctx.conditions.some((c) => c.state === 'ESTABLISHED')) &&
     redFlags.length === 0;
-  const anaphylaxisReaction = dyspneaNow && EXPOSURE_RE.test(text) && redFlags.length === 0;
+  const anaphylaxisReaction = dyspneaNow && EXPOSURE_RE.test(text);
   // glucose reading far below the safe range (< 55) = severe hypoglycemia,
   // an emergency even before symptoms are described
   const hypoglycemiaEmergency =
@@ -512,9 +529,11 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
 
   if (redFlags.length > 0 || diabeticEmerg || traumaEmerg || overdoseEmerg || mentalStatusEmergency || respiratoryEmergency || anaphylaxisReaction || hypoglycemiaEmergency) {
     const contextualEmerg = mentalStatusEmergency || respiratoryEmergency || anaphylaxisReaction || hypoglycemiaEmergency;
-    const category = contextualEmerg && !redFlags.length && !diabeticEmerg && !traumaEmerg && !overdoseEmerg
-      ? (anaphylaxisReaction ? 'anaphylaxis' : hypoglycemiaEmergency ? 'diabetic-emergency' : 'general-emergency')
-      : resolveEmergencyCategory(redFlags, ctx, diabeticEmerg);
+    const category = anaphylaxisReaction
+      ? 'anaphylaxis'
+      : contextualEmerg && !redFlags.length && !diabeticEmerg && !traumaEmerg && !overdoseEmerg
+        ? (hypoglycemiaEmergency ? 'diabetic-emergency' : 'general-emergency')
+        : resolveEmergencyCategory(redFlags, ctx, diabeticEmerg);
     const pattern = redFlags.find((r) => r.pattern.category === category)?.pattern;
     const reason = pattern
       ? pattern.reason_template[lang]
@@ -537,7 +556,7 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
       ],
       engine: 'L0',
       shortCircuited: true,
-      matchedPatternId: pattern?.id ?? (diabeticEmerg || hypoglycemiaEmergency ? 'diabetic_emergency' : traumaEmerg ? 'trauma_composition' : overdoseEmerg ? 'overdose_altered' : anaphylaxisReaction ? 'anaphylaxis_reaction' : 'altered_mental_status'),
+      matchedPatternId: pattern?.id ?? (anaphylaxisReaction ? 'anaphylaxis_reaction' : diabeticEmerg || hypoglycemiaEmergency ? 'diabetic_emergency' : traumaEmerg ? 'trauma_composition' : overdoseEmerg ? 'overdose_altered' : 'altered_mental_status'),
       matchedCategory: category,
       context: ctx,
       needsClarification: false,
@@ -763,6 +782,15 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
     level = maxSeverityLevel(level, 'URGENT');
     signals.push('abnormal-glucose:qualitative');
   }
+  // hypertension + severe headache (hypertensive urgency / pre-eclampsia rule-out)
+  if (
+    !informational &&
+    /\b(high bp|high blood pressure|hypertension|blood pressure (?:is )?(?:very )?high|bp (?:bohat|bohot|bahut|zyada|high|barh))\b|ہائی بلڈ پریشر|بلڈ پریشر زیادہ/i.test(text) &&
+    /\b(headache|head ache|sar dard|sar mein dard|sar chakra)\b|سر درد/i.test(text)
+  ) {
+    level = maxSeverityLevel(level, 'URGENT');
+    signals.push('hypertension-with-headache');
+  }
   // a baby (age not stated) with fever needs its age checked — treat urgently
   // until an infant-vs-toddler distinction is established
   if (ctx.populations.child && hasFever && /\b(baby|babies|shishu)\b/i.test(text) && !informational) {
@@ -831,6 +859,18 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
     level = maxSeverityLevel(level, 'URGENT');
     signals.push('chronic-complication-sign');
   }
+
+  // mild abdominal pain with no alarm signs stays SELF_CARE (prevent alert fatigue)
+  if (
+    MILD_QUALIFIER.test(text) &&
+    /(pet|maeda|stomach|tummy|abdomen|abdominal)/i.test(text) &&
+    !SEVERE_QUALIFIER.test(text) &&
+    !ALARM_SIGNS.test(text)
+  ) {
+    level = 'SELF_CARE';
+    signals.push('calibration:mild-abdominal-pain');
+  }
+
   if (ctx.injection.detected) {
     // logged, never affects classification
     signals.push('injection-attempt');
@@ -955,6 +995,11 @@ function contextualReason(signals: string[], level: TriageLevel, lang: Lang): st
 
 /** reason templates for context-driven emergency categories (no lexicon pattern) */
 const EMERGENCY_CATEGORY_REASONS: Record<string, Record<Lang, string>> = {
+  'anaphylaxis': {
+    en: 'Breathing difficulty after food or medicine exposure can indicate severe anaphylaxis — call 1122 and seek emergency care immediately.',
+    ur: 'کھانے یا دوا کے بعد سانس لینے میں مشکل شدید الرجی (انافیلیکسس) کی علامت ہو سکتی ہے — 1122 پر کال کریں اور فوری ایمرجنسی علاج حاصل کریں۔',
+    roman: 'Khaane ya dawa ke baad saans lene mein mushkil shadeed allergy (anaphylaxis) ki alamat ho sakti hai — 1122 par call karein aur fori emergency ilaaj haasil karein.',
+  },
   'choking': {
     en: 'Choking means the airway is blocked — this is immediately life-threatening. Start first aid now and call 1122.',
     ur: 'گلا پھنسنا سانس کی نالی کے بند ہونے کا نام ہے — یہ فوراً جان لیوا ہے۔ ابھی ابتدائی امداد شروع کریں اور 1122 پر کال کریں۔',
@@ -1498,16 +1543,18 @@ export function retrieveCorpus(
       if (normTag.includes(' ')) {
         if (hasTokenBoundaryMatch(expandedText, normTag)) {
           score += 4.0;
-        } else if (affirmativeClauses.length > 0) {
+        } else {
           const tagTokens = tokenizeText(normTag).filter((t) => !STOP_WORDS.has(t));
-          if (tagTokens.length > 0) {
+          if (tagTokens.length >= 2 && tagTokens.every((t) => queryTokens.has(t))) {
+            score += 3.5;
+          } else if (affirmativeClauses.length > 0 && tagTokens.length > 0) {
             for (const clause of affirmativeClauses) {
               const clauseTokens = new Set(tokenizeText(clause));
               const matchedCount = tagTokens.filter((t) => clauseTokens.has(t)).length;
               if (matchedCount === tagTokens.length) {
                 score += 3.0;
                 break;
-              } else if (matchedCount >= 2 && matchedCount >= tagTokens.length * 0.65) {
+              } else if (matchedCount >= 2 && matchedCount >= tagTokens.length * 0.75) {
                 score += 2.0;
                 break;
               }
@@ -1560,6 +1607,15 @@ export function retrieveCorpus(
           }
         }
       }
+    }
+
+    const queryHasChild = /\b(child|children|baby|babies|infant|toddler|pediatric|bacha|bachay|bachon|bachi|bete|beti)\b|بچہ|بچے|بچی/i.test(query);
+    if (queryHasChild && item.audience === 'child') {
+      score += 1.0;
+    } else if (!queryHasChild && item.audience === 'child') {
+      score -= 1.0;
+    } else if (!queryHasChild && item.audience === 'general') {
+      score += 0.5;
     }
 
     if (score >= minScore) {
@@ -1830,13 +1886,6 @@ export interface TriageCalibration {
   level: TriageLevel;
   signal: string;
 }
-
-const MILD_QUALIFIER = /(halka|halki|halkay|thora|thori|mild|slight|light|halka sa)/i;
-const SEVERE_QUALIFIER = /(bohot|sakht|sakhtee|severe|intense|unbearable|bardasht nahin|bardasht nahi|tez|shadid|شدید|بہت)/i;
-const ALARM_SIGNS = /(bukhar|fever|khoon|blood|bleeding|ulti|vomit|jalan|weight loss|wazan kam|raat ko paseena|night sweats)/i;
-const BREATHING_DISTRESS = /(saans lene mein (mushkil|dushwari|dikkat)|difficulty breath|breathing difficulty|(fast|rapid|quick|tez) (breathing|saans)|breathing (fast|rapid|quick)|saans (tez|chal|phool)|stridor|neela|hont neele|blue lip|cannot speak|can't speak|nahin bol pa|saans ki awaz|grunting|shortness of breath)/i;
-const HYPO_ALARM = /(behosh|unconscious|fainted|gir gaya|seizure|dora|convulsion|confus|ghabr|unresponsive|nahin hosh)/i;
-const PREGNANCY_ALARM = /(bleeding|khun|khoon|dard|pain|cramp|dizziness|chakkar|vomit|ulti|fever|bukhar|swelling|sojan|fluid|pani phatna)/i;
 
 /**
  * Post-L1 calibration caps. Returns null when no calibration applies.

@@ -735,7 +735,7 @@ function AdminRolePanel({ lang }: { lang: Lang }) {
   }, [email, lang, toast]);
 
   return (
-    <ChartCard title={lang === 'ur' ? 'ایڈمن: ڈاکٹر رول' : 'Admin: Doctor role assignment'}>
+    <ChartCard title={lang === 'ur' ? 'ایڈمن: ڈاکٹر رول' : 'Admin: Doctor role assignment'} lang={lang}>
       <p className="mb-2 text-xs text-muted-foreground">
         {lang === 'ur'
           ? 'کسی بھی رجسٹرڈ صارف کو ڈاکٹر رول تفویض کریں — Doctor Copilot تک رسائی کے لیے۔'

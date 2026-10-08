@@ -186,6 +186,7 @@ export const en = {
     assistant: 'SehatAI',
     emptyConversation: 'Conversation cleared',
     dailyTip: 'Health tip of the day',
+    transcript: 'Conversation transcript',
     copyTranscript: 'Copy transcript',
     transcriptCopied: 'Transcript copied to clipboard',
     transcriptEmpty: 'Nothing to copy yet',

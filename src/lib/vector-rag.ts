@@ -17,6 +17,8 @@
 import { EXPANDED_CORPUS as CORPUS } from '@/data/expanded';
 import type { CorpusItem } from '@/lib/types';
 
+export const MIN_VECTOR_SCORE_THRESHOLD = 0.14;
+
 // ---------- Vector utilities ----------
 
 /** A sparse vector represented as Map<termIndex, weight> */
@@ -174,7 +176,7 @@ class VectorRAG {
     const scores: { item: CorpusItem; score: number }[] = [];
     for (const doc of this.vectors) {
       const score = cosineSimilarity(queryVector, doc.vector);
-      if (score > 0) scores.push({ item: doc.item, score });
+      if (score >= MIN_VECTOR_SCORE_THRESHOLD) scores.push({ item: doc.item, score });
     }
 
     scores.sort((a, b) => b.score - a.score);

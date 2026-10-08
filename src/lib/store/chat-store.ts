@@ -56,6 +56,7 @@ interface ChatState {
       confidence?: ResponseConfidence | null;
       drugCheck?: DrugCheckSummary | null;
       differential?: Differential | null;
+      latencyMs?: number;
       error?: boolean;
     },
   ) => void;

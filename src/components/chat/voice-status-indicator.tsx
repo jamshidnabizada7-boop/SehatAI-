@@ -23,10 +23,10 @@ import { cn } from '@/lib/utils';
 type VoiceSupport = 'full' | 'stt-only' | 'tts-only' | 'none';
 
 function detectVoiceSupport(): VoiceSupport {
-  if (typeof window === 'undefined') return 'none';
+  const win = window as unknown as Record<string, unknown>;
   const hasSTT =
-    typeof window.SpeechRecognition !== 'undefined' ||
-    typeof window.webkitSpeechRecognition !== 'undefined';
+    typeof win.SpeechRecognition !== 'undefined' ||
+    typeof win.webkitSpeechRecognition !== 'undefined';
   const hasTTS = typeof window.speechSynthesis !== 'undefined';
   if (hasSTT && hasTTS) return 'full';
   if (hasSTT) return 'stt-only';

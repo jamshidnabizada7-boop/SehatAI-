@@ -40,6 +40,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
   const { toast } = useToast();
   const conversationId = useAppStore((s) => s.conversationId);
+  const sessionId = useAppStore((s) => s.sessionId);
   const [summary, setSummary] = useState<DoctorSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +57,7 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
       const res = await fetch('/api/summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, language: lang }),
+        body: JSON.stringify({ conversationId, language: lang, sessionId }),
       });
       if (!res.ok) throw new Error(`summary ${res.status}`);
       const data = (await res.json()) as DoctorSummary | { summary: DoctorSummary };
@@ -68,7 +69,7 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
     } finally {
       setLoading(false);
     }
-  }, [conversationId, lang]);
+  }, [conversationId, lang, sessionId]);
 
   const shareText = useCallback(() => {
     if (!summary) return '';

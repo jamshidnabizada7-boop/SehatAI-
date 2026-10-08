@@ -183,6 +183,7 @@ export const ur: Dict = {
     assistant: 'سیۃ اے آئی',
     emptyConversation: 'گفتگو صاف کر دی گئی',
     dailyTip: 'آج کا صحت مشورہ',
+    transcript: 'گفتگو کا ریکارڈ',
     copyTranscript: 'گفتگو کاپی کریں',
     transcriptCopied: 'گفتگو کلپ بورڈ پر کاپی ہو گئی',
     transcriptEmpty: 'ابھی کاپی کرنے کو کچھ نہیں',

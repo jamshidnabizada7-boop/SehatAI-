@@ -177,5 +177,5 @@ export async function getLocalConversations(): Promise<LocalConversation[]> {
  */
 export async function getLocalMessages(conversationId: string): Promise<LocalMessage[]> {
   const db = getOfflineDB();
-  return db.messages.where('conversationId').equals(conversationId).orderBy('createdAt').toArray();
+  return db.messages.where('conversationId').equals(conversationId).sortBy('createdAt');
 }

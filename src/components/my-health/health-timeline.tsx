@@ -209,7 +209,7 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-muted-foreground/30" />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'currentColor' }} className="text-muted-foreground" interval="preserveStartEnd" />
               <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-muted-foreground" width={28} />
-              <Tooltip content={(props) => <CustomTooltip {...props} lang={lang} />} />
+              <Tooltip content={(props: any) => <CustomTooltip {...props} lang={lang} />} />
               <Area
                 type="monotone"
                 dataKey="severity"

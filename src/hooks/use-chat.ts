@@ -215,6 +215,7 @@ export function useChat() {
               confidence: done.confidence ?? null,
               drugCheck: done.drugCheck ?? null,
               differential: done.differential ?? null,
+              latencyMs: done.latencyMs,
             });
             if (done.conversationId) {
               useAppStore.getState().setConversationId(done.conversationId);

@@ -172,7 +172,6 @@ export function ConversationHistoryDrawer() {
           ...(m.triageLevel && ['EMERGENCY', 'URGENT', 'ROUTINE', 'SELF_CARE'].includes(m.triageLevel)
             ? { triage: { level: m.triageLevel as TriageLevel, reason: '', signals: [], engine: 'L0' as const, shortCircuited: false } }
             : {}),
-          ...(m.emergency ? { emergency: true as const } : {}),
         }));
         loadConversation(chatMessages, conv.id, convLang);
         setConversationId(conv.id);

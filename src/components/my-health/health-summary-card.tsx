@@ -66,6 +66,7 @@ function readTrackers(): TrackerData {
 
   // Lifestyle (steps + BMI)
   try {
+    const today = new Date().toISOString().slice(0, 10);
     const lifestyle = JSON.parse(localStorage.getItem('sehatai.lifestyle.v1') || '{}');
     if (lifestyle.steps && lifestyle.steps[today]) data.stepsToday = lifestyle.steps[today];
     if (lifestyle.heightCm && lifestyle.weightKg) {

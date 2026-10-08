@@ -67,7 +67,7 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'heavy bleeding', 'severe bleeding', 'bleeding wont stop', "bleeding won't stop", 'bleeding will not stop', 'bleeding does not stop', 'bleeding a lot', 'bleeding heavily', 'blood is pouring', 'blood pouring', 'blood is spurting', 'blood spurting', 'spurting blood', 'spurting from the wound', 'losing a lot of blood', 'lots of blood', 'lot of blood', 'vomiting blood', 'vomiting up blood', 'coughing up blood', 'coughing blood', 'blood in vomit', 'nosebleed wont stop', "nosebleed won't stop", 'nosebleed will not stop', 'swallowed some medicine', 'swallowed my medicine', 'swallowed pills', 'swallowed tablets', 'dont know what pills', "don't know what pills", 'dont know what i swallowed', "don't know what i swallowed", 'pata nahi kya goli', 'bohot khoon beh raha', 'khoon nahi ruk raha', 'khoon beh kar nahi ruk raha', 'zyada khoon', 'khoon ki ulti', 'khoon ki qay', 'khansi mein khoon', 'nak se khoon nahi ruk', 'خون بہت زیادہ بہہ رہا', 'خون نہیں رک رہا', 'خون بہہ کر نہیں رک رہا', 'خون کی الٹی', 'خون کی قے',
+          'heavy bleeding', 'severe bleeding', 'bleeding wont stop', "bleeding won't stop", 'bleeding will not stop', 'bleeding does not stop', 'bleeding a lot', 'bleeding heavily', 'blood is pouring', 'blood pouring', 'blood is spurting', 'blood spurting', 'spurting blood', 'spurting from the wound', 'pulsatile spurting', 'arterial bleeding', 'arterial cut', 'arterial laceration', 'arterial', 'losing a lot of blood', 'lots of blood', 'lot of blood', 'vomiting blood', 'vomiting up blood', 'coughing up blood', 'coughing blood', 'blood in vomit', 'nosebleed wont stop', "nosebleed won't stop", 'nosebleed will not stop', 'swallowed some medicine', 'swallowed my medicine', 'swallowed pills', 'swallowed tablets', 'dont know what pills', "don't know what pills", 'dont know what i swallowed', "don't know what i swallowed", 'pata nahi kya goli', 'bohot khoon beh raha', 'khoon nahi ruk raha', 'khoon beh kar nahi ruk raha', 'zyada khoon', 'khoon ki ulti', 'khoon ki qay', 'khansi mein khoon', 'nak se khoon nahi ruk', 'khoon dhar ban kar', 'khoon ka fawarah', 'خون بہت زیادہ بہہ رہا', 'خون نہیں رک رہا', 'خون بہہ کر نہیں رک رہا', 'خون کی الٹی', 'خون کی قے', 'خون کا فوارہ', 'خون کا فوارہ جاری', 'فوارہ', 'شریان کا کٹنا', 'شریان کٹ', 'شریان کٹ گئی', 'شریان سے خون', 'شریان',
         ],
       },
     ],
@@ -87,7 +87,7 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'unconscious', 'not waking up', 'wont wake up', "won't wake up", 'passed out', 'collapsed', 'no response', 'fainted', 'lost consciousness', 'became unconscious', 'behosh', 'hosh nahi aa raha', 'hosh nahi hai', 'gir kar behosh', 'behosh ho gaya', 'behosh ho gayi', 'بےہوش', 'بے ہوش', 'ہوش نہیں ہے', 'ہوش نہیں آ رہا', 'گر کر بےہوش', 'بےہوش ہو گیا', 'بےہوش ہو گئی',
+          'unconscious', 'not waking', 'not waking after', 'cant wake', "can't wake", 'not waking up', 'wont wake up', "won't wake up", 'passed out', 'collapsed', 'no response', 'fainted', 'lost consciousness', 'became unconscious', 'behosh', 'hosh nahi aa raha', 'hosh nahi hai', 'gir kar behosh', 'behosh ho gaya', 'behosh ho gayi', 'بےہوش', 'بے ہوش', 'ہوش نہیں ہے', 'ہوش نہیں آ رہا', 'گر کر بےہوش', 'بےہوش ہو گیا', 'بےہوش ہو گئی',
         ],
       },
     ],
@@ -242,7 +242,7 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'snake bite', 'snakebite', 'bitten by a snake', 'snake bit', 'saanp ne kaata', 'saanp kaat gaya', 'saanp ne dasa', 'sanp ne kata', 'سانپ نے کاٹا', 'سانپ نے کاٹا ہے',
+          'snake bite', 'snakebite', 'bitten by a snake', 'snake bit', 'viper bite', 'russell viper bite', 'russell viper', 'viper', 'snake venom', 'saanp ne kaata', 'saanp kaat gaya', 'saanp ne dasa', 'sanp ne kata', 'saanp ne paon par kaat', 'saanp ne kaat liya', 'saanp ne kaat', 'saanp kaat', 'saanp ne kata', 'saanp dasa', 'sanp ne dasa', 'saanp ke do nishan', 'do nishan aur sojan', 'سانپ نے کاٹا', 'سانپ نے کاٹا ہے', 'سانپ کا ڈسنا', 'سانپ نے ڈسا', 'سانپ کے ڈسنے', 'سانپ نے ڈس لیا', 'سانپ نے کاٹ لیا', 'سانپ کا کاٹنا', 'دانتوں کے دو نشان',
         ],
       },
     ],
@@ -262,12 +262,12 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'severe burn', 'severe burns', 'large burn', 'large burns', 'deep burn', 'deep burns', 'badly burned', 'badly burnt', 'burn is white', 'white and charred', 'charred', 'burned black', 'chemical burn', 'burned by a chemical', 'chemical burns', 'electrical burn', 'burned by electricity', 'bohot jala', 'zyada jala', 'bara hissa jala', 'poora haath jala', 'poora hath jala', 'bada area jala', 'بہت جل گیا', 'زیادہ جل گیا', 'بڑا حصہ جل گیا', 'پورا ہاتھ جل گیا', 'بڑا علاقہ جلا',
+          'severe burn', 'severe burns', 'large burn', 'large burns', 'deep burn', 'deep burns', 'badly burned', 'badly burnt', 'burn is white', 'white and charred', 'charred', 'burned black', 'chemical burn', 'burned by a chemical', 'chemical burns', 'electrical burn', 'burned by electricity', 'bohot jala', 'zyada jala', 'bara hissa jala', 'poora haath jala', 'poora hath jala', 'bada area jala', 'gehray chhalay', 'khaal jal gayi', 'بہت جل گیا', 'زیادہ جل گیا', 'بڑا حصہ جل گیا', 'پورا ہاتھ جل گیا', 'بڑا علاقہ جلا', 'شدید جل جانا', 'شدید جل گیا', 'شدید جل', 'سلنڈر دھماکے', 'چہرہ جل', 'سینہ جل', 'کھال جل گئی', 'کھال جل', 'گہرے چھالے', 'چھالے اور کھال جل', 'گیس کے شدید دھماکے', 'گیس کے دھماکے', 'دھماکے سے', 'جل گئی ہے', 'جل گئی',
         ],
       },
     ],
     terms_en: ['severe or large burns'],
-    terms_ur: ['بہت جل گیا', 'بڑا حصہ جل گیا'],
+    terms_ur: ['بہت جل گیا', 'بڑا حصہ جل گیا', 'شدید جل جانا'],
     terms_roman: ['bohot jala', 'bara hissa jala'],
     reason_template: {
       en: 'A severe or large burn is an emergency — cool the burn with clean running water for 10–20 minutes and get medical help; do NOT apply toothpaste, ghee or ice.',
@@ -282,7 +282,7 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'stiff neck', 'neck stiffness', 'neck is rigid', 'cant touch chin to chest', "can't touch chin", 'gardan sakht', 'gardan mein sakhti', 'garadan sakht hai', 'gardan nahi hil pa rahi', 'گردن سخت', 'گردن میں سختی', 'گردن نہیں ہل پا رہی',
+          'stiff neck', 'neck stiffness', 'neck is rigid', 'cant touch chin to chest', "can't touch chin", 'gardan sakht', 'gardan mein sakhti', 'garadan sakht hai', 'gardan nahi hil pa rahi', 'gardan mein akrao', 'gardan akrao', 'گردن سخت', 'گردن میں سختی', 'گردن نہیں ہل پا رہی', 'گردن میں اکڑن', 'گردن اکڑ', 'گردن کی اکڑن', 'اکڑی ہوئی گردن', 'گردن میں شدید اکڑاؤ', 'گردن میں اکڑاؤ', 'گردن کا اکڑاؤ', 'گردن اکڑاؤ', 'اکڑاؤ', 'سر کو ہلانے نہیں دے رہا', 'سر نہیں ہلا',
         ],
       },
       {
@@ -327,12 +327,12 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'face swelling', 'face is swelling', 'lips swollen', 'lips are swelling', 'lips swelled', 'lips suddenly swelled', 'throat swelling', 'throat is closing', 'throat feels closed', 'throat closing', 'tongue swelling', 'tongue is swollen', 'tongue is swelling', 'allergic reaction', 'severe allergy', 'hives', 'chehra phool raha', 'chehra sooj raha', 'hont phool gaye', 'hont sooj gaye', 'gala sooj raha', 'gala phool raha', 'zaban sooj gayi', 'zaban sooj rahi', 'allergy ho gayi', 'الرجی', 'چہرہ سوج رہا', 'ہونٹ سوج گئے', 'گلا سوج رہا', 'زبان سوج گئی', 'شدید الرجی',
+          'face swelling', 'face is swelling', 'lips swollen', 'lips are swelling', 'lips swelled', 'lips suddenly swelled', 'throat swelling', 'throat is closing', 'throat feels closed', 'throat closing', 'tongue swelling', 'tongue is swollen', 'tongue is swelling', 'allergic reaction', 'severe allergy', 'hives', 'chehra phool raha', 'chehra sooj raha', 'hont phool gaye', 'hont sooj gaye', 'gala sooj raha', 'gala phool raha', 'zaban sooj gayi', 'zaban sooj rahi', 'allergy ho gayi', 'makhi ke kaatne', 'keeray ke kaatne', 'الرجی', 'چہرہ سوج رہا', 'ہونٹ سوج گئے', 'گلا سوج رہا', 'زبان سوج گئی', 'شدید الرجی', 'ہونٹوں کی شدید سوجن', 'ہونٹوں کی سوجن', 'ہونٹ سوج', 'ہونٹوں پر سوجن', 'ہونٹ پھول', 'مکھی کے کاٹنے', 'کیڑے کے کاٹنے', 'مکھی کا کاٹنا',
         ],
       },
       {
         terms: [
-          'difficulty breathing', 'cant breathe', "can't breathe", 'cannot breathe', 'unable to breathe', 'struggling to breathe', 'trouble breathing', 'breathing difficulty', 'saans lene mein mushkil', 'saans nahi aa rahi', 'saans nhi aa rahi', 'saans phool rahi', 'saans mein takleef', 'سانس لینے میں مشکل', 'سانس نہیں آ رہی', 'سانس پھول رہی',
+          'difficulty breathing', 'cant breathe', "can't breathe", 'cannot breathe', 'unable to breathe', 'struggling to breathe', 'trouble breathing', 'breathing difficulty', 'saans lene mein mushkil', 'saans nahi aa rahi', 'saans nhi aa rahi', 'saans phool rahi', 'saans mein takleef', 'saans band', 'saans ruk rahi', 'سانس لینے میں مشکل', 'سانس نہیں آ رہی', 'سانس پھول رہی', 'سانس بند', 'سانس بند ہو', 'سانس رک رہی', 'سانس رک گئی', 'سانس گھٹ رہی',
         ],
       },
     ],
@@ -457,7 +457,7 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'crushing chest', 'crushing chest pain', 'crushing feeling in my chest', 'crushing feeling in chest', 'crushing sensation in my chest', 'crushing sensation in chest', 'crushing pain in chest', 'crushing pain in my chest', 'squeezing in my chest', 'squeezing in chest', 'squeezing sensation in my chest', 'squeezing sensation in chest', 'squeezing chest pain', 'squeezing feeling in chest', 'squeezing feeling in my chest', 'squeezing chest', 'elephant on my chest', 'elephant is sitting', 'elephant sitting on my chest', 'elephant sitting on', 'elephant on chest', 'someone sitting on my chest', 'feels like someone sitting on my chest', 'feels like someone is sitting on my chest', 'heavy weight on my chest', 'heavy weight on chest', 'tight band around my chest', 'tight band around chest', 'band around my chest', 'band around chest', 'chest being squeezed', 'chest feels like its being squeezed', 'vice around my chest', 'vice on my chest', 'chest feels really tight and heavy', 'chest feels really heavy', 'seene par bhaari bojh', 'seene par wazan', 'seene ko dabao', 'seene mein dabao', 'seena daba raha hai', 'seena dab raha hai', 'seene dab raha', 'seena par dabao', 'seene par dabao', 'seena daba', 'seene mein bharipan', 'سینے پر بھاری بوجھ', 'سینے پر دباؤ', 'سینہ دبا رہا ہے', 'سینے میں بھراپن', 'سینے میں دباؤ',
+          'crushing chest', 'crushing chest pain', 'crushing feeling in my chest', 'crushing feeling in chest', 'crushing sensation in my chest', 'crushing sensation in chest', 'crushing pain in chest', 'crushing pain in my chest', 'squeezing in my chest', 'squeezing in chest', 'squeezing sensation in my chest', 'squeezing sensation in chest', 'squeezing chest pain', 'squeezing feeling in chest', 'squeezing feeling in my chest', 'squeezing chest', 'elephant on my chest', 'elephant is sitting', 'elephant sitting on my chest', 'elephant sitting on', 'elephant on chest', 'someone sitting on my chest', 'feels like someone sitting on my chest', 'feels like someone is sitting on my chest', 'heavy weight on my chest', 'heavy weight on chest', 'tight band around my chest', 'tight band around chest', 'band around my chest', 'band around chest', 'chest being squeezed', 'chest feels like its being squeezed', 'vice around my chest', 'vice on my chest', 'chest feels really tight and heavy', 'chest feels really heavy', 'chest feels really tight', 'chest feels tight', 'chest is really tight', 'chest feels very tight', 'chest is very tight', 'seene par bhaari bojh', 'seene par wazan', 'seene ko dabao', 'seene mein dabao', 'seena daba raha hai', 'seena dab raha hai', 'seene dab raha', 'seena par dabao', 'seene par dabao', 'seena daba', 'seene mein bharipan', 'سینے پر بھاری بوجھ', 'سینے پر دباؤ', 'سینہ دبا رہا ہے', 'سینے میں بھراپن', 'سینے میں دباؤ',
         ],
       },
     ],
@@ -595,7 +595,7 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'spilled boiling oil', 'boiling oil on', 'hot oil burn', 'boiling water on', 'hot water spilled', 'scalded', 'scald', 'steam burn', 'severe burn', 'large burn', 'burn on face', 'burn on hands', 'burn on genitals', 'burnt arm', 'burnt leg', 'burnt face', 'burnt hand', 'boiling chai', 'garam chai', 'garam pani', 'garam tel', 'aablagi se', 'aag se jala', 'jala hua', 'jala diya', 'jala liya', 'daahak', 'daahak se', 'جل گیا', 'جلنے لگا', 'آبلے', 'آبلہ', 'گرم پانی', 'گرم تیل', 'گرم چائے', 'آگ سے جلا',
+          'spilled boiling oil', 'boiling oil on', 'hot oil burn', 'boiling water on', 'hot water spilled', 'scalded', 'scald', 'steam burn', 'severe burn', 'large burn', 'burn on face', 'burn on hands', 'burn on genitals', 'burnt arm', 'burnt leg', 'burnt face', 'burnt hand', 'boiling chai', 'garam chai', 'garam pani', 'garam tel', 'aablagi se', 'aag se jala', 'jala hua', 'jala diya', 'jala liya', 'daahak', 'daahak se', 'gehray chhalay', 'khaal jal gayi', 'جل گیا', 'جلنے لگا', 'آبلے', 'آبلہ', 'گرم پانی', 'گرم تیل', 'گرم چائے', 'آگ سے جلا', 'شدید جل جانا', 'سلنڈر دھماکے', 'کھال جل گئی', 'کھال جل', 'گہرے چھالے', 'چھالے اور کھال جل', 'گیس کے شدید دھماکے', 'گیس کے دھماکے', 'دھماکے سے', 'جل گئی ہے', 'جل گئی',
         ],
       },
     ],
@@ -615,7 +615,7 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'hit my head', 'hit his head', 'hit her head', 'fell and hit head', 'bumped head hard', 'head injury', 'head trauma', 'knocked out', 'knocked unconscious', 'lost consciousness after fall', 'vomited after hitting head', 'vomiting after fall', 'confused after fall', 'cant remember the fall', "can't remember the fall", 'unequal pupils', 'pupils different sizes', 'one pupil bigger', 'seizure after fall', 'seizure after head injury', 'blood from ear', 'fluid from ear', 'fluid from nose', 'clear fluid from nose after fall', 'sir par chot', 'sar par chot', 'sar gira', 'girte hue sar laga', 'sar lag kar gir gaya', 'sar par chot ke baad ulti', 'ulti ke baad sar', 'sar dard ke baad ulti', 'yaad nahi gira', 'behosh gir gaya', 'behosh ho gaya gir kar', 'سر پر چوٹ', 'سر گر کر بےہوش', 'گرنے کے بعد الٹی', 'گرنے کے بعد ہوش نہیں',
+          'knocked out', 'knocked unconscious', 'lost consciousness after fall', 'vomited after hitting head', 'vomiting after fall', 'confused after fall', 'cant remember the fall', "can't remember the fall", 'unequal pupils', 'pupils different sizes', 'one pupil bigger', 'seizure after fall', 'seizure after head injury', 'blood from ear', 'fluid from ear', 'fluid from nose', 'clear fluid from nose after fall', 'sar lag kar gir gaya', 'sar par chot ke baad ulti', 'ulti ke baad sar', 'sar dard ke baad ulti', 'yaad nahi gira', 'behosh gir gaya', 'behosh ho gaya gir kar', 'سر گر کر بےہوش', 'گرنے کے بعد الٹی', 'گرنے کے بعد ہوش نہیں',
         ],
       },
     ],
@@ -675,12 +675,12 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'lips swelling', 'lip is swelling', 'lips are swelling', 'throat swelling', 'throat is closing', 'throat closing up', 'tongue swelling', 'tongue is swelling', 'tongue swelled up', 'face swelling rapidly', 'eyes swollen shut', 'widespread hives', 'hives all over', 'hives spreading fast', 'throat tight', 'throat feels tight', 'throat feels closed', 'cant swallow', "can't swallow", 'lips swollen hont phool', 'galay mein soojan', 'zabaan phool gayi', 'chehra phool gaya', 'galay mein khichao', 'galay ka band hona', 'ہونٹ پھول گئے', 'گلے میں سوجن', 'زبان پھول گئی', 'چہرہ پھول گیا', 'گلے میں کھنچاؤ',
+          'lips swelling', 'lip is swelling', 'lips are swelling', 'throat swelling', 'throat is closing', 'throat closing up', 'tongue swelling', 'tongue is swelling', 'tongue swelled up', 'face swelling rapidly', 'eyes swollen shut', 'widespread hives', 'hives all over', 'hives spreading fast', 'throat tight', 'throat feels tight', 'throat feels closed', 'cant swallow', "can't swallow", 'lips swollen hont phool', 'galay mein soojan', 'zabaan phool gayi', 'chehra phool gaya', 'galay mein khichao', 'galay ka band hona', 'ہونٹ پھول گئے', 'گلے میں سوجن', 'زبان پھول گئی', 'چہرہ پھول گیا', 'گلے میں کھنچاؤ', 'ہونٹوں کی شدید سوجن', 'ہونٹوں کی سوجن', 'ہونٹ سوج', 'ہونٹوں پر سوجن', 'سانس بند',
         ],
       },
       {
         terms: [
-          'after eating', 'after taking', 'food allergy', 'medicine allergy', 'peanut', 'shrimp', 'shellfish', 'bee sting', 'insect sting', 'khanay ke baad', 'dawai ke baad', 'kha kar', 'peenay ke baad', 'dawai lenay ke baad', 'کھانے کے بعد', 'دوا لینے کے بعد',
+          'after eating', 'after taking', 'food allergy', 'medicine allergy', 'peanut', 'shrimp', 'shellfish', 'bee sting', 'insect sting', 'khanay ke baad', 'dawai ke baad', 'kha kar', 'peenay ke baad', 'dawai lenay ke baad', 'makhi ke kaatne', 'makhi ke kaatne ke baad', 'keeray ke kaatne', 'keeray ke kaatne ke baad', 'makhi ne kaata', 'کھانے کے بعد', 'دوا لینے کے بعد', 'مکھی کے کاٹنے', 'مکھی کے کاٹنے کے بعد', 'کیڑے کے کاٹنے', 'کیڑے کے کاٹنے کے بعد',
         ],
       },
     ],
@@ -760,7 +760,7 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'pregnant and bleeding', 'pregnant bleeding', 'bleeding in pregnancy', 'bleeding while pregnant', 'pregnant with severe headache', 'pregnant severe headache', 'pregnant and blurry vision', 'pregnant vision change', 'pregnant and seizure', 'seizure in pregnancy', 'pregnant and convulsion', 'pregnant and severe abdominal pain', 'pregnant severe belly pain', 'pregnant and fever', 'high fever in pregnancy', 'pregnant water broke with meconium', 'pregnant and reduced movement', 'hamal ke saath khoon', 'hamla aur khoon', 'hamal mein khoon behna', 'hamal mein sakht sar dard', 'hamal mein dorra', 'hamal mein nazar dhundla', 'حمل کے ساتھ خون', 'حمل میں شدید سر درد', 'حمل میں دورہ', 'حمل میں نظر دھندلا',
+          'pregnant and bleeding', 'pregnant bleeding', 'bleeding in pregnancy', 'bleeding while pregnant', 'pregnant with severe headache', 'pregnant severe headache', 'pregnant and blurry vision', 'pregnant vision change', 'pregnant and seizure', 'seizure in pregnancy', 'pregnant and convulsion', 'pregnant and severe abdominal pain', 'pregnant severe belly pain', 'high fever in pregnancy', 'pregnant water broke with meconium', 'pregnant and reduced movement', 'hamal ke saath khoon', 'hamla aur khoon', 'hamal mein khoon behna', 'hamal mein sakht sar dard', 'hamal mein dorra', 'hamal mein nazar dhundla', 'حمل کے ساتھ خون', 'حمل میں شدید سر درد', 'حمل میں دورہ', 'حمل میں نظر دھندلا',
         ],
       },
     ],

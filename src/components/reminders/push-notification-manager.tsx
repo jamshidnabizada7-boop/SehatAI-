@@ -67,7 +67,7 @@ export function PushNotificationManager() {
           const reg = await navigator.serviceWorker.ready;
           const sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: await fetchVapidKey(),
+            applicationServerKey: (await fetchVapidKey()) as unknown as BufferSource,
           });
           // Store subscription on server
           await fetch('/api/push/subscribe', {

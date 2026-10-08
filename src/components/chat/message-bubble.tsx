@@ -6,6 +6,7 @@ import {
   Bell,
   CloudOff,
   Copy,
+  Cpu,
   HeartPulse,
   Languages,
   RefreshCw,
@@ -29,6 +30,7 @@ import { DrugWarningCard } from './drug-warning-card';
 import { DifferentialCard } from './differential-card';
 import { CitationCard, citationSummary } from './citation-card';
 import { PipelineTicker } from './pipeline-ticker';
+import { JudgeInspectorModal } from './judge-inspector-modal';
 import { Button } from '@/components/ui/button';
 
 /** "HH:MM" from a message timestamp (12h clock, locale-safe fallback). */
@@ -106,6 +108,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [showingUrdu, setShowingUrdu] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
   const isUser = message.role === 'user';
   // content language of THIS message (kept regardless of UI language)
   const msgLang: Lang = message.language ?? 'en';
@@ -440,6 +443,12 @@ export function MessageBubble({
                 <ThumbsUp className="h-4 w-4" aria-hidden />
               </ActionIcon>
               <ActionIcon
+                label={uiLang === 'ur' ? 'تکنیکی انسپکٹر (جج موڈ)' : 'Technical Inspector (Judge Mode)'}
+                onClick={() => setInspectorOpen(true)}
+              >
+                <Cpu className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
+              </ActionIcon>
+              <ActionIcon
                 label={t(uiLang, 'chat.notHelpful')}
                 onClick={() => onFeedback(message.id, 0)}
                 active={feedback === 0}
@@ -448,6 +457,16 @@ export function MessageBubble({
               </ActionIcon>
             </span>
           </div>
+        ) : null}
+
+        {/* Technical Inspector (Judge Mode) Modal */}
+        {!isUser ? (
+          <JudgeInspectorModal
+            open={inspectorOpen}
+            onOpenChange={setInspectorOpen}
+            message={message}
+            lang={uiLang}
+          />
         ) : null}
       </div>
     </motion.div>

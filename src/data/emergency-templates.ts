@@ -1113,9 +1113,9 @@ export const EMERGENCY_TEMPLATES: EmergencyTemplate[] = [
     },
     immediateActions: [
       {
-        en: 'If you are in immediate danger, call 15 (Police) now.',
-        ur: 'اگر فوری خطرے میں ہیں تو فوراً 15 (پولیس) پر کال کریں۔',
-        roman: 'Agar fori khatre mein hain to fori 15 (Police) par call karein.',
+        en: 'If you are in immediate danger or injured, call 1122 / 15 (Police) now.',
+        ur: 'اگر آپ فوری خطرے میں ہیں یا زخمی ہیں تو فوراً 1122 / 15 پر کال کریں۔',
+        roman: 'Agar aap fori khatre mein hain ya zakhmi hain to fori 1122 / 15 par call karein.',
       },
       {
         en: 'For women, call Madadgar Women Helpline 1099.',
@@ -1156,9 +1156,9 @@ export const EMERGENCY_TEMPLATES: EmergencyTemplate[] = [
     },
     immediateActions: [
       {
-        en: 'Take the child to a health facility NOW — even if they look better.',
-        ur: 'بچے کو فوراً ہسپتال لے جائیں — چاہے وہ ٹھیک دکھے۔',
-        roman: 'Bachay ko fori hospital le jayein — chahey woh theek dikhe.',
+        en: 'Call 1122 or take the child to a health facility NOW — even if they look better.',
+        ur: '1122 پر کال کریں یا بچے کو فوراً ہسپتال لے جائیں — چاہے وہ ٹھیک دکھے۔',
+        roman: '1122 par call karein ya bachay ko fori hospital le jayein — chahey woh theek dikhe.',
       },
       {
         en: 'Keep the child warm during transport.',

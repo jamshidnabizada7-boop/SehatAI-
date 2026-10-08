@@ -33,7 +33,10 @@ export const CORPUS: CorpusItem[] = [
       "hararat",
       "جسم گرم",
       "bukhar aur sar dard",
-      "fever and headache"
+      "bukhar sar dard",
+      "fever and headache",
+      "jism dard",
+      "bukhar aur jism dard"
     ],
     "baseLevel": "SELF_CARE",
     "audience": "general",
@@ -286,6 +289,14 @@ export const CORPUS: CorpusItem[] = [
       "tb cough",
       "cough 2 weeks",
       "two weeks cough",
+      "cough for three weeks",
+      "three weeks cough",
+      "cough 3 weeks",
+      "3 weeks cough",
+      "teen hafte khansi",
+      "3 hafte khansi",
+      "lost some weight",
+      "lost weight",
       "do hafte khansi",
       "2 hafte khansi",
       "do haftay se khansi",
@@ -1157,6 +1168,9 @@ export const CORPUS: CorpusItem[] = [
       "دمے",
       "wheezing",
       "seeti ki aawaz",
+      "seeti jaisi aawaz",
+      "saans mein seeti",
+      "saans mein seeti jaisi aawaz",
       "seeti",
       "inhaler",
       "saans phoolna",
@@ -1303,6 +1317,11 @@ export const CORPUS: CorpusItem[] = [
     },
     "tags": [
       "ramadan fasting diabetes",
+      "ramzan",
+      "ramzan fasting",
+      "ramzan sugar",
+      "ramadan",
+      "ramzan roza",
       "roza sugar",
       "roze diabetes",
       "fasting diabetes",
@@ -1380,9 +1399,15 @@ export const CORPUS: CorpusItem[] = [
       "child asthma",
       "bachay ka dama",
       "bachon ka dama",
+      "5 saal ka bacha",
+      "bacha raat ko khansi",
+      "raat ko khansi",
+      "bachay ko raat khansi",
       "bachay ki khansi raat",
       "night cough child",
       "wheeze child",
+      "seeti jaisi aawaz",
+      "seeti ki aawaz",
       "bacha saans",
       "child inhaler",
       "spacer",
@@ -1394,7 +1419,7 @@ export const CORPUS: CorpusItem[] = [
       "child asthma attack"
     ],
     "baseLevel": "ROUTINE",
-    "audience": "general",
+    "audience": "child",
     "source": {
       "publisher": "WHO",
       "title": "Asthma fact sheet (children)",
@@ -5793,8 +5818,21 @@ export const CORPUS: CorpusItem[] = [
     "id": "appendicitis",
     "topic": "appendicitis",
     "title": { "en": "Appendicitis — when abdominal pain is an emergency", "ur": "زائدہ کی سوزش — جب پیٹ کا درد ایمرجنسی ہو", "roman": "Zaida ki sozish — jab pait ka dard emergency ho" },
-    "content": { "en": "Appendicitis is inflammation of the appendix. Symptoms: pain starting around the navel that moves to the lower right abdomen, worsens with movement/coughing, loss of appetite, nausea, mild fever.\nSEE A DOCTOR IMMEDIATELY if you have these symptoms — appendicitis can rupture and become life-threatening.\nDO NOT eat, drink, or take painkillers/laxatives — go to the hospital immediately.\nEMERGENCY: severe right-lower abdominal pain with fever and vomiting = go to hospital NOW. Call 1122 if no transport.", "ur": "زائدہ کی سوزش ایک خطرناک حالت ہے۔ علامات: ناف کے پاس درد شروع ہو کر نیچے دائیں طرف منتقل ہو، حرکت سے بڑھے، بھوک نہ لگے، متلی، ہلکا بخار۔\nفوراً ڈاکٹر کو دکھائیں — زائدہ پھٹ سکتا ہے اور جان لیوا ہو سکتا ہے۔\nکچھ کھائیں/پییں نہیں، درد کی دوا/لینٹ نہ لیں — فوراً ہسپتال جائیں۔\nایمرجنسی: دائیں نیچے پیٹ میں شدید درد + بخار + متلی = فوراً ہسپتال جائیں۔ ٹرانسپورٹ نہ ہو تو 1122 کال کریں۔", "roman": "Appendicitis ek khatarnak halat hai. Alamaat: naaf ke paas dard shuru ho kar neechay dayain taraf muntaqil ho, harkat se barhe, bhook na lagay, matli, halka bukhar.\nFori doctor ko dikhayein — zaida phat sakta hai aur jan lewa ho sakta hai.\nKuch khayein/peeyein nahi, dard ki dawa/lent na lein — fori hospital jayein.\nEmergency: dayain neechay pait mein shadeed dard + bukhar + matli = fori hospital jayein. Transport na ho to 1122 call karein." },
-    "tags": ["appendicitis", "appendix", "zaida", "pet dard", "right lower abdomen pain", "abdominal pain emergency", "پیٹ کا درد", "زائدہ"],
+    "content": {
+      "en": "• Appendicitis is inflammation of the appendix causing severe abdominal pain that usually starts around the navel and shifts to the lower right abdomen\n• Pain typically worsens with walking, coughing, or sudden movements; accompanied by nausea, vomiting, loss of appetite, and low-grade fever\n• DO NOT eat, drink, or take painkillers, laxatives, or apply heat pads which can cause rupture\nSEE A DOCTOR IF: Any persistent lower right abdominal pain or digestive upset lasting more than a few hours.\nEMERGENCY / GO IMMEDIATELY: Severe sharp right lower quadrant abdominal pain, high fever, rigid abdomen, vomiting, or signs of shock (call 1122 immediately).",
+      "ur": "• زائدہ کی سوزش (اپینڈیسائٹس) ایک خطرناک حالت ہے جس میں ناف کے گرد شروع ہونے والا درد پیٹ کے نچلے دائیں حصے میں منتقل ہو جاتا ہے\n• درد چلنے، کھانسنے یا اچانک جھٹکے سے بڑھتا ہے؛ ساتھ میں متلی، الٹی، بھوک کا ختم ہونا اور ہلکا بخار ہو سکتا ہے\n• کچھ بھی کھائیں یا پئیں نہیں، اور درد کش ادویات یا جلاب ہرگز نہ لیں تاکہ اپینڈکس پھٹنے سے بچ سکے\nڈاکٹر کو دکھائیں: پیٹ کے دائیں نچلے حصے میں چند گھنٹوں سے زائد برقرار رہنے والے درد کی صورت میں فوری معائنہ کروائیں۔\nایمرجنسی (فوراً جائیں): شدید ناقابل برداشت درد، تیز بخار، مسلسل الٹیاں، پیٹ کا سخت پتھر جیسا ہو جانا (فوراً 1122 کال کریں یا ہسپتال جائیں)۔",
+      "roman": "• Appendicitis appendix ki sozish hai jismein pait ke nichlay dayain hissay mein shadeed dard hota hai jo naaf ke qareeb shuru hota hai\n• Dard chalne, khansne ya harkat se barhta hai; sath matli, ulti, bhook na lagna aur bukhar hota hai\n• Mareez ko kuch khane peene na dein aur dard ki goliyan ya julaab hargiz na lein taake appendix phatne se bach sake\nDOCTOR KO DIKHAYEIN: Pait ke dayain taraf dard mehsoos hone par fori clinic ya hospital mein doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Shadeed pait dard, tez bukhar, ultiyan, ya pait sakht ho jana (1122 call karein ya fori emergency jayein)."
+    },
+    "tags": [
+      "appendicitis",
+      "appendix",
+      "zaida",
+      "shadeed pet dard",
+      "right lower abdomen pain",
+      "abdominal pain emergency",
+      "شدید پیٹ کا درد",
+      "زائدہ"
+],
     "baseLevel": "EMERGENCY",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Acute abdominal pain — emergency triage", "url": "https://www.who.int/publications", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5803,8 +5841,21 @@ export const CORPUS: CorpusItem[] = [
     "id": "sepsis",
     "topic": "sepsis",
     "title": { "en": "Sepsis — a life-threatening infection response", "ur": "سیپسس — جان لیوا انفیکشن کا ردعمل", "roman": "Sepsis — jan lewa infection ka radd-e-amal" },
-    "content": { "en": "Sepsis is the body's extreme response to an infection. It is a MEDICAL EMERGENCY.\nSymptoms: high fever or very low temperature, rapid heartbeat, rapid breathing, confusion or drowsiness, cold/clammy skin, reduced urine.\nCAUSED BY: any infection (pneumonia, urinary tract, abdominal, wound).\nEMERGENCY: Call 1122 immediately. Go to the hospital NOW. Sepsis can cause death within hours if untreated. Every hour of delay increases mortality by 8%.", "ur": "سیپسس جسم کا انفیکشن کے خلاف شدید ردعمل ہے۔ یہ میڈیکل ایمرجنسی ہے۔\nعلامات: تیز بخار یا بہت کم درجہ حرارت، تیز دھڑکن، تیز سانس، الجھن یا نیند، سرد/گیلی جلد، کم پیشاب۔\nوجہ: کوئی بھی انفیکشن (نمونیہ، پیشاب کی نالی، پیٹ، زخم)۔\nایمرجنسی: فوراً 1122 کال کریں۔ فوراً ہسپتال جائیں۔ علاج نہ کرنے سے گھنٹوں میں موت ہو سکتی ہے۔", "roman": "Sepsis jism ka infection ke khilaf shadeed radd-e-amal hai. Yeh medical emergency hai.\nAlamaat: tez bukhar ya bohot kam hararat, tez dharkan, tez saans, uljhan ya neend, sard/geeli jild, kam peshab.\nWajah: koi bhi infection (namonia, peshab ki nali, pait, zakhm).\nEmergency: fori 1122 call karein. Fori hospital jayein. Ilaaj na karne se ghanton mein maut ho sakti hai." },
-    "tags": ["sepsis", "septic shock", "blood poisoning", "infection emergency", "سپتی شاک", "انفیکشن", "tez bukhar", "confusion"],
+    "content": {
+      "en": "• Sepsis is the body's extreme, life-threatening response to an infection (pneumonia, UTI, skin, or abdominal infection)\n• Warning signs include shivering, fever or feeling very cold, extreme pain or discomfort, clammy or sweaty skin, confusion, and shortness of breath\n• Early antibiotic treatment and intravenous fluids at a hospital are critical within the first golden hour\nSEE A DOCTOR IF: Any worsening infection with persistent high fever or lethargy.\nEMERGENCY / GO IMMEDIATELY: Rapid breathing, rapid heart rate, confusion, slurred speech, mottled/bluish skin, or low urine output (call 1122 immediately).",
+      "ur": "• سیپسس کسی بھی انفیکشن (نمونیہ، پیشاب کی نالی، جلد یا پیٹ) کے خلاف جسم کا جان لیوا اور انتہائی شدید ردعمل ہے\n• علامات میں شدید لرزہ، تیز بخار یا جسم کا انتہائی ٹھنڈا ہونا، شدید بے چینی، پسینے والی جلد، الجھن اور تیز سانس شامل ہیں\n• پہلے گھنٹے میں ہسپتال پہنچ کر اینٹی بائیوٹک اور آئی وی ڈرپ لگوانا جان بچانے کے لیے لازمی ہے\nڈاکٹر کو دکھائیں: کوئی بھی انفیکشن جو بگڑ رہا ہو یا تیز بخار کم نہ ہو رہا ہو۔\nایمرجنسی (فوراً جائیں): تیز سانس، انتہائی تیز دھڑکن، شدید ذہنی الجھن، نیلی جلد، یا پیشاب کا بند ہونا (فوراً 1122 پر کال کریں)۔",
+      "roman": "• Sepsis infection ke khilaf jism ka jan lewa aur intehai shadeed radd-e-amal hai\n• Alamaat mein shadeed thand lagna, tez bukhar ya jism thanda parhna, tez dard, pasina, uljhan aur saans tez aana shamil hain\n• Pehle ghantay mein hospital ja kar antibiotics aur drip lagwana zaroori hai\nDOCTOR KO DIKHAYEIN: Koi bhi infection jo theek na ho raha ho aur bukhar barhta jaye to doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Tez saans, tez nabz, behoshi, neele hont, ya peshab band hona (fori 1122 par call karein)."
+    },
+    "tags": [
+      "sepsis",
+      "septic shock",
+      "blood poisoning",
+      "infection emergency",
+      "سپتی شاک",
+      "انفیکشن",
+      "tez bukhar",
+      "confusion"
+],
     "baseLevel": "EMERGENCY",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Sepsis — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/sepsis", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5813,8 +5864,21 @@ export const CORPUS: CorpusItem[] = [
     "id": "meningitis",
     "topic": "meningitis",
     "title": { "en": "Meningitis — brain infection emergency", "ur": "میننجائٹس — دماغ کے انفیکشن کی ایمرجنسی", "roman": "Meningitis — dimagh ke infection ki emergency" },
-    "content": { "en": "Meningitis is inflammation of the membranes around the brain and spinal cord. It is a MEDICAL EMERGENCY.\nSymptoms: sudden high fever, severe headache, stiff neck (can't touch chin to chest), sensitivity to light, confusion, vomiting, rash that doesn't fade when pressed with a glass.\nIn babies: bulging fontanelle (soft spot), high-pitched cry, refusing to eat, lethargy.\nEMERGENCY: Call 1122. Go to hospital IMMEDIATELY. Meningitis can cause death or brain damage within hours. Do NOT wait.", "ur": "میننجائٹس دماغ کی جھلیوں کی سوزش ہے۔ یہ میڈیکل ایمرجنسی ہے۔\nعلامات: اچانک تیز بخار، شدید سر درد، گردن سخت (ٹھوڑی سینے تک نہ لگے)، روشنی سے تکلیف، الجھن، الٹی، دانے جو شیشے دبانے سے غائب نہ ہوں۔\nبچوں میں: کھلہ سر نرم، تیز رویا، کھانا نہ کھانا، سستی۔\nایمرجنسی: 1122 کال کریں۔ فوراً ہسپتال جائیں۔ میننجائٹس گھنٹوں میں موت یا دماغی نقصان کر سکتا ہے۔ انتظار نہ کریں۔", "roman": "Meningitis dimagh ki jhaliyon ki sozish hai. Yeh medical emergency hai.\nAlamaat: achanak tez bukhar, shadeed sar dard, gardan sakht (thodi seene tak na lagay), roshni se takleef, uljhan, ulti, danay jo sheeshe dabane se ghayab na hon.\nBachon mein: khula sar naram, tez roya, khana na khana, susti.\nEmergency: 1122 call karein. Fori hospital jayein. Meningitis ghanton mein maut ya dimaghi nuqsan kar sakta hai. Intezar na karein." },
-    "tags": ["meningitis", "stiff neck", "brain infection", "gardan sakht", "سر درد بخار", "دانے", "meningococcal", "bacterial meningitis"],
+    "content": {
+      "en": "• Meningitis is a serious infection and swelling of the protective membranes covering the brain and spinal cord\n• Classic symptoms: sudden high fever, severe headache, stiff neck (inability to touch chin to chest), light sensitivity, and vomiting\n• In infants: look for bulging fontanelle (soft spot), high-pitched crying, irritability, refusal to feed, and floppy limbs\nSEE A DOCTOR IF: High fever with persistent headache and sensitivity to light.\nEMERGENCY / GO IMMEDIATELY: Stiff neck with fever, non-blanching purple rash, seizures, confusion, or unresponsiveness (call 1122 immediately).",
+      "ur": "• میننجائٹس دماغ اور حرام مغز کی حفاظتی جھلیوں کا ایک جان لیوا بیکٹیریل یا وائرل انفیکشن ہے\n• اہم علامات: اچانک تیز بخار، شدید سر درد، گردن کی اکڑن (ٹھوڑی سینے کو نہ لگنا)، روشنی سے آنکھوں میں تکلیف، اور الٹیاں\n• بچوں میں: تالو کا ابھر جانا، تیز چیخوں سے رونا، چڑچڑاپن، دودھ نہ پینا اور سستی\nڈاکٹر کو دکھائیں: تیز بخار کے ساتھ مسلسل سر درد اور روشنی سے تکلیف کی صورت میں۔\nایمرجنسی (فوراً جائیں): گردن کی اکڑن، جامنی رنگ کے دانے، دورے، غنودگی، یا بے ہوشی (فوراً 1122 پر کال کریں)۔",
+      "roman": "• Meningitis dimagh aur spinal cord ki jhaliyon ka khatarnak infection hai\n• Khas alamaat: achanak tez bukhar, shadeed sar dard, gardan ki akad (thori seene se na lagna), roshni se chubhan, aur ulti\n• Chotay bachon mein: naram taloo ka phoolna, ajeeb cheeqon se rona, doodh na peena aur behoshi\nDOCTOR KO DIKHAYEIN: Tez bukhar ke sath sar dard aur roshni se takleef ho to doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Gardan akad jana, jism par jamni danay, doray, ya behoshi (fori 1122 call karein)."
+    },
+    "tags": [
+      "meningitis",
+      "stiff neck",
+      "brain infection",
+      "gardan sakht",
+      "سر درد بخار",
+      "دانے",
+      "meningococcal",
+      "bacterial meningitis"
+],
     "baseLevel": "EMERGENCY",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Meningococcal meningitis — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/meningococcal-meningitis", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5823,28 +5887,71 @@ export const CORPUS: CorpusItem[] = [
     "id": "pneumonia-adult",
     "topic": "pneumonia-adult",
     "title": { "en": "Pneumonia in adults — lung infection", "ur": "بالغوں میں نمونیہ — پھیپھڑوں کا انفیکشن", "roman": "Baragon mein namonia — phphron ka infection" },
-    "content": { "en": "Pneumonia is an infection of the lungs. Symptoms: cough (may produce green/yellow phlegm), fever, shortness of breath, rapid breathing, chest pain when breathing deeply, fatigue.\nSEE A DOCTOR within 24 hours if: fever above 38.5°C, breathing difficulty, chest pain, confusion, or coughing blood.\nEMERGENCY: severe shortness of breath, blue lips, confusion, or very low blood pressure = call 1122.\nPrevention: pneumococcal vaccine, flu vaccine, hand hygiene, avoid smoking.", "ur": "نمونیہ پھیپھڑوں کا انفیکشن ہے۔ علامات: کھانسی (سبز/پیلا بلغم)، بخار، سانس لینے میں مشکل، تیز سانس، سانس لینے پر سینے میں درد، تھکاوٹ۔\n24 گھنٹے میں ڈاکٹر کو دکھائیں اگر: بخار 38.5°C سے زیادہ، سانس لینے میں مشکل، سینے کا درد، الجھن، یا کھانسی میں خون۔\nایمرجنسی: شدید سانس کی مشکل، نیلے ہونٹ، الجھن، یا بہت کم بلڈ پریشر = 1122 کال کریں۔\nبچاؤ: نمونوکوکل ویکسین، فلو ویکسین، ہاتھ صاف رکھیں، سگریف نہ پییں۔", "roman": "Namonia phphron ka infection hai. Alamaat: khansi (sabz/piela balgham), bukhar, saans lene mein mushkil, tez saans, saans lene par seene mein dard, thakawat.\n24 ghante mein doctor ko dikhayein agar: bukhar 38.5°C se zyada, saans lene mein mushkil, seene ka dard, uljhan, ya khansi mein khoon.\nEmergency: shadeed saans ki mushkil, neele hont, uljhan, ya bohot kam BP = 1122 call karein.\nBachao: pneumococcal vaccine, flu vaccine, haath saaf rakhein, cigarette na peeyein." },
-    "tags": ["pneumonia", "lung infection", "namonia", "phphron", "cough fever", "سینہ بند", "بلغم", "khansi bukhar", "chest infection"],
+    "content": {
+      "en": "• Pneumonia is an inflammatory lung infection causing pus and fluid build-up in air sacs\n• Symptoms include productive cough with green/yellow or rust-colored phlegm, fever, shaking chills, and sharp chest pain on deep breathing\n• Complete all prescribed antibiotics; drink plenty of warm fluids and use steam inhalation to ease congestion\nSEE A DOCTOR IF: High fever, persistent cough with colored sputum, or weakness lasting more than 48 hours.\nEMERGENCY / GO IMMEDIATELY: Severe shortness of breath, bluish lips or fingernails, chest pain, confusion, or coughing up blood (call 1122).",
+      "ur": "• نمونیہ پھیپھڑوں کا سنگین انفیکشن ہے جس میں ہوا کی تھیلیوں میں پیپ اور رطوبت جمع ہو جاتی ہے\n• علامات میں بلغم والی کھانسی (سبز، پیلا یا زنگ آلود)، تیز بخار، کپکپی، اور گہری سانس لینے پر سینے میں تیز درد شامل ہیں\n• تجویز کردہ اینٹی بائیوٹکس کا مکمل کورس کریں؛ گرم مائعات پئیں اور بھاپ لیں\nڈاکٹر کو دکھائیں: مسلسل تیز بخار، گہرے بلغم والی کھانسی، یا 48 گھنٹے سے زائد کمزوری۔\nایمرجنسی (فوراً جائیں): سانس لینے میں شدید دشواری، ہونٹوں کا نیلا ہونا، سینے کا شدید درد، یا کھانسی میں خون آنا (1122 کال کریں)۔",
+      "roman": "• Pneumonia phepron ka shadeed infection hai jismein hawa ki thailiyon mein peep aur rutoobat jama ho jati hai\n• Alamaat mein balgham wali khansi (sabz ya peeli), tez bukhar, kapkapi, aur gehri saans par seene mein dard shamil hain\n• Doctor ki di hui antibiotics ka course poora karein; garam pani aur joshanda lein\nDOCTOR KO DIKHAYEIN: Musalsal bukhar, balgham wali khansi ya kamzori 2 din se barh jaye to doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Saans lene mein shadeed takleef, neele hont, seene mein sakht dard, ya khansi mein khoon (1122 call karein)."
+    },
+    "tags": [
+      "pneumonia",
+      "lung infection",
+      "namonia",
+      "phphron",
+      "cough fever",
+      "سینہ بند",
+      "بلغم",
+      "khansi bukhar",
+      "chest infection"
+],
     "baseLevel": "URGENT",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Pneumonia — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/pneumonia", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
   },
   {
-    "id": "pneumonia-child",
+    "id": "pneumonia-child-imci",
     "topic": "pneumonia-child",
     "title": { "en": "Pneumonia in children — WHO IMCI guidelines", "ur": "بچوں میں نمونیہ — WHO IMCI ہدایات", "roman": "Bachon mein namonia — WHO IMCI hidayat" },
-    "content": { "en": "Pneumonia is the #1 killer of children under 5 worldwide. Symptoms: cough, fast breathing, chest indrawing (skin between ribs sucks in when breathing), refusal to eat, fever.\nFAST BREATHING: count breaths per minute — if >60 (age <2mo), >50 (2-11mo), >40 (1-5yr) = pneumonia.\nSEVERE PNEUMONIA: chest indrawing, grunting, head nodding, not drinking, convulsions, lethargy.\nEMERGENCY: chest indrawing or any danger sign = go to hospital IMMEDIATELY. Call 1122.\nTreatment: antibiotics (amoxicillin) prescribed by a doctor. Never self-medicate children.", "ur": "نمونیہ دنیا بھر میں 5 سال سے کم عمر بچوں کی موت کی سب سے بڑی وجہ ہے۔ علامات: کھانسی، تیز سانس، سینے کا دھنسنا، کھانا نہ کھانا، بخار۔\nتیز سانس: ایک منٹ میں سانیوں کی گنتی کریں — 60 سے زیادہ (2 مہینہ سے کم)، 50 سے زیادہ (2-11 مہینہ)، 40 سے زیادہ (1-5 سال) = نمونیہ۔\nشدید نمونیہ: سینے کا دھنسنا، گھرگھراہٹ، سر ہلنا، پانی نہ پینا، دورے، سستی۔\nایمرجنسی: سینے کا دھنسنا یا کوئی بھی خطرے کی علامت = فوراً ہسپتال جائیں۔ 1122 کال کریں۔", "roman": "Namonia duniya bhar mein 5 saal se kam umar bachon ki maut ki sab se bari wajah hai. Alamaat: khansi, tez saans, seene ka dhansna, khana na khana, bukhar.\nTez saans: ek minute mein saanson ki ginti karein — 60 se zyada (2 mahina se kam), 50 se zyada (2-11 mahina), 40 se zyada (1-5 saal) = namonia.\nShadeed namonia: seene ka dhansna, gharagharahat, sar hilna, pani na peena, doray, susti.\nEmergency: seene ka dhansna ya koi bhi khatre ki alamat = fori hospital jayein. 1122 call karein." },
-    "tags": ["pneumonia child", "child cough", "fast breathing", "chest indrawing", "baccha khansi", "tez saans bacha", "بچے کو کھانسی", "سینہ دھنسنا", "IMCI"],
+    "content": {
+      "en": "• Pneumonia is a leading cause of mortality in children under 5; caused by bacterial or viral lung infections\n• Count respiratory rate for 60 seconds: fast breathing is >60 breaths/min (<2 mo), >50 (2-11 mo), >40 (1-5 yrs)\n• Lower chest wall indrawing (subcostal retractions) indicates severe pneumonia requiring immediate hospital admission\nSEE A DOCTOR IF: Child has cough, mild fever, or breathing faster than normal.\nEMERGENCY / GO IMMEDIATELY: Chest indrawing, grunting, nasal flaring, stridor, inability to breastfeed/drink, lethargy, or convulsions (call 1122 immediately).",
+      "ur": "• نمونیہ 5 سال سے کم عمر بچوں میں نمونیہ اور سانس کی سب سے خطرناک بیماری ہے\n• ایک منٹ تک سانس کی رفتار گنیں: تیز سانس 60 سے زیادہ (2 ماہ سے کم)، 50 سے زیادہ (2-11 ماہ)، 40 سے زیادہ (1-5 سال)\n• سانس لیتے وقت سینے کا نچلا حصہ اندر دھنسنا (Chest Indrawing) شدید نمونیہ کی علامت ہے جس میں فوری ہسپتال ضروری ہے\nڈاکٹر کو دکھائیں: کھانسی، ہلکا بخار، یا معمول سے تیز سانس لینے کی صورت میں اسی دن دکھائیں۔\nایمرجنسی (فوراً جائیں): سینے کا دھنسنا، گھرگھراہٹ، دودھ یا پانی نہ پی سکنا، دورے، یا بے سدھ پڑ جانا (فوراً 1122 کال کریں)۔",
+      "roman": "• Bachon mein namonia saans ka intehai khatarnak infection hai jo phaphron ko mutaasir karta hai\n• 1 minute mein saans ki raftaar ginein: 60 se zyada (<2 mo), 50 se zyada (2-11 mo), 40 se zyada (1-5 yrs) tez saans hai\n• Saans lete waqt bachay ke seene ka nichla hissa andar dhansna shadeed namonia ki alamat hai\nDOCTOR KO DIKHAYEIN: Bachay ko khansi, bukhar ya tez saans ho to usi din doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Seena dhansna, doodh na peena, ghargharahat, doray, ya neela parhna (fori 1122 call karein)."
+    },
+    "tags": [
+      "pneumonia child",
+      "child cough",
+      "fast breathing",
+      "chest indrawing",
+      "baccha khansi",
+      "tez saans bacha",
+      "بچے کو کھانسی",
+      "سینہ دھنسنا",
+      "IMCI"
+],
     "baseLevel": "EMERGENCY",
     "audience": "child",
     "source": { "publisher": "WHO", "title": "Integrated Management of Childhood Illness (IMCI)", "url": "https://www.who.int/publications/i/item/9789240010649", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
   },
   {
-    "id": "stroke-fast",
+    "id": "stroke-fast-signs",
     "topic": "stroke-fast",
     "title": { "en": "Stroke — FAST warning signs (brain attack)", "ur": "اسٹروک — FAST خطرے کی علامات", "roman": "Stroke — FAST khatre ki alamaat" },
-    "content": { "en": "A stroke is a brain attack — blood flow to part of the brain stops. It is a MEDICAL EMERGENCY. Act FAST:\nF — FACE: Is one side of the face drooping? Ask them to smile.\nA — ARMS: Can they raise both arms? Does one drift down?\nS — SPEECH: Is speech slurred or strange? Ask them to repeat a sentence.\nT — TIME: If ANY sign is present, call 1122 IMMEDIATELY. Every minute counts.\nOther signs: sudden severe headache, sudden vision loss, sudden dizziness, loss of balance.\nDo NOT give food, water, or medication. Note the time symptoms started. Go to hospital IMMEDIATELY.", "ur": "اسٹروک دماغ پر حملہ ہے — دماغ کے کسی حصے میں خون کا بہاؤ بند ہو جاتا ہے۔ یہ میڈیکل ایمرجنسی ہے۔ FAST عمل کریں:\nF — چہرہ: کیا چہرے کا ایک طرفہ گر رہا ہے؟ مسکرانے کو کہیں۔\nA — بازو: کیا دونوں بازو اٹھا سکتے ہیں؟ ایک نیچے گرتا ہے؟\nS — بات: کیا بات الٹی ہے؟ ایک جملہ دہرائیں۔\nT — وقت: کوئی بھی علامت ہو تو فوراً 1122 کال کریں۔ ہر منٹ اہم ہے۔\nفوراً ہسپتال جائیں۔ کچھ کھانے/پینے/دوا نہ دیں۔ علامات شروع ہونے کا وقت نوٹ کریں۔", "roman": "Stroke dimagh par hamla hai — dimagh ke kisi hisay mein khoon ka bahao band ho jata hai. Yeh medical emergency hai. FAST amal karein:\nF — Chehra: kya chehre ka ek tarfa gir raha hai? Muskurane ko kahein.\nA — Baazu: kya dono baazu utha sakte hain? Ek neechay girta hai?\nS — Baat: kya baat ulti hai? Ek jumla duhrayein.\nT — Waqt: koi bhi alamat ho to fori 1122 call karein. Har minute ahem hai.\nFori hospital jayein. Kuch khane/peene/dawa na dein. Alamaat shuru hone ka waqt note karein." },
-    "tags": ["stroke", "FAST", "brain attack", "face drooping", "slurred speech", "falij", "فالج", "dimagh ki nali", "stroke urdu", "أچانک کمزوری"],
+    "content": {
+      "en": "• Stroke is a sudden disruption of blood supply to part of the brain; brain tissue begins dying within minutes\n• Use the FAST test: Face drooping on one side, Arm weakness/numbness, Speech difficulty/slurring, Time to call 1122\n• Note the exact time symptoms started; do NOT give food, water, or aspirin until evaluated by a hospital CT scan\nSEE A DOCTOR IF: Transient numbness or temporary speech difficulties that seem to resolve (mini-stroke/TIA).\nEMERGENCY / GO IMMEDIATELY: Sudden one-sided weakness, facial droop, slurred speech, sudden blindness, severe sudden thunderclap headache, or loss of balance (call 1122 immediately).",
+      "ur": "• فالج (اسٹروک) دماغ کی کسی شریان کے بند ہونے یا پھٹنے سے خون کی فراہمی بند ہو جانے کی ایمرجنسی ہے\n• FAST فارمولا یاد رکھیں: چہرے کا ایک طرف جھک جانا، ایک بازو میں کمزوری یا سن ہونا، بولنے میں لڑکھڑاہٹ، وقت فوراً 1122 کال کرنے کا\n• علامات شروع ہونے کا وقت نوٹ کریں؛ ہسپتال کے سی ٹی اسکین سے پہلے کوئی کھانا، پانی یا اسپرین ہرگز نہ دیں\nڈاکٹر کو دکھائیں: اگر وقتی طور پر چکر آئیں یا بازو میں کمزوری آ کر ٹھیک ہو جائے (TIA کا خطرہ)۔\nایمرجنسی (فوراً جائیں): چہرے کا ٹیڑھا ہونا، ایک طرف کا بازو یا ٹانگ کام نہ کرنا، بول نہ پانا، یا اچانک شدید سر درد (فوراً 1122 کال کریں)۔",
+      "roman": "• Falij (stroke) dimagh ki khoon ki nali band hone ya phatne se dimaghi nuqsan ki emergency hai\n• FAST yaad rakhein: Face jhukna, Arm kamzor hona, Speech ladkharana, Time fori 1122 call karne ka\n• Alamaat shuru hone ka exact waqt note karein; CT scan se pehle mareez ko khana, pani ya aspirin na dein\nDOCTOR KO DIKHAYEIN: Agar baazu sunn ho kar theek ho jaye to TIA ke muainay ke liye doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Aik taraf ka chehra dhalakna, aik baazu ya taang kaam na karna, bol na sakna (fori 1122 call karein)."
+    },
+    "tags": [
+      "stroke",
+      "FAST",
+      "brain attack",
+      "face drooping",
+      "slurred speech",
+      "falij",
+      "فالج",
+      "dimagh ki nali",
+      "stroke urdu",
+      "أچانک کمزوری"
+],
     "baseLevel": "EMERGENCY",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Stroke — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/stroke", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5853,8 +5960,23 @@ export const CORPUS: CorpusItem[] = [
     "id": "heart-attack",
     "topic": "heart-attack",
     "title": { "en": "Heart attack — chest pain emergency", "ur": "دل کا دورہ — سینے کے درد کی ایمرجنسی", "roman": "Dil ka dora — seene ke dard ki emergency" },
-    "content": { "en": "A heart attack happens when blood flow to the heart is blocked. It is a MEDICAL EMERGENCY.\nSymptoms: central chest pain or pressure (feels like heavy weight on chest), pain spreading to left arm/jaw/back, shortness of breath, cold sweat, nausea, dizziness.\nWOMEN may have different symptoms: fatigue, nausea, jaw pain without chest pain.\nEMERGENCY: Call 1122 IMMEDIATELY. Chew an aspirin (300mg) if available and not allergic. Sit still, do NOT exert. Time = muscle — every minute of delay damages heart muscle.\nDo NOT drive yourself — get someone to drive or call an ambulance.", "ur": "دل کا دورہ خون کی نالی بند ہونے سے ہوتا ہے۔ یہ میڈیکل ایمرجنسی ہے۔\nعلامات: سینے کے وسط میں درد یا دباؤ (جیسے سینے پر بوجھ)، درد بائیں بازو/جبڑے/پیٹھ تک پھیلنا، سانس کی کمی، سرد پسینہ، متلی، چکر۔\nخواتین میں علامات مختلف ہو سکتی ہیں: تھکاوٹ، متلی، جبڑے کا درد۔\nایمرجنسی: فوراً 1122 کال کریں۔ اگر دستیاب ہو اور الرجی نہ ہو تو ایک سپرن (300mg) چبائیں۔ خاموش بیٹھیں، محنت نہ کریں۔ ہر منٹ کا نقصان ہوتا ہے۔\nخود ڈرائیو نہ کریں — کسی اور کو ڈرائیو کریں یا ایمبولینس بلائیں۔", "roman": "Dil ka dora khoon ki nali band hone se hota hai. Yeh medical emergency hai.\nAlamaat: seene ke wast mein dard ya dabao (jaise seene par boojh), dard bain baazu/jabray/pith tak phailna, saans ki kami, sard paseena, matli, chakar.\nAuraton mein alamaat mukhtalif ho sakti hain: thakawat, matli, jabray ka dard.\nEmergency: fori 1122 call karein. Agar dastiyab ho aur allergy na ho to ek aspirin (300mg) chubayein. Khamosh baithein, mehnat na karein. Har minute ka nuqsan hota hai.\nKhud drive na karein — kisi aur ko drive karein ya ambulance bulayein." },
-    "tags": ["heart attack", "myocardial infarction", "MI", "chest pain", "seene ka dard", "dil ka dora", "دل کا درد", "سینہ درد", "left arm pain", "cardiac emergency"],
+    "content": {
+      "en": "• A heart attack (myocardial infarction) occurs when coronary blood flow to the heart muscle is obstructed\n• Common symptoms: central heavy/crushing chest pressure, pain radiating to left arm, shoulder, jaw, neck, or back\n• Keep patient calm at rest; if not allergic, give 300mg chewable aspirin immediately while awaiting ambulance\nSEE A DOCTOR IF: Exertional chest tightness that relieves with rest (angina evaluation).\nEMERGENCY / GO IMMEDIATELY: Crushing chest pain lasting >5 minutes, radiating pain, shortness of breath, cold sweats, dizziness, or collapse (call 1122 immediately).",
+      "ur": "• دل کا دورہ (ہارٹ اٹیک) دل کے پٹھوں کو خون پہنچانے والی نالی میں رکاوٹ پیدا ہونے سے واقع ہوتا ہے\n• علامات: سینے کے درمیان شدید بوجھ یا دباؤ، درد کا بائیں بازو، کندھے، جبڑے، گردن یا پیٹھ تک پھیلنا، ٹھنڈا پسینہ\n• مریض کو مکمل پرسکون بٹھائیں؛ الرجی نہ ہو تو 300 ملی گرام ڈسپرین چبوا دیں اور ایمبولینس کا انتظار کریں\nڈاکٹر کو دکھائیں: چلنے پھرنے پر سینے میں بوجھ یا درد جو آرام سے ٹھیک ہو جائے (انجائنا)۔\nایمرجنسی (فوراً جائیں): سینے میں شدید دباؤ، بائیں بازو یا جبڑے میں درد، سانس کا پھولنا، ٹھنڈے پسینے یا بے ہوشی (فوراً 1122 کال کریں)۔",
+      "roman": "• Dil ka dora (heart attack) coronary nali mein khoon ka bahao rukne se hota hai\n• Alamaat: seene ke darmiyan shadeed boojh ya dabao, baain baazu, kandhay, jabray ya kamar mein dard, thanda paseena\n• Mareez ko bitha dein; allergy na ho to 300mg disprin chaba kar dein aur ambulance ka intezar karein\nDOCTOR KO DIKHAYEIN: Mehnat ya chalne par seene mein dard ho jo aaraam karne par theek ho jaye.\nEMERGENCY (FORI JAYEIN): Seene mein shadeed jakran, baain baazu mein dard, saans phoolna, ya behoshi (fori 1122 call karein)."
+    },
+    "tags": [
+      "heart attack",
+      "myocardial infarction",
+      "MI",
+      "chest pain",
+      "seene ka dard",
+      "dil ka dora",
+      "دل کا درد",
+      "سینہ درد",
+      "left arm pain",
+      "cardiac emergency"
+],
     "baseLevel": "EMERGENCY",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Cardiovascular diseases — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/cardiovascular-diseases-(cvds)", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5863,8 +5985,22 @@ export const CORPUS: CorpusItem[] = [
     "id": "diabetic-ketoacidosis",
     "topic": "dka",
     "title": { "en": "Diabetic Ketoacidosis (DKA) — diabetes emergency", "ur": "ذیابیطس کیٹواسائڈوسس — شوگر کی ایمرجنسی", "roman": "Diabetes ketoacidosis — sugar ki emergency" },
-    "content": { "en": "DKA is a life-threatening complication of diabetes. It happens when blood sugar is very high and the body produces ketones.\nSymptoms: extreme thirst, very frequent urination, nausea/vomiting, abdominal pain, fruity-smelling breath, rapid breathing, confusion, drowsiness.\nCAUSED BY: missed insulin doses, infection, stress.\nEMERGENCY: Go to hospital IMMEDIATELY. DKA can cause coma and death. Check blood sugar if possible (usually >250 mg/dL). Check ketones if possible.\nDo NOT stop insulin without medical advice — sick days may need MORE insulin.", "ur": "DKA ذیابیطس کی جان لیوا پیچیدگی ہے۔ خون میں شوگر بہت زیادہ ہونے سے کیٹون بنتے ہیں۔\nعلامات: شدید پیاس، بہت زیادہ پیشاب، متلی/الٹی، پیٹ کا درد، میٹھی سانس، تیز سانس، الجھن، نیند۔\nوجہ: انسولین نہ لینا، انفیکشن، ذہنی دباؤ۔\nایمرجنسی: فوراً ہسپتال جائیں۔ DKA سے کوما اور موت ہو سکتی ہے۔ اگر ہو تو بلڈ شوگر چیک کریں (عام طور پر 250 سے زیادہ)۔", "roman": "DKA diabetes ki jan lewa pechidgi hai. Khoon mein sugar bohot zyada hone se ketone bantay hain.\nAlamaat: shadeed pyas, bohot zyada peshab, matli/ulti, pait ka dard, meethi saans, tez saans, uljhan, neend.\nWajah: insulin na lena, infection, zahni dabao.\nEmergency: fori hospital jayein. DKA se coma aur maut ho sakti hai. Agar ho to blood sugar check karein (amom tor par 250 se zyada)." },
-    "tags": ["DKA", "ketoacidosis", "diabetes emergency", "high blood sugar", "sugar emergency", "meethi saans", "شوگر زیادہ", "ذیابیطس ایمرجنسی", "fruity breath"],
+    "content": {
+      "en": "• Diabetic Ketoacidosis (DKA) is an acute, life-threatening metabolic emergency caused by severe insulin deficiency\n• High blood sugar causes ketone build-up leading to blood acidosis, severe dehydration, and electrolyte depletion\n• Hallmark signs: high blood glucose (>250 mg/dL), deep rapid breathing (Kussmaul), fruity acetone breath, nausea, and abdominal pain\nSEE A DOCTOR IF: Consistently high blood sugar readings (>200 mg/dL) with mild ketonuria during illness.\nEMERGENCY / GO IMMEDIATELY: Persistent vomiting, rapid deep breathing, fruity-smelling breath, abdominal pain with high sugar, or confusion (call 1122).",
+      "ur": "• ذیابیطس کیٹواسائڈوسس (DKA) انسولین کی شدید کمی سے پیدا ہونے والی ایک ہنگامی جان لیوا حالت ہے\n• خون میں شوگر کی زیادتی سے خطرناک تیزابی مادے (کیٹونز) بنتے ہیں جس سے جسم میں پانی اور نمکیات کی شدید کمی ہوتی ہے\n• نمایاں علامات: شوگر 250 سے زیادہ، تیز اور گہری سانسیں، منہ سے پھلوں جیسی میٹھی بو، الٹیاں، اور پیٹ میں شدید درد\nڈاکٹر کو دکھائیں: بیماری کے دوران شوگر کا مسلسل 200 سے اوپر رہنا یا پیشاب میں ہلکے کیٹونز آنا۔\nایمرجنسی (فوراً جائیں): مسلسل الٹیاں، میٹھی سانسیں، پیٹ کا شدید درد، شدید غنودگی یا بے ہوشی (فوراً 1122 کال کریں یا ہسپتال جائیں)۔",
+      "roman": "• Diabetic Ketoacidosis (DKA) sugar ke mareezon mein insulin ki shadeed kami ki wajah se jan lewa emergency hai\n• Khoon mein sugar 250 se barh jati hai aur tezaabi ketones banne se shadeed dehydration hoti hai\n• Alamaat: meethi phal jaisi saans, gehri tez saans, pait dard, ulti, shadeed pyas aur ghunoodgi\nDOCTOR KO DIKHAYEIN: Sugar musalsal 200 se zyada rahe to fori routine checkup ke liye doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Musalsal ultiyan, meethi saans, pait dard, tez saans, ya behoshi (fori 1122 call karein)."
+    },
+    "tags": [
+      "DKA",
+      "ketoacidosis",
+      "diabetes emergency",
+      "high blood sugar",
+      "sugar emergency",
+      "meethi saans",
+      "شوگر زیادہ",
+      "ذیابیطس ایمرجنسی",
+      "fruity breath"
+],
     "baseLevel": "EMERGENCY",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Diabetes — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/diabetes", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5873,8 +6009,23 @@ export const CORPUS: CorpusItem[] = [
     "id": "snake-bite",
     "topic": "snake-bite",
     "title": { "en": "Snake bite — first aid and emergency", "ur": "سانپ کا کاٹنا — ابتدائی امداد اور ایمرجنسی", "roman": "Saamp ka kaatna — ibtidai imdaad aur emergency" },
-    "content": { "en": "Pakistan has many venomous snakes (cobra, krait, vipers). Snake bite is a MEDICAL EMERGENCY.\nFirst aid:\n1. Keep the person CALM and STILL — movement spreads venom faster.\n2. Remove jewelry/tight clothing near the bite (swelling will occur).\n3. Keep the bitten limb BELOW heart level.\n4. DO NOT: cut the wound, suck out venom, apply ice, apply tourniquet, or give alcohol.\n5. Note the snake's appearance if possible (color, size) — DO NOT try to catch it.\n6. Go to hospital IMMEDIATELY for anti-venom. Call 1122.\nSymptoms of venom: swelling, pain, bleeding, nausea, blurred vision, drooping eyelids, difficulty breathing, muscle weakness.\nTIME IS CRITICAL — anti-venom works best within 4-6 hours.", "ur": "پاکستان میں زہریلے سانپ ہیں (کوبرا، کریٹ، وائپر)۔ سانپ کا کاٹنا میڈیکل ایمرجنسی ہے۔\nابتدائی امداد:\n1. مریض کو پرسکون اور خاموش رکھیں — حرکت زہر تیزی سے پھیلاتی ہے۔\n2. کاٹے والی جگہ کے قریب زیورات/تنگ کپڑے اتاریں۔\n3. کاٹا ہوا حصہ دل سے نیچے رکھیں۔\n4. زخم نہ کاٹیں، زہر نہ چوسیں، برف نہ لگائیں، ٹورنیکیٹ نہ باندھیں۔\n5. سانپ کی شکل نوٹ کریں — پکڑنے کی کوشش نہ کریں۔\n6. اینٹی وینم کے لیے فوراً ہسپتال جائیں۔ 1122 کال کریں۔\nزہر کی علامات: سوجن، درد، خون بہنا، متلی، دھندلا نظر، پلک گرنا، سانس مشکل، پٹھوں کی کمزوری۔", "roman": "Pakistan mein zahrilay saamp hain (cobra, krait, viper). Saamp ka kaatna medical emergency hai.\nIbtidai imdaad:\n1. Mareez ko pursukoon aur khamosh rakhein — harkat zahr tezi se phelati hai.\n2. Kaate wali jagah ke qareeb zewarat/tang kapre utarein.\n3. Kaata hua hissa dil se neechay rakhein.\n4. Zakham na kaatein, zahr na choosein, barf na lagayein, tourniquet na bandhein.\n5. Saamp ki shakal note karein — pakarne ki koshish na karein.\n6. Anti-venom ke liye fori hospital jayein. 1122 call karein.\nZahr ki alamaat: sojan, dard, khoon behna, matli, dhundla nazar, palak girna, saans mushkil, pathon ki kamzori." },
-    "tags": ["snake bite", "saamp kaat", "snake venom", "antivenom", "سانپ", "زہر", "snakebite first aid", "krait", "cobra", "viper bite"],
+    "content": {
+      "en": "• Venomous snakebite (vipers, cobras, kraits) requires immediate hospital admission for anti-snake venom (ASV)\n• Keep victim still and calm; immobilize bitten limb below heart level; remove tight jewelry and clothing\n• DO NOT cut the wound, DO NOT suck venom, DO NOT apply tourniquets or ice, and DO NOT waste time on traditional remedies\nSEE A DOCTOR IF: Any snakebite, even if non-venomous appearance, for tetanus prophylaxis and 24-hour observation.\nEMERGENCY / GO IMMEDIATELY: Rapid spreading swelling, active bleeding from bite/gums, ptosis (drooping eyelids), difficulty swallowing/breathing, or muscle paralysis (call 1122 immediately).",
+      "ur": "• پاکستان میں زہریلے سانپ (وائپر، کوبرا، کریٹ) کا کاٹنا ایک فوری میڈیکل ایمرجنسی ہے جس میں اینٹی سنیک وینم لازمی ہے\n• مریض کو ساکت اور پرسکون رکھیں؛ کاٹے ہوئے بازو یا ٹانگ کو دل سے نیچے رکھیں؛ زیورات اور تنگ کپڑے اتار دیں\n• زخم پر کٹ نہ لگائیں، زہر نہ چوسیں، ٹورنیکیٹ یا رسی نہ باندھیں، اور دم درود پر وقت ضائع نہ کریں\nڈاکٹر کو دکھائیں: سانپ کا کوئی بھی کاٹ، خواہ غیر زہریلا محسوس ہو، ٹیٹنس کے ٹیکے اور نگرانی کے لیے۔\nایمرجنسی (فوراً جائیں): سوجن کا تیزی سے پھیلنا، زخم یا مسوڑھوں سے خون آنا، پلکیں جھک جانا، سانس لینے یا نگلنے میں دشواری (فوراً 1122 کال کریں)۔",
+      "roman": "• Saamp ka kaatna (cobra, viper, krait) fori medical emergency hai jismein anti-snake venom zaroori hota hai\n• Mareez ko bilkul harkat na karne dein; zakham ko dil ki satah se neechay rakhein; zewar aur tang kapray utaar dein\n• Zakham par cheera na lagayein, zahar na choosein, tight patti ya rassi na bandhein, aur dam darood mein waqt zaya na karein\nDOCTOR KO DIKHAYEIN: Saamp ke kisi bhi daant lagne par tetanus aur nigrani ke liye doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Zakham se khoon behna, soojan phailna, palak girna, saans mein rukawat (fori 1122 call karein)."
+    },
+    "tags": [
+      "snake bite",
+      "saamp kaat",
+      "snake venom",
+      "antivenom",
+      "سانپ",
+      "زہر",
+      "snakebite first aid",
+      "krait",
+      "cobra",
+      "viper bite"
+],
     "baseLevel": "EMERGENCY",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Snakebite envenoming — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/snakebite-envenoming", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5883,8 +6034,22 @@ export const CORPUS: CorpusItem[] = [
     "id": "rabies-bite",
     "topic": "rabies-bite",
     "title": { "en": "Dog bite and rabies — urgent prevention", "ur": "کتے کے کاٹنے اور ریبیز — فوری بچاؤ", "roman": "Kutte ke kaatne aur rabies — fori bachao" },
-    "content": { "en": "Rabies is 100% fatal once symptoms appear but 100% preventable with prompt vaccination. ANY dog/animal bite that breaks the skin = potential rabies exposure.\nIMMEDIATE steps:\n1. Wash the wound with soap and running water for 15 MINUTES. This is the most important step.\n2. Apply antiseptic (povidone-iodine or alcohol) if available.\n3. Go to a hospital or vaccination center IMMEDIATELY for rabies vaccine + immunoglobulin.\n4. Report the bite — observe the animal for 10 days if possible.\nDO NOT: stitch the wound, apply home remedies, or wait to see if symptoms develop.\nVACCINE SCHEDULE: Day 0, 3, 7, 14, 28 (5 doses). Must complete all doses.\nEMERGENCY: If the bite is on the face/neck/head, go to hospital IMMEDIATELY — rabies reaches the brain faster from these areas.", "ur": "ریبیز کی علامات ظاہر ہونے کے بعد 100% جان لیوا ہے لیکن فوری ویکسین سے 100% قابلِ بچاؤ ہے۔ کسی بھی جانور کا کاٹ = ریبیز کا خطرہ۔\nفوری اقدامات:\n1. زخم کو صابن اور بہتے پانی سے 15 منٹ دھوئیں۔ یہ سب سے اہم قدم ہے۔\n2. اینٹی سیپٹک لگائیں۔\n3. فوراً ہسپتال یا ویکسینیشن سینٹر جائیں۔\n4. جانور کو 10 دن تک دیکھیں۔\nزخم کو سی نہ دیں، گھریلو علاج نہ کریں۔\nویکسین: دن 0، 3، 7، 14، 28 (5 خوراکیں)۔ سب مکمل کرنیں۔", "roman": "Rabies ki alamaat zahir hone ke baad 100% jan lewa hai lekin fori vaccine se 100% qabil-e-bachao hai. Kisi bhi janwar ka kaat = rabies ka khatra.\nFori iqdamat:\n1. Zakham ko sabun aur behte pani se 15 minute dhoyein. Yeh sab se ahem qadam hai.\n2. Antiseptic lagayein.\n3. Fori hospital ya vaccination center jayein.\n4. Janwar ko 10 din tak dekhein.\nZakham ko se na dein, gharelu ilaaj na karein.\nVaccine: din 0, 3, 7, 14, 28 (5 khoraakein). Sab mukammal karein." },
-    "tags": ["rabies", "dog bite", "animal bite", "kutta kaat", "کتے کا کاٹنا", "ریبیز", "rabies vaccine", "anti-rabies", "zahar ilaaj"],
+    "content": {
+      "en": "• Rabies is a fatal viral encephalitis transmitted via saliva from infected dogs, bats, or animals; 100% fatal once clinical symptoms emerge\n• Immediate first aid: wash bite wound vigorously with running water and soap for at least 15 continuous minutes\n• Apply antiseptic (povidone-iodine); do NOT suture the wound or apply irritants like chili powder or lime\nSEE A DOCTOR IF: Any scratch, lick over broken skin, or minor animal exposure for post-exposure prophylaxis advice.\nEMERGENCY / GO IMMEDIATELY: Deep puncture bite, face/head/neck bites, or unprovoked stray animal attacks requiring immediate Rabies Vaccine + Immunoglobulin (RIG) (call 1122).",
+      "ur": "• ریبیز پاگل کتے یا جانور کے کاٹنے سے پھیلنے والا جان لیوا وائرس ہے؛ علامات ظاہر ہونے کے بعد یہ 100 فیصد مہلک ہے\n• فوری ابتدائی امداد: زخم کو بہتے پانی اور صابن سے کم از کم 15 منٹ تک مسلسل رگڑ کر اچھی طرح دھوئیں\n• زخم پر پائیوڈین لگائیں؛ ٹانکے ہرگز نہ لگوائیں اور نہ ہی لال مرچ یا راکھ لگائیں\nڈاکٹر کو دکھائیں: جانور کی کوئی بھی خراش یا کھرچن ہو تو ویکسین کے مشورے کے لیے فوراً جائیں۔\nایمرجنسی (فوراً جائیں): چہرے یا گردن پر گہرا کاٹ، خون بہنا، یا آوارہ کتے کا حملہ — ریبیز ویکسین اور امیونوگلوبلین کے لیے فوراً ہسپتال جائیں۔",
+      "roman": "• Rabies kuttay ya kisi janwar ke kaatne se hone wala jan lewa marz hai; alamaat aane ke baad koi ilaaj nahi\n• Fori ibtidai imdaad: zakham ko behte paani aur sabun se kam az kam 15 minute tak achi tarah dhoyen\n• Pyodine lagayein; tankay na lagwayein aur mirch ya desi totkay hargiz na aazmayein\nDOCTOR KO DIKHAYEIN: Kisi bhi janwar ki kharash ya kaatne par vaccine schedule shuru karne ke liye doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Chehre ya gardan par ghera kaat, khoon aana, ya pagal kuttay ka hamla (fori hospital jayein)."
+    },
+    "tags": [
+      "rabies",
+      "dog bite",
+      "animal bite",
+      "kutta kaat",
+      "کتے کا کاٹنا",
+      "ریبیز",
+      "rabies vaccine",
+      "anti-rabies",
+      "zahar ilaaj"
+],
     "baseLevel": "URGENT",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Rabies — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/rabies", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5893,8 +6058,23 @@ export const CORPUS: CorpusItem[] = [
     "id": "heat-exhaustion",
     "topic": "heat-exhaustion",
     "title": { "en": "Heat exhaustion — summer heat (50°C in Pakistan)", "ur": "گرمی کی تھکاوٹ — گرمیوں کا موسم", "roman": "Garmi ki thakawat — garmiyon ka mausam" },
-    "content": { "en": "Pakistan's summers can reach 50°C. Heat exhaustion is the body's warning that it's overheating.\nSymptoms: heavy sweating, weakness, dizziness, headache, nausea, muscle cramps, rapid pulse, cool/moist skin.\nFirst aid:\n1. Move to a cool/shaded place IMMEDIATELY.\n2. Remove excess clothing.\n3. Drink cool water with a pinch of salt (or ORS).\n4. Apply cool wet cloths to skin.\n5. Rest for at least 30 minutes.\nSEE A DOCTOR if: symptoms don't improve in 30 minutes, vomiting, confusion.\nEMERGENCY (HEAT STROKE): NO sweating, hot/dry skin, body temperature above 40°C, confusion, unconsciousness, seizure = call 1122 IMMEDIATELY. Heat stroke can kill within minutes.", "ur": "پاکستان کی گرمیوں میں درجہ حرارت 50°C تک پہنچ سکتا ہے۔ گرمی کی تھکاوٹ جسم کا انتباہ ہے۔\nعلامات: زیادہ پسینہ، کمزوری، چکر، سر درد، متلی، پٹھوں میں درد، تیز نبض، ٹھنڈی/گیلی جلد۔\nابتدائی امداد:\n1. فوراً ٹھنڈی/سائی والی جگہ جائیں۔\n2. اضافی کپڑے اتاریں۔\n3. ٹھنڈا پانی نمک کے ساتھ (یا ORS) پییں۔\n4. جسم پر ٹھنڈے گیلا کپڑے رکھیں۔\n5. کم از کم 30 منٹ آرام کریں۔\nایمرجنسی (ہیٹ اسٹروک): پسینہ نہ ہونا، گرم/خشک جلد، درجہ حرارت 40°C سے زیادہ، الجھن، بے ہوشی، دورہ = فوراً 1122 کال کریں۔", "roman": "Pakistan ki garmiyon mein hararat 50°C tak pahunch sakta hai. Garmi ki thakawat jism ka intibah hai.\nAlamaat: zyada paseena, kamzori, chakar, sar dard, matli, pathon mein dard, tez nabz, thandi/geeli jild.\nIbtidai imdaad:\n1. Fori thandi/saye wali jagah jayein.\n2. Izaafi kapre utarein.\n3. Thanda pani namak ke saath (ya ORS) peeyein.\n4. Jism par thande geela kapre rakhein.\n5. Kam az kam 30 minute aaraam karein.\nEmergency (heat stroke): paseena na hona, garam/khushk jild, hararat 40°C se zyada, uljhan, behoshi, dora = fori 1122 call karein." },
-    "tags": ["heat exhaustion", "heat stroke", "garmi", "lu", "گرمی لگنا", "لو", "heat emergency", "sun stroke", "dehydration heat", "50 degrees"],
+    "content": {
+      "en": "• Heat exhaustion occurs when the body overheats in hot humid environments (e.g. 45°C+ summer weather), losing fluid and salt\n• Symptoms: heavy sweating, paleness, muscle cramps, tiredness, dizziness, headache, nausea, and fainting\n• Move to an air-conditioned or shaded area immediately, loosen clothing, sip cool water or ORS, and apply cold wet towels\nSEE A DOCTOR IF: Symptoms do not improve after 30 minutes of rest and hydration, or patient cannot drink.\nEMERGENCY / GO IMMEDIATELY: Heat stroke signs: body temperature >40°C, hot dry skin (no sweating), confusion, seizures, or loss of consciousness (call 1122 immediately).",
+      "ur": "• گرمی کی شدت (ہیٹ ایگزاسشن) شدید گرمی اور حبس میں پانی اور نمکیات کے زیادہ اخراج سے پیدا ہوتی ہے\n• علامات: زیادہ پسینہ آنا، رنگ پیلا پڑنا، پٹھوں کے اینٹھن، چکر آنا، سر درد، متلی، اور کمزوری\n• فوراً سائے یا ٹھنڈے کمرے میں منتقل کریں، کپڑے ڈھیلے کریں، ٹھنڈا پانی یا او آر ایس گھونٹ گھونٹ پلائیں، اور ٹھنڈی پٹیاں رکھیں\nڈاکٹر کو دکھائیں: اگر 30 منٹ آرام اور پانی پلانے کے بعد بھی حالت بہتر نہ ہو یا مریض قے کر رہا ہو۔\nایمرجنسی (فوراً جائیں): ہیٹ اسٹروک کی علامات: بخار 104°F (40°C) سے اوپر، پسینہ بند ہو کر جلد کا گرم و خشک ہونا، بے ہوشی یا دورے (فوراً 1122 کال کریں)۔",
+      "roman": "• Garmi lagna (heat exhaustion) sakht dhoop aur garmi mein jism se paani aur namak nikalne se hota hai\n• Alamaat: shadeed paseena, rang zard parhna, pathon mein dard, sar chakraana, sar dard, ulti aur kamzori\n• Fori saye ya thanday kamray mein jayein, kapray dheelay karein, ORS ya thanda paani peeyein, aur geeli pattiyan rakhein\nDOCTOR KO DIKHAYEIN: Agar aadhe ghantay aaram aur paani lene ke bawajood tabiyat behtar na ho.\nEMERGENCY (FORI JAYEIN): Heat stroke: jism ka bukhar 40°C se barh jaye, paseena aana band ho, behoshi ya dora parhe (fori 1122 call karein)."
+    },
+    "tags": [
+      "heat exhaustion",
+      "heat stroke",
+      "garmi",
+      "lu",
+      "گرمی لگنا",
+      "لو",
+      "heat emergency",
+      "sun stroke",
+      "dehydration heat",
+      "50 degrees"
+],
     "baseLevel": "URGENT",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Heat and health", "url": "https://www.who.int/news-room/fact-sheets/detail/climate-change-heat-and-health", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5903,8 +6083,22 @@ export const CORPUS: CorpusItem[] = [
     "id": "pesticide-poisoning-data",
     "topic": "pesticide-poisoning",
     "title": { "en": "Pesticide poisoning — agricultural emergency", "ur": "کیمیائی زہر کھانے کی ایمرجنسی", "roman": "Chemical zahr khane ki emergency" },
-    "content": { "en": "Pesticide/organophosphate poisoning is common in Pakistan's agricultural areas. It is a MEDICAL EMERGENCY.\nSymptoms: excessive salivation, tearing, sweating, small pupils, muscle twitching, difficulty breathing, vomiting, diarrhea, confusion, seizures.\nIf ingested (swallowed):\n1. Do NOT induce vomiting.\n2. Call 1122 IMMEDIATELY.\n3. Take the pesticide container to the hospital — doctors need to know what chemical it is.\nIf on skin: remove contaminated clothing, wash skin with lots of water for 15 minutes.\nIf inhaled: move to fresh air immediately.\nEMERGENCY: Go to hospital IMMEDIATELY. Atropine is the antidote — must be given by medical professionals. Delay = death.\nPrevention: wear protective gear, store pesticides safely, never transfer to food containers.", "ur": "کیمیائی زہر پاکستان کی زرعی علاقوں میں عام ہے۔ یہ میڈیکل ایمرجنسی ہے۔\nعلامات: زیادہ تھوک، آنسو، پسینہ، چھوٹی پتیاں، پٹھوں کا کھنچاؤ، سانس مشکل، الٹی، دستاب، الجھن، دورے۔\nکھانے کی صورت میں: الٹی نہ کرائیں، فوراً 1122 کال کریں، زہر کی بوتل ہسپتال لے جائیں۔\nجلد پر: کپڑے اتاریں، 15 منٹ پانی سے دھوئیں۔\nسانس میں: تازہ ہوا میں جائیں۔\nایمرجنسی: فوراً ہسپتال جائیں۔ ایٹروپائن تریاق ہے۔", "roman": "Chemical zahr Pakistan ki zrai ilaqon mein aam hai. Yeh medical emergency hai.\nAlamaat: zyada thook, ansoo, paseena, chhoti pattian, pathon ka khinchaoo, saans mushkil, ulti, dastab, uljhan, doray.\nKhane ki soorat mein: ulti na karayein, fori 1122 call karein, zahr ki bottle hospital le jayein.\nJild par: kapre utarein, 15 minute pani se dhoyein.\nSaans mein: taza hawa mein jayein.\nEmergency: fori hospital jayein. Atropine tiryaaq hai." },
-    "tags": ["pesticide poisoning", "organophosphate", "chemical poisoning", "zahr", "زراعت زہر", "atropine", "agricultural poisoning", "کیمیائی", "self harm pesticide"],
+    "content": {
+      "en": "• Acute organophosphate and agricultural pesticide toxicity is a common rural medical emergency\n• Toxins inhibit acetylcholinesterase, producing DUMBELS: Diarrhea, Urination, Miosis (pinpoint pupils), Bronchospasm/Bradycardia, Emesis, Lacrimation, Salivation\n• Remove contaminated clothing immediately, wash skin with soap and plenty of water; do NOT induce vomiting\nSEE A DOCTOR IF: Mild accidental pesticide exposure with eye/skin irritation or headache.\nEMERGENCY / GO IMMEDIATELY: Severe poisoning: pinpoint pupils, excessive drooling/frothing, wheezing, slow heart rate, muscle twitching, seizures, or coma (call 1122 for Atropine resuscitation).",
+      "ur": "• کیڑے مار ادویات (آرگینو فاسفیٹ) کا زہر پاکستان کے زرعی علاقوں میں ایک انتہائی خطرناک ایمرجنسی ہے\n• زہر کے اثرات: آنکھوں کی پتلیاں باریک سوئی جیسی ہونا، منہ سے بے تحاشا جھاگ یا تھوک بہنا، سانس میں سیٹیاں، الٹی، دست اور نبض سست ہونا\n• زہر آلود کپڑے فوراً اتاریں، جلد کو صابن اور کھلے پانی سے دھوئیں؛ مریض کو الٹی کروانے کی کوشش ہرگز نہ کریں\nڈاکٹر کو دکھائیں: اسپرے کے بعد سر درد، جلد یا آنکھوں میں جلن کے ہلکے اثرات کے لیے۔\nایمرجنسی (فوراً جائیں): منہ سے جھاگ آنا، پتلیاں سکڑنا، سانس کا رکنا، پٹھوں کا پھڑکنا، یا بے ہوشی — ایٹروپین تریاق کے لیے فوراً 1122 کال کریں۔",
+      "roman": "• Keeray maar spray (pesticide poisoning) dehati ilaqon mein intehai khatarnak emergency hai\n• Alamaat: aankhon ki putliyan bohot choti hona, munh se jhaag aur thook aana, saans phoolna, ulti, dast aur nabz sust hona\n• Zaher aalood kapray utaar dein, jild ko sabun aur pani se dhoyen; ulti karwane ki koshish na karein\nDOCTOR KO DIKHAYEIN: Spray ke baad sar dard, jild ya aankh mein jalan ke liye doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Munh se jhaag, putliyan sukur jana, saans rukna, doray ya behoshi (atropine tiryaaq ke liye fori 1122 call karein)."
+    },
+    "tags": [
+      "pesticide poisoning",
+      "organophosphate",
+      "chemical poisoning",
+      "zahr",
+      "زراعت زہر",
+      "atropine",
+      "agricultural poisoning",
+      "کیمیائی",
+      "self harm pesticide"
+],
     "baseLevel": "EMERGENCY",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Pesticide poisoning — prevention and management", "url": "https://www.who.int/publications", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5913,8 +6107,23 @@ export const CORPUS: CorpusItem[] = [
     "id": "schizophrenia",
     "topic": "schizophrenia",
     "title": { "en": "Schizophrenia — understanding psychosis", "ur": "شیزوفرینیا — ذہنی بیماری کی سمجھ", "roman": "Schizophrenia — dimaghi bimari ki samajh" },
-    "content": { "en": "Schizophrenia is a chronic mental health condition affecting how a person thinks, feels, and behaves.\nSymptoms: hearing voices or seeing things that aren't there (hallucinations), false beliefs (delusions), disorganized speech, social withdrawal, lack of motivation, reduced emotional expression.\nSEE A PSYCHIATRIST: Early treatment improves outcomes. Medication (antipsychotics) is essential.\nEMERGENCY: If the person is a danger to themselves or others, hearing command hallucinations to harm, or unable to care for basic needs — seek immediate help. Call 1166 (mental health helpline).\nDo NOT: argue with delusions, mock, or force them. Stay calm, listen, and encourage professional help.\nTreatment is available and effective. Many people with schizophrenia lead productive lives with proper care.", "ur": "شیزوفرینیا ایک دائمی ذہنی بیماری ہے جو سوچنے، محسوس کرنے اور رویے کو متاثر کرتی ہے۔\nعلامات: آوازیں سنا یا چیزیں دیکھنا جو نہیں ہیں، غلط یقین، بے ترتیب بات چیت، سماعت سے الگ ہونا، حوصلے کی کمی۔\n ماہرِ امراضِ نفسیات سے رابطہ کریں: ابتدائی علاج بہتر نتائج دیتا ہے۔ دوا ضروری ہے۔\nایمرجنسی: خود یا دوسروں کو نقصان پہنچانے کا خطرہ ہو تو فوری مدد لیں۔ 1166 کال کریں۔\nغلط یقین سے بحث نہ کریں، مضحکہ نہ بنائیں۔ پرسکون رہیں اور پیشہ ورانہ مدد کی ترغیب دیں۔", "roman": "Schizophrenia ek daimi dimaghi bimari hai jo sochne, mehsoos karne aur rawayya ko mutaasir karti hai.\nAlamaat: aawazein suna ya cheezein dekhna jo nahi hain, ghalat yaqeen, be tarteeb baat cheet, samajat se alag hona, hoslay ki kami.\nMaahir-e-amraaz-e-nafsiyat se rabta karein: ibtidai ilaaj behtar nataij deta hai. Dawa zaroori hai.\nEmergency: khud ya doosron ko nuksan pahunchane ka khatra ho to fori madad lein. 1166 call karein.\nGhalat yaqeen se behas na karein, mazaka na banayein. Pursukoon rahein aur peshawarana madad ki targheeb dein." },
-    "tags": ["schizophrenia", "psychosis", "hallucinations", "delusions", "hearing voices", "mental illness", "ذہنی بیماری", "آوازیں", "dimaghi bimari", "psychiatry"],
+    "content": {
+      "en": "• Schizophrenia is a chronic psychiatric disorder characterized by distortions in thinking, perception, emotions, and behavior\n• Core symptoms include delusions (firm false beliefs), hallucinations (hearing non-existent voices), disorganized speech, and social withdrawal\n• Anti-psychotic medication adherence is vital; do not argue with delusional beliefs but provide calm, safe support\nSEE A DOCTOR IF: Early changes in behavior, suspiciousness, social isolation, or hearing whispering sounds.\nEMERGENCY / GO IMMEDIATELY: Command hallucinations telling the person to harm themselves or others, severe agitation, or complete catatonia (call 1166 mental health helpline or 1122).",
+      "ur": "• شیزوفرینیا ایک دائمی دماغی و نفسیاتی بیماری ہے جو مریض کے سوچنے، محسوس کرنے اور حقیقت کو پرکھنے کی صلاحیت کو متاثر کرتی ہے\n• بنیادی علامات: واہمے (ایسی آوازیں سنائی دینا جو دوسروں کو نہیں آتیں)، غیر حقیقی شکوک و شبہات، بے ربط گفتگو اور تنہائی پسندی\n• ماہر نفسیات کی تجویز کردہ اینٹی سائیکوٹک ادویات کا باقاعدہ استعمال بیماری کو قابو میں رکھنے کے لیے ناگزیر ہے\nڈاکٹر کو دکھائیں: اگر رویے میں غیر معمولی تبدیلی، حد سے زیادہ شک، یا اکیلے میں باتیں کرنے کی علامت نظر آئے۔\nایمرجنسی (فوراً جائیں): خود کو یا دوسروں کو نقصان پہنچانے کے خیالات، شدید بے قابو غصہ، یا خودکشی کا خطرہ (فوراً 1166 یا 1122 کال کریں)۔",
+      "roman": "• Schizophrenia ek daimi dimaghi aur nafsiyati bimari hai jismein marz ki soch aur rawayya mutaasir hota hai\n• Khas alamaat: ghaibi aawazein sunai dena (hallucinations), be-bunyaad shak o shubhat (delusions), aur akele rehna\n• Nafsiyat ke doctor (psychiatrist) ki di hui adwiyaat ka musalsal istemal zaroori hai\nDOCTOR KO DIKHAYEIN: Agar kisi shakhs ke rawayye mein ajeeb tabdeeli aaye ya wo akele mein batein kare to doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Khud ko ya kisi ko nuqsan pohanchane ka khatra, shadeed ghussa, ya khudkushi ki koshish (1166 helpline ya 1122 call karein)."
+    },
+    "tags": [
+      "schizophrenia",
+      "psychosis",
+      "hallucinations",
+      "delusions",
+      "hearing voices",
+      "mental illness",
+      "ذہنی بیماری",
+      "آوازیں",
+      "dimaghi bimari",
+      "psychiatry"
+],
     "baseLevel": "ROUTINE",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Schizophrenia — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/schizophrenia", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5923,8 +6132,22 @@ export const CORPUS: CorpusItem[] = [
     "id": "bipolar-disorder",
     "topic": "bipolar",
     "title": { "en": "Bipolar disorder — mood swings", "ur": "بائی پولر ڈس آرڈر — موڈ کی تبدیلیاں", "roman": "Bipolar disorder — mood ki tabdeeliyan" },
-    "content": { "en": "Bipolar disorder causes extreme mood swings between mania (high) and depression (low).\nMANIA symptoms: very high energy, little need for sleep, rapid speech, racing thoughts, impulsive/risky behavior, grandiose ideas, irritability.\nDEPRESSION symptoms: low mood, loss of interest, fatigue, sleep changes, hopelessness, suicidal thoughts.\nSEE A PSYCHIATRIST: Treatment includes mood stabilizers (lithium, valproate) and therapy. With treatment, people lead stable lives.\nEMERGENCY: Suicidal thoughts during depression, or dangerous behavior during mania (reckless spending, risky driving) = seek immediate help. Call 1166.\nDo NOT stop medication suddenly — this can trigger worse episodes.", "ur": "بائی پولر ڈس آرڈر موڈ کی شدید تبدیلیاں پیدا کرتا ہے — مینیا (اونچا) اور ڈپریشن (نیچا)۔\nمانیا علامات: بہت زیادہ توانائی، کم نیند، تیز بات، جلد جلد خیالات، خطرناک رویہ، بڑے خیالات، جھنجھلاہٹ۔\nڈپریشن علامات: اداس موڈ، دلچسپی کی کمی، تھکاوٹ، نیند کی تبدیلی، مایوسی، خودکشی کے خیالات۔\nماہرِ نفسیات سے ملیں: علاج میں موڈ سٹیبلائزر اور تھراپی شامل ہے۔\nایمرجنسی: خودکشی کے خیالات یا خطرناک رویہ = فوری مدد لیں۔ 1166 کال کریں۔\nدوا اچانک نہ بند کریں۔", "roman": "Bipolar disorder mood ki shadeed tabdeeliyan paida karta hai — mania (ooncha) aur depression (neechay).\nMania alamaat: bohot zyada tawanai, kam neend, tez baat, jald jald khayalat, khatarnak rawayya, baray khayalat, jhanjhlahaat.\nDepression alamaat: udaas mood, dilchaspi ki kami, thakawat, neend ki tabdeeli, mayoosi, khudkushi ke khayalat.\nMaahir-e-nafsiyat se mulein: ilaaj mein mood stabilizer aur therapy shamil hai.\nEmergency: khudkushi ke khayalat ya khatarnak rawayya = fori madad lein. 1166 call karein.\nDawa achanak na band karein." },
-    "tags": ["bipolar", "mania", "mood swings", "bipolar disorder", "moood changes", "مانیا", "ڈپریشن", "خودکشی خیالات", "psychiatry mood"],
+    "content": {
+      "en": "• Bipolar disorder involves significant mood episodes oscillating between manic highs (hyperactivity, euphoria) and depressive lows\n• Manic episodes feature decreased need for sleep, grandiosity, rapid pressured speech, racing thoughts, and impulsive risk-taking\n• Depressive phases involve severe melancholy, feelings of worthlessness, fatigue, anhedonia, and suicide risk\nSEE A DOCTOR IF: Recurring cyclical mood changes affecting work, relationships, or daily function.\nEMERGENCY / GO IMMEDIATELY: Active suicidal intent, severe self-harm plans, psychotic detachment, or dangerously reckless manic behavior (call 1166 or 1122).",
+      "ur": "• بائی پولر ڈس آرڈر موڈ کی شدید تبدیلیوں کی بیماری ہے جس میں انسان مینیا (غیر معمولی جوش) اور ڈپریشن (شدید اداسی) کے درمیان جھولتا ہے\n• مینیا کی علامات: نیند کی ضرورت نہ رہنا، غیر حقیقی منصوبے، بے تحاشا تیز بولنا، خیالات کی تیزی اور خطرناک فیصلے کرنا\n• ڈپریشن کے دور میں شدید مایوسی، زندگی سے بیزاری، بستر سے نہ اٹھ پانا اور خودکشی کے خیالات آتے ہیں\nڈاکٹر کو دکھائیں: اگر مزاج میں غیر معمولی اتار چڑھاؤ روزمرہ زندگی، کام اور تعلقات کو متاثر کر رہا ہو۔\nایمرجنسی (فوراً جائیں): خودکشی کے خیالات، خود کو شدید نقصان پہنچانے کا ارادہ، یا مینیا میں خود کو خطرے میں ڈالنے والا رویہ (فوراً 1166 یا 1122 پر کال کریں)۔",
+      "roman": "• Bipolar disorder mood ki shadeed tabdeeli ka marz hai jismein mania (zyada josh) aur depression (shadeed udaasi) aate hain\n• Mania mein neend ki kami, hadh se zyada bolna, baray baray daawe aur fizool kharchi hoti hai\n• Depression mein shadeed mayoosi, rona aana aur zindagi be-maqsad lagti hai\nDOCTOR KO DIKHAYEIN: Mood mein bar bar ghair mamooli tabdeeli aaye to psychiatrist doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Khudkushi ke khayalat, jaan lene ka irada, ya khatarnak hadh tak be-khauf harkatein (1166 helpline ya 1122 call karein)."
+    },
+    "tags": [
+      "bipolar",
+      "mania",
+      "mood swings",
+      "bipolar disorder",
+      "moood changes",
+      "مانیا",
+      "ڈپریشن",
+      "خودکشی خیالات",
+      "psychiatry mood"
+],
     "baseLevel": "ROUTINE",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Bipolar disorder", "url": "https://www.who.int/news-room/fact-sheets/detail/bipolar-disorder", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5933,18 +6156,48 @@ export const CORPUS: CorpusItem[] = [
     "id": "domestic-violence",
     "topic": "domestic-violence",
     "title": { "en": "Domestic violence — safety and support", "ur": "گھریلو تشدد — حفاظت اور مدد", "roman": "Gharelo tashadud — hifazat aur madad" },
-    "content": { "en": "Domestic violence is a serious problem. You are not alone and it is not your fault.\nIf you are in immediate danger: Call 15 (Police) or 1122 (Rescue).\nSafety planning:\n1. Keep important documents (ID, money, phone) in a safe place you can access quickly.\n2. Memorize emergency numbers: 15 (Police), 1122 (Rescue), 1099 (Women Helpline).\n3. Identify a safe place to go (family, friend, shelter).\n4. Tell someone you trust what is happening.\n5. Keep a record of incidents (dates, photos of injuries).\nResources in Pakistan:\n- Women Helpline: 1099\n- Madadgar National Helpline: 1099\n- Women Shelter homes available in major cities\nSEE A DOCTOR if injured — your medical record is important evidence.\nYou deserve to be safe. Seeking help is a sign of strength.", "ur": "گھریلو تشدد ایک سنگین مسئلہ ہے۔ آپ اکیلے نہیں ہیں اور یہ آپ کی غلطی نہیں ہے۔\nاگر فوری خطرہ ہو: 15 (پولیس) یا 1122 (ریسکیو) پر کال کریں۔\nحفاظتی منصوبہ:\n1. اہم دستاویزات محفوظ جگہ رکھیں۔\n2. ایمرجنسی نمبر یاد رکھیں: 15، 1122، 1099۔\n3. محفوظ جگہ متعین کریں۔\n4. کسی قابلِ اعتماد کو بتائیں۔\n5. واقعات کا ریکارڈ رکھیں۔\nپاکستان میں وسائل: خواتین ہیلپ لائن 1099۔\nزخمی ہونے پر ڈاکٹر کو دکھائیں۔", "roman": "Gharelo tashadud ek sangin masla hai. Aap akele nahi hain aur yeh aap ki ghalati nahi hai.\nAgar fori khatra ho: 15 (Police) ya 1122 (Rescue) par call karein.\nHifazati mansuba:\n1. Ahem dastavezat mehfooz jagah rakhein.\n2. Emergency number yaad rakhein: 15, 1122, 1099.\n3. Mehfooz jagah mutayyan karein.\n4. Kisi qabil-e-aitmad ko batayein.\n5. Waqiyat ka record rakhein.\nPakistan mein wasail: Khawateen helpline 1099.\nZakhi hone par doctor ko dikhayein." },
-    "tags": ["domestic violence", "abuse", "women safety", "tashadud", "تشدد", "gharelo tashadud", "women helpline", "1099", "safety planning", "protection"],
+    "content": {
+      "en": "• Domestic violence includes physical assault, psychological terror, sexual abuse, financial deprivation, and controlling behaviors\n• Safety planning: memorize emergency numbers (15 Police, 1099 Women Helpline, 1122 Rescue), identify a safe escape route, and keep emergency cash and ID\n• Document injuries with photographs, seek medical examination records, and confide in trusted individuals or specialized shelters\nSEE A DOCTOR IF: Treatment is needed for chronic pain, stress, anxiety, or ongoing physical injuries.\nEMERGENCY / GO IMMEDIATELY: Active physical threat, weapon involvement, acute trauma, strangulation, or life danger (call 15 police or 1122 rescue immediately).",
+      "ur": "• گھریلو تشدد میں جسمانی مار پیٹ، ذہنی اذیت، جنسی زیادتی، معاشی پابندیاں اور جبری کنٹرول شامل ہیں\n• ذاتی حفاظتی منصوبہ: ہنگامی نمبرز یاد رکھیں (15 پولیس، 1099 خواتین ہیلپ لائن، 1122 ریسکیو)، ضروری کاغذات و پیسے محفوظ جگہ رکھیں\n• چوٹوں کی تصاویر اور ہسپتال کے میڈیکل ریکارڈ قانونی تحفظ کے لیے بطور ثبوت محفوظ رکھیں\nڈاکٹر کو دکھائیں: پرانی چوٹوں کے درد، شدید ذہنی دباؤ اور خوف کی علامات کے علاج کے لیے۔\nایمرجنسی (فوراً جائیں): فوری جسمانی حملہ، جان سے مارنے کی دھمکیاں، گلا دبانا، یا شدید زخمی ہونا (فوراً 15 پولیس یا 1122 ریسکیو کال کریں)۔",
+      "roman": "• Gharelo tashadud (domestic violence) mein jismani maar peet, zahni aziyat aur dhamkiyan shamil hain\n• Hifazati mansooba: emergency numbers yaad rakhein (15 Police, 1099 Women Helpline, 1122 Rescue), zaroori kaghazaat aur paise mehfooz rakhein\n• Zakham ki tasweerein aur doctori parchi qanooni saboot ke tor par sambhal kar rakhein\nDOCTOR KO DIKHAYEIN: Dard, choton aur shadeed zahni dabao ke ilaaj ke liye doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Jaan ka fori khatra, hathyar ka istemal, gala dabana, ya shadeed chotein (fori 15 police ya 1122 call karein)."
+    },
+    "tags": [
+      "domestic violence",
+      "abuse",
+      "women safety",
+      "tashadud",
+      "تشدد",
+      "gharelo tashadud",
+      "women helpline",
+      "1099",
+      "safety planning",
+      "protection"
+],
     "baseLevel": "SELF_CARE",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Violence against women", "url": "https://www.who.int/news-room/fact-sheets/detail/violence-against-women", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
   },
   {
-    "id": "scabies",
+    "id": "scabies-mite-infestation",
     "topic": "scabies",
     "title": { "en": "Scabies — itchy skin infection", "ur": "خارش — جلد کا انفیکشن", "roman": "Khaarish — jild ka infection" },
-    "content": { "en": "Scabies is a skin infestation by tiny mites. It spreads easily in crowded households.\nSymptoms: intense itching (especially at night), red bumps/burrows between fingers, wrists, waist, armpits, genitals.\nTreatment:\n1. Apply permethrin 5% cream (available at pharmacy) from neck down to toes.\n2. Leave on for 8-14 hours (apply at night, wash off in morning).\n3. Wash all clothes, bed sheets, towels in hot water.\n4. Treat ALL family members at the same time — even those without symptoms.\n5. Repeat treatment after 1 week.\nSEE A DOCTOR if: itching persists after 2 weeks, signs of infection (pus, fever), or in young babies.\nPrevention: avoid sharing clothes/towels, maintain personal hygiene.", "ur": "خارش مائیٹ نامی جراسیم کی وجہ سے ہوتی ہے۔ یہ بھیڑ بھڑے گھروں میں آسانی سے پھیلتی ہے۔\nعلامات: شدید خارش (خصوصاً رات کو)، انگلیوں کے درمیان، کلائی، کمر، بغل پر سرخ دانے۔\nعلاج:\n1. پرمیتھرین 5% کریم گردن سے پاؤں تک لگائیں۔\n2. 8-14 گھنٹے چھوڑیں (رات کو لگائیں، صبح دھوئیں)۔\n3. تمام کپڑے، چادرے گرم پانی سے دھوئیں۔\n4. خاندان کے تمام افراد کا یکجا علاج کریں۔\n5. ایک ہفتے بعد دہرائیں۔\nڈاکٹر کو دکھائیں اگر: 2 ہفتے بعد بھی خارش رہے، انفیکشن کی علامات۔", "roman": "Khaarish mite nami jaraseem ki wajah se hoti hai. Yeh bheer bhare gharon mein aasani se phailti hai.\nAlamaat: shadeed khaarish (khususan raat ko), ungliyon ke darmiyan, kalai, kamar, baghal par surkh danay.\nIlaaj:\n1. Permethrin 5% cream gardan se paon tak lagayein.\n2. 8-14 ghante chhodein (raat ko lagayein, subah dhoyein).\n3. Tamam kapre, chadaray garam pani se dhoyein.\n4. Khandan ke tamam afraad ka ikja ilaaj karein.\n5. Ek haftay baad duhrayein.\nDoctor ko dikhayein agar: 2 haftay baad bhi khaarish rahay, infection ki alamaat." },
-    "tags": ["scabies", "itchy skin", "khaarish", "خارش", "mites", "skin infection", "permethrin", "night itching", "danay", "جھنگل"],
+    "content": {
+      "en": "• Scabies is an intensely pruritic ectoparasitic skin infestation caused by Sarcoptes scabiei microscopic mites\n• Characterized by intense nocturnal itching and red papules in finger webs, wrists, elbows, waistline, and groin\n• Apply Permethrin 5% lotion from neck down to feet, leave on for 8-14 hours before washing off; treat ALL household contacts simultaneously\nSEE A DOCTOR IF: Rash persists or worsens 2-3 weeks after proper application of permethrin.\nEMERGENCY / GO IMMEDIATELY: Secondary bacterial infection signs: extensive honey-colored crusted sores (impetigo), spreading redness, fever, or Norwegian crusted scabies (call doctor).",
+      "ur": "• خارش (سکیبیز) ایک مائکروسکوپک کیڑے (Sarcoptes scabiei) کی جلد میں داخل ہونے سے ہونے والی شدید جلدی بیماری ہے\n• علامات: رات کے وقت شدید ناقابل برداشت خارش، انگلیوں کے درمیان، کلائی، بغلوں اور کمر پر باریک سرخ دانے\n• پرمیتھرین (Permethrin 5%) لوشن گردن سے پاؤں تک لگائیں اور 8 سے 14 گھنٹے بعد نہائیں؛ گھر کے تمام افراد کا ایک ساتھ علاج کریں\nڈاکٹر کو دکھائیں: اگر دوا لگانے کے 2 سے 3 ہفتے بعد بھی خارش ختم نہ ہو یا دانے بڑھ جائیں۔\nایمرجنسی (فوراً جائیں): دانوں میں شدید پیپ پڑ جانا، جلد پر شہد کے رنگ کے موٹے چھلکے (امپیٹیگو)، تیز بخار یا شدید سوجن۔",
+      "roman": "• Khaarish (scabies) jild ke andar keeron ke ghusne se phailne wali shadeed chhoot ki bimari hai\n• Alamaat: raat ko sakht khaarish hona, unglion ke darmiyan, kalai, aur kamar par surkh bareek danay nikalna\n• Permethrin 5% lotion gardan se paon tak poore jism par lagayein aur 8-14 ghante baad dhoyen; ghar ke tamam afrad ka ikatha ilaaj karein\nDOCTOR KO DIKHAYEIN: Agar mukammal ilaaj ke 2 se 3 hafte baad bhi kharish theek na ho to doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Zakham mein peep parh jana, zard chhilkay banna, shadeed dard ya bukhar aana (fori hospital dikhayein)."
+    },
+    "tags": [
+      "scabies",
+      "itchy skin",
+      "khaarish",
+      "خارش",
+      "mites",
+      "skin infection",
+      "permethrin",
+      "night itching",
+      "danay",
+      "جھنگل"
+],
     "baseLevel": "SELF_CARE",
     "audience": "general",
     "source": { "publisher": "WHO", "title": "Scabies", "url": "https://www.who.int/news-room/fact-sheets/detail/scabies", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5953,8 +6206,23 @@ export const CORPUS: CorpusItem[] = [
     "id": "measles",
     "topic": "measles",
     "title": { "en": "Measles — vaccine-preventable disease", "ur": "خسرہ — ویکسین سے قابلِ بچاؤ بیماری", "roman": "Khasra — vaccine se qabil-e-bachao bimari" },
-    "content": { "en": "Measles is a highly contagious viral disease. It can cause serious complications including pneumonia, encephalitis, and death.\nSymptoms: high fever, cough, runny nose, red/watery eyes, white spots inside cheeks (Koplik spots), followed by a red rash that starts on the face and spreads downward.\nSEE A DOCTOR: if you suspect measles, especially in children under 5, pregnant women, or malnourished children.\nEMERGENCY: difficulty breathing, seizures, severe dehydration, confusion, or loss of consciousness = call 1122.\nTreatment: supportive care — fluids, fever management, vitamin A (prevents complications). No specific antiviral.\nPrevention: MMR vaccine at 9 months and 15 months. Vaccination is the BEST prevention. Pakistan has measles outbreaks due to low vaccination rates.", "ur": "خسرہ ایک انتہائی متعدی وائرس کی بیماری ہے۔ یہ نمونیا، دماغی سوزش اور موت کا سبب بن سکتی ہے۔\nعلامات: تیز بخار، کھانسی، ناک بہنا، سرخ/پانی والی آنکھیں، گال کے اندر سفید دانے، پھر سرخ دانے جو چہرے سے شروع ہو کر نیچے پھلیں۔\nڈاکٹر کو دکھائیں: خاص طور پر 5 سال سے کم بچوں، حاملہ خواتین، یا کمزور بچوں میں۔\nایمرجنسی: سانس مشکل، دورے، شدید پانی کی کمی، الجھن = 1122 کال کریں۔\nعلاج: مائعات، بخار کا انتظام، وٹامن اے۔\nبچاؤ: MMR ویکسین 9 اور 15 مہینے پر۔ ویکسین بہترین بچاؤ ہے۔", "roman": "Khasra ek intehai mutaadi virus ki bimari hai. Yeh namonia, dimaghi sozish aur maut ka sabab ban sakti hai.\nAlamaat: tez bukhar, khansi, naak behna, surkh/pani wali aankhein, gaal ke andar safaid danay, phir surkh danay jo chehre se shuru ho kar neechay phailain.\nDoctor ko dikhayein: khasoosan 5 saal se kam bachon, haamila khawateen, ya kamzor bachon mein.\nEmergency: saans mushkil, doray, shadeed pani ki kami, uljhan = 1122 call karein.\nIlaaj: mayeaat, bukhar ka intezam, vitamin A.\nBachao: MMR vaccine 9 aur 15 mahine par. Vaccine behtareen bachao hai." },
-    "tags": ["measles", "khasra", "خسرہ", "mmr vaccine", "rash fever", "koplik spots", "childhood disease", "danay", "بچوں کا بخار", "vaccine preventable"],
+    "content": {
+      "en": "• Measles (Khasra) is a highly contagious, airborne Morbillivirus infection primarily affecting unvaccinated children\n• Classic 4-day prodrome: high fever, cough, coryza (runny nose), and conjunctivitis (red watery eyes), plus Koplik spots inside the cheek\n• Erythematous maculopapular rash begins at hairline and face, spreading downward over trunk and extremities\nSEE A DOCTOR IF: Child develops suspected measles rash with fever and runny nose for supportive assessment.\nEMERGENCY / GO IMMEDIATELY: Rapid breathing, chest indrawing (measles pneumonia), extreme drowsiness, seizures (encephalitis), or inability to drink (call 1122).",
+      "ur": "• خسرہ ایک انتہائی متعدی وائرل بیماری ہے جو ہوا کے ذریعے پھیلتی ہے اور زیادہ تر ان بچوں کو متاثر کرتی ہے جنہیں حفاظتی ٹیکے نہ لگے ہوں\n• علامات: تیز بخار، کھانسی، ناک بہنا، آنکھوں کا سرخ اور پانی سے بھر جانا، گال کے اندر سفید دانے (Koplik spots)، اور چہرے سے شروع ہونے والے سرخ دانے\n• بچے کو او آر ایس، وٹامن اے کی خوراک دیں اور آرام کروائیں؛ یہ بیماری نمونیہ یا دماغی سوزش جیسی خطرناک پیچیدگیاں پیدا کر سکتی ہے\nڈاکٹر کو دکھائیں: خسرہ کے دانے اور بخار ظاہر ہوتے ہی وٹامن اے اور معائنے کے لیے ڈاکٹر سے رجوع کریں۔\nایمرجنسی (فوراً جائیں): سانس لینے میں دشواری، سینے کا دھنسنا، شدید غنودگی، دورے، یا پانی بالکل نہ پی سکنا (فوراً 1122 کال کریں)۔",
+      "roman": "• Khasra (measles) hawa ke zariye phailne wala intehai mutaaddi virus hai jo bachon ko mutaasir karta hai\n• Alamaat: tez bukhar, khansi, naak behna, surkh aankhein, gaal ke andar safaid daagh, aur chehre se phailne walay surkh danay\n• Vitamin A ki do doses zaroori hain; bachay ko pani aur taaza ghiza dein\nDOCTOR KO DIKHAYEIN: Khasra ke danay nikalne par vitamin A aur checkup ke liye doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Saans mein shadeed takleef, seena dhansna, behoshi, doray, ya kuch na peena (fori 1122 call karein)."
+    },
+    "tags": [
+      "measles",
+      "khasra",
+      "خسرہ",
+      "mmr vaccine",
+      "rash fever",
+      "koplik spots",
+      "childhood disease",
+      "danay",
+      "بچوں کا بخار",
+      "vaccine preventable"
+],
     "baseLevel": "URGENT",
     "audience": "child",
     "source": { "publisher": "WHO", "title": "Measles — fact sheet", "url": "https://www.who.int/news-room/fact-sheets/detail/measles", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5963,8 +6231,22 @@ export const CORPUS: CorpusItem[] = [
     "id": "infant-fever-3mo",
     "topic": "infant-fever-3mo",
     "title": { "en": "Fever in babies under 3 months — emergency", "ur": "3 مہینے سے کم بچوں میں بخار — ایمرجنسی", "roman": "3 mahine se kam bachon mein bukhar — emergency" },
-    "content": { "en": "ANY fever (38°C / 100.4°F or higher) in a baby under 3 months old is a MEDICAL EMERGENCY. Do NOT wait.\nYoung babies have immature immune systems — a simple fever can mean a serious bacterial infection (urinary tract infection, meningitis, sepsis).\nWHAT TO DO:\n1. Take the baby's temperature (rectal is most accurate for infants).\n2. If 38°C or higher = go to hospital IMMEDIATELY. Call 1122.\n3. Do NOT give paracetamol/ibuprofen without a doctor's advice for this age.\n4. Do NOT sponge with cold water.\n5. Do NOT overdress or underdress the baby.\nThe hospital will do blood tests, urine tests, and possibly a spinal tap to rule out serious infection. This is standard and necessary.\nTRUST YOUR INSTINCTS — if the baby looks unwell (not feeding, lethargic, floppy, unusual cry) even without fever = seek medical help immediately.", "ur": "3 مہینے سے کم عمر بچے میں کوئی بھی بخار (38°C یا زیادہ) میڈیکل ایمرجنسی ہے۔ انتظار نہ کریں۔\nننھے بچوں کا مدافعتی نظام نادھن ہوتا ہے — بخار کا مطلب سنگین انفیکشن ہو سکتا ہے۔\nاقدامات:\n1. بچے کا درجہ حرارت لیں۔\n2. 38°C یا زیادہ = فوراً ہسپتال جائیں۔ 1122 کال کریں۔\n3. اس عمر میں بغیر ڈاکٹر کے مشورے پیراسٹامول/آئبوپروفین نہ دیں۔\n4. ٹھنڈے پانی سے نہ نہلائیں۔\n5. بچے کو زیادہ یا کم کپڑے نہ پہنائیں۔\nہسپتال خون، پیشاب اور ممکنہ طور پر سپائنل ٹیسٹ کرے گا۔", "roman": "3 mahine se kam umar bachay mein koi bhi bukhar (38°C ya zyada) medical emergency hai. Intezar na karein.\nNanhe bachon ka mudaafiyati system nadhon hota hai — bukhar ka matlab sangin infection ho sakta hai.\nIqdamat:\n1. Bachay ka hararat lein.\n2. 38°C ya zyada = fori hospital jayein. 1122 call karein.\n3. Isumar mein bina doctor ke mashware paracetamol/ibuprofen na dein.\n4. Thande pani se na nahlayein.\n5. Bachay ko zyada ya kam kapre na pehnayein.\nHospital khoon, peshab aur mumkin tor par spinal test kare ga." },
-    "tags": ["infant fever", "baby fever", "newborn fever", "3 months fever", "baccha bukhar", "ننھا بچہ بخار", "infant emergency", "neonatal fever", "baby under 3 months"],
+    "content": {
+      "en": "• Any rectal temperature >=38.0°C (100.4°F) in an infant under 90 days is a medical emergency requiring full diagnostic sepsis workup\n• Young infants lack mature immune defenses; a simple fever may signify bacteremia, meningitis, or urinary tract infection\n• DO NOT administer antipyretics (paracetamol, ibuprofen) before clinical evaluation as it masks critical diagnostic signs\nSEE A DOCTOR IF: Infant has any fever >=38°C or feels abnormally warm to touch.\nEMERGENCY / GO IMMEDIATELY: Infant <3 months with fever, grunting breathing, poor feeding, unresponsiveness, bulging fontanelle, cyanosis, or floppiness (go to ER or call 1122).",
+      "ur": "• 3 ماہ (90 دن) سے کم عمر کے نوزائیدہ بچے میں 38.0°C (100.4°F) یا اس سے زیادہ بخار ایک ہنگامی میڈیکل ایمرجنسی ہے\n• چھوٹے بچوں کی قوت مدافعت کمزور ہوتی ہے؛ معمولی بخار بھی خون کے انفیکشن (سیپسس) یا گردن توڑ بخار کی علامت ہو سکتا ہے\n• ڈاکٹر کے معائنے سے پہلے بچے کو خود سے کوئی دوا (پیراسیٹامول یا بروفین) ہرگز نہ دیں تاکہ اصل بیماری نہ چھپے\nڈاکٹر کو دکھائیں: 3 ماہ سے کم بچے کا جسم گرم لگتے ہی بغیر انتظار کیے ہسپتال لے کر جائیں۔\nایمرجنسی (فوراً جائیں): 3 ماہ سے کم عمر بچے میں بخار، دودھ نہ پینا، سستی، نیلا پڑ جانا، تالو کا ابھرنا، یا سانس میں رکاوٹ (فوراً 1122 یا ایمرجنسی جائیں)۔",
+      "roman": "• 3 maheene se kam umar bachay mein 38°C (100.4°F) ya zyada bukhar fori emergency hai jismein hospital jana lazmi hai\n• Chotay bachon mein quwwat-e-mudafiat kam hoti hai; halka bukhar bhi sepsis ya meningitis ho sakta hai\n• Doctor ke check karne se pehle khud se koi bukhar ki dawa na dein taake bimari chhupe nahi\nDOCTOR KO DIKHAYEIN: 3 maheene se chotay bachay ko zara sa bhi bukhar ho to fori doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Bacha doodh na peeye, be-hiss parha rahe, neela parh jaye, ya saans mein takleef ho (fori 1122 ya hospital emergency jayein)."
+    },
+    "tags": [
+      "infant fever",
+      "baby fever",
+      "newborn fever",
+      "3 months fever",
+      "baccha bukhar",
+      "ننھا بچہ بخار",
+      "infant emergency",
+      "neonatal fever",
+      "baby under 3 months"
+],
     "baseLevel": "EMERGENCY",
     "audience": "child",
     "source": { "publisher": "WHO", "title": "Integrated Management of Childhood Illness (IMCI) — young infant", "url": "https://www.who.int/publications/i/item/9789240010649", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5973,8 +6255,24 @@ export const CORPUS: CorpusItem[] = [
     "id": "near-drowning",
     "topic": "near-drowning",
     "title": { "en": "Near drowning — water safety emergency", "ur": "ڈوبنے کا خطرہ — پانی میں حفاظت", "roman": "Doobne ka khatra — pani mein hifazat" },
-    "content": { "en": "Near drowning is a common emergency during Pakistan's monsoon floods and swimming accidents.\nRESCUE: Only enter water if it's safe and you can swim. Use a stick/rope/floatation device if possible.\nAFTER RESCUE:\n1. Check if the person is breathing. If not, start CPR immediately (30 chest compressions : 2 rescue breaths).\n2. If breathing, place in recovery position (on their side).\n3. Keep them warm — remove wet clothes, cover with dry blanket.\n4. Go to hospital EVEN IF they seem fine — 'secondary drowning' can occur hours later.\nEMERGENCY: Call 1122. Continue CPR until help arrives or the person starts breathing.\nDO NOT: give mouth-to-mouth while the person is still in water, put the person face down to 'drain water' (this is a myth and dangerous), or give food/drink.\nPrevention: never swim alone, supervise children near water, don't swim in flooded rivers/canals.", "ur": "ڈوبنے کا خطرہ پاکستان کے سیلابوں اور تیراکی کے حادثوں میں عام ہے۔\nبچاؤ: صرف تب پانی میں جائیں جب محفوظ ہو اور تیراکی آتی ہو۔ چھڑی/رسی/بہاؤ کا آلہ استعمال کریں۔\nبچاؤ کے بعد:\n1. سانس لے رہا ہے؟ اگر نہیں، فوراً CPR شروع کریں (30 دباؤ : 2 سانسیں)۔\n2. اگر سانس ہے توٹھنے کی پوزیشن میں رکھیں۔\n3. گرم رکھیں — گیلا کپڑے اتاریں، خشک کمبل لپیٹیں۔\n4. ہسپتال جائیں — بعد میں پیچیدگیاں ہو سکتی ہیں۔\nایمرجنسی: 1122 کال کریں۔ CPR جاری رکھیں۔\nکھانا/پانی نہ دیں۔", "roman": "Doobne ka khatra Pakistan ke selabon aur teraki ke hadson mein aam hai.\nBachao: sirf tab pani mein jayein jab mehfooz ho aur teraki aati ho. Chhadi/rassi/bahao ka aala istemal karein.\nBachao ke baad:\n1. Saans le raha hai? Agar nahi, fori CPR shuru karein (30 dabao : 2 saansein).\n2. Agar saans hai to thande ki position mein rakhein.\n3. Garam rakhein — gila kapra utarein, khushk kambal lypayein.\n4. Hospital jayein — baad mein pechidgiyan ho sakti hain.\nEmergency: 1122 call karein. CPR jari rakhein.\nKhana/pani na dein." },
-    "tags": ["drowning", "near drowning", "water safety", "flood", "selab", "سیلاب", "doobna", "ڈوبنا", "CPR", "water rescue", "monsoon flood"],
+    "content": {
+      "en": "• Near drowning causes acute hypoxia, pulmonary edema, and potential cardiac arrest from fluid aspiration in lungs\n• Safe rescue: do NOT become a second victim; use reaching poles or floatation objects; remove victim from water immediately\n• Begin CPR immediately if unresponsive and not breathing (5 initial rescue breaths followed by 30 compressions : 2 breaths)\nSEE A DOCTOR IF: Any submerged person has coughed up water, even if appearing fully recovered (secondary drowning danger).\nEMERGENCY / GO IMMEDIATELY: Unconsciousness, absent breathing, bluish lips, coughing froth or blood, or hypothermia following submersion (call 1122 immediately).",
+      "ur": "• ڈوبنے کا حادثہ (سیلاب یا تیراکی) پھیپھڑوں میں پانی جانے سے آکسیجن کی شدید کمی اور دل بند ہونے کا باعث بنتا ہے\n• محفوظ بچاؤ: خود خطرے میں پڑے بغیر رسی یا تیرنے والی چیز پھینکیں؛ پانی سے نکالتے ہی مریض کو گرم رکھیں\n• اگر مریض سانس نہ لے رہا ہو تو فوراً سی پی آر (CPR) شروع کریں: 5 بچاؤ سانسیں، پھر 30 بار سینے کا دباؤ اور 2 سانسیں\nڈاکٹر کو دکھائیں: پانی میں ڈوبنے کے بعد اگر مریض بالکل ٹھیک بھی لگے تب بھی پھیپھڑوں کے معائنے کے لیے ہسپتال لے جائیں۔\nایمرجنسی (فوراً جائیں): بے ہوشی، سانس کا بند ہونا، منہ سے جھاگ یا خون آنا، ہونٹ نیلے پڑنا (فوراً 1122 کال کریں اور سی پی آر جاری رکھیں)۔",
+      "roman": "• Paani mein doobna phepron mein paani bharne se oxygen ki shadeed kami aur dil band hone ka baais banta hai\n• Mehfooz bachao: khud ko khatray mein daalay baghair rassi ya float phenk kar nikalein\n• Agar saans na aa rahi ho to fori CPR shuru karein: 30 martaba seena dabayein aur 2 saansein dein\nDOCTOR KO DIKHAYEIN: Doobne ke baad agar shakhs theek bhi lagay to secondary drowning se bachao ke liye checkup karwayein.\nEMERGENCY (FORI JAYEIN): Behoshi, saans band hona, munh se jhaag aana ya neela parhna (fori 1122 call karein aur CPR jari rakhein)."
+    },
+    "tags": [
+      "drowning",
+      "near drowning",
+      "water safety",
+      "flood",
+      "selab",
+      "سیلاب",
+      "doobna",
+      "ڈوبنا",
+      "CPR",
+      "water rescue",
+      "monsoon flood"
+],
     "baseLevel": "EMERGENCY",
     "audience": "general",
     "source": { "publisher": "IFRC", "title": "First aid for drowning", "url": "https://www.ifrc.org", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5983,8 +6281,22 @@ export const CORPUS: CorpusItem[] = [
     "id": "placenta-previa",
     "topic": "placenta-previa",
     "title": { "en": "Placenta previa — painless bleeding in pregnancy", "ur": "پلیسینٹا پریویا — حمل میں بغیر درد کا خون", "roman": "Placenta previa — hamal mein bina dard ka khoon" },
-    "content": { "en": "Placenta previa is when the placenta covers the cervix. It causes painless vaginal bleeding, usually after 20 weeks.\nSymptoms: sudden, painless, bright red vaginal bleeding (can be light or heavy). NO pain.\nEMERGENCY: ANY bleeding during pregnancy = go to hospital IMMEDIATELY. Call 1122.\nDO NOT: do a vaginal exam, use tampons, have sexual intercourse, or do heavy lifting.\nHospital will do an ultrasound to check the placenta position. Treatment depends on severity:\n- Minor: bed rest, avoid heavy activity, monitor.\n- Major: hospital admission, possibly C-section delivery.\nWith proper care, most women with placenta previa deliver safely.", "ur": "پلیسینٹا پریویا میں ناہ پلیسینٹا رحم کے منہ کو ڈھانپ لیتی ہے۔ 20 ہفتے بعد بغیر درد خون آتا ہے۔\nعلامات: اچانک، بغیر درد، سرخ خون بہنا۔ کوئی درد نہیں۔\nایمرجنسی: حمل میں کوئی بھی خون بہنا = فوراً ہسپتال جائیں۔ 1122 کال کریں۔\nاندرونی معائنہ نہ کریں، ٹیمپون نہ استعمال کریں، جنسی تعلق نہ بنائیں۔\nہسپتال الٹراساؤنڈ کرے گا۔ علاج سنگینی پر منحصر ہے۔\nبہتر نگہداشت سے اکثر محفوظ ڈیلیوری ہوتی ہے۔", "roman": "Placenta previa mein naali placenta reham ke mun ko dhanap leti hai. 20 hafte baad bina dard khoon aata hai.\nAlamaat: achanak, bina dard, surkh khoon behna. Koi dard nahi.\nEmergency: hamal mein koi bhi khoon behna = fori hospital jayein. 1122 call karein.\nAndrooni muaina na karein, tampon na istemal karein, jinsi talluq na banayein.\nHospital ultrasound kare ga. Ilaaj sangini par munhasir hai.\nBehtar nighehdasht se aksar mehfooz delivery hoti hai." },
-    "tags": ["placenta previa", "painless bleeding pregnancy", "hamal mein khoon", "حمل میں خون", "vaginal bleeding pregnancy", "antepartum hemorrhage", "placenta low"],
+    "content": {
+      "en": "• Placenta previa occurs when the placenta abnormally implants over or near the internal cervical os in the 2nd/3rd trimester\n• Hallmark presentation: painless, sudden-onset bright red vaginal bleeding in late pregnancy\n• Strictly avoid digital vaginal examinations and sexual intercourse; strict bed rest and immediate obstetric hospitalization\nSEE A DOCTOR IF: Any spotting or vaginal discharge in pregnancy for prompt ultrasound placenta localization.\nEMERGENCY / GO IMMEDIATELY: Sudden heavy bright red vaginal bleeding, dizziness, fainting, tachycardia, or reduced fetal movement (call 1122 immediately).",
+      "ur": "• پلیسینٹا پریویا میں نال (پلیسینٹا) رحم کے نچلے حصے میں آ کر بچے دانی کے منہ کو جزوی یا مکمل طور پر ڈھانپ لیتی ہے\n• خاص علامت: حمل کے دوسرے یا تیسرے سہ ماہی میں اچانک بغیر درد کے سرخ چمکدار خون کا بہنا\n• اندرونی انگلی کا معائنہ ہرگز نہ کروائیں اور ازدواجی تعلق سے پرہیز کریں؛ مکمل آرام اور ہسپتال میں داخلہ ضروری ہے\nڈاکٹر کو دکھائیں: حمل کے دوران کسی بھی قسم کا ہلکا داغ یا ڈسچارج آنے پر الٹراساؤنڈ کے لیے فوراً جائیں۔\nایمرجنسی (فوراً جائیں): اچانک بغیر درد کے شدید خون بہنا، چکر آنا، بے ہوشی، یا بچے کی حرکت بند ہونا (فوراً 1122 کال کریں اور ایمرجنسی ہسپتال جائیں)۔",
+      "roman": "• Placenta previa mein naal (placenta) reham ke munh par aa jati hai jo aakhri maheenon mein khatra banti hai\n• Khas alamat: achanak bina dard ke surkh khoon ka aana\n• Androoni ungli se check na karwayein aur mukammal aaraam karein; hospital dakhla zaroori hai\nDOCTOR KO DIKHAYEIN: Hamal ke doran kisi bhi qisam ka daagh lage to ultrasound ke liye doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Achanak shadeed khoon behna, chakkar aana, ya bachay ki harkat kam/band hona (fori 1122 call karein)."
+    },
+    "tags": [
+      "placenta previa",
+      "painless bleeding pregnancy",
+      "hamal mein khoon",
+      "حمل میں خون",
+      "vaginal bleeding pregnancy",
+      "antepartum hemorrhage",
+      "placenta low",
+      "پلیسینٹا پریویا",
+      "پلیسینٹا"
+],
     "baseLevel": "EMERGENCY",
     "audience": "maternal",
     "source": { "publisher": "WHO", "title": "Pregnancy care — antenatal bleeding", "url": "https://www.who.int/publications", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }
@@ -5993,8 +6305,25 @@ export const CORPUS: CorpusItem[] = [
     "id": "malnutrition-severe",
     "topic": "severe-malnutrition",
     "title": { "en": "Severe acute malnutrition (SAM) in children", "ur": "بچوں میں شدید غذائی قلت", "roman": "Bachon mein shadeed ghizai qillat" },
-    "content": { "en": "Severe Acute Malnutrition (SAM) affects millions of Pakistani children. It is life-threatening.\nSigns of SAM:\n- Severe wasting (very thin arms/legs, visible ribs)\n- Mid-Upper Arm Circumference (MUAC) < 11.5 cm (use MUAC tape)\n- Swelling of both feet (edema — kwashiorkor)\n- Weight-for-height below -3 z-score\n- Lethargy, not feeding, weak cry\nSEE A DOCTOR IMMEDIATELY. Treatment requires therapeutic feeding (RUTF — Plumpy'Nut) under medical supervision.\nEMERGENCY: child not eating at all, unconscious, severe dehydration, or infection = call 1122.\nDO NOT: give regular food suddenly — can be dangerous. Refeeding must be gradual under medical supervision.\nPrevention: exclusive breastfeeding for 6 months, complementary feeding from 6 months, balanced diet, vaccination, treat infections promptly.", "ur": "شدید غذائی قلت لاکھوں پاکستانی بچوں کو متاثر کرتی ہے۔ یہ جان لیوا ہے۔\nعلامات:\n- شدید دبلا پن (پتلے بازو/ٹانگیں، پسلیاں نظر آنا)\n- بازو کا گھیرا 11.5 سینٹی میٹر سے کم\n- دونوں پیروں میں سوجن\n- بچہ کمزور، نہ کھانا، کمزور رویا\n- فوراً ڈاکٹر کو دکھائیں۔ علاج میں تھراپیوٹک کھانا (RUTF) طبی نگرانی میں دینا ضروری ہے۔\nایمرجنسی: بچہ بالکل نہ کھانا، بے ہوشی، شدید پانی کی کمی = 1122 کال کریں۔\nفوراً عام کھانا نہ دیں — خطرناک ہو سکتا ہے۔ آہستہ آہستہ دیں۔", "roman": "Shadeed ghizai qillat lakhon Pakistani bachon ko mutaasir karti hai. Yeh jan lewa hai.\nAlamaat:\n- Shadeed dubla pan (patlay baazu/taangein, pasliyan nazar aana)\n- Baazu ka gheera 11.5 cm se kam\n- Dono peron mein sojan\n- Bacha kamzor, na khana, kamzor roya\n- Fori doctor ko dikhayein. Ilaaj mein therapeutic khana (RUTF) tibbi nigrani mein dena zaroori hai.\nEmergency: bacha bilkul na khana, behoshi, shadeed pani ki kami = 1122 call karein.\nFori aam khana na dein — khatarnak ho sakta hai. Aahista aahista dein." },
-    "tags": ["malnutrition", "SAM", "severe malnutrition", "wasting", "stunting", "khwashiorkor", "marasmus", "bacha kamzor", "بچہ دبلا", "غذائی قلت", "MUAC", "RUTF"],
+    "content": {
+      "en": "• Severe Acute Malnutrition (SAM) is defined by severe wasting (weight-for-height <-3 Z-score), MUAC <11.5 cm, or nutritional bilateral pitting edema\n• Look for marasmus (extreme emaciation, visible ribs, old man facies) or kwashiorkor (swollen feet/legs, flaky skin, brittle pale hair)\n• Treatment: specialized therapeutic formula (F-75, F-100, RUTF / Plumpy'Nut); NEVER give regular high-protein meals suddenly (refeeding risk)\nSEE A DOCTOR IF: Child has weight loss, failure to thrive, persistent lack of appetite, or swelling in feet.\nEMERGENCY / GO IMMEDIATELY: Bilateral pitting edema of feet, MUAC <11.5cm with high fever, hypothermia, severe dehydration, or lethargy (call 1122).",
+      "ur": "• شدید غذائی قلت (SAM) بچوں میں خطرناک حد تک وزن کی کمی (MUAC <11.5 سینٹی میٹر) یا دونوں پیروں میں سوجن کی علامت ہے\n• بچے کا جسم سوکھ کر پسلیاں نظر آنا (سوکڑے پن) یا پیروں و چہرے پر سوجن اور جلد کا پھٹنا اس کی علامات ہیں\n• علاج کے لیے خصوصی غذائی پیسٹ (RUTF / F-75) ڈاکٹر کی نگرانی میں دی جاتی ہے؛ اچانک عام بھاری کھانا ہرگز نہ کھلائیں\nڈاکٹر کو دکھائیں: بچے کا وزن نہ بڑھنے، بھوک ختم ہونے، یا پیروں پر سوجن کی صورت میں غذائی مرکز دکھائیں۔\nایمرجنسی (فوراً جائیں): دونوں پیروں میں سوجن، بازو کا گھیرا 11.5 سینٹی میٹر سے کم اور ساتھ تیز بخار، الٹیاں، یا غنودگی (فوراً 1122 یا ہسپتال جائیں)۔",
+      "roman": "• Shadeed ghizai qillat (SAM) bachon mein wazan ki intehai kami (MUAC <11.5cm) ya dono paon mein soojan se zahir hoti hai\n• Bacha hadh se zyada kamzor ho jana, pasliyan nazar aana, ya paon soojh jana iski nishaniyan hain\n• Ilaaj mein RUTF / Plumpy Nut aur doctori nigrani zaroori hai; achanak bhari khana na dein\nDOCTOR KO DIKHAYEIN: Bachay ka wazan na barhay aur bhook khatam ho to doctor ko dikhayein.\nEMERGENCY (FORI JAYEIN): Dono paon mein soojan, MUAC 11.5cm se kam aur sath tez bukhar ya behoshi (fori 1122 call karein)."
+    },
+    "tags": [
+      "malnutrition",
+      "SAM",
+      "severe malnutrition",
+      "wasting",
+      "stunting",
+      "khwashiorkor",
+      "marasmus",
+      "bacha kamzor",
+      "بچہ دبلا",
+      "غذائی قلت",
+      "MUAC",
+      "RUTF"
+],
     "baseLevel": "EMERGENCY",
     "audience": "child",
     "source": { "publisher": "WHO", "title": "Management of severe acute malnutrition", "url": "https://www.who.int/publications/i/item/9789241506328", "license": "CC BY-NC-SA 3.0 IGO", "verifiedAt": "2026-09" }

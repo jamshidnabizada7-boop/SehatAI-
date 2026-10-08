@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
 import { HEALTH_TIPS, getDailyTip, type HealthTip } from '@/data/health-tips';
+import type { Lang } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 // ============================================================

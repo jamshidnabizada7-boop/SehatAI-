@@ -88,7 +88,7 @@ function dayLabel(dateStr: string, lang: Lang): string {
   }
 }
 
-function dayNum(dateStr: string): string {
+function dayNum(dateStr: string, _lang?: Lang): string {
   try {
     const d = new Date(dateStr + 'T00:00:00');
     return String(d.getDate());

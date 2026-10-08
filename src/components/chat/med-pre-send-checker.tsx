@@ -90,12 +90,12 @@ export function MedPreSendChecker({ text, lang, className }: MedPreSendCheckerPr
       for (const hit of allergyHits) {
         const existing = drugs.find((d) => d.canonical === hit.trigger || d.name === hit.trigger);
         if (existing) {
-          existing.allergyHit = { allergy: hit.allergy, class: hit.drugClass };
+          existing.allergyHit = { allergy: hit.allergy, class: hit.class };
         } else {
           drugs.push({
             name: hit.trigger,
             canonical: hit.trigger,
-            allergyHit: { allergy: hit.allergy, class: hit.drugClass },
+            allergyHit: { allergy: hit.allergy, class: hit.class },
           });
         }
       }

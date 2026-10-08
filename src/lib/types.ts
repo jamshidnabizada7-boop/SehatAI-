@@ -421,6 +421,7 @@ export interface ChatMessage {
   drugCheck?: DrugCheckSummary | null;
   /** Phase 2: 3-tier differential (Glass-style Most Likely / Plausible / Can't-Miss). */
   differential?: Differential | null;
+  latencyMs?: number;
   createdAt: number;
   streaming?: boolean;
 }

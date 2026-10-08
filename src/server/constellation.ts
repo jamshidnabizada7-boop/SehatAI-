@@ -198,7 +198,7 @@ async function validateLanguage(input: ConstellationInput): Promise<ValidatorRes
   const userHasUrdu = /[\u0600-\u06FF]/.test(input.message);
   const responseHasUrdu = /[\u0600-\u06FF]/.test(input.response);
 
-  if (userHasUrdu && !responseHasUrdu) {
+  if (input.response && userHasUrdu && !responseHasUrdu) {
     return {
       name: 'language-consistency',
       veto: true,
