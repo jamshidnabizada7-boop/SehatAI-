@@ -64,10 +64,36 @@ export function verifyRoomToken(token: string): { valid: boolean; roomId?: strin
 }
 
 export async function joinCall(opts: { consultationId: string; userId: string; role: 'PATIENT' | 'DOCTOR' }) {
-  const c = await db.consultation.findUnique({ where: { id: opts.consultationId }, include: { service: true } });
+  const c = await db.consultation.findUnique({
+    where: { id: opts.consultationId },
+    include: {
+      service: true,
+      doctorProfile: {
+        include: {
+          user: { select: { accountStatus: true } },
+        },
+      },
+    },
+  });
   if (!c) throw new ConsultationError('CONSULTATION_NOT_FOUND', 404);
   const isParticipant = c.patientId === opts.userId ? 'PATIENT' : c.doctorUserId === opts.userId ? 'DOCTOR' : null;
   if (!isParticipant) throw new ConsultationError('NOT_A_PARTICIPANT', 403);
+
+  // Completed consultation rejoin prevention
+  if (['COMPLETED', 'CANCELLED', 'REFUNDED', 'EXPIRED'].includes(c.status)) {
+    throw new ConsultationError(`CONSULTATION_ALREADY_${c.status}`, 409);
+  }
+
+  // Doctor suspension check (§14): suspended doctors cannot join consultations
+  if (c.doctorProfile) {
+    const isDocSuspended =
+      c.doctorProfile.careStatus === 'SUSPENDED' ||
+      c.doctorProfile.careStatus === 'REJECTED' ||
+      c.doctorProfile.user?.accountStatus === 'suspended';
+    if (isDocSuspended) {
+      throw new ConsultationError('DOCTOR_SUSPENDED', 403);
+    }
+  }
 
   // §26 — paid/eligible state + window.
   if (!['DOCTOR_ACCEPTED', 'SCHEDULED', 'WAITING', 'IN_PROGRESS', 'PAID', 'REQUESTED'].includes(c.status)) {
@@ -156,19 +182,79 @@ export class MiniSignalProvider implements VideoProvider {
   }
 }
 
+export function generateLiveKitToken(opts: {
+  roomId: string;
+  userId: string;
+  role: 'PATIENT' | 'DOCTOR';
+  consultationId: string;
+  apiKey: string;
+  apiSecret: string;
+  ttlMs?: number;
+}): string {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const expSec = nowSec + Math.floor((opts.ttlMs ?? TOKEN_TTL_MS) / 1000);
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = {
+    iss: opts.apiKey,
+    sub: opts.userId,
+    nbf: nowSec,
+    exp: expSec,
+    jti: randomUUID(),
+    video: {
+      room: opts.roomId,
+      roomJoin: true,
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: true,
+      recorder: false, // §29 — recording disabled by default
+      hidden: false,
+    },
+    metadata: JSON.stringify({
+      role: opts.role,
+      consultationId: opts.consultationId,
+    }),
+  };
+  const encHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
+  const encPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = createHmac('sha256', opts.apiSecret)
+    .update(`${encHeader}.${encPayload}`)
+    .digest('base64url');
+  return `${encHeader}.${encPayload}.${sig}`;
+}
+
 export class LiveKitVideoProvider implements VideoProvider {
   name = 'livekit-prod';
   isProductionReady = true;
+
   issueToken(opts: { consultationId: string; userId: string; role: 'PATIENT' | 'DOCTOR' }): RoomToken {
     if (!liveKitConfigured()) {
-      throw new Error('LiveKit credentials not configured');
+      throw new Error('PROVIDER_NOT_CONFIGURED: LiveKit production requires LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET');
     }
-    return issueRoomToken(opts);
+    const roomId = `care-${opts.consultationId}`;
+    const expiresAt = Date.now() + TOKEN_TTL_MS;
+    const token = generateLiveKitToken({
+      roomId,
+      userId: opts.userId,
+      role: opts.role,
+      consultationId: opts.consultationId,
+      apiKey: process.env.LIVEKIT_API_KEY!,
+      apiSecret: process.env.LIVEKIT_API_SECRET!,
+    });
+
+    return {
+      token,
+      roomId,
+      provider: 'livekit',
+      expiresAt: new Date(expiresAt).toISOString(),
+      signalingUrl: process.env.LIVEKIT_URL!,
+      iceServers: [], // Managed by LiveKit media server directly
+      recording: false,
+    };
   }
 }
 
 export function getVideoProvider(): VideoProvider {
-  if (process.env.CARE_VIDEO_PROVIDER === 'livekit' && liveKitConfigured()) {
+  if (process.env.CARE_VIDEO_PROVIDER === 'livekit') {
     return new LiveKitVideoProvider();
   }
   return new MiniSignalProvider();

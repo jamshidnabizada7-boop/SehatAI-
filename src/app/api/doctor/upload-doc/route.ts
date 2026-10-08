@@ -12,8 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireDoctor } from '@/lib/auth';
-import path from 'node:path';
-import { promises as fs } from 'node:fs';
+import { getStorage } from '@/server/care/storage';
 import crypto from 'node:crypto';
 
 export const runtime = 'nodejs';
@@ -21,8 +20,6 @@ export const runtime = 'nodejs';
 const ALLOWED_DOC_TYPES = ['pmdc_card', 'cnic', 'degree', 'experience_letter'];
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
-
-const UPLOAD_ROOT = path.join(process.cwd(), 'storage', 'doctor-docs');
 
 function validateMagicBytes(buf: Uint8Array, mime: string): boolean {
   if (buf.length < 12) return false;
@@ -85,15 +82,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Doctor profile not found' }, { status: 404 });
   }
 
-  // Save file to private /storage/doctor-docs/{userId}/{rand}-{safeFileName}
+  // Store encrypted file via Care Connect StorageProvider
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-]/g, '_').slice(-80);
   const rand = crypto.randomBytes(6).toString('hex');
-  const dir = path.join(UPLOAD_ROOT, user.id);
-  await fs.mkdir(dir, { recursive: true });
-  const fileName = `${rand}-${safeName}`;
-  const filePath = path.join(dir, fileName);
-  await fs.writeFile(filePath, bytes);
-  const fileUrl = `/storage/doctor-docs/${user.id}/${fileName}`;
+  const storage = getStorage();
+  const stored = await storage.put(`doctor-docs/${user.id}/${rand}-${safeName}`, Buffer.from(bytes), { kind: docType });
+  const fileUrl = stored.storageKey;
 
   const doc = await db.doctorVerificationDoc.create({
     data: {

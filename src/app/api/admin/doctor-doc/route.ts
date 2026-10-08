@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import { getStorage } from '@/server/care/storage';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 
@@ -20,22 +21,32 @@ export async function GET(req: NextRequest) {
   const doc = await db.doctorVerificationDoc.findUnique({ where: { id: docId } });
   if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 });
 
-  // The fileUrl is a relative path like /storage/doctor-docs/{userId}/...-{filename} or legacy /uploads/...
-  // We map it to the absolute path on disk
-  const absPath = doc.fileUrl.startsWith('/uploads/')
-    ? path.join(process.cwd(), 'public', doc.fileUrl)
-    : path.join(process.cwd(), doc.fileUrl.replace(/^\//, ''));
+  let buf: Buffer;
   try {
-    const buf = await fs.readFile(absPath);
-    return new NextResponse(buf, {
+    const storage = getStorage();
+    if (!doc.fileUrl.startsWith('/')) {
+      buf = await storage.get(doc.fileUrl);
+    } else {
+      // Legacy disk fallback
+      const absPath = doc.fileUrl.startsWith('/uploads/')
+        ? path.join(process.cwd(), 'public', doc.fileUrl)
+        : path.join(process.cwd(), doc.fileUrl.replace(/^\//, ''));
+      try {
+        buf = await fs.readFile(absPath);
+      } catch {
+        buf = await storage.get(doc.fileUrl.replace(/^\//, ''));
+      }
+    }
+    return new NextResponse(new Uint8Array(buf), {
       status: 200,
       headers: {
         'Content-Type': doc.mimeType,
         'Content-Disposition': `inline; filename="${doc.fileName}"`,
         'Cache-Control': 'private, no-cache',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch {
-    return NextResponse.json({ error: 'File not found on disk' }, { status: 404 });
+    return NextResponse.json({ error: 'File not found on disk or storage' }, { status: 404 });
   }
 }

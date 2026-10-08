@@ -62,11 +62,63 @@ export async function deliverPendingPush(userId: string): Promise<{ sent: number
 }
 
 /**
- * Durable outbox worker (§17): processes queued notifications from NotificationOutbox.
- * Supports retries with exponential backoff and dead-letter routing.
- * Survives process restarts and temporary push gateway failures.
+ * Reclaims jobs stuck in 'CLAIMED' or 'PROCESSING' status (> 5 minutes by default)
+ * caused by abnormal worker termination or node crashes.
  */
-export async function processNotificationOutbox(batchSize = 20): Promise<{ processed: number; delivered: number; deadLetter: number }> {
+export async function recoverStuckJobs(stuckThresholdMs = 5 * 60 * 1000): Promise<number> {
+  const cutoff = new Date(Date.now() - stuckThresholdMs);
+  const reclaimed = await db.notificationOutbox.updateMany({
+    where: {
+      status: { in: ['CLAIMED', 'PROCESSING'] },
+      updatedAt: { lte: cutoff },
+    },
+    data: {
+      status: 'PENDING',
+      lastError: 'RECLAIMED_FROM_STUCK_WORKER',
+      nextAttemptAt: new Date(),
+    },
+  });
+  return reclaimed.count;
+}
+
+/**
+ * Operator action (§17): replay failed dead-letter notifications back to PENDING.
+ */
+export async function replayDeadLetterJobs(options?: { ids?: string[]; limit?: number }): Promise<number> {
+  if (options?.ids && options.ids.length > 0) {
+    const res = await db.notificationOutbox.updateMany({
+      where: { id: { in: options.ids }, status: 'DEAD_LETTER' },
+      data: { status: 'PENDING', attempts: 0, nextAttemptAt: new Date() },
+    });
+    return res.count;
+  }
+  if (options?.limit) {
+    const dead = await db.notificationOutbox.findMany({
+      where: { status: 'DEAD_LETTER' },
+      take: options.limit,
+      select: { id: true },
+    });
+    if (dead.length === 0) return 0;
+    const res = await db.notificationOutbox.updateMany({
+      where: { id: { in: dead.map((d) => d.id) } },
+      data: { status: 'PENDING', attempts: 0, nextAttemptAt: new Date() },
+    });
+    return res.count;
+  }
+  const res = await db.notificationOutbox.updateMany({
+    where: { status: 'DEAD_LETTER' },
+    data: { status: 'PENDING', attempts: 0, nextAttemptAt: new Date() },
+  });
+  return res.count;
+}
+
+/**
+ * Durable outbox worker (§17): processes queued notifications from NotificationOutbox.
+ * Supports atomic queue claiming, retries with exponential backoff, dead-letter routing,
+ * and automatic recovery of stuck jobs.
+ */
+export async function processNotificationOutbox(batchSize = 20): Promise<{ processed: number; delivered: number; deadLetter: number; reclaimed: number }> {
+  const reclaimed = await recoverStuckJobs();
   const now = new Date();
   const queue = await db.notificationOutbox.findMany({
     where: {
@@ -82,6 +134,16 @@ export async function processNotificationOutbox(batchSize = 20): Promise<{ proce
   let deadLetter = 0;
 
   for (const item of queue) {
+    // Atomic queue claim (§17): prevent duplicate dispatches in concurrent workers
+    const claim = await db.notificationOutbox.updateMany({
+      where: { id: item.id, status: 'PENDING' },
+      data: { status: 'CLAIMED', updatedAt: new Date() },
+    });
+    if (claim.count === 0) {
+      // Already claimed by another worker instance
+      continue;
+    }
+
     processed++;
     try {
       const payload = JSON.parse(item.payloadJson) as { userId: string; title: string; body: string; consultationId?: string; type?: string };
@@ -109,6 +171,7 @@ export async function processNotificationOutbox(batchSize = 20): Promise<{ proce
         await db.notificationOutbox.update({
           where: { id: item.id },
           data: {
+            status: 'PENDING',
             attempts: nextAttempt,
             lastError: errorMessage,
             nextAttemptAt: new Date(Date.now() + backoffSeconds * 1000),
@@ -119,5 +182,5 @@ export async function processNotificationOutbox(batchSize = 20): Promise<{ proce
     }
   }
 
-  return { processed, delivered, deadLetter };
+  return { processed, delivered, deadLetter, reclaimed };
 }

@@ -102,22 +102,193 @@ export class LocalPrivateStorage implements StorageProvider {
   }
 }
 
-class S3Storage implements StorageProvider {
-  readonly name = 's3';
-  constructor() {
-    if (!process.env.CARE_S3_BUCKET || !process.env.CARE_S3_REGION) {
-      throw new Error('PROVIDER_NOT_CONFIGURED: S3 storage requires CARE_S3_BUCKET/REGION + credentials');
+function hmacSha256(key: string | Buffer, data: string): Buffer {
+  return createHmac('sha256', key).update(data).digest();
+}
+
+function sha256Hex(data: string | Buffer): string {
+  return createHash('sha256').update(data).digest('hex');
+}
+
+export interface PrivateObjectStorageOptions {
+  bucket?: string;
+  region?: string;
+  endpoint?: string;
+  accessKey?: string;
+  secretKey?: string;
+  name?: string;
+}
+
+export class PrivateObjectStorageProvider implements StorageProvider {
+  readonly name: string;
+  private readonly bucket: string;
+  private readonly region: string;
+  private readonly endpoint: string;
+  private readonly accessKey: string;
+  private readonly secretKey: string;
+
+  constructor(opts?: PrivateObjectStorageOptions) {
+    this.name = opts?.name ?? (process.env.CARE_STORAGE_PROVIDER === 'oss' ? 'oss-private' : 's3-private');
+    this.bucket = opts?.bucket ?? process.env.CARE_S3_BUCKET ?? process.env.CARE_OSS_BUCKET ?? '';
+    this.region = opts?.region ?? process.env.CARE_S3_REGION ?? process.env.CARE_OSS_REGION ?? 'us-east-1';
+    this.accessKey = opts?.accessKey ?? process.env.CARE_S3_KEY ?? process.env.CARE_OSS_ACCESS_KEY_ID ?? '';
+    this.secretKey = opts?.secretKey ?? process.env.CARE_S3_SECRET ?? process.env.CARE_OSS_ACCESS_KEY_SECRET ?? '';
+
+    const defaultEndpoint = process.env.CARE_STORAGE_PROVIDER === 'oss'
+      ? `https://${this.bucket}.oss-${this.region}.aliyuncs.com`
+      : `https://${this.bucket}.s3.${this.region}.amazonaws.com`;
+    this.endpoint = (opts?.endpoint ?? process.env.CARE_S3_ENDPOINT ?? process.env.CARE_OSS_ENDPOINT ?? defaultEndpoint).replace(/\/+$/, '');
+
+    if (!this.bucket || !this.accessKey || !this.secretKey) {
+      throw new Error('PROVIDER_NOT_CONFIGURED: S3/OSS storage requires CARE_S3_BUCKET, CARE_S3_KEY, and CARE_S3_SECRET');
     }
   }
-  async put(): Promise<StoredObject> { throw new Error('PROVIDER_NOT_CONFIGURED: S3 adapter pending credentials'); }
-  async get(): Promise<Buffer> { throw new Error('PROVIDER_NOT_CONFIGURED: S3 adapter pending credentials'); }
-  async delete(): Promise<void> { throw new Error('PROVIDER_NOT_CONFIGURED: S3 adapter pending credentials'); }
-  signRead(): string { throw new Error('PROVIDER_NOT_CONFIGURED: S3 adapter pending credentials'); }
-  verifySignedRead(): boolean { return false; }
+
+  private signHeaders(method: string, path: string, headers: Record<string, string>, payloadSha256: string): Record<string, string> {
+    const url = new URL(`${this.endpoint}${path.startsWith('/') ? path : `/${path}`}`);
+    const host = url.host;
+    const now = new Date();
+    const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+    const dateStamp = amzDate.slice(0, 8);
+
+    const canonicalHeadersMap: Record<string, string> = {
+      host,
+      'x-amz-content-sha256': payloadSha256,
+      'x-amz-date': amzDate,
+      ...headers,
+    };
+
+    const sortedHeaderKeys = Object.keys(canonicalHeadersMap).map((k) => k.toLowerCase()).sort();
+    const canonicalHeadersStr = sortedHeaderKeys.map((k) => `${k}:${canonicalHeadersMap[k].trim()}\n`).join('');
+    const signedHeaders = sortedHeaderKeys.join(';');
+
+    const canonicalRequest = [
+      method,
+      url.pathname,
+      url.search ? url.search.slice(1) : '',
+      canonicalHeadersStr,
+      signedHeaders,
+      payloadSha256,
+    ].join('\n');
+
+    const credentialScope = `${dateStamp}/${this.region}/s3/aws4_request`;
+    const stringToSign = [
+      'AWS4-HMAC-SHA256',
+      amzDate,
+      credentialScope,
+      sha256Hex(canonicalRequest),
+    ].join('\n');
+
+    const kDate = hmacSha256(`AWS4${this.secretKey}`, dateStamp);
+    const kRegion = hmacSha256(kDate, this.region);
+    const kService = hmacSha256(kRegion, 's3');
+    const kSigning = hmacSha256(kService, 'aws4_request');
+    const signature = createHmac('sha256', kSigning).update(stringToSign).digest('hex');
+
+    const authorization = `AWS4-HMAC-SHA256 Credential=${this.accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+    return {
+      ...canonicalHeadersMap,
+      authorization,
+    };
+  }
+
+  async put(key: string, data: Buffer): Promise<StoredObject> {
+    const safeKey = key.replace(/[^a-zA-Z0-9._/-]/g, '_');
+    const checksumSha256 = createHash('sha256').update(data).digest('hex');
+    const encryptedBlob = encrypt(data);
+    const payloadSha256 = sha256Hex(encryptedBlob);
+
+    const targetPath = `/${safeKey}`;
+    const signedHeaders = this.signHeaders(
+      'PUT',
+      targetPath,
+      {
+        'content-type': 'application/octet-stream',
+        'x-amz-acl': 'private',
+        'x-amz-server-side-encryption': 'AES256',
+      },
+      payloadSha256,
+    );
+
+    const putUrl = `${this.endpoint}${targetPath}`;
+    const res = await fetch(putUrl, {
+      method: 'PUT',
+      headers: signedHeaders,
+      body: new Uint8Array(encryptedBlob),
+    });
+
+    if (!res.ok) {
+      await this.delete(safeKey).catch(() => undefined);
+      throw new Error(`STORAGE_PUT_FAILED: HTTP ${res.status} ${res.statusText}`);
+    }
+
+    return {
+      storageKey: safeKey,
+      checksumSha256,
+      sizeBytes: data.length,
+    };
+  }
+
+  async get(storageKey: string): Promise<Buffer> {
+    const cleanKey = storageKey.replace(/^[/\\]+/, '');
+    if (cleanKey.includes('..')) throw new Error('INVALID_STORAGE_KEY');
+    const targetPath = `/${cleanKey}`;
+    const emptySha256 = sha256Hex('');
+    const signedHeaders = this.signHeaders('GET', targetPath, {}, emptySha256);
+
+    const getUrl = `${this.endpoint}${targetPath}`;
+    const res = await fetch(getUrl, {
+      method: 'GET',
+      headers: signedHeaders,
+    });
+
+    if (res.status === 404) {
+      throw new Error('OBJECT_NOT_FOUND');
+    }
+    if (!res.ok) {
+      throw new Error(`STORAGE_GET_FAILED: HTTP ${res.status} ${res.statusText}`);
+    }
+
+    const encryptedBlob = Buffer.from(await res.arrayBuffer());
+    return decrypt(encryptedBlob);
+  }
+
+  async delete(storageKey: string): Promise<void> {
+    const cleanKey = storageKey.replace(/^[/\\]+/, '');
+    const targetPath = `/${cleanKey}`;
+    const emptySha256 = sha256Hex('');
+    const signedHeaders = this.signHeaders('DELETE', targetPath, {}, emptySha256);
+
+    const delUrl = `${this.endpoint}${targetPath}`;
+    await fetch(delUrl, {
+      method: 'DELETE',
+      headers: signedHeaders,
+    }).catch(() => undefined);
+  }
+
+  signRead(storageKey: string, ttlSeconds = 300): string {
+    return signReadImpl(storageKey, ttlSeconds);
+  }
+
+  verifySignedRead(storageKey: string, signature: string, expiresAtMs: number): boolean {
+    return verifySignedReadImpl(storageKey, signature, expiresAtMs);
+  }
 }
 
 export function getStorage(): StorageProvider {
-  if (process.env.CARE_S3_BUCKET) return new S3Storage();
+  const provider = process.env.CARE_STORAGE_PROVIDER;
+  const hasCloudConfig = Boolean(
+    (process.env.CARE_S3_BUCKET || process.env.CARE_OSS_BUCKET) &&
+    (process.env.CARE_S3_KEY || process.env.CARE_OSS_ACCESS_KEY_ID)
+  );
+
+  if (provider === 's3' || provider === 'oss') {
+    return new PrivateObjectStorageProvider();
+  }
+  if (hasCloudConfig && provider !== 'local') {
+    return new PrivateObjectStorageProvider();
+  }
   return new LocalPrivateStorage();
 }
 

@@ -2,7 +2,7 @@ import { db } from '@/lib/db';
 import { CORPUS } from '@/data/corpus';
 import { glossaryForPrompt } from '@/data/glossary';
 import { EMERGENCY_TEMPLATES, getEmergencyTemplate } from '@/data/emergency-templates';
-import { EMERGENCY_NUMBERS } from '@/data/lexicon';
+import { EMERGENCY_NUMBERS, getEmergencyNumbers } from '@/data/lexicon';
 import {
   calibrateTriage,
   detectLanguage,
@@ -100,6 +100,9 @@ export interface PipelineInput {
   /** Phase 1: authenticated user id (from requireUser in the calling route).
    *  Falls back to requireUser() inside the pipeline when omitted. */
   userId?: string;
+  /** Jurisdiction routing: ISO 3166-1 alpha-2 country code (e.g. 'PK', 'AF') */
+  country?: string;
+  jurisdiction?: string;
 }
 
 export interface PipelineResult extends DoneStageData {
@@ -1374,6 +1377,13 @@ export async function runPipeline(
   // W4 partial: allergy cross-reactivity between the stored profile and the message
   const allergyHits = allergyCrossCheck(profile, message);
 
+  // Jurisdiction-aware emergency routing: detect user's jurisdiction for regional emergency numbers
+  const resolvedCountry =
+    input.country ??
+    input.jurisdiction ??
+    (/\b(afghanistan|kabul|herat|kandahar|mazar|jalalabad|افغانستان|کابل)\b/i.test(message) ? 'AF' : 'PK');
+  const emergencyNumbers = getEmergencyNumbers(resolvedCountry);
+
   // ---------- Step 0: Conversation History Loading & Stream Separation (M1 / R1) ----------
   let rawHistoryMessages: Array<{ role: string; content: string; triageLevel?: string | null; emergency?: boolean; createdAt?: Date | string }> = [];
   if (Array.isArray(input.history)) {
@@ -1546,8 +1556,8 @@ export async function runPipeline(
 
   // ---------- Step 1: L0 (sync, <5ms) — includes clinical context ----------
   const tL0 = Date.now();
-  let redFlagMatches = matchRedFlags(message);
   let l0 = runL0Triage(message);
+  let redFlagMatches = l0.redFlagMatches ?? matchRedFlags(message);
   const ctx = l0.context ?? extractClinicalContext(combinedPatientContext);
 
   if (l0.level !== 'EMERGENCY' && priorPatientMessages.length > 0) {
@@ -1644,7 +1654,7 @@ export async function runPipeline(
       matchedPatternId: patternId ?? 'l1-escalation',
       actions: tpl.immediateActions.map((a) => a[lang]),
       doNot: tpl.doNot.map((d) => d[lang]),
-      numbers: EMERGENCY_NUMBERS,
+      numbers: emergencyNumbers,
       sources: tpl.sources,
     };
     const triageData: TriageStageData = {
@@ -2085,7 +2095,7 @@ export async function runPipeline(
           matchedPatternId: 'constellation-pre-veto',
           actions: emTemplate.immediateActions.map((a) => a[lang]),
           doNot: emTemplate.doNot.map((d) => d[lang]),
-          numbers: EMERGENCY_NUMBERS,
+          numbers: emergencyNumbers,
           sources: emTemplate.sources,
         };
       } else if (criticalMed) {
@@ -2767,7 +2777,7 @@ export async function runPipeline(
           matchedPatternId: redFlagMatches[0]?.pattern.id ?? 'constellation-veto',
           actions: emTemplate.immediateActions.map((a) => a[lang]),
           doNot: emTemplate.doNot.map((d) => d[lang]),
-          numbers: EMERGENCY_NUMBERS,
+          numbers: emergencyNumbers,
           sources: emTemplate.sources,
         };
       } else if (medVeto) {

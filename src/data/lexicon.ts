@@ -805,7 +805,12 @@ export const SEVERITY_MODIFIERS: ModifierTerm[] = [
   },
 ];
 
-export const EMERGENCY_NUMBERS = [
+export interface EmergencyContact {
+  label: string;
+  number: string;
+}
+
+export const EMERGENCY_NUMBERS_PK: EmergencyContact[] = [
   { label: 'Rescue 1122 (Ambulance)', number: '1122' },
   { label: 'Alkhidmat Ambulance', number: '1023' },
   { label: 'Edhi Ambulance', number: '115' },
@@ -814,7 +819,33 @@ export const EMERGENCY_NUMBERS = [
   { label: 'Madadgar Women Helpline', number: '1099' },
   { label: 'Umang Child Protection Line', number: '1152' },
   { label: 'Police Emergency', number: '15' },
-  // Pakistan Association for Mental Health (PAMH) — varies by city; surfaced in the
-  // mental-health template's "encourage professional help" line rather than a single
-  // national number. Local crisis-line DB is a future enhancement (P1).
 ];
+
+export const EMERGENCY_NUMBERS_AF: EmergencyContact[] = [
+  { label: 'Kabul Ambulance Service', number: '102' },
+  { label: 'Afghan Red Crescent (ARCS)', number: '112' },
+  { label: 'Police Emergency (Afghanistan)', number: '119' },
+  { label: 'Afghan Health Crisis Helpline', number: '166' },
+];
+
+export const EMERGENCY_NUMBERS_INTL: EmergencyContact[] = [
+  { label: 'Local Emergency Medical Services', number: '112 / 911' },
+  { label: 'Nearest Hospital Emergency Department', number: 'Local EMS' },
+];
+
+export function getEmergencyNumbers(countryCode?: string | null): EmergencyContact[] {
+  const code = (countryCode ?? 'PK').trim().toUpperCase();
+  if (code === 'AF' || code === 'AFG' || code === 'AFGHANISTAN') {
+    return EMERGENCY_NUMBERS_AF;
+  }
+  if (code === 'PK' || code === 'PAK' || code === 'PAKISTAN') {
+    return EMERGENCY_NUMBERS_PK;
+  }
+  if (code === 'INTL' || code === 'GLOBAL' || code === 'OTHER') {
+    return EMERGENCY_NUMBERS_INTL;
+  }
+  // Safe regional default: if unknown 2-letter country code, return INTL, else PK
+  return code.length === 2 && code !== 'PK' ? EMERGENCY_NUMBERS_INTL : EMERGENCY_NUMBERS_PK;
+}
+
+export const EMERGENCY_NUMBERS = EMERGENCY_NUMBERS_PK;

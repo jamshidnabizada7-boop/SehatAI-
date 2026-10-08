@@ -38,6 +38,7 @@ export interface TriageResult {
   /** deterministic clarification requirement (NEEDS_CLARIFICATION state) */
   needsClarification?: boolean;
   clarificationReasons?: string[];
+  redFlagMatches?: LexiconMatch[];
 }
 
 /** normalize text: lowercase, strip Urdu diacritics, strip punctuation
@@ -51,6 +52,17 @@ export function normalizeText(text: string): string {
     .replace(/[.!?,;:()[\]{}"“”‘’…\u06D4\u061F\u060C\u061B&—–\-\/\\|~*_+#@]/g, ' ') // EN + Urdu + symbols + dashes
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+const RED_FLAG_NORM_TERMS = new Map<string, string>();
+for (const pattern of RED_FLAG_PATTERNS) {
+  for (const group of pattern.groups) {
+    for (const term of group.terms) {
+      if (!RED_FLAG_NORM_TERMS.has(term)) {
+        RED_FLAG_NORM_TERMS.set(term, normalizeText(term));
+      }
+    }
+  }
 }
 
 // ------------------------------------------------------------
@@ -179,14 +191,24 @@ function escapeRegex(str: string): string {
  *     matching "seene mein dard")
  */
 export function termMatches(normText: string, term: string): boolean {
-  const t = normalizeText(term);
+  const t = RED_FLAG_NORM_TERMS.get(term) ?? normalizeText(term);
   if (!t) return false;
   if (!t.includes(' ')) {
     // exact token match
-    return hasTokenBoundaryMatch(normText, t);
+    return (
+      normText === t ||
+      normText.startsWith(t + ' ') ||
+      normText.endsWith(' ' + t) ||
+      normText.includes(' ' + t + ' ')
+    );
   }
   // exact phrase with token boundaries
-  if (hasTokenBoundaryMatch(normText, t)) return true;
+  if (
+    normText === t ||
+    normText.startsWith(t + ' ') ||
+    normText.endsWith(' ' + t) ||
+    normText.includes(' ' + t + ' ')
+  ) return true;
 
   // proximity: all term words as distinct whole tokens within a window of (n + 3) tokens
   const words = t.split(' ').filter((w) => w.length > 1 || /\d/.test(w));
@@ -361,7 +383,7 @@ export function matchRedFlags(rawText: string): LexiconMatch[] {
       let groupAffirmedHit: string | undefined;
 
       for (const term of group.terms) {
-        const normTerm = normalizeText(term);
+        const normTerm = RED_FLAG_NORM_TERMS.get(term) ?? normalizeText(term);
         for (const normClause of normClauses) {
           if (isTermAffirmedInNormClause(normClause, term, normTerm)) {
             groupAffirmedHit = term;
@@ -561,6 +583,7 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
       context: ctx,
       needsClarification: false,
       clarificationReasons: [],
+      redFlagMatches: redFlags,
     };
   }
 
@@ -894,6 +917,7 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
     context: ctx,
     needsClarification: clarification.needed,
     clarificationReasons: clarification.reasons,
+    redFlagMatches: redFlags,
   };
 }
 
@@ -1094,10 +1118,12 @@ export function hasTokenBoundaryMatch(text: string, phrase: string): boolean {
   const normText = normalizeText(text);
   const normPhrase = normalizeText(phrase);
   if (!normText || !normPhrase) return false;
-
-  const escaped = normPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`(?:^|[^a-z0-9\\u0600-\\u06FF])${escaped}(?:$|[^a-z0-9\\u0600-\\u06FF])`, 'i');
-  return re.test(normText);
+  return (
+    normText === normPhrase ||
+    normText.startsWith(normPhrase + ' ') ||
+    normText.endsWith(' ' + normPhrase) ||
+    normText.includes(' ' + normPhrase + ' ')
+  );
 }
 
 export interface RetrievalHit {
@@ -1506,6 +1532,36 @@ const STOP_WORDS = new Set([
   'کا', 'کی', 'کے', 'کو', 'میں', 'سے', 'پر', 'اور', 'یا', 'ہے', 'ہیں', 'ہو', 'تھا', 'تھی', 'تھے', 'کیا', 'والی', 'والے', 'والا', 'بعد', 'پہلے', 'کچھ', 'بھی'
 ]);
 
+interface PreindexedCorpusItem {
+  item: (typeof CORPUS)[number];
+  tags: Array<{
+    normTag: string;
+    hasSpace: boolean;
+    tagTokens: string[];
+  }>;
+  titleCandidates: Array<{
+    normCand: string;
+    candTokens: string[];
+  }>;
+}
+
+const PREINDEXED_CORPUS: PreindexedCorpusItem[] = CORPUS.map((item) => ({
+  item,
+  tags: item.tags.map((tag) => {
+    const normTag = normalizeText(tag);
+    const hasSpace = normTag.includes(' ');
+    const tagTokens = hasSpace ? tokenizeText(normTag).filter((t) => !STOP_WORDS.has(t)) : [];
+    return { normTag, hasSpace, tagTokens };
+  }),
+  titleCandidates: [item.title.en, item.title.ur, item.title.roman, item.topic, item.id]
+    .filter(Boolean)
+    .map((cand) => {
+      const normCand = normalizeText(cand);
+      const candTokens = tokenizeText(normCand).filter((t) => !STOP_WORDS.has(t));
+      return { normCand, candTokens };
+    }),
+}));
+
 /**
  * Calibrated RAG confidence retrieval with token-boundary matching and minimum confidence threshold.
  */
@@ -1531,20 +1587,18 @@ export function retrieveCorpus(
   const queryTokens = new Set(tokenizeText(expandedText));
   const hits: RetrievalHit[] = [];
 
-  for (const item of CORPUS) {
+  for (const { item, tags, titleCandidates } of PREINDEXED_CORPUS) {
     let score = 0;
     const matchedSourceWords = new Set<string>();
 
     // 1. Direct Tag Matching
-    for (const tag of item.tags) {
-      const normTag = normalizeText(tag);
+    for (const { normTag, hasSpace, tagTokens } of tags) {
       if (!normTag) continue;
 
-      if (normTag.includes(' ')) {
+      if (hasSpace) {
         if (hasTokenBoundaryMatch(expandedText, normTag)) {
           score += 4.0;
         } else {
-          const tagTokens = tokenizeText(normTag).filter((t) => !STOP_WORDS.has(t));
           if (tagTokens.length >= 2 && tagTokens.every((t) => queryTokens.has(t))) {
             score += 3.5;
           } else if (affirmativeClauses.length > 0 && tagTokens.length > 0) {
@@ -1576,16 +1630,12 @@ export function retrieveCorpus(
     }
 
     // 2. Title & Topic Metadata Matching
-    const titleCandidates = [item.title.en, item.title.ur, item.title.roman, item.topic, item.id];
-    for (const cand of titleCandidates) {
-      if (!cand) continue;
-      const normCand = normalizeText(cand);
+    for (const { normCand, candTokens } of titleCandidates) {
       if (!normCand) continue;
 
       if (hasTokenBoundaryMatch(expandedText, normCand)) {
         score += 5.0;
       } else {
-        const candTokens = tokenizeText(normCand).filter((t) => !STOP_WORDS.has(t));
         if (candTokens.length >= 1) {
           const overallMatchedCount = candTokens.filter((t) => queryTokens.has(t)).length;
           if (overallMatchedCount === candTokens.length) {
