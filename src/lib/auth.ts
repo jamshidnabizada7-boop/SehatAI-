@@ -29,7 +29,6 @@ if (!process.env.NEXTAUTH_SECRET) {
 const prisma = db as unknown as PrismaClient;
 
 export const authOptions: NextAuthOptions = {
-  // @ts-expect-error — PrismaAdapter expects a PrismaClient; our db is one
   adapter: PrismaAdapter(prisma as any),
   session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 }, // 30 days
   pages: {
@@ -144,11 +143,28 @@ export async function requireUser(): Promise<{ id: string; email: string; role: 
     (err as any).status = 401;
     throw err;
   }
+
+  // Live database re-verification: guarantees immediate revocation of suspended accounts or demoted roles
+  const user = await db.user.findUnique({
+    where: { email: session.user.email.toLowerCase() },
+    select: { id: true, email: true, role: true, accountStatus: true },
+  });
+  if (!user) {
+    const err = new Error('Unauthorized');
+    (err as any).status = 401;
+    throw err;
+  }
+  if (user.accountStatus === 'suspended' || user.accountStatus === 'deleted') {
+    const err = new Error('Forbidden — account suspended');
+    (err as any).status = 403;
+    throw err;
+  }
+
   return {
-    id: (session.user as any).id,
-    email: session.user.email,
-    role: (session.user as any).role ?? 'user',
-    accountStatus: (session.user as any).accountStatus ?? 'active',
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    accountStatus: user.accountStatus,
   };
 }
 

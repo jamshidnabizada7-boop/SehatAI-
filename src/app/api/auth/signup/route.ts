@@ -65,8 +65,10 @@ export async function POST(req: NextRequest) {
 
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   const password = typeof body.password === 'string' ? body.password : '';
-  const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim().slice(0, 80) : null;
-  const consent = body.consent !== false;
+  const consent = body.consent === true;
+  if (!consent) {
+    return NextResponse.json({ error: 'Explicit consent is required to create a health account.' }, { status: 400 });
+  }
   const intendedRole = body.intendedRole === 'doctor' ? 'doctor' : 'user';
   const doctor = intendedRole === 'doctor' && typeof body.doctor === 'object' && body.doctor ? body.doctor as Record<string, unknown> : null;
 
@@ -156,7 +158,7 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         action: 'doctor.signup',
         resource: 'credentials',
-        meta: JSON.stringify({ pmdcNumber, specialty, facilityCity }),
+        meta: JSON.stringify({ pmdcNumber, specialty, facilityCity, consent: true, policyVersion: '2026-10-v1' }),
       },
     });
 
@@ -169,7 +171,7 @@ export async function POST(req: NextRequest) {
       email,
       name,
       passwordHash,
-      consentAt: consent ? new Date() : null,
+      consentAt: new Date(),
       role: 'user',
       accountStatus: 'active',
     },
@@ -180,7 +182,7 @@ export async function POST(req: NextRequest) {
 
   // Audit log
   await db.auditLog.create({
-    data: { userId: user.id, action: 'auth.signup', resource: 'credentials', meta: JSON.stringify({ consent, role: 'user' }) },
+    data: { userId: user.id, action: 'auth.signup', resource: 'credentials', meta: JSON.stringify({ consent: true, policyVersion: '2026-10-v1', role: 'user' }) },
   });
 
   return NextResponse.json({ ok: true, userId: user.id, role: 'user', accountStatus: 'active' });
