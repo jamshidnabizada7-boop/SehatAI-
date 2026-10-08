@@ -92,3 +92,15 @@ Tested under Category X frozen holdout and Red-Team suites:
 - **Content Security Policy (CSP):** Strict script, style, and connect boundaries enforced via Next.js response headers (`default-src 'self'`, `frame-ancestors 'none'`).
 - **X-Content-Type-Options:** `nosniff` enforced on all document delivery and attachment download routes.
 - **Cache-Control:** `private, no-store` on all clinical and financial endpoints.
+
+---
+
+## 7. Red-Team Boundary Hardening & Audit Verification
+
+During independent red-team review, authorization barriers were comprehensively verified and reinforced:
+1. **Directory Leakage Protection:** `/api/doctors` was remediated to enforce `careStatus: { in: ['ACTIVE', 'VERIFIED'] }`, preventing access to suspended clinicians (`DOCTOR_SUSPENDED`), and isolating test seed fixtures (`IT-`, `SMOKE-`) from production views.
+2. **Object Storage Boundary Defense:** `PrivateObjectStorageProvider` enforces path traversal validation (`..` checks) uniformly across both read and delete operations, preventing arbitrary cloud object deletions.
+3. **Jurisdiction Pipeline Localization:** End-to-end clinical pipeline execution in `src/server/pipeline/run.ts` was audited and updated to ensure users declaring Afghan jurisdiction (`AF`) receive local emergency services (102 Kabul Ambulance, 112 Afghan Red Crescent) across triage buttons, hotlines, and pre/post veto messages.
+4. **Webhook Security & Replay Defense:** Gateway callbacks enforce strict cryptographic HMAC signature validation and timestamp anti-replay windows (max 5 minutes clock skew).
+5. **Authorization Red Team Suite Realism:** Replaced in-memory mock assertions with end-to-end database-backed invariant tests (`tests/security/authorization-red-team.test.ts`), covering IDOR isolation, doctor scoping, LiveKit room token tampering, and consent tracking.
+

@@ -2,7 +2,7 @@ import { db } from '@/lib/db';
 import { CORPUS } from '@/data/corpus';
 import { glossaryForPrompt } from '@/data/glossary';
 import { EMERGENCY_TEMPLATES, getEmergencyTemplate } from '@/data/emergency-templates';
-import { EMERGENCY_NUMBERS, getEmergencyNumbers } from '@/data/lexicon';
+import { EMERGENCY_NUMBERS, getEmergencyNumbers, type EmergencyContact } from '@/data/lexicon';
 import {
   calibrateTriage,
   detectLanguage,
@@ -500,7 +500,14 @@ function escalateOne(level: TriageLevel): TriageLevel {
   return 'URGENT';
 }
 
-function buildEmergencyContent(tplTitle: string, reasonIntro: string, actions: string[], doNot: string[], lang: Lang): string {
+function buildEmergencyContent(
+  tplTitle: string,
+  reasonIntro: string,
+  actions: string[],
+  doNot: string[],
+  lang: Lang,
+  emergencyNumbers?: EmergencyContact[],
+): string {
   const lines: string[] = [];
   lines.push(`**${tplTitle}**`);
   lines.push('');
@@ -512,13 +519,32 @@ function buildEmergencyContent(tplTitle: string, reasonIntro: string, actions: s
   lines.push(lang === 'ur' ? 'نہ کریں:' : lang === 'roman' ? 'Na karein:' : 'Do NOT:');
   doNot.forEach((d) => lines.push(`• ${d}`));
   lines.push('');
-  lines.push(
-    lang === 'ur'
-      ? '📞 فوراً کال کریں: 1122 (ریسکیو) یا 1166 (ہیلتھ ہیلپ لائن)'
+
+  const nums = emergencyNumbers && emergencyNumbers.length > 0 ? emergencyNumbers : EMERGENCY_NUMBERS;
+  const p1 = nums[0];
+  const p2 = nums[1];
+
+  let callLine: string;
+  if (p1 && p2) {
+    callLine = lang === 'ur'
+      ? `📞 فوراً کال کریں: ${p1.number} (${p1.label}) یا ${p2.number} (${p2.label})`
       : lang === 'roman'
-        ? '📞 Fori call karein: 1122 (Rescue) ya 1166 (Health Helpline)'
-        : '📞 Call now: 1122 (Rescue) or 1166 (Health Helpline)',
-  );
+        ? `📞 Fori call karein: ${p1.number} (${p1.label}) ya ${p2.number} (${p2.label})`
+        : `📞 Call now: ${p1.number} (${p1.label}) or ${p2.number} (${p2.label})`;
+  } else if (p1) {
+    callLine = lang === 'ur'
+      ? `📞 فوراً کال کریں: ${p1.number} (${p1.label})`
+      : lang === 'roman'
+        ? `📞 Fori call karein: ${p1.number} (${p1.label})`
+        : `📞 Call now: ${p1.number} (${p1.label})`;
+  } else {
+    callLine = lang === 'ur'
+      ? '📞 فوراً ایمرجنسی خدمات پر کال کریں۔'
+      : lang === 'roman'
+        ? '📞 Fori emergency services par call karein.'
+        : '📞 Call emergency services immediately.';
+  }
+  lines.push(callLine);
   return lines.join('\n');
 }
 
@@ -1647,12 +1673,25 @@ export async function runPipeline(
   ): Promise<PipelineResult> => {
     // 'unconscious' always exists in the template set; the final fallback keeps TS happy
     const tpl = getEmergencyTemplate(templateCategory) ?? getEmergencyTemplate('unconscious') ?? EMERGENCY_TEMPLATES[0]!;
+    const rawActions = tpl.immediateActions.map((a) => a[lang]);
+    const actions = rawActions.map((act) => {
+      if (resolvedCountry !== 'PK' && emergencyNumbers.length > 0) {
+        const p1 = emergencyNumbers[0]!;
+        const p2 = emergencyNumbers[1];
+        return act
+          .replace(/1122\s*\([^)]*\)\s*(?:or|ya|یا)\s*1023\s*\([^)]*\)/gi, `${p1.number} (${p1.label})${p2 ? ` / ${p2.number} (${p2.label})` : ''}`)
+          .replace(/1122\s*(?:or|ya|یا)\s*1023/gi, `${p1.number}${p2 ? ` / ${p2.number}` : ''}`)
+          .replace(/\b1122\b/g, p1.number)
+          .replace(/\b1023\b/g, p2 ? p2.number : p1.number);
+      }
+      return act;
+    });
     const emergencyData: EmergencyStageData = {
       templateCategory,
       title: tpl.title[lang],
       reason,
       matchedPatternId: patternId ?? 'l1-escalation',
-      actions: tpl.immediateActions.map((a) => a[lang]),
+      actions,
       doNot: tpl.doNot.map((d) => d[lang]),
       numbers: emergencyNumbers,
       sources: tpl.sources,
@@ -1667,7 +1706,7 @@ export async function runPipeline(
     emit('triage', triageData);
     emit('emergency', emergencyData);
 
-    const content = buildEmergencyContent(tpl.title[lang], tpl.reasonIntro[lang], emergencyData.actions, emergencyData.doNot, lang);
+    const content = buildEmergencyContent(tpl.title[lang], tpl.reasonIntro[lang], emergencyData.actions, emergencyData.doNot, lang, emergencyNumbers);
     const citations = templateCitations(tpl.sources);
     const totalMs = Date.now() - t0;
 
@@ -2082,11 +2121,17 @@ export async function runPipeline(
         preVetoLevel = 'EMERGENCY';
         const emTemplate = getEmergencyTemplate('general-emergency') ?? getEmergencyTemplate('unconscious') ?? EMERGENCY_TEMPLATES[0]!;
         const langKey = lang === 'ur' ? 'ur' : lang === 'roman' ? 'roman' : 'en';
+        const primaryNumber = emergencyNumbers[0]?.number ?? '1122';
+        const emDirective = lang === 'ur'
+          ? `فوری طور پر ${primaryNumber} پر کال کریں۔`
+          : lang === 'roman'
+            ? `Foran ${primaryNumber} par call karein.`
+            : `CALL ${primaryNumber} IMMEDIATELY.`;
         preVetoContent = [
           `🚨 **${emTemplate.title[langKey]}**`,
           emTemplate.reasonIntro[langKey],
           ...emTemplate.immediateActions.map((a) => '• ' + a[langKey]),
-          lang === 'ur' ? 'فوری طور پر 1122 پر کال کریں۔' : lang === 'roman' ? 'Foran 1122 par call karein.' : 'CALL 1122 IMMEDIATELY.',
+          emDirective,
         ].join('\n\n');
         preEmergencyData = {
           templateCategory: 'general-emergency',
@@ -2762,11 +2807,17 @@ export async function runPipeline(
         const templateCategory = redFlagMatches[0]?.pattern.category ?? 'general-emergency';
         const emTemplate = getEmergencyTemplate(templateCategory) ?? getEmergencyTemplate('unconscious') ?? EMERGENCY_TEMPLATES[0]!;
         const langKey = lang === 'ur' ? 'ur' : lang === 'roman' ? 'roman' : 'en';
+        const primaryNumber = emergencyNumbers[0]?.number ?? '1122';
+        const emDirective = lang === 'ur'
+          ? `فوری طور پر ${primaryNumber} پر کال کریں۔`
+          : lang === 'roman'
+            ? `Foran ${primaryNumber} par call karein.`
+            : `CALL ${primaryNumber} IMMEDIATELY.`;
         const emGuidance = [
           `🚨 **${emTemplate.title[langKey]}**`,
           emTemplate.reasonIntro[langKey],
           ...emTemplate.immediateActions.map((a) => '• ' + a[langKey]),
-          lang === 'ur' ? 'فوری طور پر 1122 پر کال کریں۔' : lang === 'roman' ? 'Foran 1122 par call karein.' : 'CALL 1122 IMMEDIATELY.',
+          emDirective,
         ].join('\n\n');
         result.content = emGuidance;
         finalContent = emGuidance;

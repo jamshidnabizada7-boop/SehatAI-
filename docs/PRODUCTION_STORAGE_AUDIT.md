@@ -40,7 +40,8 @@ All storage operations flow through the encrypted `StorageProvider` abstraction.
 
 ### 2. `PrivateObjectStorageProvider` (Production Enterprise Engine)
 - Compatible with AWS S3, Alibaba Cloud OSS, Cloudflare R2, and self-hosted MinIO.
-- Implements dependency-free AWS Signature Version 4 (SigV4) request signing via native Node.js `crypto`.
+- Implements dependency-free AWS Signature Version 4 (SigV4) request signing via native Node.js `crypto` with lowercase canonical header normalization.
+- Enforces path-traversal validation across all endpoints: `get()` and `delete()` reject keys containing `..` or leading slashes with `INVALID_STORAGE_KEY`.
 - Enforces private ACLs (`x-amz-acl: private`) and server-side encryption (`x-amz-server-side-encryption: AES256`).
 - Automatic failure cleanup: partial or failed PUT requests automatically issue cleanup DELETE requests to prevent orphan storage costs.
 

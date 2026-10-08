@@ -18,14 +18,14 @@ function ensureVapid(): boolean {
 }
 
 /** Attempt push delivery for one user's pending notifications. Best-effort. */
-export async function deliverPendingPush(userId: string): Promise<{ sent: number; failed: number }> {
+export async function deliverPendingPush(userId: string): Promise<{ sent: number; failed: number; unconfigured?: boolean }> {
   const notifications = await db.notification.findMany({
     where: { userId, state: 'PENDING', channel: { in: ['inapp', 'push'] } },
     orderBy: { createdAt: 'asc' },
     take: 10,
   });
   if (notifications.length === 0) return { sent: 0, failed: 0 };
-  if (!ensureVapid()) return { sent: 0, failed: 0 };
+  if (!ensureVapid()) return { sent: 0, failed: 0, unconfigured: true };
 
   const subscriptions = await db.pushSubscription.findMany({ where: { userId }, take: 5 });
   let sent = 0;
@@ -148,7 +148,13 @@ export async function processNotificationOutbox(batchSize = 20): Promise<{ proce
     try {
       const payload = JSON.parse(item.payloadJson) as { userId: string; title: string; body: string; consultationId?: string; type?: string };
       const res = await deliverPendingPush(payload.userId);
-      if (res.sent > 0 || res.failed === 0) {
+      if (res.unconfigured) {
+        // VAPID is not configured; keep PENDING with explanatory error
+        await db.notificationOutbox.update({
+          where: { id: item.id },
+          data: { status: 'PENDING', lastError: 'VAPID_NOT_CONFIGURED', nextAttemptAt: new Date(Date.now() + 60_000), updatedAt: new Date() },
+        });
+      } else if (res.sent > 0 || res.failed === 0) {
         await db.notificationOutbox.update({
           where: { id: item.id },
           data: { status: 'DELIVERED', updatedAt: new Date() },

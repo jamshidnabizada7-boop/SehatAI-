@@ -155,10 +155,12 @@ export class PrivateObjectStorageProvider implements StorageProvider {
       host,
       'x-amz-content-sha256': payloadSha256,
       'x-amz-date': amzDate,
-      ...headers,
     };
+    for (const [k, v] of Object.entries(headers)) {
+      canonicalHeadersMap[k.toLowerCase()] = v;
+    }
 
-    const sortedHeaderKeys = Object.keys(canonicalHeadersMap).map((k) => k.toLowerCase()).sort();
+    const sortedHeaderKeys = Object.keys(canonicalHeadersMap).sort();
     const canonicalHeadersStr = sortedHeaderKeys.map((k) => `${k}:${canonicalHeadersMap[k].trim()}\n`).join('');
     const signedHeaders = sortedHeaderKeys.join(';');
 
@@ -256,6 +258,7 @@ export class PrivateObjectStorageProvider implements StorageProvider {
 
   async delete(storageKey: string): Promise<void> {
     const cleanKey = storageKey.replace(/^[/\\]+/, '');
+    if (cleanKey.includes('..')) throw new Error('INVALID_STORAGE_KEY');
     const targetPath = `/${cleanKey}`;
     const emptySha256 = sha256Hex('');
     const signedHeaders = this.signHeaders('DELETE', targetPath, {}, emptySha256);

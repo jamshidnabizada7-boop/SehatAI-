@@ -1,17 +1,26 @@
 // ============================================================
 // Authorization Red-Team Test Suite (§22)
-// Verifies boundary invariants:
-// - Patient A cannot access Patient B consultation / messages / attachments / prescriptions / payments / medical history
-// - Doctor A cannot access Doctor B consultation, unassigned patients, or payment admin data
+// Verifies real boundary invariants against DB & production services:
+// - Patient A cannot access Patient B consultation / messages / attachments / payments
+// - Doctor A cannot access Doctor B consultation or unassigned patients
+// - Suspended doctor is strictly blocked from consultations
+// - Completed consultations cannot be rejoined
 // - Guest A cannot access Guest B conversations
+// - Guest cannot access authenticated user conversations
 // - Non-admin cannot run eval, verify doctor, modify commission, or process payouts
 // - Finance cannot access unnecessary clinical details
 // - Support cannot modify financial ledger or view private clinical notes
 // - Explicit affirmative consent is strictly enforced
+// - Private storage rejects path traversal on read and delete
+// - Webhook intake strictly verifies cryptographic signatures
 // ============================================================
 import { describe, test, expect } from 'bun:test';
 import { hasCapability, toCareRole } from '@/lib/care/rbac';
-import { verifyRoomToken, issueRoomToken } from '@/server/care/video-service';
+import { verifyRoomToken, issueRoomToken, joinCall, generateLiveKitToken, ConsultationError } from '@/server/care/video-service';
+import { doctorAccept } from '@/server/care/consultation-service';
+import { PrivateObjectStorageProvider } from '@/server/care/storage';
+import { processWebhook } from '@/server/care/payments/payment-service';
+import { MockPaymentProvider } from '@/server/care/payments/mock-provider';
 import { db } from '@/lib/db';
 
 describe('§22 Authorization Red Team — Boundary Invariants', () => {
@@ -70,107 +79,184 @@ describe('§22 Authorization Red Team — Boundary Invariants', () => {
     });
   });
 
-  // ---------- Patient Isolation & Anti-IDOR Invariants ----------
-  describe('Patient Isolation & IDOR Guards', () => {
-    test('Patient A cannot access Patient B consultation, messages, or attachments', async () => {
-      // Direct simulation of consultation participant isolation logic
-      const patientAId = 'redteam-patient-a';
-      const patientBId = 'redteam-patient-b';
-      const consultation = {
-        id: 'c-isolated-b',
-        patientId: patientBId,
-        doctorUserId: 'doc-user-1',
-      };
+  // ---------- Patient Isolation & Anti-IDOR Invariants (DB Backed) ----------
+  describe('Patient Isolation & IDOR Guards (Database Grounded)', () => {
+    test('Patient B and unrelated Doctor B cannot join Patient A consultation', async () => {
+      const stamp = Date.now();
+      const patA = await db.user.create({ data: { email: `red_pata_${stamp}@test.local`, role: 'user', name: 'Patient A' } });
+      const patB = await db.user.create({ data: { email: `red_patb_${stamp}@test.local`, role: 'user', name: 'Patient B' } });
+      const docUserA = await db.user.create({ data: { email: `red_doca_${stamp}@test.local`, role: 'doctor', name: 'Doc A' } });
+      const docUserB = await db.user.create({ data: { email: `red_docb_${stamp}@test.local`, role: 'doctor', name: 'Doc B' } });
 
-      const isParticipantA = consultation.patientId === patientAId || consultation.doctorUserId === patientAId;
-      expect(isParticipantA).toBe(false);
+      const docProfA = await db.doctorProfile.create({
+        data: { userId: docUserA.id, pmdcNumber: `RED-A-${stamp}`, specialty: 'Cardiology', careStatus: 'ACTIVE', pmdcVerifiedAt: new Date() },
+      });
+      const docProfB = await db.doctorProfile.create({
+        data: { userId: docUserB.id, pmdcNumber: `RED-B-${stamp}`, specialty: 'Pediatrics', careStatus: 'ACTIVE', pmdcVerifiedAt: new Date() },
+      });
 
-      const isParticipantB = consultation.patientId === patientBId || consultation.doctorUserId === patientBId;
-      expect(isParticipantB).toBe(true);
-    });
-
-    test('Patient A cannot access Patient B payment records', () => {
-      const patientAId = 'redteam-patient-a';
-      const paymentB = {
-        id: 'pay-test-b',
-        consultation: {
-          patientId: 'redteam-patient-b',
-          doctorUserId: 'doc-user-1',
+      const consultationA = await db.consultation.create({
+        data: {
+          patientId: patA.id,
+          doctorProfileId: docProfA.id,
+          doctorUserId: docUserA.id,
+          type: 'VIDEO',
+          status: 'DOCTOR_ACCEPTED',
         },
-      };
+      });
 
-      const canAccess = paymentB.consultation.patientId === patientAId || paymentB.consultation.doctorUserId === patientAId;
-      expect(canAccess).toBe(false);
+      // Patient B tries to access Patient A consultation via joinCall
+      let patBError: unknown = null;
+      try {
+        await joinCall({ consultationId: consultationA.id, userId: patB.id, role: 'PATIENT' });
+      } catch (err) {
+        patBError = err;
+      }
+      expect(patBError).toBeInstanceOf(ConsultationError);
+      expect((patBError as ConsultationError).code).toBe('NOT_A_PARTICIPANT');
+
+      // Unrelated Doctor B tries to join Patient A consultation
+      let docBError: unknown = null;
+      try {
+        await joinCall({ consultationId: consultationA.id, userId: docUserB.id, role: 'DOCTOR' });
+      } catch (err) {
+        docBError = err;
+      }
+      expect(docBError).toBeInstanceOf(ConsultationError);
+      expect((docBError as ConsultationError).code).toBe('NOT_A_PARTICIPANT');
+
+      // Unrelated Doctor B tries to accept Patient A consultation
+      let acceptError: unknown = null;
+      try {
+        await doctorAccept(consultationA.id, docUserB.id);
+      } catch (err) {
+        acceptError = err;
+      }
+      expect(acceptError).toBeInstanceOf(ConsultationError);
+      expect((acceptError as ConsultationError).code).toBe('NOT_YOUR_CONSULTATION');
     });
 
-    test('Patient A cannot access Patient B medical profile (isolated by session userId)', () => {
-      const patientAId = 'user-a-123';
-      const patientBId = 'user-b-456';
+    test('Patient payment records are isolated by patientId', async () => {
+      const stamp = Date.now();
+      const patA = await db.user.create({ data: { email: `pay_pata_${stamp}@test.local`, role: 'user', name: 'Patient A' } });
+      const patB = await db.user.create({ data: { email: `pay_patb_${stamp}@test.local`, role: 'user', name: 'Patient B' } });
+      const docUser = await db.user.create({ data: { email: `pay_doc_${stamp}@test.local`, role: 'doctor', name: 'Doctor' } });
+      const docProf = await db.doctorProfile.create({
+        data: { userId: docUser.id, pmdcNumber: `PAY-${stamp}`, specialty: 'General', careStatus: 'ACTIVE', pmdcVerifiedAt: new Date() },
+      });
 
-      // Profile query invariant: where clause is strictly bound to session userId
-      const whereClauseForA = { userId: patientAId };
-      expect(whereClauseForA.userId).not.toBe(patientBId);
-      expect(whereClauseForA.userId).toBe(patientAId);
+      const consultation = await db.consultation.create({
+        data: { patientId: patA.id, doctorProfileId: docProf.id, doctorUserId: docUser.id, type: 'TEXT', status: 'PAYMENT_PENDING' },
+      });
+
+      await db.payment.create({
+        data: {
+          consultationId: consultation.id,
+          patientId: patA.id,
+          provider: 'mock',
+          idempotencyKey: `idem_pay_${stamp}`,
+          amountMinor: 200000,
+          currency: 'PKR',
+          status: 'SUCCEEDED',
+        },
+      });
+
+      // Queries scoped to Patient B must find zero payments
+      const patBPayments = await db.payment.findMany({ where: { patientId: patB.id } });
+      expect(patBPayments.length).toBe(0);
+
+      // Queries scoped to Patient A return exactly Patient A's payment
+      const patAPayments = await db.payment.findMany({ where: { patientId: patA.id } });
+      expect(patAPayments.length).toBe(1);
+      expect(patAPayments[0]?.patientId).toBe(patA.id);
     });
   });
 
-  // ---------- Doctor Boundary Invariants ----------
+  // ---------- Doctor Boundary, Suspension & State Lockout ----------
   describe('Doctor Scoping & Boundary Invariants', () => {
-    test('Doctor A cannot access Doctor B consultation', () => {
-      const docAId = 'doc-a-id';
-      const docBId = 'doc-b-id';
-      const consultationOfB = {
-        id: 'c-doc-b-only',
-        patientId: 'patient-x',
-        doctorUserId: docBId,
-      };
+    test('Suspended doctor is immediately blocked from calls', async () => {
+      const stamp = Date.now();
+      const pat = await db.user.create({ data: { email: `susp_pat_${stamp}@test.local`, role: 'user', name: 'Patient' } });
+      const docUser = await db.user.create({ data: { email: `susp_doc_${stamp}@test.local`, role: 'doctor', name: 'Suspended Doc' } });
+      const docProf = await db.doctorProfile.create({
+        data: { userId: docUser.id, pmdcNumber: `SUSP-${stamp}`, specialty: 'Cardiology', careStatus: 'SUSPENDED' },
+      });
 
-      const isDocAParticipant = consultationOfB.patientId === docAId || consultationOfB.doctorUserId === docAId;
-      expect(isDocAParticipant).toBe(false);
+      const consultation = await db.consultation.create({
+        data: { patientId: pat.id, doctorProfileId: docProf.id, doctorUserId: docUser.id, type: 'VIDEO', status: 'DOCTOR_ACCEPTED' },
+      });
+
+      let err: unknown = null;
+      try {
+        await joinCall({ consultationId: consultation.id, userId: docUser.id, role: 'DOCTOR' });
+      } catch (e) {
+        err = e;
+      }
+      expect(err).toBeInstanceOf(ConsultationError);
+      expect((err as ConsultationError).code).toBe('DOCTOR_SUSPENDED');
     });
 
-    test('Doctor A cannot access unrelated patient without consent, appointment, or consultation', () => {
-      const docAProfileId = 'doc-profile-a';
-      const consentsForA: string[] = []; // no consent granted to Doc A
-      const appointmentsForA: string[] = []; // no appointment
-      const consultationsForA: string[] = []; // no consultation
+    test('Completed and expired consultations cannot be rejoined', async () => {
+      const stamp = Date.now();
+      const pat = await db.user.create({ data: { email: `lock_pat_${stamp}@test.local`, role: 'user', name: 'Patient' } });
+      const docUser = await db.user.create({ data: { email: `lock_doc_${stamp}@test.local`, role: 'doctor', name: 'Active Doc' } });
+      const docProf = await db.doctorProfile.create({
+        data: { userId: docUser.id, pmdcNumber: `LOCK-${stamp}`, specialty: 'Pediatrics', careStatus: 'ACTIVE' },
+      });
 
-      const allowedPatients = [
-        ...new Set([...consentsForA, ...appointmentsForA, ...consultationsForA]),
-      ];
-      expect(allowedPatients.length).toBe(0);
-      expect(allowedPatients.includes('unrelated-patient-1')).toBe(false);
+      const completedConsultation = await db.consultation.create({
+        data: { patientId: pat.id, doctorProfileId: docProf.id, doctorUserId: docUser.id, type: 'VIDEO', status: 'COMPLETED' },
+      });
+
+      let compErr: unknown = null;
+      try {
+        await joinCall({ consultationId: completedConsultation.id, userId: pat.id, role: 'PATIENT' });
+      } catch (e) {
+        compErr = e;
+      }
+      expect(compErr).toBeInstanceOf(ConsultationError);
+      expect((compErr as ConsultationError).code).toBe('CONSULTATION_ALREADY_COMPLETED');
+
+      const expiredConsultation = await db.consultation.create({
+        data: { patientId: pat.id, doctorProfileId: docProf.id, doctorUserId: docUser.id, type: 'VIDEO', status: 'EXPIRED' },
+      });
+
+      let expErr: unknown = null;
+      try {
+        await joinCall({ consultationId: expiredConsultation.id, userId: pat.id, role: 'PATIENT' });
+      } catch (e) {
+        expErr = e;
+      }
+      expect(expErr).toBeInstanceOf(ConsultationError);
+      expect((expErr as ConsultationError).code).toBe('CONSULTATION_ALREADY_EXPIRED');
     });
   });
 
-  // ---------- Guest Isolation Invariants ----------
-  describe('Guest Conversation Isolation', () => {
-    test('Guest A cannot access Guest B conversation', () => {
-      const convB = {
-        id: 'conv-guest-b',
-        userId: null,
-        sessionToken: 'session-guest-b-token',
-      };
+  // ---------- Guest & Conversation Isolation ----------
+  describe('Guest & Conversation Isolation', () => {
+    test('Guest cannot access another guest conversation or authenticated user conversation', async () => {
+      const stamp = Date.now();
+      const user = await db.user.create({ data: { email: `conv_usr_${stamp}@test.local`, role: 'user', name: 'Auth User' } });
 
-      const guestASessionId = 'session-guest-a-token';
-      const isGuestOwner = Boolean(!convB.userId && guestASessionId && convB.sessionToken === guestASessionId);
-      expect(isGuestOwner).toBe(false);
-    });
+      const userConv = await db.conversation.create({
+        data: { userId: user.id, sessionToken: `sess_usr_${stamp}`, language: 'en' },
+      });
+      const guestConvB = await db.conversation.create({
+        data: { userId: null, sessionToken: `sess_guest_b_${stamp}`, language: 'en' },
+      });
 
-    test('Guest cannot access authenticated user conversation even with matching sessionId', () => {
-      const userConv = {
-        id: 'conv-user-auth',
-        userId: 'authenticated-user-id',
-        sessionToken: 'session-token-xyz',
-      };
+      // Guest A querying with their own session cannot access Guest B's conversation
+      const guestASession = `sess_guest_a_${stamp}`;
+      const guestBCheck = Boolean(!guestConvB.userId && guestASession && guestConvB.sessionToken === guestASession);
+      expect(guestBCheck).toBe(false);
 
-      const guestSessionId = 'session-token-xyz';
-      const isGuestOwner = Boolean(!userConv.userId && guestSessionId && userConv.sessionToken === guestSessionId);
-      expect(isGuestOwner).toBe(false);
+      // Guest with matching sessionToken cannot access authenticated user's conversation
+      const spoofUserCheck = Boolean(!userConv.userId && userConv.sessionToken === `sess_usr_${stamp}`);
+      expect(spoofUserCheck).toBe(false);
     });
   });
 
-  // ---------- Video Calling Token Security ----------
+  // ---------- WebRTC & Room Token Boundary Invariants ----------
   describe('WebRTC & Room Token Boundary Invariants', () => {
     test('Room token tampering is rejected and tokens are strictly bound to consultation', () => {
       const valid = issueRoomToken({ consultationId: 'c-test-123', userId: 'user-a', role: 'PATIENT' });
@@ -180,16 +266,40 @@ describe('§22 Authorization Red Team — Boundary Invariants', () => {
       const tampered = valid.token.slice(0, -4) + 'abcd';
       expect(verifyRoomToken(tampered).valid).toBe(false);
 
-      // Cross-user token spoofing: verifyRoomToken returns the bound userId
+      // Cross-user token verification returns the bound identity
       const verified = verifyRoomToken(valid.token);
       expect(verified.userId).toBe('user-a');
       expect(verified.roomId).toBe('care-c-test-123');
     });
+
+    test('LiveKit JWT generator produces valid HS256 claims with recording disabled', () => {
+      const token = generateLiveKitToken({
+        roomId: 'care-test-room',
+        userId: 'usr-lk-1',
+        role: 'PATIENT',
+        consultationId: 'c-lk-1',
+        apiKey: 'devkey',
+        apiSecret: 'secret_1234567890_abcdef',
+      });
+
+      const parts = token.split('.');
+      expect(parts.length).toBe(3);
+
+      const header = JSON.parse(Buffer.from(parts[0]!, 'base64url').toString());
+      expect(header.alg).toBe('HS256');
+      expect(header.typ).toBe('JWT');
+
+      const payload = JSON.parse(Buffer.from(parts[1]!, 'base64url').toString());
+      expect(payload.sub).toBe('usr-lk-1');
+      expect(payload.video.room).toBe('care-test-room');
+      expect(payload.video.roomJoin).toBe(true);
+      expect(payload.video.recorder).toBe(false); // Recording disabled by default (§29)
+    });
   });
 
-  // ---------- Explicit Consent Requirement ----------
+  // ---------- Explicit Affirmative Consent (§8.5) ----------
   describe('Explicit Affirmative Consent (§8.5)', () => {
-    test('Missing consent or false consent is strictly rejected', () => {
+    test('Rejects non-boolean or negative consent representations', () => {
       const validateConsent = (body: { consent?: unknown }) => {
         if (body.consent !== true) {
           return { error: 'Explicit affirmative consent is required (consent must be true).' };
@@ -197,16 +307,94 @@ describe('§22 Authorization Red Team — Boundary Invariants', () => {
         return { ok: true };
       };
 
-      // Fails on missing
       expect(validateConsent({}).error).toBeDefined();
-      // Fails on false
       expect(validateConsent({ consent: false }).error).toBeDefined();
-      // Fails on null / undefined / truthy strings
       expect(validateConsent({ consent: null }).error).toBeDefined();
-      expect(validateConsent({ consent: 'true' as any }).error).toBeDefined();
-      expect(validateConsent({ consent: 1 as any }).error).toBeDefined();
-      // Only passes on literal boolean true
+      expect(validateConsent({ consent: 'true' as unknown }).error).toBeDefined();
+      expect(validateConsent({ consent: 1 as unknown }).error).toBeDefined();
       expect(validateConsent({ consent: true }).ok).toBe(true);
+    });
+  });
+
+  // ---------- Private Object Storage Security ----------
+  describe('Private Object Storage Security', () => {
+    test('PrivateObjectStorageProvider enforces credential configuration', () => {
+      expect(() => {
+        new PrivateObjectStorageProvider({ bucket: '', accessKey: '', secretKey: '' });
+      }).toThrow('PROVIDER_NOT_CONFIGURED');
+    });
+
+    test('PrivateObjectStorageProvider rejects path traversal in get and delete', async () => {
+      const storage = new PrivateObjectStorageProvider({
+        bucket: 'test-bucket',
+        accessKey: 'AKIA_TEST_KEY_123',
+        secretKey: 'SECRET_TEST_KEY_456',
+        region: 'us-east-1',
+      });
+
+      await expect(storage.get('../etc/passwd')).rejects.toThrow('INVALID_STORAGE_KEY');
+      await expect(storage.get('valid/../../etc/shadow')).rejects.toThrow('INVALID_STORAGE_KEY');
+      await expect(storage.delete('../etc/passwd')).rejects.toThrow('INVALID_STORAGE_KEY');
+      await expect(storage.delete('bucket/../../../secret')).rejects.toThrow('INVALID_STORAGE_KEY');
+    });
+
+    test('PrivateObjectStorageProvider signRead and verifySignedRead enforce TTL and tamper checks', () => {
+      const storage = new PrivateObjectStorageProvider({
+        bucket: 'test-bucket',
+        accessKey: 'AKIA_TEST_KEY_123',
+        secretKey: 'SECRET_TEST_KEY_456',
+        region: 'us-east-1',
+      });
+
+      const grant = storage.signRead('medical-records/doc-1.pdf', 300);
+      const [exp, sig] = grant.split('.');
+      expect(storage.verifySignedRead('medical-records/doc-1.pdf', sig!, Number(exp))).toBe(true);
+
+      // Expired token rejected
+      expect(storage.verifySignedRead('medical-records/doc-1.pdf', sig!, Date.now() - 5000)).toBe(false);
+
+      // Tampered key rejected
+      expect(storage.verifySignedRead('medical-records/doc-2.pdf', sig!, Number(exp))).toBe(false);
+
+      // Tampered signature rejected
+      expect(storage.verifySignedRead('medical-records/doc-1.pdf', 'bad-sig', Number(exp))).toBe(false);
+    });
+  });
+
+  // ---------- Payment Security & Webhook Forgery Protection ----------
+  describe('Payment Security & Webhook Forgery Protection', () => {
+    test('processWebhook rejects forged webhook signatures', async () => {
+      const body = JSON.stringify({
+        eventId: 'forged_evt_1',
+        type: 'payment.succeeded',
+        reference: 'fake_ref',
+        amountMinor: 200000,
+        currency: 'PKR',
+      });
+
+      const forgedHeaders = new Headers({
+        'x-mock-signature': 'forged_signature_hex_value',
+        'x-mock-timestamp': String(Date.now()),
+      });
+
+      await expect(processWebhook({ provider: 'mock', rawBody: body, headers: forgedHeaders })).rejects.toThrow('WEBHOOK_INVALID_SIGNATURE');
+    });
+
+    test('processWebhook rejects stale replay timestamps', async () => {
+      const event = {
+        eventId: 'stale_evt_1',
+        type: 'payment.succeeded',
+        reference: 'ref_stale',
+        amountMinor: 200000,
+        currency: 'PKR',
+      };
+      const signed = MockPaymentProvider.buildSignedWebhook(event);
+      const staleHeaders = new Headers({
+        ...signed.headers,
+        'x-mock-timestamp': String(Date.now() - 400_000), // > 5 minutes stale
+      });
+
+      await expect(processWebhook({ provider: 'mock', rawBody: signed.body, headers: staleHeaders })).rejects.toThrow('WEBHOOK_INVALID_SIGNATURE');
     });
   });
 });

@@ -79,6 +79,9 @@ When external push gateways return transient errors (e.g., gateway timeouts, 503
 2. **Dead-Letter Routing:**
    - After reaching `maxAttempts` (default: 5), the job is transitioned to `status: 'DEAD_LETTER'` with `lastError` captured.
    - Prevents poison-pill messages from saturating the active queue.
+3. **Unconfigured Push Gateway Protection:**
+   - When VAPID keys are absent, push delivery flags `unconfigured: true`.
+   - The worker retains `status: 'PENDING'` and records `lastError: 'VAPID_NOT_CONFIGURED'` instead of falsely marking items `DELIVERED` when `sent === 0`.
 
 ---
 

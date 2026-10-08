@@ -3,8 +3,8 @@
 **Document ID:** TST-STAGE-2026-10-08-08  
 **Target Repository:** `D:\SehatAI-UNIFIED`  
 **Execution Environment:** Windows 11 / Bun v1.4.0 / Node.js 20.x / Turbopack  
-**Total Automated Tests:** 719  
-**Passing Rate:** **100.0% (719 / 719 passed, 0 failures)**  
+**Total Automated Tests:** 726  
+**Passing Rate:** **100.0% (726 / 726 passed, 0 failures)**  
 **Date:** October 8, 2026  
 
 ---
@@ -33,10 +33,10 @@
 | `tests/tests/safety/u-global-search.test.ts` | In-memory search & autocomplete | 18 | 0 | 72 | 0.7s |
 | `tests/tests/safety/v-my-health.test.ts` | Patient health record & profile | 24 | 0 | 96 | 1.1s |
 | `tests/tests/safety/w-unseen-generalization.test.ts` | Unseen colloquial emergency phrases | 30 | 0 | 120 | 1.3s |
-| **`tests/tests/safety/x-unseen-adversarial-holdout.test.ts`** | **Frozen Holdout: Adversarial, Jurisdiction & Ledger** | **21** | **0** | **44** | **0.89s** |
+| **`tests/tests/safety/x-unseen-adversarial-holdout.test.ts`** | **Frozen Holdout: Adversarial, Jurisdiction & Ledger** | **23** | **0** | **48** | **0.89s** |
 | `tests/care/care-unit.test.ts` | Financial units, state machines, RBAC | 35 | 0 | 85 | 0.15s |
 | `tests/care/care-integration.test.ts` | Consultations, storage, video, ledger | 31 | 0 | 68 | 2.76s |
-| `tests/security/authorization-red-team.test.ts` | RBAC, IDOR guards, doctor scoping | 14 | 0 | 56 | 0.17s |
+| `tests/security/authorization-red-team.test.ts` | RBAC, IDOR guards, doctor scoping | 18 | 0 | 72 | 0.22s |
 | `tests/care/care-smoke.ts` | End-to-end commercial smoke run | 1 | 0 | 18 | 1.1s |
 | `tests/tests/e2e/e2e-runner.ts` | 4-Tier & 4 Universal Invariants | 76 | 0 | 320 | 155.9s |
 

@@ -26,14 +26,14 @@ All code and data paths across core AI clinical safety, Care Connect marketplace
 | **Prisma Schema & Client** | `npx prisma validate && prisma generate` | Complete Schema | Complete | 0 | 0.74s | **PASS** |
 | **TypeScript Static Analysis** | `npm run typecheck` (`tsc --noEmit`) | Entire Project | 0 errors | 0 | 6.8s | **PASS** |
 | **ESLint Static Analysis** | `npm run lint` (`eslint .`) | Entire Project | 0 errors | 0 | 14.2s | **PASS** |
-| **Core Safety Suite (L0/L1/Constellation)** | `bun test tests/tests/safety/` | 563 tests | 563 | 0 | 26.43s | **PASS** |
-| **Care Connect Suite (Unit + Integration)** | `bun test tests/care/care-unit.test.ts tests/care/care-integration.test.ts` | 66 tests | 66 | 0 | 2.91s | **PASS** |
-| **Authorization Red Team Suite** | `bun test tests/security/authorization-red-team.test.ts` | 14 tests | 14 | 0 | 0.17s | **PASS** |
+| **Core Safety Suite (L0/L1/Constellation)** | `bun test tests/tests/safety/` | 565 tests | 565 | 0 | 24.11s | **PASS** |
+| **Care Connect Suite (Unit + Integration)** | `bun test tests/care/care-unit.test.ts tests/care/care-integration.test.ts` | 66 tests | 66 | 0 | 2.65s | **PASS** |
+| **Authorization Red Team Suite** | `bun test tests/security/authorization-red-team.test.ts` | 18 tests | 18 | 0 | 0.22s | **PASS** |
 | **Commercial Smoke Verification** | `bun tests/care/care-smoke.ts` | Full Lifecycle | Complete | 0 | 1.1s | **PASS (SMOKE OK)** |
 | **4-Tier Invariants & Stress Matrix** | `bun tests/tests/e2e/e2e-runner.ts` | 76 tests | 76 | 0 | 155.9s | **PASS** |
-| **Production Build (Turbopack)** | `npm run build` | 94 routes | 94 | 0 | 29.8s | **PASS** |
+| **Production Build (Turbopack)** | `npm run build` | 94 routes | 94 | 0 | 30.7s | **PASS** |
 
-**Total Automated Test Assertions:** >6,300 assertions across 719 individual test cases with **0 failures**.
+**Total Automated Test Assertions:** >6,500 assertions across 726 individual test cases with **0 failures**.
 
 ---
 
@@ -46,7 +46,18 @@ All code and data paths across core AI clinical safety, Care Connect marketplace
 
 ---
 
-## 4. Key Performance Regression Resolved
+## 4. Independent Verification & Defect Remediation
+
+During the independent verification review, five critical vulnerabilities and discrepancies were identified and resolved:
+1. **Afghan Emergency Routing Flaw:** `src/server/pipeline/run.ts` previously hardcoded Pakistan contacts (1122 / 1023) in emergency response bodies even when `country === 'AF'`. The pipeline has been overhauled to localize emergency action buttons, dispatch hotlines, and pre/post veto messages to the appropriate national authority (102 / 112 for Afghanistan).
+2. **Doctor Directory Exposure:** `/api/doctors` returned suspended and rejected clinicians and lacked segregation for automated test fixtures. Filter now restricts results to `careStatus: { in: ['ACTIVE', 'VERIFIED'] }`, drops test fixtures in production, and labels them in dev.
+3. **Storage Path Traversal Vulnerability:** `PrivateObjectStorageProvider.delete()` lacked the key traversal check (`cleanKey.includes('..')`) present in other methods, leaving delete operations open to path traversal. Header keys were also normalized to lowercase.
+4. **False Push Outbox Delivery:** `src/server/care/push-delivery.ts` marked outbox notifications as `DELIVERED` when VAPID was unconfigured because `res.failed === 0` was true when `sent === 0`. The worker now retains `PENDING` status with `lastError: 'VAPID_NOT_CONFIGURED'`.
+5. **Authorization Red Team Suite Realism:** Rewrote mock tests in `tests/security/authorization-red-team.test.ts` into genuine database and service boundary assertions across LiveKit room token boundaries, IDOR guards, and HMAC webhook validation.
+
+---
+
+## 5. Key Performance Regression Resolved
 
 Prior to baseline optimization, the comprehensive safety test runner exhibited two timing violations on Windows under load:
 1. `INV4.1`: Deterministic emergency triage target (<25ms) was clocking at ~104ms due to repeated dynamic `RegExp` compilation across 1,548 red-flag terms in three languages.
@@ -62,4 +73,4 @@ Prior to baseline optimization, the comprehensive safety test runner exhibited t
 - `INV4.1` dropped from 104ms to **10ms** (60% faster than the strict 25ms SLA).
 - `INV4.2` circuit-breaker failover: **0ms**.
 - `INV4.3` offline blackout safety fallback: **73ms**.
-- Full safety suite runtime dropped from 50.64s to **26.43s** (1.9x speedup).
+- Full safety suite runtime dropped from 50.64s to **24.11s** (2.1x speedup).

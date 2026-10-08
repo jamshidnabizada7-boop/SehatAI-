@@ -10,6 +10,7 @@
 // ============================================================
 import { describe, expect, test } from 'bun:test';
 import { runL0Triage } from '@/lib/engine/safety-engine';
+import { runPipeline } from '@/server/pipeline/run';
 import { scanForInjection } from '@/lib/prompt-security';
 import { getEmergencyNumbers, EMERGENCY_NUMBERS_AF, EMERGENCY_NUMBERS_PK, EMERGENCY_NUMBERS_INTL } from '@/data/lexicon';
 import { evaluateJurisdiction } from '@/server/care/jurisdiction';
@@ -102,6 +103,35 @@ describe('X3. Jurisdiction-aware emergency routing', () => {
     const nums = getEmergencyNumbers('US');
     expect(nums).toEqual(EMERGENCY_NUMBERS_INTL);
     expect(nums.some((n) => n.number.includes('112') || n.number.includes('911'))).toBe(true);
+  });
+
+  test('runPipeline produces localized Afghan emergency guidance without Pakistan numbers', async () => {
+    const res = await runPipeline({
+      message: 'Severe chest pain and difficulty breathing',
+      language: 'en',
+      sessionId: `test_holdout_af_${Date.now()}`,
+      country: 'AF',
+      persist: false,
+    });
+    expect(res.emergency).toBeDefined();
+    expect(res.emergency?.numbers).toEqual(EMERGENCY_NUMBERS_AF);
+    expect(res.content).toContain('102');
+    expect(res.content).toContain('Kabul Ambulance Service');
+    expect(res.content).not.toContain('1122');
+    expect(res.content).not.toContain('1023');
+  });
+
+  test('runPipeline produces localized Pakistan emergency guidance for PK country code', async () => {
+    const res = await runPipeline({
+      message: 'Severe chest pain and difficulty breathing',
+      language: 'en',
+      sessionId: `test_holdout_pk_${Date.now()}`,
+      country: 'PK',
+      persist: false,
+    });
+    expect(res.emergency).toBeDefined();
+    expect(res.emergency?.numbers).toEqual(EMERGENCY_NUMBERS_PK);
+    expect(res.content).toContain('1122');
   });
 });
 

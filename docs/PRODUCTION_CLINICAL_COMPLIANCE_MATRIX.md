@@ -31,6 +31,8 @@ The system dynamically selects emergency contact numbers based on the user's dec
 | **Afghanistan** | `AF` | **102** (Kabul Ambulance Service)<br>**112** (Afghan Red Crescent ARCS) | **119** (Police Emergency)<br>**166** (Health Crisis Helpline) |
 | **International** | `INTL` | **112 / 911** (Universal Emergency Access) | Local Nearest Hospital Emergency Department |
 
+**Localization Invariant:** Emergency guidance generated across triage buttons, hotlines, and pre/post generation veto triggers is strictly localized using the patient's jurisdiction profile. For Afghanistan (`AF`), primary contact numbers (102 / 112) replace Pakistan-specific numbers (1122 / 1023) across all user-facing output.
+
 ---
 
 ## 3. Clinician Verification & Licensing Lifecycle (§14 & §15)
