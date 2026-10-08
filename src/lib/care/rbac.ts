@@ -11,7 +11,7 @@ import type { CareRole } from './constants';
 
 // Maps a NextAuth User.role string to a CareRole.
 export function toCareRole(role: string | null | undefined): CareRole {
-  switch (role) {
+  switch (role?.toLowerCase()) {
     case 'admin':
     case 'super_admin':
       return 'SUPER_ADMIN';
