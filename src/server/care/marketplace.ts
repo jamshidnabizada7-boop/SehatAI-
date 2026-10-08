@@ -58,17 +58,39 @@ export interface MarketplaceDoctor {
 /** Check whether a doctor profile represents an internal test fixture. */
 export function isTestDoctorProfile(doctor: {
   pmdcNumber?: string | null;
+  facilityName?: string | null;
+  bio?: string | null;
   user?: { email?: string | null; name?: string | null } | null;
 }): boolean {
   const pmdc = (doctor.pmdcNumber ?? '').toUpperCase();
   const email = (doctor.user?.email ?? '').toLowerCase();
   const name = (doctor.user?.name ?? '').toLowerCase();
+  const facility = (doctor.facilityName ?? '').toLowerCase();
+  const bio = (doctor.bio ?? '').toLowerCase();
 
-  const isTestEmail = /@(test\.local|local\.test|t\.local|example\.com)$/i.test(email);
-  const isTestPmdc = /^(TEST|RED|PAY|SUSP|LOCK|IT|SMOKE|PG|PMDC-SUSP|PMDC-COMP|PMDC-LEDGER)/i.test(pmdc);
+  const isTestEmail =
+    /@(test\.local|local\.test|t\.local|example\.com|example\.org|test\.com)$/i.test(email) ||
+    email.startsWith('test-') ||
+    email.startsWith('test_') ||
+    email.startsWith('staging-') ||
+    email.includes('+test@') ||
+    email.includes('.test@');
+
+  const isTestPmdc =
+    /^(TEST|STG|DEMO|SIM|MOCK|DUMMY|STAGE|STAGING|RED|PAY|SUSP|LOCK|IT|SMOKE|PG)/i.test(pmdc) ||
+    /(TEST|STG|DEMO|SIM|MOCK|DUMMY|STAGING)/i.test(pmdc);
+
   const isTestName =
-    name.startsWith('[test]') ||
-    name === 'test doctor' ||
+    name.includes('[test]') ||
+    name.includes('(test)') ||
+    name.includes('[staging]') ||
+    name.includes('test doctor') ||
+    name.includes('staging doctor') ||
+    name.includes('staging specialist') ||
+    name.includes('mock doctor') ||
+    name.startsWith('test ') ||
+    name.endsWith(' test') ||
+    name === 'test' ||
     name === 'doc a' ||
     name === 'doc b' ||
     name === 'dr it' ||
@@ -77,7 +99,10 @@ export function isTestDoctorProfile(doctor: {
     name === 'suspended doc' ||
     name === 'ledger doc';
 
-  return isTestEmail || isTestPmdc || isTestName;
+  const isTestFacility = facility.includes('test facility') || facility.includes('staging clinic');
+  const isTestBio = bio.includes('test profile') || bio.includes('staging fixture');
+
+  return isTestEmail || isTestPmdc || isTestName || isTestFacility || isTestBio;
 }
 
 // §45 Bayesian average: avoids "one 5-star review outranks hundreds".

@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
         provider: payment.provider,
         checkoutUrl: payment.checkoutUrl,
         capturedAt: payment.capturedAt,
+        isMockPayment: payment.provider === 'mock',
+        mockNotice: payment.provider === 'mock' ? 'SIMULATION ONLY: No real money is charged.' : null,
       },
     });
   } catch (e) {

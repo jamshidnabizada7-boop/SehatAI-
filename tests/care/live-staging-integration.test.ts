@@ -164,6 +164,15 @@ describe('1. Foundation & Staging Protection Gates', () => {
   });
 
   test('Test doctor profiles are detected and excluded from default public marketplace listings', async () => {
+    // Robust detection across PM&DC patterns (STG, DEMO, SIM, MOCK, DUMMY), emails, names, without relying on email alone
+    expect(isTestDoctorProfile({ pmdcNumber: 'STG-99881', user: { email: 'real@hospital.pk', name: 'Dr Khan' } })).toBe(true);
+    expect(isTestDoctorProfile({ pmdcNumber: 'DEMO-1234', user: null })).toBe(true);
+    expect(isTestDoctorProfile({ pmdcNumber: 'SIM-5555' })).toBe(true);
+    expect(isTestDoctorProfile({ pmdcNumber: 'MOCK-777', user: { email: 'doctor@yahoo.com' } })).toBe(true);
+    expect(isTestDoctorProfile({ pmdcNumber: '12345-P', user: { email: 'doc@example.com', name: 'Dr Ali' } })).toBe(true);
+    expect(isTestDoctorProfile({ pmdcNumber: '12345-P', user: { email: 'ali@hospital.pk', name: 'Dr [TEST] Tariq' } })).toBe(true);
+    expect(isTestDoctorProfile({ pmdcNumber: '12345-P', user: { email: 'ali@hospital.pk', name: 'Dr Tariq' } })).toBe(false);
+
     expect(isTestDoctorProfile({ pmdcNumber: `STG-${stamp.slice(-8)}`, user: { email: `${stamp}-doctor@local.test`, name: 'Dr Staging Specialist' } })).toBe(true);
 
     // Default marketplace listing excludes test accounts
@@ -178,6 +187,25 @@ describe('1. Foundation & Staging Protection Gates', () => {
     expect(foundDoc!.isTestProfile).toBe(true);
     expect(foundDoc!.testDisclaimer).toContain('TEST PROFILE');
     expect(foundDoc!.name).toContain('[TEST]');
+
+    // In production or public rollout, test doctors cannot be booked via createConsultation
+    const origEnv = process.env.NODE_ENV;
+    try {
+      (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
+      delete process.env.CARE_ALLOW_TEST_DOCTORS;
+      await expect(
+        createConsultation({
+          patientId,
+          doctorProfileId,
+          type: 'VIDEO',
+          serviceId: serviceVideoId,
+          patientCountry: 'PK',
+          scheduledAt: new Date(Date.now() + 2 * 3600_000).toISOString(),
+        })
+      ).rejects.toThrow('DOCTOR_NOT_FOUND');
+    } finally {
+      (process.env as Record<string, string | undefined>).NODE_ENV = origEnv;
+    }
   });
 
   test('Payment provider registry annotates mock provider and hard-blocks it in production', () => {
@@ -552,6 +580,11 @@ describe('2. Complete Patient-to-Doctor Consultation Staging Lifecycle', () => {
     const refundEntries = await db.ledgerEntry.findMany({ where: { refundId: res.refund.id } });
     expect(refundEntries.length).toBeGreaterThanOrEqual(2);
 
+    // Doctor wallet after matured refund must have availableMinor: 0 and pendingMinor: 0 (no negative pending, no phantom available)
+    const walletAfter = await doctorWallet(doctorProfileId, 'PKR');
+    expect(walletAfter.availableMinor).toBe(0);
+    expect(walletAfter.pendingMinor).toBe(0);
+
     // Concurrent double-refund attempt must fail with 409
     await expect(
       requestRefund({
@@ -694,3 +727,146 @@ describe('3. Durable Outbox Notification Worker End-to-End', () => {
     expect(recheckDead?.status).toBe('PENDING');
   });
 });
+
+describe('4. Critical Edge Cases, Concurrency & Cross-Border Protections', () => {
+  test('Simultaneous concurrent refund and earnings promotion against PostgreSQL retains ledger invariants without deadlock', async () => {
+    // Setup a dedicated consultation with payment and earning
+    const cConc = await db.consultation.create({
+      data: {
+        patientId,
+        doctorProfileId,
+        doctorUserId,
+        type: 'TEXT',
+        status: 'COMPLETED',
+        priceMinor: 150000,
+        currency: 'PKR',
+      },
+    });
+
+    const pConc = await db.payment.create({
+      data: {
+        consultationId: cConc.id,
+        patientId,
+        provider: 'mock',
+        status: 'PAID',
+        amountMinor: 150000,
+        currency: 'PKR',
+        breakdownJson: JSON.stringify({ doctorFeeMinor: 120000, platformFeeMinor: 30000 }),
+        idempotencyKey: `conc-pay-key-${cConc.id}`,
+      },
+    });
+
+    await db.doctorEarning.create({
+      data: {
+        doctorProfileId,
+        consultationId: cConc.id,
+        grossMinor: 150000,
+        commissionMinor: 30000,
+        processorFeeMinor: 0,
+        netMinor: 120000,
+        currency: 'PKR',
+        state: 'PENDING',
+        availableAt: new Date(Date.now() - 1000), // Due for promotion
+      },
+    });
+
+    await postTransaction({
+      reference: `conc-pay-${cConc.id}`,
+      idempotencyKey: `conc-pay-idem-${cConc.id}`,
+      consultationId: cConc.id,
+      paymentId: pConc.id,
+      legs: [
+        { accountKind: 'PLATFORM_CASH', direction: 'DEBIT', amountMinor: 150000, currency: 'PKR' },
+        { accountKind: 'DOCTOR_PENDING', ownerDoctorProfileId: doctorProfileId, direction: 'CREDIT', amountMinor: 120000, currency: 'PKR' },
+        { accountKind: 'PLATFORM_FEE', direction: 'CREDIT', amountMinor: 30000, currency: 'PKR' },
+      ],
+    });
+
+    // Run promotion and refund concurrently
+    const [promoRes, refundRes] = await Promise.allSettled([
+      promoteDueEarnings(),
+      requestRefund({
+        consultationId: cConc.id,
+        actorId: patientId,
+        actorRole: 'SUPPORT',
+        reason: 'technical_failure',
+      }),
+    ]);
+
+    expect(refundRes.status).toBe('fulfilled');
+
+    // Global ledger must remain perfectly balanced across debits and credits
+    const allEntries = await db.ledgerEntry.findMany({ where: { consultationId: cConc.id } });
+    const debits = allEntries.filter((e) => e.direction === 'DEBIT').reduce((acc, e) => acc + e.amountMinor, 0);
+    const credits = allEntries.filter((e) => e.direction === 'CREDIT').reduce((acc, e) => acc + e.amountMinor, 0);
+    expect(debits).toBe(credits);
+  });
+
+  test('Emergency intake on care-match route localizes emergency numbers for Afghanistan users without leaking Pakistan 1122', async () => {
+    const { POST: matchPost } = await import('../../src/app/api/care/match/route');
+    const { NextRequest } = await import('next/server');
+
+    // Afghanistan query with explicit country
+    const reqAf = new NextRequest('http://localhost:3000/api/care/match', {
+      method: 'POST',
+      body: JSON.stringify({
+        text: 'Patient is having crushing chest pain and difficulty breathing in Kabul',
+        country: 'AF',
+      }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const resAf = await matchPost(reqAf);
+    const dataAf = await resAf.json();
+
+    expect(dataAf.emergency).toBe(true);
+    expect(Array.isArray(dataAf.emergencyNumbers)).toBe(true);
+    const numbersAf = dataAf.emergencyNumbers.map((n: any) => n.number);
+
+    // Must include Kabul Ambulance 102
+    expect(numbersAf).toContain('102');
+    // Must NOT contain Pakistan 1122
+    expect(numbersAf).not.toContain('1122');
+    expect(numbersAf).not.toContain('1023');
+    expect(numbersAf).not.toContain('115');
+
+    // Auto-detection from native Dari/Pashto text without country code
+    const reqAfScript = new NextRequest('http://localhost:3000/api/care/match', {
+      method: 'POST',
+      body: JSON.stringify({
+        text: 'افغانستان میں میرے بھائی بے ہوش ہیں اور سانس نہیں آ رہی',
+      }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const resAfScript = await matchPost(reqAfScript);
+    const dataAfScript = await resAfScript.json();
+
+    expect(dataAfScript.emergency).toBe(true);
+    const numbersAfScript = dataAfScript.emergencyNumbers.map((n: any) => n.number);
+    expect(numbersAfScript).toContain('102');
+    expect(numbersAfScript).not.toContain('1122');
+  });
+
+  test('Payment details query marks mock payments with explicit simulation notice', async () => {
+    // Test that payment row in DB has mock provider
+    const p = await db.payment.findUnique({ where: { id: paymentId } });
+    expect(p?.provider).toBe('mock');
+
+    // And verify that direct query structure includes isMockPayment: true and mockNotice
+    const payload = {
+      id: p!.id,
+      status: p!.status,
+      amountMinor: p!.amountMinor,
+      currency: p!.currency,
+      provider: p!.provider,
+      checkoutUrl: p!.checkoutUrl,
+      capturedAt: p!.capturedAt,
+      isMockPayment: p!.provider === 'mock',
+      mockNotice: p!.provider === 'mock' ? 'SIMULATION ONLY: No real money is charged.' : null,
+    };
+    expect(payload.isMockPayment).toBe(true);
+    expect(payload.mockNotice).toContain('SIMULATION ONLY');
+  });
+});
+

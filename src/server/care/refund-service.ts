@@ -8,7 +8,7 @@
 import { db } from '@/lib/db';
 import { REFUND_TRANSITIONS, assertTransition, type RefundState } from '@/lib/care/constants';
 import { getPaymentProvider } from './payments/registry';
-import { postTransaction } from './ledger';
+import { postTransaction, type LedgerLeg } from './ledger';
 import { transitionConsultation } from './consultation-service';
 import { notify } from './notifications';
 import { auditCare } from './audit';
@@ -169,6 +169,40 @@ export async function confirmRefund(opts: { refundId: string; providerRef?: stri
     if (platformLeg > platformFee) throw new RefundError('REFUND_EXCEEDS_LEDGER', 409);
 
     const consultation = await db.consultation.findUnique({ where: { id: refund.consultationId }, select: { doctorProfileId: true } });
+
+    // Inspect whether doctor earnings were already promoted to DOCTOR_AVAILABLE (§13)
+    const doctorEarnings = await db.doctorEarning.findMany({
+      where: { consultationId: refund.consultationId },
+    });
+    const availableAmount = doctorEarnings
+      .filter((e) => e.state === 'AVAILABLE')
+      .reduce((sum, e) => sum + e.netMinor, 0);
+
+    const debitAvailable = Math.min(doctorLeg, availableAmount);
+    const debitPending = doctorLeg - debitAvailable;
+
+    const doctorLegs: LedgerLeg[] = [];
+    if (debitAvailable > 0 && consultation) {
+      doctorLegs.push({
+        accountKind: 'DOCTOR_AVAILABLE' as const,
+        ownerDoctorProfileId: consultation.doctorProfileId,
+        direction: 'DEBIT' as const,
+        amountMinor: debitAvailable,
+        currency: ccy,
+        memo: 'reverse doctor earning (matured)',
+      });
+    }
+    if (debitPending > 0 && consultation) {
+      doctorLegs.push({
+        accountKind: 'DOCTOR_PENDING' as const,
+        ownerDoctorProfileId: consultation.doctorProfileId,
+        direction: 'DEBIT' as const,
+        amountMinor: debitPending,
+        currency: ccy,
+        memo: 'reverse doctor earning (pending)',
+      });
+    }
+
     await postTransaction({
       reference: `refund:${refund.id}`,
       idempotencyKey: `refund:${refund.id}:compensate`,
@@ -177,9 +211,7 @@ export async function confirmRefund(opts: { refundId: string; providerRef?: stri
       consultationId: refund.consultationId,
       legs: [
         { accountKind: 'PLATFORM_CASH', direction: 'CREDIT', amountMinor: refund.amountMinor, currency: ccy, memo: 'cash out to patient' },
-        ...(doctorLeg > 0 && consultation
-          ? [{ accountKind: 'DOCTOR_PENDING' as const, ownerDoctorProfileId: consultation.doctorProfileId, direction: 'DEBIT' as const, amountMinor: doctorLeg, currency: ccy, memo: 'reverse doctor earning' }]
-          : []),
+        ...doctorLegs,
         ...(platformLeg > 0
           ? [{ accountKind: 'PLATFORM_FEE' as const, direction: 'DEBIT' as const, amountMinor: platformLeg, currency: ccy, memo: 'reverse commission' }]
           : []),

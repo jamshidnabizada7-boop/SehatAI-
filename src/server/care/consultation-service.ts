@@ -18,6 +18,7 @@ import {
 import { evaluateJurisdiction } from './jurisdiction';
 import { assertSlotBookable } from './availability';
 import { notify, notifyMany } from './notifications';
+import { isTestDoctorProfile } from './marketplace';
 
 export class ConsultationError extends Error {
   status: number;
@@ -46,9 +47,19 @@ export interface CreateConsultationInput {
 export async function createConsultation(input: CreateConsultationInput) {
   const doctor = await db.doctorProfile.findUnique({
     where: { id: input.doctorProfileId },
-    include: { user: { select: { id: true, accountStatus: true } } },
+    include: { user: { select: { id: true, accountStatus: true, email: true, name: true } } },
   });
   if (!doctor) throw new ConsultationError('DOCTOR_NOT_FOUND', 404);
+
+  // Prevent internal test doctors from appearing as real services in production or public rollout (§18)
+  if (
+    isTestDoctorProfile(doctor) &&
+    (process.env.NODE_ENV === 'production' || process.env.CARE_ROLLOUT_STAGE === '5') &&
+    process.env.CARE_ALLOW_TEST_DOCTORS !== 'true'
+  ) {
+    throw new ConsultationError('DOCTOR_NOT_FOUND', 404);
+  }
+
   const doctorActive =
     doctor.pmdcVerifiedAt != null &&
     doctor.user.accountStatus === 'active' &&

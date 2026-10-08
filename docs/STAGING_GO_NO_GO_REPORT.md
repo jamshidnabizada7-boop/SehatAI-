@@ -65,20 +65,22 @@ bun x prisma migrate deploy
 
 ## 3. Marketplace Gating & Test Profile Containment
 
-To prevent test doctor profiles and simulated payments from ever being exposed to real patients as genuine clinical services, strict multi-layer guardrails were implemented:
+To prevent test doctor profiles and simulated payments from ever being exposed to real patients as genuine clinical services, strict multi-layer guardrails were implemented and verified:
 
-1. **Test Doctor Detection (`src/server/care/marketplace.ts`):**
-   - Function `isTestDoctorProfile(doctor)` checks PM&DC numbers (`TEST-`, `STG-`, `DEMO-`, `SIM-`), email domains (`@test.local`, `@example.com`, `@local.test`), and test keywords in names.
+1. **Comprehensive Test Doctor Detection (`src/server/care/marketplace.ts`):**
+   - Function `isTestDoctorProfile(doctor)` checks PM&DC numbers (`TEST-`, `STG-`, `DEMO-`, `SIM-`, `MOCK-`, `DUMMY-`, `STAGE-`, `STAGING-`), email domains (`@test.local`, `@local.test`, `@example.com`, `@test.com`, `@example.org`), email patterns (`test-`, `test_`, `staging-`, `+test@`), and test keywords in names (`[TEST]`, `[STAGING]`, `(test)`, `test doctor`, `mock doctor`, `staging specialist`).
    - Public marketplace search (`listMarketplaceDoctors`) defaults to `includeTest: false`, completely omitting test doctors from patient search results.
    - When test profiles are explicitly retrieved in non-production environments, they are stamped with:
      - `isTestProfile: true`
      - `testDisclaimer: 'TEST PROFILE — NOT A REAL CLINICAL SERVICE'`
 2. **Production Doctor Detail Guard (`src/app/api/care/doctors/[id]/route.ts`):**
-   - In `NODE_ENV === 'production'`, requests for test doctor profiles return `404 NOT_FOUND` with message `"This profile is a staging test fixture and is not available in production."`
-3. **Mock Payment Isolation (`src/server/care/payments/registry.ts`, `payment-service.ts`):**
+   - In `NODE_ENV === 'production'` or rollout stage 5, requests for test doctor profiles return `404 NOT_FOUND` with message `"This profile is a staging test fixture and is not available in production."`
+3. **Consultation Booking Gate (`src/server/care/consultation-service.ts`):**
+   - In `createConsultation`, test doctor fixtures are hard-blocked from bookings in `NODE_ENV === 'production'` or rollout stage 5 unless `CARE_ALLOW_TEST_DOCTORS === 'true'`, throwing `DOCTOR_NOT_FOUND` (404) to ensure fake doctor fixtures cannot be booked or paid for as real consultations.
+4. **Mock Payment Isolation (`src/server/care/payments/registry.ts`, `payment-service.ts`, `route.ts`):**
    - `MockPaymentProvider` is annotated with `isMock: true`.
    - Hard-blocked in production: `CARE_ALLOW_MOCK_PAYMENTS="false"` throws `PAYMENT_METHOD_DISABLED` (403) if attempted outside non-production environments.
-   - Checkout responses explicitly include:
+   - Checkout sessions (`createCheckoutForConsultation`) and payment lookup (`GET /api/care/payments`) explicitly include:
      - `isMockPayment: true`
      - `mockNotice: 'SIMULATION ONLY: No real money is charged.'`
 
@@ -100,12 +102,13 @@ Emergency contact numbers and routing logic were re-verified against primary off
 - **Humanitarian Helpline:** `410` (Awaaz Afghanistan multi-agency humanitarian helpline).
 - **Non-Kabul Provincial Routing:** Queries originating from provinces outside Kabul (e.g., Herat, Kandahar, Balkh) route patients directly to provincial regional hospital emergency rooms rather than attempting Kabul 102 dispatch.
 - **Script Autodetection:** Dari/Pashto and Arabic-script emergency queries resolve automatically to the Afghanistan jurisdiction without requiring explicit country code query params.
+- **AI Triage & Matching Route (`POST /api/care/match`):** Fully integrated with `getEmergencyNumbers(country, city)` and location autodetector; Afghan emergency intakes return Kabul 102 / MoPH 166 without leaking Pakistan 1122 lines.
 
 ---
 
 ## 5. End-to-End Consultation Staging Lifecycle
 
-All 10 steps of the staging consultation lifecycle were executed against the isolated staging PostgreSQL instance in `tests/care/live-staging-integration.test.ts`:
+All 10 core steps and edge-case lifecycle stages were executed against the isolated staging PostgreSQL instance in `tests/care/live-staging-integration.test.ts`:
 
 ```
 +----------------------------------------------------------------------------------------------------+
@@ -119,8 +122,9 @@ All 10 steps of the staging consultation lifecycle were executed against the iso
   [6] Private Attachments -> AES-256-GCM encrypted document upload, SHA-256 hash, signed read grant (300s)
   [7] Clinical Summary    -> SOAP ClinicalNote recorded, doctor completes consultation (COMPLETED)
   [8] Earnings Maturity   -> 72h payout gate simulated, earnings promoted to AVAILABLE, ledger balanced
-  [9] Refund Processing   -> Row-locked atomic refund, compensating ledger reversal, double-refund blocked
+  [9] Refund Processing   -> Row-locked atomic refund, dynamic account debit (AVAILABLE/PENDING), 0 wallet
  [10] Doctor Payout Sim   -> Atomic DoctorProfile lock, payout requested for net earnings, balance drained
+ [11] Concurrency Defense -> Simultaneous refund vs maturity promotion verified without deadlock or imbalance
 +----------------------------------------------------------------------------------------------------+
 ```
 
@@ -128,7 +132,7 @@ All 10 steps of the staging consultation lifecycle were executed against the iso
 
 | Step | Operation | Result | Verification Detail |
 | :--- | :--- | :---: | :--- |
-| **2.1** | Booking Consultation | **PASS** | Validates doctor availability, creates consultation in `PAYMENT_PENDING` state with duration 30m and price PKR 2,500.00. |
+| **2.1** | Booking Consultation | **PASS** | Validates doctor availability, creates consultation in `PAYMENT_PENDING` state with duration 30m and price PKR 2,500.00. Test doctors are rejected in production. |
 | **2.2** | Sandbox Checkout & Webhook | **PASS** | `createCheckoutForConsultation` emits simulation notice; `processWebhook` verifies HMAC-SHA256 signature, transitions payment to `PAID`, transitions consultation to `REQUESTED`, posts balanced ledger entries. |
 | **2.3** | Doctor Acceptance | **PASS** | `doctorAccept` checks ownership, transitions consultation through `DOCTOR_ACCEPTED` to `SCHEDULED`, and enqueues patient notification. |
 | **2.4** | Authenticated Chat & RBAC | **PASS** | Bilateral message exchange between patient and doctor; non-participant intrusion attempt strictly rejected with 403. |
@@ -136,8 +140,9 @@ All 10 steps of the staging consultation lifecycle were executed against the iso
 | **2.6** | Private Document Exchange | **PASS** | Lab report PDF uploaded to private storage provider; AES-256-GCM encrypted on disk; SHA-256 checksum matched; 300s signed grant verified; path traversal rejected (`../../../etc/passwd`). |
 | **2.7** | Clinical Completion | **PASS** | §43 clinical documentation guard enforced; SOAP/Summary `ClinicalNote` authored by doctor; `completeConsultation` sets status `COMPLETED`; post-completion rejoin rejected. |
 | **2.8** | Earnings Maturity & Ledger | **PASS** | Fast-forwarded availability gate; `promoteDueEarnings` transitions funds to `DOCTOR_AVAILABLE`; global ledger double-entry zero-imbalance invariant verified across all currencies. |
-| **2.9** | Refund & Compensating Ledger | **PASS** | `requestRefund` acquires row lock on `Payment`, transitions to `REFUNDED`, generates compensating ledger legs reversing doctor earning and platform fee; concurrent double-refund blocked with 409. |
+| **2.9** | Refund & Compensating Ledger | **PASS** | `requestRefund` acquires row lock on `Payment`, transitions to `REFUNDED`, dynamically reverses `DOCTOR_AVAILABLE` for matured earnings and `DOCTOR_PENDING` for pending earnings, leaving wallet balance exactly 0 available and 0 pending; concurrent double-refund blocked with 409. |
 | **2.10** | Doctor Payout Simulation | **PASS** | `requestPayout` acquires row lock on `DoctorProfile`, claims available earnings into `Payout` record, transitions earnings to `PAID`, drains balance; subsequent request fails with 409 `NOTHING_AVAILABLE`. |
+| **2.11** | Concurrency Under Load | **PASS** | Simultaneous concurrent refund and earnings promotion against PostgreSQL pool tested; row locks on `Payment` and atomic `doctorEarning` claims prevent race conditions and maintain ledger balance. |
 
 ---
 
@@ -145,7 +150,7 @@ All 10 steps of the staging consultation lifecycle were executed against the iso
 
 The background notification pipeline was tested to prove reliable delivery and failure recovery:
 - **Batch Processing:** `processNotificationOutbox(batchSize)` processes pending jobs and transitions them to `DELIVERED`.
-- **Atomic Concurrency:** Outbox queue uses `SELECT ... FOR UPDATE SKIP LOCKED` inside transactions, ensuring parallel worker processes never claim duplicate notifications.
+- **Atomic Concurrency:** Outbox queue uses genuine PostgreSQL `WITH next_jobs AS (SELECT id FROM "NotificationOutbox" WHERE status = 'PENDING' AND "nextAttemptAt" <= $1 ORDER BY "createdAt" ASC LIMIT $2 FOR UPDATE SKIP LOCKED) UPDATE ... RETURNING ...` atomic query, preventing duplicate dispatches across parallel workers.
 - **Stuck Job Recovery:** Function `recoverStuckJobs()` detects jobs stranded in `PROCESSING` status with stale timestamps (>5 minutes) and resets them to `PENDING`.
 - **Dead-Letter Queue Replay:** Function `replayDeadLetterJobs()` takes failed notifications exceeding max attempts (5) from `DEAD_LETTER` and replays them into `PENDING` with cleared error counters for administrative retry.
 
@@ -171,14 +176,14 @@ While the isolated staging environment is fully functional, production launch is
 
 | Test Suite | File / Scope | Total Tests | Passed | Failed | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| **Live Staging Integration** | `tests/care/live-staging-integration.test.ts` | 14 | 14 | 0 | **PASS** |
+| **Live Staging Integration** | `tests/care/live-staging-integration.test.ts` | 17 | 17 | 0 | **PASS** |
 | **Care Connect Core** | `tests/care/care-unit.test.ts`<br>`tests/care/care-integration.test.ts`<br>`tests/care/postgres-concurrency.test.ts` | 77 | 77 | 0 | **PASS** |
 | **Clinical Safety & Localization** | `tests/tests/safety/` (21 files)<br>`tests/safety/afghanistan-emergency-audit.test.ts` | 575 | 575 | 0 | **PASS** |
 | **Security & Authorization Red Team** | `tests/security/authorization-red-team.test.ts` | 18 | 18 | 0 | **PASS** |
 | **Care End-to-End Smoke** | `tests/care/care-smoke.ts` | 1 | 1 | 0 | **PASS** |
 | **TypeScript Typecheck** | `bun run typecheck` (`tsc --noEmit`) | Full Repo | Full Repo | 0 | **PASS** |
 | **Next.js Production Build** | `bun run build` (Turbopack, Next 16.1.3) | 94 routes | 94 routes | 0 | **PASS** |
-| **TOTAL** | **Entire Test & Build Arsenal** | **684+** | **684+** | **0** | **100% PASS** |
+| **TOTAL** | **Entire Test & Build Arsenal** | **688+** | **688+** | **0** | **100% PASS** |
 
 ---
 

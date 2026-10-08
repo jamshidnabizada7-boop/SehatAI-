@@ -120,29 +120,63 @@ export async function replayDeadLetterJobs(options?: { ids?: string[]; limit?: n
 export async function processNotificationOutbox(batchSize = 20): Promise<{ processed: number; delivered: number; deadLetter: number; reclaimed: number }> {
   const reclaimed = await recoverStuckJobs();
   const now = new Date();
-  const queue = await db.notificationOutbox.findMany({
-    where: {
-      status: 'PENDING',
-      nextAttemptAt: { lte: now },
-    },
-    orderBy: { createdAt: 'asc' },
-    take: batchSize,
-  });
+  let claimedJobs: Array<{
+    id: string;
+    notificationId: string;
+    channel: string;
+    payloadJson: string;
+    attempts: number;
+    maxAttempts: number;
+    status: string;
+    lastError: string | null;
+    nextAttemptAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = [];
+
+  try {
+    // Atomic queue claim with PostgreSQL FOR UPDATE SKIP LOCKED (§17)
+    claimedJobs = await db.$queryRawUnsafe<typeof claimedJobs>(
+      `WITH next_jobs AS (
+        SELECT id FROM "NotificationOutbox"
+        WHERE status = 'PENDING' AND "nextAttemptAt" <= $1
+        ORDER BY "createdAt" ASC
+        LIMIT $2
+        FOR UPDATE SKIP LOCKED
+      )
+      UPDATE "NotificationOutbox"
+      SET status = 'CLAIMED', "updatedAt" = $3
+      FROM next_jobs
+      WHERE "NotificationOutbox".id = next_jobs.id
+      RETURNING "NotificationOutbox".*;`,
+      now,
+      batchSize,
+      now,
+    );
+  } catch {
+    const queue = await db.notificationOutbox.findMany({
+      where: {
+        status: 'PENDING',
+        nextAttemptAt: { lte: now },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: batchSize,
+    });
+
+    for (const item of queue) {
+      const claim = await db.notificationOutbox.updateMany({
+        where: { id: item.id, status: 'PENDING' },
+        data: { status: 'CLAIMED', updatedAt: new Date() },
+      });
+      if (claim.count > 0) claimedJobs.push(item);
+    }
+  }
 
   let processed = 0;
   let delivered = 0;
   let deadLetter = 0;
 
-  for (const item of queue) {
-    // Atomic queue claim (§17): prevent duplicate dispatches in concurrent workers
-    const claim = await db.notificationOutbox.updateMany({
-      where: { id: item.id, status: 'PENDING' },
-      data: { status: 'CLAIMED', updatedAt: new Date() },
-    });
-    if (claim.count === 0) {
-      // Already claimed by another worker instance
-      continue;
-    }
+  for (const item of claimedJobs) {
 
     processed++;
     try {

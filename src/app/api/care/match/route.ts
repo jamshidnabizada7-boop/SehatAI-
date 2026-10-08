@@ -9,14 +9,17 @@ import { classifyFromPipelineSignals } from '@/lib/care/specialties';
 import { listMarketplaceDoctors } from '@/server/care/marketplace';
 import { getCareSession } from '@/lib/care/care-auth';
 import { rateLimit, clientIpFrom, RATE_LIMITS } from '@/lib/care/rate-limit';
-import { EMERGENCY_NUMBERS } from '@/data/lexicon';
+import { getEmergencyNumbers } from '@/data/lexicon';
 export const runtime = 'nodejs';
+
+const afLocationRegex = /(?:^|[^\p{L}\p{N}])(afghanistan|kabul|herat|kandahar|mazar|jalalabad|افغانستان|کابل|هرات|ہرات|قندھار|قندهار|مزار|جلال\s*آباد|جلال\s*اباد)(?:$|[^\p{L}\p{N}])/iu;
+const afRegionRegex = /(?:^|[^\p{L}\p{N}])(kabul|herat|kandahar|mazar|jalalabad|کابل|هرات|ہرات|قندھار|قندهار|مزار|جلال\s*آباد|جلال\s*اباد)(?:$|[^\p{L}\p{N}])/iu;
 
 export async function POST(req: NextRequest) {
   const rl = await rateLimit(`care-match:${clientIpFrom(req)}`, RATE_LIMITS.aiEndpoints.limit, RATE_LIMITS.aiEndpoints.windowSeconds);
   if (!rl.allowed) return NextResponse.json({ error: 'RATE_LIMITED' }, { status: 429 });
 
-  let body: { text?: string; consultationType?: string };
+  let body: { text?: string; consultationType?: string; country?: string; city?: string };
   try {
     body = await req.json();
   } catch {
@@ -31,10 +34,14 @@ export async function POST(req: NextRequest) {
   const l0 = runL0Triage(text);
   const redFlags = matchRedFlags(text);
   if (l0.level === 'EMERGENCY') {
+    const resolvedCountry = body.country ?? (afLocationRegex.test(text) ? 'AF' : 'PK');
+    const resolvedRegion = body.city ?? (text.match(afRegionRegex)?.[1] ?? undefined);
+    const emergencyNumbers = getEmergencyNumbers(resolvedCountry, resolvedRegion);
+
     return NextResponse.json({
       emergency: true,
       triage: { level: l0.level, reason: l0.reason, signals: redFlags.map((r) => r.pattern.category) },
-      emergencyNumbers: EMERGENCY_NUMBERS,
+      emergencyNumbers,
       message: 'Emergency detected — call emergency services now. No booking required.',
     });
   }
