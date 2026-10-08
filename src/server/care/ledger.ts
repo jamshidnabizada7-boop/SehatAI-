@@ -107,40 +107,47 @@ export async function postTransaction(input: PostTransactionInput): Promise<{ po
     }
   }
 
-  return db.$transaction(async (tx) => {
-    // Idempotency probe: leg keys are deterministic `${key}:${index}` —
-    // if leg 0 exists, this transaction was already posted → replay, skip.
-    const existing = await tx.ledgerEntry.findFirst({
-      where: { idempotencyKey: `${input.idempotencyKey}:0` },
-      select: { id: true },
-    });
-    if (existing) return { posted: false, reference: input.reference };
+  try {
+    return await db.$transaction(async (tx) => {
+      // Idempotency probe: leg keys are deterministic `${key}:${index}` —
+      // if leg 0 exists, this transaction was already posted → replay, skip.
+      const existing = await tx.ledgerEntry.findFirst({
+        where: { idempotencyKey: `${input.idempotencyKey}:0` },
+        select: { id: true },
+      });
+      if (existing) return { posted: false, reference: input.reference };
 
-    for (const [index, leg] of input.legs.entries()) {
-      const account = await getOrCreateAccount({
-        kind: leg.accountKind,
-        currency: leg.currency,
-        ownerDoctorProfileId: leg.ownerDoctorProfileId ?? null,
-        tx,
-      });
-      await tx.ledgerEntry.create({
-        data: {
-          accountId: account.id,
-          direction: leg.direction,
-          amountMinor: leg.amountMinor,
-          currency: leg.currency.toUpperCase(),
-          consultationId: input.consultationId,
-          paymentId: input.paymentId,
-          payoutId: input.payoutId,
-          refundId: input.refundId,
-          reference: input.reference,
-          idempotencyKey: `${input.idempotencyKey}:${index}`,
-          memo: leg.memo,
-        },
-      });
+      for (const [index, leg] of input.legs.entries()) {
+        const account = await getOrCreateAccount({
+          kind: leg.accountKind,
+          currency: leg.currency,
+          ownerDoctorProfileId: leg.ownerDoctorProfileId ?? null,
+          tx,
+        });
+        await tx.ledgerEntry.create({
+          data: {
+            accountId: account.id,
+            direction: leg.direction,
+            amountMinor: leg.amountMinor,
+            currency: leg.currency.toUpperCase(),
+            consultationId: input.consultationId,
+            paymentId: input.paymentId,
+            payoutId: input.payoutId,
+            refundId: input.refundId,
+            reference: input.reference,
+            idempotencyKey: `${input.idempotencyKey}:${index}`,
+            memo: leg.memo,
+          },
+        });
+      }
+      return { posted: true, reference: input.reference };
+    }, { timeout: 15_000 });
+  } catch (err: any) {
+    if (err.code === 'P2002' && (err.meta?.target?.includes('idempotencyKey') || String(err).includes('idempotencyKey'))) {
+      return { posted: false, reference: input.reference };
     }
-    return { posted: true, reference: input.reference };
-  }, { timeout: 15_000 });
+    throw err;
+  }
 }
 
 export interface LedgerBalance {

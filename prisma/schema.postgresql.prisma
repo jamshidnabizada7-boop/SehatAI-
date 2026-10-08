@@ -1,0 +1,1432 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // LOCAL DEVELOPMENT: sqlite (no server needed).
+  // PRODUCTION: switch to "postgresql" (Neon) â€” schema contains no
+  // postgres-only constructs; see docs/CARE_CONNECT_CURRENT_STATE.md.
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Phase 0 â€” Authentication (NextAuth.js credentials provider)
+// Doctor/Patient identity separation (PLAN-DOCTOR-LOGIN-SEPARATION)
+// ============================================================
+model User {
+  id                     String                    @id @default(cuid())
+  email                  String                    @unique
+  name                   String?
+  passwordHash           String?
+  role                   String                    @default("user") // user | doctor | admin | support | finance | clinical_admin | super_admin
+  accountStatus          String                    @default("active") // active | pending_verification | suspended | deleted
+  consentAt              DateTime? // Urdu consent timestamp; null = not consented
+  retentionDays          Int? // null = indefinite; otherwise auto-purge schedule
+  totpSecret             String? // Care Connect Â§55: TOTP 2FA for privileged roles (null = disabled)
+  totpEnabledAt          DateTime?
+  deletionRequestedAt    DateTime? // Care Connect Â§82 data lifecycle
+  retentionHoldUntil     DateTime?
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+  accounts               Account[]
+  sessions               Session[]
+  conversations          Conversation[]
+  profiles               PatientProfile[]
+  outcomes               OutcomeEntry[]
+  auditLogs              AuditLog[]
+  pushSubscriptions      PushSubscription[]
+  doctorProfile          DoctorProfile?
+  reviews                DoctorReview[]
+  appointments           Appointment[]
+  streak                 UserStreak?
+  labTests               LabTest[]
+  medicineOrders         MedicineOrder[]
+  communityPosts         CommunityPost[]
+  communityReplies       CommunityReply[]
+  chronicPrograms        ChronicProgram[]
+  dietPlans              DietPlan[]
+  insuranceClaims        InsuranceClaim[]
+  // Care Connect (additive relations)
+  consultationsAsPatient Consultation[]            @relation("ConsultationPatient")
+  consultationsAsDoctor  Consultation[]            @relation("ConsultationDoctor")
+  careParticipants       ConsultationParticipant[]
+  careMessages           ConsultationMessage[]
+  careNotifications      Notification[]
+  careFavorites          DoctorFavorite[]
+  careConsents           ConsentRecord[]
+  careReviews            Review[]                  @relation("ReviewAuthor")
+  careSubscriptions      Subscription[]
+  careFraudSignals       FraudSignal[]
+  carePayments           Payment[]                 @relation("PaymentPatient")
+  prescriptionsAsPatient Prescription[]            @relation("PrescriptionPatient")
+  clinicMemberships      ClinicMember[]
+}
+
+// ============================================================
+// Doctor identity (PMDC-verified). One-to-one with User (role=doctor).
+// Created at /auth/doctor/signup; verified by admin.
+// ============================================================
+model DoctorProfile {
+  id                     String                        @id @default(cuid())
+  userId                 String                        @unique
+  user                   User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pmdcNumber             String                        @unique // Pakistan Medical & Dental Council #
+  pmdcVerifiedAt         DateTime? // null = not yet verified
+  pmdcVerifiedBy         String? // admin userId
+  specialty              String // e.g. "Cardiology", "Family Medicine"
+  subSpecialty           String?
+  facilityName           String?
+  facilityCity           String?
+  yearsExperience        Int?
+  languages              String                        @default("[]") // JSON array: ["en","ur"]
+  consultationFee        Int? // PKR, optional (legacy free-booking flow)
+  bio                    String? // short, for patient-facing directory
+  avatarUrl              String?
+  gender                 String? // Care Connect Â§18 filter: male | female
+  country                String? // Care Connect Â§15: licensing jurisdiction (ISO 3166-1 alpha-2)
+  careStatus             String? // Care Connect Â§14: null = legacy (derive from pmdcVerifiedAt/accountStatus); DRAFT | PENDING_VERIFICATION | MORE_INFO_REQUIRED | VERIFIED | ACTIVE | SUSPENDED | REJECTED | EXPIRED
+  onlineNow              Boolean                       @default(false) // Care Connect Â§47 instant availability
+  onlineNowUntil         DateTime?
+  payoutMethod           String? // Care Connect Â§13: JSON { type, label, last4 } â€” NO secrets
+  clinicId               String? // Care Connect Â§69 readiness only
+  createdAt              DateTime                      @default(now())
+  updatedAt              DateTime                      @updatedAt
+  verificationDocs       DoctorVerificationDoc[]
+  patientConsents        PatientConsentForDoctor[]
+  reviews                DoctorReview[]
+  appointments           Appointment[]
+  // Care Connect (additive relations)
+  services               DoctorService[]
+  availability           DoctorAvailability[]
+  availabilityExceptions DoctorAvailabilityException[]
+  jurisdictions          DoctorJurisdiction[]
+  languagesIndexed       DoctorLanguage[]
+  credentials            DoctorCredential[]
+  careReviews            Review[]                      @relation("ReviewDoctor")
+  favorites              DoctorFavorite[]
+  payouts                Payout[]
+  earnings               DoctorEarning[]
+  ledgerAccounts         LedgerAccount[]
+  consultations          Consultation[]                @relation("ConsultationDoctorProfile")
+  prescriptions          Prescription[]
+
+  @@index([pmdcNumber])
+}
+
+// Uploaded verification evidence (PMDC card / CNIC / degree / experience letter)
+model DoctorVerificationDoc {
+  id              String        @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  docType         String // pmdc_card | cnic | degree | experience_letter
+  fileName        String
+  fileUrl         String // stored under /uploads (local disk in v1; S3 in prod)
+  mimeType        String
+  uploadedAt      DateTime      @default(now())
+  reviewedAt      DateTime?
+  reviewedBy      String? // admin userId
+  status          String        @default("pending") // pending | approved | rejected
+  notes           String?
+
+  @@index([doctorProfileId])
+}
+
+// Consent boundary: a doctor can only see a patient's data if the patient
+// explicitly granted access (or has an active conversation with them).
+model PatientConsentForDoctor {
+  id            String        @id @default(cuid())
+  patientId     String
+  doctorId      String
+  doctorProfile DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  grantedAt     DateTime      @default(now())
+  revokedAt     DateTime?
+  scope         String        @default("read_history") // read_history | soap_draft | follow_up
+
+  @@unique([patientId, doctorId, scope])
+  @@index([doctorId])
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String // credentials | google
+  providerAccountId String
+  refreshToken      String?
+  accessToken       String?
+  expiresAt         Int?
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String   @unique
+  expires      DateTime
+  createdAt    DateTime @default(now())
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Phase 0 â€” Patient profile (server-stored, encrypted-at-rest via SQLCipher;
+// mirrors the localStorage HealthProfile so the pipeline can read it server-side).
+model PatientProfile {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ageBand     String   @default("undisclosed")
+  sex         String   @default("undisclosed")
+  conditions  String   @default("[]") // JSON array of condition ids
+  allergies   String   @default("[]") // JSON array of strings
+  medications String   @default("[]") // JSON array of strings
+  pregnant    Boolean  @default(false)
+  iceContacts String   @default("[]") // JSON array
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId])
+}
+
+// Phase 1 â€” Outcome capture (closed-loop follow-up): T+24h/72h/7d "how are you?"
+model OutcomeEntry {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageId      String? // the assistant message that triggered the follow-up
+  conversationId String?
+  scheduledFor   DateTime // T+24h / T+72h / T+7d
+  status         String    @default("pending") // pending | captured | escalated | resolved
+  outcome        String? // better | same | worse | saw_doctor | went_to_er | unresolved
+  notes          String?
+  capturedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([userId, status, scheduledFor])
+}
+
+// Phase 1 â€” Audit log (every PHI read/write/share + every constellation decision)
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String // auth.login | profile.read | profile.update | outcome.captured | constellation.veto | data.delete | pipeline.run
+  resource  String?
+  meta      String? // JSON
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+// Phase 2 â€” Push notification subscriptions (Web Push API)
+model PushSubscription {
+  id             String   @id @default(cuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint       String   @unique // PushSubscription.endpoint
+  keys           String // JSON: { p256dh, auth }
+  expirationTime Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// Conversations & messages with full pipeline metadata
+model Conversation {
+  id           String    @id @default(cuid())
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String
+  language     String    @default("en")
+  offline      Boolean   @default(false)
+  startedAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  messages     Message[]
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String // 'user' | 'assistant'
+  content        String
+  language       String        @default("en")
+  triageLevel    String? // EMERGENCY | URGENT | ROUTINE | SELF_CARE
+  redFlags       String? // JSON array
+  citations      String? // JSON array
+  pipelineMeta   String? // JSON: per-stage latency, engine, validator verdict, chunk ids
+  emergency      Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  triageEvents   TriageEvent[]
+  feedback       Feedback[]
+}
+
+model TriageEvent {
+  id             String   @id @default(cuid())
+  messageId      String
+  message        Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  level          String
+  signals        String // JSON array
+  engine         String // 'L0' | 'L1' | 'offline-ts' | 'combined'
+  shortCircuited Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+// Reminders (med / vax / anc)
+model Reminder {
+  id           String   @id @default(cuid())
+  sessionToken String
+  type         String // 'med' | 'vax' | 'anc' | 'other'
+  title        String
+  notes        String?
+  timeOfDay    String // HH:MM
+  days         String // JSON number[] 0-6, empty = daily
+  nextDue      DateTime
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Healthcare facilities seed
+model Facility {
+  id          String  @id @default(cuid())
+  name        String
+  nameUr      String?
+  type        String // hospital | clinic | bhuc | maternity | pharmacy
+  lat         Float
+  lng         Float
+  city        String
+  district    String
+  phone       String?
+  services    String // JSON array
+  emergency24 Boolean @default(false)
+  source      String
+  verified    Boolean @default(false)
+}
+
+// Eval harness
+model EvalRun {
+  id           String       @id @default(cuid())
+  startedAt    DateTime     @default(now())
+  suiteVersion String
+  durationMs   Int
+  summary      String // JSON EvalRunSummary
+  results      EvalResult[]
+}
+
+model EvalResult {
+  id       String  @id @default(cuid())
+  runId    String
+  run      EvalRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  caseId   String
+  category String
+  input    String
+  language String
+  expected String
+  actual   String
+  passed   Boolean
+  metric   String // JSON
+}
+
+// Verified knowledge corpus (mirrors src/data/corpus.ts for provenance queries)
+model Document {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  title      String
+  publisher  String
+  license    String
+  sourceUrl  String
+  language   String   @default("en")
+  verifiedAt String
+  topic      String
+  audience   String   @default("general")
+  baseLevel  String
+  createdAt  DateTime @default(now())
+}
+
+// Feedback on assistant messages
+model Feedback {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  rating    Int // 1 helpful | 0 not helpful
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+// Offline pack versioning
+model PackVersion {
+  id        String   @id @default(cuid())
+  version   String
+  manifest  String // JSON
+  createdAt DateTime @default(now())
+}
+
+// SehatAI â€” Health Blog (health education articles, Pakistan-specific)
+model BlogPost {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  content     String // markdown
+  category    String // nutrition | maternal | child-health | chronic | emergency | seasonal
+  tags        String   @default("[]") // JSON array
+  authorName  String   @default("SehatAI Editorial")
+  imageUrl    String?
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, publishedAt])
+}
+
+model DoctorReview {
+  id              String        @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  patientId       String
+  patient         User          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  rating          Int // 1-5 stars
+  comment         String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([doctorProfileId, patientId]) // one review per patient per doctor
+  @@index([doctorProfileId])
+}
+
+model Appointment {
+  id              String        @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  patientId       String
+  patient         User          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  scheduledAt     DateTime
+  reason          String?
+  status          String        @default("requested") // requested | confirmed | declined | cancelled | completed
+  doctorNotes     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([doctorProfileId, status])
+  @@index([patientId, status])
+}
+
+model UserStreak {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  totalPoints    Int       @default(0)
+  lastActiveDate DateTime?
+  badges         String    @default("[]") // JSON array of badge IDs
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model LabTest {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  labName     String // Chughtai Lab | Aga Khan Lab | Dow Lab
+  testName    String // CBC | Lipid Profile | Blood Sugar | etc.
+  status      String    @default("requested") // requested | scheduled | completed | cancelled
+  scheduledAt DateTime?
+  reportUrl   String? // lab report PDF URL when completed
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, status])
+}
+
+model MedicineOrder {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pharmacyName    String // Dawaai | InstaCare
+  items           String // JSON array: [{ name, quantity, dosage }]
+  prescriptionUrl String? // uploaded prescription image
+  status          String   @default("placed") // placed | confirmed | dispatched | delivered | cancelled
+  totalAmount     Int? // PKR
+  deliveryAddress String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, status])
+}
+
+model CommunityPost {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  content     String
+  category    String           @default("general") // general | maternal | child-health | chronic | mental-health
+  upvotes     Int              @default(0)
+  replies     Int              @default(0)
+  isModerated Boolean          @default(false)
+  isPinned    Boolean          @default(false)
+  replyList   CommunityReply[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([category, isModerated, createdAt])
+}
+
+model CommunityReply {
+  id            String        @id @default(cuid())
+  postId        String
+  post          CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content       String
+  isModerated   Boolean       @default(false)
+  isDoctorReply Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+
+  @@index([postId, createdAt])
+}
+
+model ChronicProgram {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programType    String // diabetes | hypertension | smoking-cessation
+  currentWeek    Int      @default(1)
+  totalWeeks     Int      @default(12)
+  status         String   @default("active") // active | completed | paused | cancelled
+  startDate      DateTime @default(now())
+  completedTasks String   @default("[]") // JSON array of task IDs
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, programType, status])
+}
+
+model DietPlan {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  condition     String // diabetes | hypertension | pregnancy | general | weight-loss
+  dailyCalories Int?
+  meals         String // JSON: { breakfast, lunch, dinner, snacks }
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, condition])
+}
+
+model InsuranceClaim {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider      String // Jubilee | Adamjee | EFU | IGI | Sehat Sahulat
+  policyNumber  String?
+  claimType     String // consultation | lab-test | medicine | procedure
+  amount        Int // PKR
+  status        String   @default("submitted") // submitted | approved | rejected | reimbursed
+  appointmentId String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, status])
+}
+
+// ############################################################
+// CARE CONNECT â€” commercial doctor marketplace & telemedicine
+// ADDITIVE module (docs/CARE_CONNECT_CURRENT_STATE.md plan).
+// Existing models above are the foundation and are NOT replaced.
+// Money = integer minor units. SQLite-compatible (no enums/arrays);
+// Postgres-portable.
+// ############################################################
+
+// ------------------------------------------------------------
+// Â§2 Feature flags (DB-backed runtime control; env provides defaults)
+// ------------------------------------------------------------
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique // CARE_ENABLED | CARE_PAYMENTS_ENABLED | ...
+  enabled     Boolean  @default(false)
+  scope       String   @default("global") // global | country:PK | country:AF ...
+  valueJson   String? // optional config payload
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
+// ------------------------------------------------------------
+// Â§14 Doctor onboarding state: services, availability, credentials
+// ------------------------------------------------------------
+model DoctorService {
+  id                 String         @id @default(cuid())
+  doctorProfileId    String
+  doctorProfile      DoctorProfile  @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  type               String // TEXT | AUDIO | VIDEO
+  title              String?
+  priceMinor         Int // integer minor units â€” never Float (Â§6)
+  currency           String         @default("PKR")
+  durationMinutes    Int            @default(15)
+  windowHours        Int? // TEXT: active messaging window (e.g. 24)
+  followUpGraceHours Int? // Â§22 read-only follow-up grace (e.g. 48)
+  enabled            Boolean        @default(true)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  consultations      Consultation[]
+
+  @@unique([doctorProfileId, type])
+  @@index([doctorProfileId, enabled])
+}
+
+model DoctorAvailability {
+  id              String        @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  weekday         Int // 0=Sunday .. 6=Saturday (UTC)
+  startMinute     Int // minutes from midnight UTC
+  endMinute       Int
+  slotMinutes     Int           @default(15)
+  bufferMinutes   Int           @default(0)
+  effectiveFrom   DateTime?
+  effectiveUntil  DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([doctorProfileId, weekday])
+}
+
+model DoctorAvailabilityException {
+  id              String        @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  date            String // YYYY-MM-DD (UTC calendar day)
+  kind            String        @default("UNAVAILABLE") // UNAVAILABLE | CUSTOM
+  startMinute     Int?
+  endMinute       Int?
+  reason          String?
+  createdAt       DateTime      @default(now())
+
+  @@index([doctorProfileId, date])
+}
+
+model DoctorJurisdiction {
+  id              String        @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  countryCode     String // ISO 3166-1 alpha-2
+  status          String        @default("PENDING") // LICENSED | PENDING | REVOKED
+  verifiedAt      DateTime?
+  verifiedById    String?
+  evidenceJson    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([doctorProfileId, countryCode])
+  @@index([countryCode, status])
+}
+
+model DoctorLanguage {
+  id              String        @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  language        String // en | ur | roman | ps | fa | pa | sd
+  proficiency     String? // native | fluent | conversational
+
+  @@unique([doctorProfileId, language])
+  @@index([language])
+}
+
+model DoctorCredential {
+  id                 String        @id @default(cuid())
+  doctorProfileId    String
+  doctorProfile      DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  kind               String // MEDICAL_LICENSE | DEGREE | IDENTITY | GOOD_STANDING
+  registrationNumber String?
+  registeredName     String?
+  qualification      String?
+  issuingBody        String? // e.g. PM&DC
+  country            String?
+  status             String        @default("PENDING") // PENDING | VERIFIED | REJECTED | EXPIRED
+  verificationMethod String        @default("MANUAL_ADMIN") // MANUAL_ADMIN | REGISTRY_API
+  verifiedAt         DateTime?
+  verifiedById       String?
+  evidenceUrl        String? // private storage key (never /public)
+  notes              String?
+  expiresAt          DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([doctorProfileId, status])
+}
+
+// ------------------------------------------------------------
+// Â§3 Central Consultation entity + lifecycle
+// ------------------------------------------------------------
+model Consultation {
+  id                        String         @id @default(cuid())
+  patientId                 String
+  patient                   User           @relation("ConsultationPatient", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorProfileId           String
+  doctorProfile             DoctorProfile  @relation("ConsultationDoctorProfile", fields: [doctorProfileId], references: [id])
+  doctorUserId              String // denormalized doctor User.id for authorization queries
+  doctorUser                User           @relation("ConsultationDoctor", fields: [doctorUserId], references: [id])
+  serviceId                 String?
+  service                   DoctorService? @relation(fields: [serviceId], references: [id])
+  type                      String // TEXT | AUDIO | VIDEO
+  status                    String         @default("DRAFT") // see CONSULTATION_STATES in src/lib/care/constants.ts
+  priceMinor                Int?
+  currency                  String?
+  patientCountry            String? // Â§17 declared physical location (not inferred from IP)
+  doctorCountry             String?
+  jurisdictionKey           String? // resolved JurisdictionPolicy key (Â§16)
+  policyVersion             String?
+  scheduledAt               DateTime?
+  windowOpensAt             DateTime? // messaging window (Â§22)
+  windowClosesAt            DateTime?
+  graceClosesAt             DateTime? // read-only follow-up grace
+  startedAt                 DateTime?
+  completedAt               DateTime?
+  cancelledReason           String?
+  cancellationPolicyVersion String?
+  instant                   Boolean        @default(false)
+  instantExpiresAt          DateTime?
+  clinicId                  String? // Â§69 readiness only
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+
+  participants  ConsultationParticipant[]
+  messages      ConsultationMessage[]
+  attachments   ConsultationAttachment[]
+  calls         ConsultationCall[]
+  statusEvents  ConsultationStatusEvent[]
+  intake        ClinicalIntake?
+  handoff       ClinicalHandoff?
+  notes         ClinicalNote[]
+  prescriptions Prescription[]
+  payments      Payment[]
+  refunds       Refund[]
+  reviews       Review[]
+  disputes      Dispute[]
+  auditEvents   ConsultationAuditEvent[]
+  translations  Translation[]
+  ledgerEntries LedgerEntry[]
+  earnings      DoctorEarning[]
+  platformFees  PlatformFee[]
+
+  @@index([patientId, status])
+  @@index([doctorProfileId, status])
+  @@index([status, updatedAt])
+}
+
+model ConsultationParticipant {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String // PATIENT | DOCTOR | SUPPORT | FINANCE | CLINICAL_ADMIN | ADMIN | SUPER_ADMIN
+  joinedAt       DateTime?
+  leftAt         DateTime?
+  lastReadAt     DateTime?
+
+  @@unique([consultationId, userId])
+  @@index([userId])
+}
+
+model ConsultationMessage {
+  id               String                   @id @default(cuid())
+  consultationId   String
+  consultation     Consultation             @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  senderId         String?
+  sender           User?                    @relation(fields: [senderId], references: [id])
+  senderRole       String // PATIENT | DOCTOR | SYSTEM
+  kind             String                   @default("text") // text | voice | system | correction
+  body             String
+  language         String                   @default("en")
+  hiddenForPatient Boolean                  @default(false) // Â§24 user-visible removal, no hard delete
+  hiddenForDoctor  Boolean                  @default(false)
+  deletedAt        DateTime?
+  correctedById    String? // Â§23 correction pointer, original immutable
+  flagged          Boolean                  @default(false) // Â§61 contact-info detection (flag only)
+  flaggedReason    String?
+  meta             String? // JSON
+  attachments      ConsultationAttachment[]
+  translations     Translation[]
+  createdAt        DateTime                 @default(now())
+
+  @@index([consultationId, createdAt])
+  @@index([senderId])
+}
+
+model ConsultationAttachment {
+  id             String               @id @default(cuid())
+  consultationId String
+  consultation   Consultation         @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  messageId      String?
+  message        ConsultationMessage? @relation(fields: [messageId], references: [id])
+  kind           String // document | image | voice
+  fileName       String
+  mimeType       String
+  sizeBytes      Int
+  storageKey     String // PRIVATE storage key (Â§38) â€” never /public
+  checksumSha256 String
+  uploadedById   String
+  scanStatus     String               @default("pending") // pending | clean | infected | skipped
+  createdAt      DateTime             @default(now())
+
+  @@index([consultationId])
+}
+
+model ConsultationCall {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  provider       String       @default("webrtc-local") // webrtc-local | livekit
+  roomId         String
+  state          String       @default("RINGING") // RINGING | ACTIVE | ENDED | FAILED | FELL_BACK
+  fallbackTo     String? // AUDIO | TEXT (Â§28 low-bandwidth ladder)
+  startedAt      DateTime?
+  endedAt        DateTime?
+  endedReason    String?
+  qualityEvents  String? // JSON
+  createdAt      DateTime     @default(now())
+
+  @@index([consultationId])
+}
+
+model ConsultationStatusEvent {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  fromStatus     String?
+  toStatus       String
+  actorId        String?
+  actorRole      String?
+  reason         String?
+  createdAt      DateTime     @default(now())
+
+  @@index([consultationId, createdAt])
+}
+
+model ConsultationAuditEvent {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  action         String
+  actorId        String?
+  actorRole      String?
+  detailJson     String?
+  createdAt      DateTime     @default(now())
+
+  @@index([consultationId, createdAt])
+}
+
+// ------------------------------------------------------------
+// Â§30/31 AI intake + clinical handoff (existing pipeline reused)
+// ------------------------------------------------------------
+model ClinicalIntake {
+  id                    String       @id @default(cuid())
+  consultationId        String       @unique
+  consultation          Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  chiefComplaint        String
+  symptomsJson          String       @default("[]")
+  durationDays          Int?
+  severity              Int? // 1-5
+  conditionsJson        String       @default("[]")
+  medicationsJson       String       @default("[]")
+  allergiesJson         String       @default("[]")
+  pregnant              Boolean?
+  ageBand               String?
+  previousTreatment     String?
+  questions             String?
+  // Existing pipeline output (Â§85 emergency FIRST, always)
+  triageLevel           String?
+  redFlagCategoriesJson String       @default("[]")
+  emergency             Boolean      @default(false)
+  pipelineMetaJson      String? // provenance: engine, citations, confidence, drugCheck
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+}
+
+model ClinicalHandoff {
+  id                  String       @id @default(cuid())
+  consultationId      String       @unique
+  consultation        Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  generatedContent    String
+  status              String       @default("DRAFT") // DRAFT | ACCEPTED | EDITED | REJECTED
+  doctorEditedContent String?
+  reviewedById        String?
+  reviewedAt          DateTime?
+  label               String       @default("AI-GENERATED â€” REVIEW REQUIRED")
+  provenanceJson      String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+}
+
+// ------------------------------------------------------------
+// Â§42 Clinical notes (PRIVATE vs PATIENT_SUMMARY)
+// ------------------------------------------------------------
+model ClinicalNote {
+  id               String       @id @default(cuid())
+  consultationId   String
+  consultation     Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  type             String // SOAP | SUMMARY | ASSESSMENT | FOLLOW_UP | REFERRAL
+  visibility       String       @default("PRIVATE_NOTE") // PRIVATE_NOTE | PATIENT_SUMMARY
+  content          String
+  authoredById     String
+  aiAssisted       Boolean      @default(false)
+  aiProvenanceJson String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([consultationId])
+}
+
+// ------------------------------------------------------------
+// Â§39/40/41 Prescriptions (jurisdiction-gated; doctor signs; AI never issues)
+// ------------------------------------------------------------
+model Prescription {
+  id                       String             @id @default(cuid())
+  consultationId           String
+  consultation             Consultation       @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  doctorProfileId          String
+  doctorProfile            DoctorProfile      @relation(fields: [doctorProfileId], references: [id])
+  patientId                String
+  patient                  User               @relation("PrescriptionPatient", fields: [patientId], references: [id])
+  jurisdiction             String
+  status                   String             @default("DRAFT") // DRAFT | SIGNED | DISPENSED | CANCELLED | EXPIRED
+  indication               String?
+  instructions             String?
+  doctorRegistrationNumber String
+  doctorNameSnapshot       String
+  signatureRef             String?
+  safetyCheckJson          String? // drug-interaction/allergy results at signing time (Â§40)
+  safetyOverrideReason     String? // required when signing with HIGH warnings; logged
+  issuedAt                 DateTime?
+  expiresAt                DateTime?
+  controlledDrugsIncluded  Boolean            @default(false)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  items                    PrescriptionItem[]
+
+  @@index([consultationId])
+  @@index([doctorProfileId])
+  @@index([patientId])
+}
+
+model PrescriptionItem {
+  id             String       @id @default(cuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medicine       String
+  form           String?
+  strength       String?
+  frequency      String?
+  durationDays   Int?
+  instructions   String?
+  isControlled   Boolean      @default(false)
+
+  @@index([prescriptionId])
+}
+
+// ------------------------------------------------------------
+// Â§9/11 Payments + Â§58 idempotency
+// ------------------------------------------------------------
+model Payment {
+  id             String           @id @default(cuid())
+  consultationId String
+  consultation   Consultation     @relation(fields: [consultationId], references: [id])
+  patientId      String
+  patient        User             @relation("PaymentPatient", fields: [patientId], references: [id])
+  provider       String // mock (DEV/TEST ONLY) | hesabpay | card | pk-local
+  providerRef    String?
+  status         String           @default("CREATED") // see PAYMENT_STATES in src/lib/care/constants.ts
+  amountMinor    Int
+  currency       String
+  breakdownJson  String? // { doctorFeeMinor, platformFeeMinor, processorFeeMinor, taxMinor, discountMinor }
+  checkoutUrl    String?
+  idempotencyKey String           @unique
+  capturedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  attempts       PaymentAttempt[]
+  refunds        Refund[]
+  platformFees   PlatformFee[]
+  ledgerEntries  LedgerEntry[]
+
+  @@index([consultationId])
+  @@index([status])
+}
+
+model PaymentAttempt {
+  id           String   @id @default(cuid())
+  paymentId    String
+  payment      Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  attemptNo    Int
+  status       String
+  providerRef  String?
+  errorCode    String?
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([paymentId])
+}
+
+model PaymentWebhook {
+  id          String    @id @default(cuid())
+  provider    String
+  eventId     String
+  signature   String?
+  valid       Boolean   @default(false)
+  payloadJson String
+  processed   Boolean   @default(false)
+  processedAt DateTime?
+  receivedAt  DateTime  @default(now())
+
+  @@unique([provider, eventId]) // idempotent webhook intake (Â§11/Â§58)
+  @@index([provider, processed])
+}
+
+// ------------------------------------------------------------
+// Â§7 Commission + Â§8 double-entry ledger (immutable, compensating entries)
+// ------------------------------------------------------------
+model CommissionRule {
+  id               String    @id @default(cuid())
+  country          String?
+  consultationType String?
+  specialty        String?
+  doctorTier       String?
+  percentageBps    Int // 2000 = 20% (basis points)
+  fixedFeeMinor    Int       @default(0)
+  currency         String?
+  effectiveFrom    DateTime
+  effectiveUntil   DateTime?
+  enabled          Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+
+  @@index([country, consultationType, enabled])
+}
+
+model PlatformFee {
+  id                String       @id @default(cuid())
+  consultationId    String
+  consultation      Consultation @relation(fields: [consultationId], references: [id])
+  paymentId         String
+  payment           Payment      @relation(fields: [paymentId], references: [id])
+  commissionMinor   Int
+  processorFeeMinor Int          @default(0)
+  currency          String
+  ruleId            String?
+  createdAt         DateTime     @default(now())
+
+  @@index([paymentId])
+}
+
+model LedgerAccount {
+  id                   String         @id @default(cuid())
+  code                 String         @unique // e.g. platform:fee:PKR, doctor:pending:{doctorId}:PKR
+  kind                 String // PLATFORM_CASH | PLATFORM_FEE | DOCTOR_PENDING | DOCTOR_AVAILABLE | PROCESSOR_FEE | REFUND_RESERVE | SUSPENSE
+  ownerDoctorProfileId String?
+  ownerDoctorProfile   DoctorProfile? @relation(fields: [ownerDoctorProfileId], references: [id])
+  currency             String
+  createdAt            DateTime       @default(now())
+  entries              LedgerEntry[]
+
+  @@index([kind, ownerDoctorProfileId])
+}
+
+model LedgerEntry {
+  id             String        @id @default(cuid())
+  accountId      String
+  account        LedgerAccount @relation(fields: [accountId], references: [id])
+  direction      String // DEBIT | CREDIT
+  amountMinor    Int
+  currency       String
+  consultationId String?
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+  paymentId      String?
+  payment        Payment?      @relation(fields: [paymentId], references: [id])
+  payoutId       String?
+  payout         Payout?       @relation(fields: [payoutId], references: [id])
+  refundId       String?
+  refund         Refund?       @relation(fields: [refundId], references: [id])
+  reference      String // transaction reference
+  idempotencyKey String        @unique // never post the same movement twice (Â§58)
+  memo           String?
+  createdAt      DateTime      @default(now())
+
+  // IMMUTABLE by convention: corrections create compensating entries (Â§8)
+  @@index([accountId, createdAt])
+  @@index([reference])
+}
+
+model DoctorEarning {
+  id                String        @id @default(cuid())
+  doctorProfileId   String
+  doctorProfile     DoctorProfile @relation(fields: [doctorProfileId], references: [id])
+  consultationId    String        @unique
+  consultation      Consultation  @relation(fields: [consultationId], references: [id])
+  grossMinor        Int
+  commissionMinor   Int
+  processorFeeMinor Int           @default(0)
+  netMinor          Int
+  currency          String
+  state             String        @default("PENDING") // PENDING | AVAILABLE | PAID | REVERSED
+  availableAt       DateTime // payout-delay gate
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  payoutItems       PayoutItem[]
+
+  @@index([doctorProfileId, state, availableAt])
+}
+
+// ------------------------------------------------------------
+// Â§13 Payouts
+// ------------------------------------------------------------
+model Payout {
+  id              String        @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id])
+  state           String        @default("PENDING") // PENDING | PROCESSING | PAID | FAILED | REVERSED
+  amountMinor     Int
+  currency        String
+  method          String? // bank_transfer | emi | provider (JSON-safe descriptor)
+  methodRef       String?
+  provider        String?
+  providerRef     String?
+  requestedById   String?
+  processedById   String?
+  processedAt     DateTime?
+  failureReason   String?
+  idempotencyKey  String        @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  items           PayoutItem[]
+  ledgerEntries   LedgerEntry[]
+
+  @@index([doctorProfileId, state])
+}
+
+model PayoutItem {
+  id          String        @id @default(cuid())
+  payoutId    String
+  payout      Payout        @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+  earningId   String        @unique
+  earning     DoctorEarning @relation(fields: [earningId], references: [id])
+  amountMinor Int
+  currency    String
+}
+
+// ------------------------------------------------------------
+// Â§49 Refunds + Â§50 Disputes
+// ------------------------------------------------------------
+model Refund {
+  id             String        @id @default(cuid())
+  paymentId      String
+  payment        Payment       @relation(fields: [paymentId], references: [id])
+  consultationId String
+  consultation   Consultation  @relation(fields: [consultationId], references: [id])
+  amountMinor    Int
+  currency       String
+  reason         String
+  state          String        @default("REQUESTED") // REQUESTED | REFUND_PENDING | REFUNDED | FAILED | REJECTED
+  provider       String?
+  providerRef    String?
+  policyVersion  String?
+  requestedById  String?
+  decidedById    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  ledgerEntries  LedgerEntry[]
+
+  @@index([consultationId])
+  @@index([paymentId])
+}
+
+model Dispute {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id])
+  openedByRole   String // PATIENT | DOCTOR
+  openedById     String
+  reason         String // doctor_no_show | technical_failure | incorrect_charge | not_delivered | refund_problem | payout_problem | other
+  detail         String?
+  state          String       @default("OPEN") // OPEN | UNDER_REVIEW | RESOLVED_PATIENT | RESOLVED_DOCTOR | REJECTED | ESCALATED
+  resolution     String?
+  resolvedById   String?
+  resolvedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([state, createdAt])
+  @@index([consultationId])
+}
+
+// ------------------------------------------------------------
+// Â§44 Reviews (consultation-scoped; existing DoctorReview untouched)
+// ------------------------------------------------------------
+model Review {
+  id              String        @id @default(cuid())
+  consultationId  String        @unique // one review per consultation (Â§44)
+  consultation    Consultation  @relation(fields: [consultationId], references: [id])
+  patientId       String
+  patient         User          @relation("ReviewAuthor", fields: [patientId], references: [id])
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation("ReviewDoctor", fields: [doctorProfileId], references: [id])
+  overall         Int // 1-5
+  communication   Int?
+  helpfulness     Int?
+  waitTime        Int?
+  comment         String?
+  state           String        @default("PUBLISHED") // PUBLISHED | HIDDEN | FLAGGED
+  moderatedById   String?
+  moderatedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([doctorProfileId, state])
+}
+
+model DoctorFavorite {
+  id              String        @id @default(cuid())
+  patientId       String
+  patient         User          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+
+  @@unique([patientId, doctorProfileId])
+  @@index([doctorProfileId])
+}
+
+// ------------------------------------------------------------
+// Â§62 Notifications (lock-screen privacy enforced at write time)
+// ------------------------------------------------------------
+model Notification {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String // consultation.confirmed | message.received | refund.processed | ...
+  channel        String    @default("inapp") // inapp | push | email | sms
+  title          String
+  body           String // privacy-safe text only (Â§62)
+  consultationId String?
+  dataJson       String?
+  state          String    @default("PENDING") // PENDING | SENT | FAILED | READ
+  readAt         DateTime?
+  sentAt         DateTime?
+  provider       String?
+  providerRef    String?
+  createdAt      DateTime  @default(now())
+
+  @@index([userId, state, createdAt])
+}
+
+// ------------------------------------------------------------
+// Â§17 / Â§62 Durable Notification Outbox (survives worker restarts & timeouts)
+// ------------------------------------------------------------
+model NotificationOutbox {
+  id             String   @id @default(cuid())
+  notificationId String
+  channel        String   @default("push") // push | email | sms
+  payloadJson    String
+  attempts       Int      @default(0)
+  maxAttempts    Int      @default(5)
+  status         String   @default("PENDING") // PENDING | PROCESSING | DELIVERED | DEAD_LETTER
+  lastError      String?
+  nextAttemptAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status, nextAttemptAt])
+}
+
+// ------------------------------------------------------------
+// Â§34 Translation (original ALWAYS preserved) + Â§35 risk confirmation
+// ------------------------------------------------------------
+model Translation {
+  id                String               @id @default(cuid())
+  messageId         String?
+  message           ConsultationMessage? @relation(fields: [messageId], references: [id])
+  consultationId    String?
+  consultation      Consultation?        @relation(fields: [consultationId], references: [id])
+  originalText      String
+  originalLanguage  String
+  translatedText    String
+  targetLanguage    String
+  provider          String
+  modelVersion      String?
+  confidence        Float?
+  needsConfirmation Boolean              @default(false) // Â§35 high-risk terms
+  riskTermsJson     String?
+  confirmedById     String?
+  confirmedAt       DateTime?
+  createdAt         DateTime             @default(now())
+
+  @@index([messageId])
+}
+
+// ------------------------------------------------------------
+// Â§83 Versioned consent records
+// ------------------------------------------------------------
+model ConsentRecord {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String // TERMS | PRIVACY | TELEMEDICINE | AI_ASSISTANCE | AI_TRANSLATION | DOCUMENT_PROCESSING | RECORDING
+  policyVersion  String
+  jurisdiction   String?
+  consultationId String?
+  grantedAt      DateTime  @default(now())
+  revokedAt      DateTime?
+  ip             String?
+
+  @@index([userId, type])
+}
+
+// ------------------------------------------------------------
+// Â§16 Jurisdiction engine (patient Ã— doctor Ã— mode policy)
+// ------------------------------------------------------------
+model JurisdictionPolicy {
+  id                        String   @id @default(cuid())
+  countryCode               String // patient's declared physical jurisdiction
+  doctorCountry             String // doctor's licensing jurisdiction
+  consultationAllowed       Boolean  @default(true)
+  messagingAllowed          Boolean  @default(true)
+  audioAllowed              Boolean  @default(true)
+  videoAllowed              Boolean  @default(true)
+  prescribingAllowed        Boolean  @default(false)
+  controlledDrugAllowed     Boolean  @default(false)
+  medicalCertificateAllowed Boolean  @default(true)
+  secondOpinionAllowed      Boolean  @default(true)
+  minorConsultationAllowed  Boolean  @default(true)
+  requiresGuardian          Boolean  @default(false)
+  requiresLocalDoctor       Boolean  @default(false)
+  policyVersion             String
+  effectiveDate             DateTime @default(now())
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@unique([countryCode, doctorCountry, policyVersion])
+  @@index([countryCode, doctorCountry])
+}
+
+// ------------------------------------------------------------
+// Â§58 Idempotency + Â§60 Fraud + Â§56 rate limiting
+// ------------------------------------------------------------
+model IdempotencyKey {
+  id         String   @id @default(cuid())
+  key        String   @unique
+  scope      String // payment.create | refund.create | payout.create | consultation.book | webhook.process
+  status     String   @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED | FAILED
+  resultJson String?
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+}
+
+model FraudSignal {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  kind         String // failed_payments | refund_abuse | cancellation_pattern | chargeback_pattern | self_booking | review_manipulation | payout_change | credential_sharing
+  severity     String   @default("LOW") // LOW | MEDIUM | HIGH
+  detailJson   String?
+  state        String   @default("OPEN") // OPEN | REVIEWED | DISMISSED | ACTIONED
+  reviewedById String?
+  createdAt    DateTime @default(now())
+
+  @@index([state, createdAt])
+}
+
+model RateLimitCounter {
+  id          String   @id @default(cuid())
+  key         String
+  windowStart DateTime
+  count       Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([key, windowStart])
+  @@index([key, windowStart])
+}
+
+// ------------------------------------------------------------
+// Â§67/68 Subscriptions (architecture only â€” launch-disabled)
+// ------------------------------------------------------------
+model Plan {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  audience      String // PATIENT | DOCTOR
+  name          String
+  priceMinor    Int
+  currency      String
+  interval      String         @default("MONTH") // MONTH | YEAR
+  benefitsJson  String         @default("[]")
+  enabled       Boolean        @default(false) // Â§67: not launched
+  createdAt     DateTime       @default(now())
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id               String              @id @default(cuid())
+  planId           String
+  plan             Plan                @relation(fields: [planId], references: [id])
+  userId           String
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  state            String              @default("ACTIVE") // ACTIVE | PAST_DUE | CANCELLED | EXPIRED
+  provider         String?
+  providerRef      String?
+  currentPeriodEnd DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  usage            SubscriptionUsage[]
+
+  @@index([userId, state])
+}
+
+model SubscriptionUsage {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  benefitCode    String
+  amount         Int          @default(1)
+  usedAt         DateTime     @default(now())
+
+  @@index([subscriptionId, benefitCode])
+}
+
+// ------------------------------------------------------------
+// Â§69 Clinic accounts (readiness only â€” no features)
+// ------------------------------------------------------------
+model Clinic {
+  id          String         @id @default(cuid())
+  name        String
+  country     String?
+  city        String?
+  ownerUserId String
+  createdAt   DateTime       @default(now())
+  members     ClinicMember[]
+}
+
+model ClinicMember {
+  id       String @id @default(cuid())
+  clinicId String
+  clinic   Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String @default("CLINIC_ADMIN")
+
+  @@unique([clinicId, userId])
+}

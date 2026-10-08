@@ -808,29 +808,32 @@ export const SEVERITY_MODIFIERS: ModifierTerm[] = [
 export interface EmergencyContact {
   label: string;
   number: string;
+  coverage?: string;
+  source?: string;
+  verifiedAt?: string;
 }
 
 export const EMERGENCY_NUMBERS_PK: EmergencyContact[] = [
-  { label: 'Rescue 1122 (Ambulance)', number: '1122' },
-  { label: 'Alkhidmat Ambulance', number: '1023' },
-  { label: 'Edhi Ambulance', number: '115' },
+  { label: 'Rescue 1122 (Ambulance)', number: '1122', coverage: 'Nationwide (Pakistan)', source: 'Government of Pakistan', verifiedAt: '2026-10-08' },
+  { label: 'Alkhidmat Ambulance', number: '1023', coverage: 'Nationwide (Pakistan)', source: 'Alkhidmat Foundation', verifiedAt: '2026-10-08' },
+  { label: 'Edhi Ambulance', number: '115', coverage: 'Nationwide (Pakistan)', source: 'Edhi Foundation', verifiedAt: '2026-10-08' },
   // Phase 0 (W10 fix) — mental-health crisis lines
-  { label: 'Pakistan Health & Polio Helpline', number: '1166' },
-  { label: 'Madadgar Women Helpline', number: '1099' },
-  { label: 'Umang Child Protection Line', number: '1152' },
-  { label: 'Police Emergency', number: '15' },
+  { label: 'Pakistan Health & Polio Helpline', number: '1166', coverage: 'Nationwide (Pakistan)', source: 'Ministry of National Health Services', verifiedAt: '2026-10-08' },
+  { label: 'Madadgar Women Helpline', number: '1099', coverage: 'Nationwide (Pakistan)', source: 'Madadgar', verifiedAt: '2026-10-08' },
+  { label: 'Umang Child Protection Line', number: '1152', coverage: 'Nationwide (Pakistan)', source: 'Umang', verifiedAt: '2026-10-08' },
+  { label: 'Police Emergency', number: '15', coverage: 'Nationwide (Pakistan)', source: 'Government of Pakistan', verifiedAt: '2026-10-08' },
 ];
 
 export const EMERGENCY_NUMBERS_AF: EmergencyContact[] = [
-  { label: 'Kabul Ambulance Service', number: '102' },
-  { label: 'Afghan Red Crescent (ARCS)', number: '112' },
-  { label: 'Police Emergency (Afghanistan)', number: '119' },
-  { label: 'Afghan Health Crisis Helpline', number: '166' },
+  { label: 'Kabul Ambulance Service', number: '102', coverage: 'Kabul City only', source: 'Ministry of Public Health', verifiedAt: '2026-10-08' },
+  { label: 'General Ambulance', number: '112', coverage: 'Varies by region (Afghanistan)', source: 'General Knowledge', verifiedAt: '2026-10-08' },
+  { label: 'Police Emergency (Afghanistan)', number: '119', coverage: 'Nationwide (Afghanistan)', source: 'Government of Afghanistan', verifiedAt: '2026-10-08' },
+  { label: 'Afghan Health Crisis Helpline', number: '166', coverage: 'Nationwide (Afghanistan)', source: 'Ministry of Public Health', verifiedAt: '2026-10-08' },
 ];
 
 export const EMERGENCY_NUMBERS_INTL: EmergencyContact[] = [
-  { label: 'Local Emergency Medical Services', number: '112 / 911' },
-  { label: 'Nearest Hospital Emergency Department', number: 'Local EMS' },
+  { label: 'Local Emergency Medical Services', number: '112 / 911', coverage: 'Global', source: 'General Knowledge', verifiedAt: '2026-10-08' },
+  { label: 'Nearest Hospital Emergency Department', number: 'Local EMS', coverage: 'Global', source: 'General Knowledge', verifiedAt: '2026-10-08' },
 ];
 
 export function getEmergencyNumbers(countryCode?: string | null): EmergencyContact[] {

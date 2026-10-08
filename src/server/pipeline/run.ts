@@ -2864,6 +2864,22 @@ export async function runPipeline(
     structuredLog('warn', 'constellation.failed', { error: 'constellation execution failed' });
   }
 
+  if (resolvedCountry !== 'PK' && emergencyNumbers.length > 0) {
+    const primary = emergencyNumbers[0]?.number ?? '1122';
+    const helpline = emergencyNumbers.find(n => n.label.toLowerCase().includes('help'))?.number ?? primary;
+    
+    if (result.content) {
+      result.content = result.content
+        .replace(/\b1122\b/g, primary)
+        .replace(/\b1166\b/g, helpline);
+    }
+    if (result.urduVersion) {
+      result.urduVersion = result.urduVersion
+        .replace(/\b1122\b/g, primary)
+        .replace(/\b1166\b/g, helpline);
+    }
+  }
+
   emit('done', {
     messageId: result.messageId,
     conversationId: result.conversationId,

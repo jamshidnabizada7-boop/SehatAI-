@@ -76,7 +76,7 @@ describe('X3. Jurisdiction-aware emergency routing', () => {
     expect(nums).toEqual(EMERGENCY_NUMBERS_AF);
     expect(nums.some((n) => n.number === '102')).toBe(true); // Kabul Ambulance
     expect(nums.some((n) => n.number === '119')).toBe(true); // Afghan Police
-    expect(nums.some((n) => n.number === '112')).toBe(true); // ARCS
+    expect(nums.some((n) => n.number === '112')).toBe(true); // General Ambulance
   });
 
   test('returns Afghan emergency numbers for case-insensitive and full country names', () => {

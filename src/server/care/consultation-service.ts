@@ -92,6 +92,12 @@ export async function createConsultation(input: CreateConsultationInput) {
   // Idempotent create (§58): same key → same consultation, never two rows.
   const created = await db.$transaction(async (tx) => {
     if (scheduledAt && input.type !== 'TEXT') {
+      // Row lock the doctor profile row to serialize concurrent slot bookings across all DB backends (PostgreSQL & SQLite)
+      await tx.doctorProfile.update({
+        where: { id: input.doctorProfileId },
+        data: { updatedAt: new Date() },
+      });
+
       // Re-check INSIDE the transaction so two concurrent bookings of the
       // same slot cannot both pass (§89 concurrency test).
       const clashing = await tx.consultation.findMany({
