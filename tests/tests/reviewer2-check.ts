@@ -1,6 +1,6 @@
-import { CORPUS } from '../src/data/corpus';
-import { runOfflineEngine, retrieveCorpus } from '../src/lib/engine/safety-engine';
-import { damerauLevenshteinDistance, stringSimilarity, fuzzyFindMedicalConcept } from '../src/lib/engine/fuzzy-matcher';
+import { CORPUS } from '@/data/corpus';
+import { runOfflineEngine, retrieveCorpus } from '@/lib/engine/safety-engine';
+import { damerauLevenshteinDistance, stringSimilarity, fuzzyFindMedicalConcept } from '@/lib/engine/fuzzy-matcher';
 
 let total = 0;
 let passed = 0;

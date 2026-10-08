@@ -13,7 +13,7 @@ import { doctorWallet } from '../../src/server/care/ledger';
 import { doctorAccept, completeConsultation } from '../../src/server/care/consultation-service';
 
 process.env.CARE_PAYMENTS_ENABLED = 'true';
-process.env.NODE_ENV = 'development';
+(process.env as Record<string, string | undefined>).NODE_ENV = 'development';
 
 const db = new PrismaClient();
 const stamp = `smoke_${Date.now()}`;

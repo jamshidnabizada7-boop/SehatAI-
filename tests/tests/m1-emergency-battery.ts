@@ -1,5 +1,5 @@
-import { runPipeline } from '../src/server/pipeline/run';
-import { hasDosePattern } from '../src/server/pipeline/run';
+import { runPipeline } from '@/server/pipeline/run';
+import { hasDosePattern } from '@/server/pipeline/run';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -42,7 +42,10 @@ interface TestResult {
 }
 
 async function runTestSuite() {
-  const casesRaw = fs.readFileSync('tests/m1-cases.json', 'utf8');
+  const casesPath = fs.existsSync(path.resolve(__dirname, 'm1-cases.json'))
+    ? path.resolve(__dirname, 'm1-cases.json')
+    : path.resolve(process.cwd(), 'tests/tests/m1-cases.json');
+  const casesRaw = fs.readFileSync(casesPath, 'utf8');
   const testBattery: TestCase[] = JSON.parse(casesRaw);
 
   console.log('============================================================');
@@ -53,6 +56,7 @@ async function runTestSuite() {
   const results: TestResult[] = [];
   const sessionMap = new Map<string, string>();
   const convMap = new Map<string, string>();
+  const historyMap = new Map<string, Array<{ role: string; content: string; triageLevel?: string; emergency?: boolean }>>();
 
   let passCount = 0;
   let failCount = 0;
@@ -63,6 +67,7 @@ async function runTestSuite() {
     const sessionId = sessionMap.get(key) ?? ('m1-qa-' + tc.id + '-' + Date.now());
     sessionMap.set(key, sessionId);
     const existingConvId = convMap.get(key);
+    const history = historyMap.get(key) || [];
 
     console.log('[' + (i + 1) + '/' + testBattery.length + '] Executing ' + tc.id + ': ' + tc.scenarioTitle + ' (' + tc.lang.toUpperCase() + ')...');
 
@@ -75,6 +80,7 @@ async function runTestSuite() {
           language: tc.lang,
           sessionId: sessionId,
           conversationId: existingConvId,
+          history: history,
           persist: false,
         },
         () => {},
@@ -93,6 +99,11 @@ async function runTestSuite() {
     if (res.conversationId) {
       convMap.set(key, res.conversationId);
     }
+
+    const updatedHist = [...history];
+    updatedHist.push({ role: 'user', content: tc.query, triageLevel: res.triage?.level, emergency: res.triage?.level === 'EMERGENCY' });
+    updatedHist.push({ role: 'assistant', content: res.content || '', triageLevel: res.triage?.level, emergency: res.triage?.level === 'EMERGENCY' });
+    historyMap.set(key, updatedHist);
 
     const content = res.content || '';
     const triageLevel = res.triage?.level || 'UNKNOWN';
@@ -288,6 +299,7 @@ function writeReportMarkdown(results: TestResult[]) {
 
   const reportPath = path.resolve('.agents/worker_m1/report.md');
   const handoffPath = path.resolve('.agents/worker_m1/handoff.md');
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, md, 'utf8');
   console.log('Saved comprehensive report to: ' + reportPath);
 

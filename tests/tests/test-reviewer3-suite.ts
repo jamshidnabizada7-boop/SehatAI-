@@ -1,10 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-import { FACILITIES_SEED, haversineKm } from '../src/data/facilities-seed';
-import { generateQrMatrix } from '../src/lib/qr';
-import { en } from '../src/lib/i18n/en';
-import { ur } from '../src/lib/i18n/ur';
-import { roman } from '../src/lib/i18n/roman';
-import type { DoctorSummary } from '../src/lib/types';
+import { FACILITIES_SEED, haversineKm } from '@/data/facilities-seed';
+import { generateQrMatrix } from '@/lib/qr';
+import { en } from '@/lib/i18n/en';
+import { ur } from '@/lib/i18n/ur';
+import { roman } from '@/lib/i18n/roman';
+import type { DoctorSummary } from '@/lib/types';
 
 const db = new PrismaClient();
 
@@ -113,6 +113,8 @@ async function runReviewer3Suite() {
   console.log('\n[Test Group 4] Doctor Summary Modal & Trilingual i18n Parity');
 
   const mockSummary: DoctorSummary = {
+    conversationId: 'c-test-r3',
+    language: 'en',
     chiefComplaint: 'Severe chest tightness',
     duration: '2 hours',
     symptoms: ['Chest pain', 'Shortness of breath'],

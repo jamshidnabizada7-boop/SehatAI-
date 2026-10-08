@@ -1,11 +1,11 @@
-import { CORPUS } from '../src/data/corpus';
+import { CORPUS } from '@/data/corpus';
 import {
   fuzzyFindMedicalConcept,
   MEDICAL_CANONICAL_TERMS,
   damerauLevenshteinDistance,
   stringSimilarity,
-} from '../src/lib/engine/fuzzy-matcher';
-import { runOfflineEngine, retrieveCorpus } from '../src/lib/engine/safety-engine';
+} from '@/lib/engine/fuzzy-matcher';
+import { runOfflineEngine, retrieveCorpus } from '@/lib/engine/safety-engine';
 
 let totalTests = 0;
 let passedTests = 0;

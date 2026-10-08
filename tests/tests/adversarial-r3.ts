@@ -1,6 +1,6 @@
-import { CORPUS } from '../src/data/corpus';
-import { fuzzyFindMedicalConcept, damerauLevenshteinDistance, stringSimilarity, MEDICAL_CANONICAL_TERMS } from '../src/lib/engine/fuzzy-matcher';
-import { retrieveCorpus, runOfflineEngine, runL0Triage, expandQuerySynonyms, QUERY_SYNONYMS } from '../src/lib/engine/safety-engine';
+import { CORPUS } from '@/data/corpus';
+import { fuzzyFindMedicalConcept, damerauLevenshteinDistance, stringSimilarity, MEDICAL_CANONICAL_TERMS } from '@/lib/engine/fuzzy-matcher';
+import { retrieveCorpus, runOfflineEngine, runL0Triage, expandQuerySynonyms, QUERY_SYNONYMS } from '@/lib/engine/safety-engine';
 import { PrismaClient } from '@prisma/client';
 import { performance } from 'perf_hooks';
 

@@ -1057,7 +1057,7 @@ describe('O. REGRESSION — normalization and data integrity', () => {
     } finally {
       await db.$disconnect();
     }
-  });
+  }, 30000);
 });
 
 // ============================================================

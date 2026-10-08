@@ -5,22 +5,22 @@
  * and verification helpers for testing universal invariants.
  */
 
-import type { PipelineInput, PipelineResult } from '../../src/server/pipeline/run';
-import { runPipeline } from '../../src/server/pipeline/run';
-import type { Lang, PipelineStage, TriageLevel, Citation } from '../../src/lib/types';
-import { CORPUS } from '../../src/data/corpus';
+import type { PipelineInput, PipelineResult } from '@/server/pipeline/run';
+import { runPipeline } from '@/server/pipeline/run';
+import type { Lang, PipelineStage, TriageLevel, Citation } from '@/lib/types';
+import { CORPUS } from '@/data/corpus';
 
 export interface CapturedEvents {
   stages: PipelineStage[];
   events: { stage: PipelineStage; data: unknown }[];
-  safetyData?: import('../../src/lib/types').SafetyStageData;
-  languageData?: import('../../src/lib/types').LanguageStageData;
-  triageData?: import('../../src/lib/types').TriageStageData;
-  retrievalData?: import('../../src/lib/types').RetrievalStageData;
+  safetyData?: import('@/lib/types').SafetyStageData;
+  languageData?: import('@/lib/types').LanguageStageData;
+  triageData?: import('@/lib/types').TriageStageData;
+  retrievalData?: import('@/lib/types').RetrievalStageData;
   generationDeltas: string[];
-  validationData?: import('../../src/lib/types').ValidationStageData;
-  emergencyData?: import('../../src/lib/types').EmergencyStageData;
-  doneData?: import('../../src/lib/types').DoneStageData;
+  validationData?: import('@/lib/types').ValidationStageData;
+  emergencyData?: import('@/lib/types').EmergencyStageData;
+  doneData?: import('@/lib/types').DoneStageData;
   errorData?: { message: string; fallbackContent: string };
 }
 

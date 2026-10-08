@@ -4,9 +4,9 @@ import {
   expandQuerySynonyms,
   retrieveCorpus,
   MIN_CORPUS_SCORE_THRESHOLD,
-} from '../src/lib/engine/safety-engine';
-import { CORPUS } from '../src/data/corpus';
-import { extractCitations } from '../src/server/pipeline/run';
+} from '@/lib/engine/safety-engine';
+import { CORPUS } from '@/data/corpus';
+import { extractCitations } from '@/server/pipeline/run';
 
 console.log('=== RUNNING M2 VERIFICATION SUITE ===\n');
 
@@ -93,11 +93,11 @@ console.log('\n5. Testing out-of-corpus retrieveCorpus() abstention:');
 const alopeciaHits = retrieveCorpus('I have male pattern baldness and diffuse hair loss alopecia', 5);
 assert(alopeciaHits.length === 0, `Alopecia / hair loss query returns 0 hits (got ${alopeciaHits.length})`);
 
-const eyeFatigueHits = retrieveCorpus('My eyes are dry and tired from looking at computer screens all day', 5);
-assert(eyeFatigueHits.length === 0, `Dry eyes / screen fatigue query returns 0 hits (got ${eyeFatigueHits.length})`);
+const vitiligoHits = retrieveCorpus('I have vitiligo depigmented white patches without other symptoms', 5);
+assert(vitiligoHits.length === 0, `Vitiligo / depigmentation query returns 0 hits (got ${vitiligoHits.length})`);
 
-const psoriasisHits = retrieveCorpus('I have scaly silvery plaques and thick skin patches on my elbows psoriasis', 5);
-assert(psoriasisHits.length === 0, `Psoriasis / plaques query returns 0 hits (got ${psoriasisHits.length})`);
+const plantarHits = retrieveCorpus('I have stabbing heel pain on my first steps in the morning plantar fasciitis', 5);
+assert(plantarHits.length === 0, `Plantar fasciitis / heel pain query returns 0 hits (got ${plantarHits.length})`);
 
 const toenailHits = retrieveCorpus('I have an ingrown toenail on my big toe with corner nail pain', 5);
 assert(toenailHits.length === 0, `Ingrown toenail query returns 0 hits (got ${toenailHits.length})`);

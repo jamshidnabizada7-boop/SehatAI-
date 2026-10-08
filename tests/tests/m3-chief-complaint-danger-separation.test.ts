@@ -9,7 +9,7 @@
  * 5. Musculoskeletal palpation-reproducible chest tightness evaluation
  */
 
-import { runL0Triage, matchRedFlags, isTermAffirmedInClause, splitIntoClauses } from '../src/lib/engine/safety-engine';
+import { runL0Triage, matchRedFlags, isTermAffirmedInClause, splitIntoClauses } from '@/lib/engine/safety-engine';
 
 console.log('============================================================');
 console.log('  SehatAI — M3 Chief Complaint vs Danger Sign Separation Suite');

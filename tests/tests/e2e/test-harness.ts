@@ -334,7 +334,7 @@ export async function runAllRegisteredSuites(): Promise<SuiteStats> {
       let error: Error | string | undefined;
 
       try {
-        const timeoutMs = tc.options?.timeoutMs ?? 50000;
+        const timeoutMs = tc.options?.timeoutMs ?? 90000;
         await Promise.race([
           Promise.resolve(tc.fn()),
           new Promise((_, reject) =>

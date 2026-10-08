@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { GLOSSARY } from '@/data/glossary';
 
-const SW_PATH = join(import.meta.dir, '../../public/sw.js');
+const SW_PATH = join(import.meta.dir, '../../../public/sw.js');
 
 describe('Q. service worker — safety contract', () => {
   const sw = readFileSync(SW_PATH, 'utf8');
@@ -47,7 +47,7 @@ describe('Q. service worker — safety contract', () => {
 
   test('precache list contains only safe static shell URLs', () => {
     // extract SHELL_URLS array
-    const match = sw.match(/SHELL_URLS = \[(.*?)\]/s);
+    const match = sw.match(/SHELL_URLS = \[([\s\S]*?)\]/);
     expect(match).not.toBeNull();
     const entries = match![1]
       .split(',')

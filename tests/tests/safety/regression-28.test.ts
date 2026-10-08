@@ -5,8 +5,9 @@
 // ============================================================
 import { describe, expect, test } from 'bun:test';
 import { runL0Triage } from '@/lib/engine/safety-engine';
+import type { TriageLevel } from '@/lib/types';
 
-const REGRESSION_CASES: { input: string; level: string; note?: string }[] = [
+const REGRESSION_CASES: { input: string; level: TriageLevel; note?: string }[] = [
   { input: 'I have diabetes', level: 'ROUTINE', note: 'established condition, no over-triage' },
   { input: 'I think I have diabetes', level: 'ROUTINE', note: 'suspected — no diagnosis' },
   { input: 'Could I have diabetes?', level: 'ROUTINE', note: 'question — no diagnosis' },

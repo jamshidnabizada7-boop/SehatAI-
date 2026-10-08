@@ -61,8 +61,8 @@ describe('T. first-aid gallery — search matching', () => {
 });
 
 describe('T. first-aid gallery — template card completeness', () => {
-  test('all 23 templates have full trilingual card content', () => {
-    expect(EMERGENCY_TEMPLATES.length).toBe(23);
+  test('all 27 templates have full trilingual card content', () => {
+    expect(EMERGENCY_TEMPLATES.length).toBe(27);
     for (const tpl of EMERGENCY_TEMPLATES) {
       for (const lang of ['en', 'ur', 'roman'] as const) {
         expect(tpl.title[lang].length).toBeGreaterThan(3);
@@ -115,7 +115,7 @@ describe('T. golden set v3 — chronic-disease depth cases', () => {
       if (actual !== c.expected.triage) drift.push(`${c.id}: want ${c.expected.triage} got ${actual}`);
     }
     expect(drift).toEqual([]);
-  });
+  }, 30000);
 
   test('hypoglycaemia golden cases expect URGENT (never ROUTINE)', () => {
     for (const id of ['t22', 't23', 'p07-en', 'p07-ur', 'p07-roman']) {

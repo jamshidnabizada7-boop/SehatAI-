@@ -27,7 +27,7 @@ import {
   llmChat,
   llmChatStream,
   llmJSON,
-} from '../../src/server/llm';
+} from '@/server/llm';
 
 let passed = 0;
 let failed = 0;
@@ -149,8 +149,8 @@ async function runTests() {
     assert(val === 'fast result', 'runWithAbortTimeout completes fast operations');
 
     // 3.2 Timed-out operation aborts and throws timeout error
-    let signalAborted: boolean = false;
-    let timedOutError: boolean = false;
+    let signalAborted = false as boolean;
+    let timedOutError = false as boolean;
     try {
       await runWithAbortTimeout(
         async (signal) => {
@@ -168,12 +168,12 @@ async function runTests() {
         timedOutError = true;
       }
     }
-    assert(timedOutError === true, 'runWithAbortTimeout rejects with explicit timeout message');
     assert(signalAborted === true, 'runWithAbortTimeout invokes signal.abort() to cancel network connections');
+    assert(timedOutError === true, 'runWithAbortTimeout rejects with explicit timeout message');
 
     // 3.3 Parent AbortSignal cancels operation immediately
     const parentController = new AbortController();
-    let parentAborted: boolean = false;
+    let parentAborted = false as boolean;
     try {
       const promise = runWithAbortTimeout(
         async (signal) => {

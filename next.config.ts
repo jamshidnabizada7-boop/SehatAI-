@@ -1,8 +1,27 @@
 import type { NextConfig } from "next";
 
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "file:../db/custom.db";
-}
+const securityHeaders = [
+  {
+    key: "X-Content-Type-Options",
+    value: "nosniff",
+  },
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  {
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
+  },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(self), microphone=(self), geolocation=()",
+  },
+];
 
 const nextConfig: NextConfig = {
   ...(process.env.DOCKER_BUILD === "1" ? { output: "standalone" } : {}),
@@ -11,11 +30,17 @@ const nextConfig: NextConfig = {
     output: "export" as const,
     images: { unoptimized: true },
     trailingSlash: true,
-  } : {}),
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  reactStrictMode: false,
+  } : {
+    async headers() {
+      return [
+        {
+          source: "/:path*",
+          headers: securityHeaders,
+        },
+      ];
+    },
+  }),
+  reactStrictMode: true,
 };
 
 export default nextConfig;

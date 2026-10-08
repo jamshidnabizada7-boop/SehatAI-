@@ -5,7 +5,7 @@ import { ur } from './ur';
 import { roman } from './roman';
 
 export type LangPref = Lang | 'auto';
-export type { Dict };
+export type { Dict, Lang };
 
 const DICTS: Record<Lang, Dict> = { en, ur, roman };
 

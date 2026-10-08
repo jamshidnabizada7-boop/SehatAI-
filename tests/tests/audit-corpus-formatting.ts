@@ -1,11 +1,11 @@
-import { CORPUS } from '../src/data/corpus';
+import { CORPUS } from '@/data/corpus';
 
 console.log('Total topics:', CORPUS.length);
 
-const nonStandard = [];
+const nonStandard: { id: string; issues: string[] }[] = [];
 
 for (const item of CORPUS) {
-  const issues = [];
+  const issues: string[] = [];
   if (!item.source.verifiedAt?.startsWith('2026')) {
     issues.push(`verifiedAt: ${item.source.verifiedAt}`);
   }

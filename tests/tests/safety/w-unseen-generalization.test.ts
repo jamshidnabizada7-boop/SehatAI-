@@ -108,7 +108,7 @@ describe('W. unseen-question generalization — pediatric danger signs', () => {
       const r = runL0Triage(q);
       expect(r.level).toBe('EMERGENCY');
       // "not waking up" routes to unconscious template; others to pediatric
-      expect(['pediatric', 'unconscious']).toContain(r.matchedCategory);
+      expect(['pediatric', 'unconscious']).toContain(r.matchedCategory ?? '');
     });
   }
 });

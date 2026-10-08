@@ -131,7 +131,7 @@ describe('V. My Health — profile storage', () => {
 
   test('sanitizeProfile auto-generates ids for ICE contacts without one', () => {
     const out = sanitizeProfile({
-      iceContacts: [{ name: 'Ayesha', phone: '03001234567' }],
+      iceContacts: [{ name: 'Ayesha', phone: '03001234567' } as any],
     });
     expect(out.iceContacts[0].id).toBeTruthy();
     expect(typeof out.iceContacts[0].id).toBe('string');

@@ -1,7 +1,7 @@
-import { db } from '../src/lib/db';
-import { FACILITIES_SEED } from '../src/data/facilities-seed';
-import { generateQrMatrix } from '../src/lib/qr';
-import type { DoctorSummary } from '../src/lib/types';
+import { db } from '@/lib/db';
+import { FACILITIES_SEED } from '@/data/facilities-seed';
+import { generateQrMatrix } from '@/lib/qr';
+import type { DoctorSummary } from '@/lib/types';
 
 let passed = 0;
 let failed = 0;
@@ -122,6 +122,8 @@ function testSummaryModalDataNarrowing() {
   console.log('\n[Group 4] Doctor Summary Modal Data Shape Handling');
 
   const mockSummary: DoctorSummary = {
+    conversationId: 'conv-test-r2',
+    language: 'en',
     chiefComplaint: 'Chest tightness',
     duration: '2 hours',
     symptoms: ['Chest tightness', 'Shortness of breath'],
@@ -132,13 +134,17 @@ function testSummaryModalDataNarrowing() {
   };
 
   // Test unwrapped shape
-  const rawDataDirect: DoctorSummary | { summary: DoctorSummary } = mockSummary;
-  const sDirect = 'summary' in rawDataDirect && rawDataDirect.summary ? rawDataDirect.summary : (rawDataDirect as DoctorSummary);
+  const rawDataDirect = mockSummary as DoctorSummary | { summary: DoctorSummary };
+  const sDirect: DoctorSummary = (typeof rawDataDirect === 'object' && 'summary' in rawDataDirect && rawDataDirect.summary)
+    ? (rawDataDirect as { summary: DoctorSummary }).summary
+    : (rawDataDirect as DoctorSummary);
   assert(sDirect.chiefComplaint === 'Chest tightness', 'Direct DoctorSummary object unwraps accurately');
 
   // Test wrapped shape { summary: DoctorSummary }
-  const rawDataWrapped: DoctorSummary | { summary: DoctorSummary } = { summary: mockSummary };
-  const sWrapped = 'summary' in rawDataWrapped && rawDataWrapped.summary ? rawDataWrapped.summary : (rawDataWrapped as DoctorSummary);
+  const rawDataWrapped = { summary: mockSummary } as DoctorSummary | { summary: DoctorSummary };
+  const sWrapped: DoctorSummary = (typeof rawDataWrapped === 'object' && 'summary' in rawDataWrapped && rawDataWrapped.summary)
+    ? (rawDataWrapped as { summary: DoctorSummary }).summary
+    : (rawDataWrapped as DoctorSummary);
   assert(sWrapped.chiefComplaint === 'Chest tightness', 'Wrapped { summary: DoctorSummary } unwraps accurately');
 }
 

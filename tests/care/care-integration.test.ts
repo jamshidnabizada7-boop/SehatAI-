@@ -17,7 +17,7 @@ import { scanContactInfo } from '../../src/server/care/messaging-service';
 import { sendMessage, messagingWindowFor } from '../../src/server/care/messaging-service';
 import { hasCapability } from '../../src/lib/care/rbac';
 
-process.env.NODE_ENV = 'development';
+(process.env as Record<string, string | undefined>).NODE_ENV = 'development';
 process.env.CARE_PAYMENTS_ENABLED = 'true';
 
 const db = new PrismaClient();
@@ -98,7 +98,7 @@ describe('§3/§46/§58/§89 booking + concurrency', () => {
   });
   test('idempotent create: same key → never two consultations', async () => {
     const key = `${stamp}-idem-create`;
-    const first = await mk({}, key as never).catch(() => null);
+    const first = await mk({ idempotencyKey: key }).catch(() => null);
     void first;
     // second call with same idempotency key handled at API layer; service-level:
     const count = await db.consultation.count({ where: { patientId: ids.patient! } });

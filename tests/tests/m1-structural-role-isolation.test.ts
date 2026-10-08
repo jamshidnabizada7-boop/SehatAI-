@@ -6,10 +6,10 @@
 // 3. Zero assistant disclaimer leakage into L0 / L1 / clinical context
 // ============================================================
 
-import { createDialogueStreams, type PatientDialogueStream, type DialogueHistoryStream } from '../src/lib/types';
-import { runPipeline } from '../src/server/pipeline/run';
-import { matchRedFlags, runL0Triage } from '../src/lib/engine/safety-engine';
-import { extractClinicalContext } from '../src/lib/engine/context-extraction';
+import { createDialogueStreams, type PatientDialogueStream, type DialogueHistoryStream } from '@/lib/types';
+import { runPipeline } from '@/server/pipeline/run';
+import { matchRedFlags, runL0Triage } from '@/lib/engine/safety-engine';
+import { extractClinicalContext } from '@/lib/engine/context-extraction';
 
 function assert(condition: boolean, msg: string) {
   if (!condition) {

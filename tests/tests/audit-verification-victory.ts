@@ -1,7 +1,7 @@
-import { CORPUS } from '../src/data/corpus';
+import { CORPUS } from '@/data/corpus';
 import { PrismaClient } from '@prisma/client';
-import { damerauLevenshteinDistance, stringSimilarity, fuzzyFindMedicalConcept, MEDICAL_CANONICAL_TERMS } from '../src/lib/engine/fuzzy-matcher';
-import { runOfflineEngine, retrieveCorpus } from '../src/lib/engine/safety-engine';
+import { damerauLevenshteinDistance, stringSimilarity, fuzzyFindMedicalConcept, MEDICAL_CANONICAL_TERMS } from '@/lib/engine/fuzzy-matcher';
+import { runOfflineEngine, retrieveCorpus } from '@/lib/engine/safety-engine';
 
 const prisma = new PrismaClient();
 

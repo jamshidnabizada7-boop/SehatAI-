@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
 
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   const password = typeof body.password === 'string' ? body.password : '';
+  const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim().slice(0, 80) : null;
   const consent = body.consent === true;
   if (!consent) {
     return NextResponse.json({ error: 'Explicit consent is required to create a health account.' }, { status: 400 });

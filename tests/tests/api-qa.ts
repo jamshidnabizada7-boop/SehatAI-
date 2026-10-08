@@ -2,15 +2,15 @@
 const BASE = 'http://localhost:3000';
 let pass = 0;
 let fail = 0;
-const results = [];
+const results: string[] = [];
 
-async function check(name, cond, extra = '') {
+async function check(name: string, cond: any, extra = '') {
   if (cond) { pass++; results.push(`PASS ${name}`); }
   else { fail++; results.push(`FAIL ${name} ${extra}`); }
   console.log((cond ? 'PASS' : 'FAIL') + ' ' + name + (cond ? '' : ' :: ' + extra));
 }
 
-async function post(path, body, timeoutMs = 60000) {
+async function post(path: string, body: any, timeoutMs = 60000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -21,25 +21,25 @@ async function post(path, body, timeoutMs = 60000) {
       signal: ctrl.signal,
     });
     const text = await res.text();
-    let json = null;
+    let json: any = null;
     try { json = JSON.parse(text); } catch { /* SSE or invalid */ }
     return { status: res.status, text, json };
   } catch (e) {
-    return { status: 0, text: String(e), json: null };
+    return { status: 0, text: String(e), json: null as any };
   } finally {
     clearTimeout(t);
   }
 }
 
-async function get(path) {
+async function get(path: string) {
   try {
     const res = await fetch(BASE + path);
     const text = await res.text();
-    let json = null;
+    let json: any = null;
     try { json = JSON.parse(text); } catch { }
     return { status: res.status, text, json };
   } catch (e) {
-    return { status: 0, text: String(e), json: null };
+    return { status: 0, text: String(e), json: null as any };
   }
 }
 

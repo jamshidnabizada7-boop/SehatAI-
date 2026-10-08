@@ -1,6 +1,6 @@
-import { CORPUS } from '../src/data/corpus';
-import { MEDICAL_CANONICAL_TERMS, fuzzyFindMedicalConcept, stringSimilarity, damerauLevenshteinDistance } from '../src/lib/engine/fuzzy-matcher';
-import { retrieveCorpus, runOfflineEngine } from '../src/lib/engine/safety-engine';
+import { CORPUS } from '@/data/corpus';
+import { MEDICAL_CANONICAL_TERMS, fuzzyFindMedicalConcept, stringSimilarity, damerauLevenshteinDistance } from '@/lib/engine/fuzzy-matcher';
+import { retrieveCorpus, runOfflineEngine } from '@/lib/engine/safety-engine';
 import { PrismaClient } from '@prisma/client';
 
 async function runAdversarialAudit() {
