@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
-  const consent = body.consent !== false;
+  if (body.consent !== true) {
+    return NextResponse.json({ error: 'Explicit affirmative consent is required (consent must be true).' }, { status: 400 });
+  }
+  const consent = true;
   const retentionDays =
     typeof body.retentionDays === 'number' && ALLOWED_RETENTION.has(body.retentionDays)
       ? body.retentionDays === 0

@@ -15,9 +15,51 @@ export async function GET(_req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden — doctor role required' }, { status: (e as { status?: number }).status ?? 401 });
   }
 
+  let allowedPatientIds: string[] | null = null;
+  if (user.role !== 'admin') {
+    const doctorProfile = await db.doctorProfile.findUnique({
+      where: { userId: user.id },
+      select: { id: true, pmdcVerifiedAt: true },
+    });
+    if (!doctorProfile || !doctorProfile.pmdcVerifiedAt) {
+      return NextResponse.json({ patients: [] });
+    }
+
+    // §22 Authorization Boundary: Doctor A cannot access unrelated patient.
+    // Must have explicit patient consent, scheduled appointment, or Care Connect consultation.
+    const [consents, appointments, consultations] = await Promise.all([
+      db.patientConsentForDoctor.findMany({
+        where: { doctorId: doctorProfile.id, revokedAt: null },
+        select: { patientId: true },
+      }),
+      db.appointment.findMany({
+        where: { doctorProfileId: doctorProfile.id },
+        select: { patientId: true },
+      }),
+      db.consultation.findMany({
+        where: { OR: [{ doctorProfileId: doctorProfile.id }, { doctorUserId: user.id }] },
+        select: { patientId: true },
+      }),
+    ]);
+
+    allowedPatientIds = [
+      ...new Set([
+        ...consents.map((c) => c.patientId),
+        ...appointments.map((a) => a.patientId),
+        ...consultations.map((c) => c.patientId),
+      ]),
+    ];
+
+    if (allowedPatientIds.length === 0) {
+      return NextResponse.json({ patients: [] });
+    }
+  }
+
   // Fetch conversations with userId (authenticated patients), include latest message + profile
   const conversations = await db.conversation.findMany({
-    where: { userId: { not: null } },
+    where: {
+      userId: allowedPatientIds ? { in: allowedPatientIds } : { not: null },
+    },
     include: {
       messages: {
         orderBy: { createdAt: 'desc' },

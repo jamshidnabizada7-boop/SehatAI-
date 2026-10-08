@@ -1381,9 +1381,32 @@ export async function runPipeline(
   } else if (input.persist !== false) {
     try {
       let convId = input.conversationId;
-      if (!convId && input.sessionId) {
+      if (convId) {
+        // Enforce ownership check BEFORE loading past conversation history turns
+        const existing = await db.conversation.findUnique({
+          where: { id: convId },
+          select: { id: true, userId: true, sessionToken: true },
+        });
+        if (!existing) {
+          convId = undefined;
+        } else if (input.userId) {
+          // If authenticated, conversation must belong to user or same guest session
+          if (existing.userId && existing.userId !== input.userId) {
+            convId = undefined; // Deny cross-user history loading
+          } else if (!existing.userId && existing.sessionToken !== input.sessionId) {
+            convId = undefined; // Deny unowned conversation from different session
+          }
+        } else {
+          // If guest, conversation must have no userId AND match sessionToken
+          if (existing.userId || existing.sessionToken !== input.sessionId) {
+            convId = undefined; // Deny guest loading other user's or guest's conversation
+          }
+        }
+      } else if (input.sessionId) {
         const conv = await db.conversation.findFirst({
-          where: { sessionToken: input.sessionId },
+          where: input.userId
+            ? { userId: input.userId }
+            : { sessionToken: input.sessionId, userId: null },
           orderBy: { updatedAt: 'desc' },
           select: { id: true },
         });
@@ -2033,13 +2056,113 @@ export async function runPipeline(
       mustAbstain: preConstellation.mustAbstain,
       vetoNames: preConstellation.results.filter((r) => r.veto).map((r) => r.name),
     });
-    // If a critical veto fires before generation, boost the safety directive
+    // If a critical veto fires before generation, enforce safety fallback and affect control flow (§8.9)
     if (preConstellation.mustAbstain) {
-      // Add extra caution to the generation prompt
-      // The response will be heavily caveated
       structuredLog('warn', 'constellation.pre-gen.critical', {
         reason: preConstellation.results.find((r) => r.veto && r.severity === 'critical')?.reason,
       });
+      const criticalRedFlag = preConstellation.results.find((r) => r.veto && r.name === 'red-flag-recheck');
+      const criticalMed = preConstellation.results.find((r) => r.veto && r.name === 'medication-safety');
+
+      let preVetoContent = '';
+      let preVetoLevel: TriageLevel = 'EMERGENCY';
+      let preEmergencyData: EmergencyStageData | null = null;
+
+      if (criticalRedFlag) {
+        preVetoLevel = 'EMERGENCY';
+        const emTemplate = getEmergencyTemplate('general-emergency') ?? getEmergencyTemplate('unconscious') ?? EMERGENCY_TEMPLATES[0]!;
+        const langKey = lang === 'ur' ? 'ur' : lang === 'roman' ? 'roman' : 'en';
+        preVetoContent = [
+          `🚨 **${emTemplate.title[langKey]}**`,
+          emTemplate.reasonIntro[langKey],
+          ...emTemplate.immediateActions.map((a) => '• ' + a[langKey]),
+          lang === 'ur' ? 'فوری طور پر 1122 پر کال کریں۔' : lang === 'roman' ? 'Foran 1122 par call karein.' : 'CALL 1122 IMMEDIATELY.',
+        ].join('\n\n');
+        preEmergencyData = {
+          templateCategory: 'general-emergency',
+          title: emTemplate.title[lang],
+          reason: 'Pre-generation constellation validator detected critical emergency red flag',
+          matchedPatternId: 'constellation-pre-veto',
+          actions: emTemplate.immediateActions.map((a) => a[lang]),
+          doNot: emTemplate.doNot.map((d) => d[lang]),
+          numbers: EMERGENCY_NUMBERS,
+          sources: emTemplate.sources,
+        };
+      } else if (criticalMed) {
+        preVetoLevel = 'URGENT';
+        preVetoContent = lang === 'ur'
+          ? 'توجہ: ادویات کا ممکنہ شدید خطرہ یا تعامل سامنے آیا ہے۔ یہ ادویات ایک ساتھ ہرگز استعمال نہ کریں اور فوراً اپنے معالج یا فارماسسٹ سے رجوع کریں۔'
+          : lang === 'roman'
+          ? 'Tawajah: Dawao ka shadeed khatra ya interaction samne aaya hai. Yeh adviyat aik saath hargiz istemal na karein aur foran certified doctor ya pharmacist se rabta karein.'
+          : 'Warning: A high-severity dangerous medication interaction has been identified. Do not take these medications together and consult a doctor or pharmacist immediately.';
+      } else {
+        preVetoLevel = 'URGENT';
+        preVetoContent = lang === 'ur'
+          ? 'طبی تحفظ کی بنیاد پر اس استفسار کا خودکار جواب روک دیا گیا ہے۔ برائے مہربانی فوری طور پر مستند ڈاکٹر سے رجوع کریں۔'
+          : lang === 'roman'
+          ? 'Tibbi tahaffuz ki bunyad par is sawal ka khudkaar jawab rok diya gaya hai. Barah-e-karam fori certified doctor se rabta karein.'
+          : 'Automated guidance for this query has been withheld by clinical safety validators. Please consult a qualified doctor directly.';
+      }
+
+      const preTriageData = {
+        ...triageData,
+        level: preVetoLevel,
+        reason: 'Pre-generation constellation safety veto enforced',
+      };
+      emit('triage', preTriageData);
+      if (preEmergencyData) {
+        emit('emergency', preEmergencyData);
+      }
+      emit('generation', { delta: preVetoContent });
+
+      const prePersisted = await persistTurn({
+        sessionId: input.sessionId,
+        conversationId: input.conversationId,
+        userId,
+        lang,
+        userContent: message,
+        assistantContent: preVetoContent,
+        level: preVetoLevel,
+        redFlags: [],
+        citations: [],
+        meta: { path: 'constellation-pre-veto', reason: 'critical safety validator veto' },
+        emergency: preVetoLevel === 'EMERGENCY',
+        engine: 'constellation-pre-veto',
+        shortCircuited: true,
+        signals: combinedSignals,
+        persist: input.persist,
+      });
+
+      const preResult: PipelineResult = {
+        messageId: prePersisted.messageId,
+        conversationId: prePersisted.conversationId,
+        content: preVetoContent,
+        language: lang,
+        triage: preTriageData,
+        citations: [],
+        validation: null,
+        offline: false,
+        latencyMs: Date.now() - t0,
+        emergency: preEmergencyData,
+        confidence: { band: 'LOW', score: 0.2, reasons: ['pre-generation constellation safety veto'] },
+        events,
+      };
+
+      emit('done', {
+        messageId: preResult.messageId,
+        conversationId: preResult.conversationId,
+        content: preResult.content,
+        language: preResult.language,
+        triage: preResult.triage,
+        citations: [],
+        validation: null,
+        offline: false,
+        latencyMs: preResult.latencyMs,
+        emergency: preResult.emergency,
+        confidence: preResult.confidence,
+      });
+
+      return preResult;
     }
   } catch {
     // Pre-generation constellation failure must not block the pipeline
@@ -2587,10 +2710,42 @@ export async function runPipeline(
     finalConfidence = adjustConfidence(finalConfidence, constellationResult);
     result.confidence = finalConfidence;
 
-    // Veto Enforcement: if any critical validator vetoes, enforce clinical safety fallback
-    if (constellationResult.mustAbstain) {
-      const redFlagVeto = constellationResult.results.find((r) => r.veto && r.name === 'red-flag-recheck');
-      const medVeto = constellationResult.results.find((r) => r.veto && r.name === 'medication-safety');
+    let activeConstellation = constellationResult;
+
+    // Single revision pass if moderate vetoes fire (§8.8)
+    if (activeConstellation.shouldRevise) {
+      structuredLog('info', 'constellation.revise', {
+        reasons: activeConstellation.results.filter((r) => r.veto).map((r) => `${r.name}: ${r.reason}`),
+      });
+
+      const citeVeto = activeConstellation.results.find((r) => r.veto && r.name === 'citation-grounding');
+      if (citeVeto) {
+        // Strip ungrounded citation tokens from response
+        const { stripped, sanitized } = extractCitations(finalContent, new Set(citations.map((c) => c.id)));
+        if (stripped.length > 0) {
+          finalContent = sanitized;
+          result.content = sanitized;
+        }
+      }
+
+      // Revalidate once after revision
+      try {
+        const revisedInput: ConstellationInput = {
+          ...constellationInput,
+          response: finalContent,
+        };
+        activeConstellation = await runConstellation(revisedInput);
+        finalConfidence = adjustConfidence(finalConfidence, activeConstellation);
+        result.confidence = finalConfidence;
+      } catch {
+        // preserve existing result
+      }
+    }
+
+    // Veto Enforcement: if any critical validator vetoes, enforce clinical safety fallback (§8.8)
+    if (activeConstellation.mustAbstain) {
+      const redFlagVeto = activeConstellation.results.find((r) => r.veto && r.name === 'red-flag-recheck');
+      const medVeto = activeConstellation.results.find((r) => r.veto && r.name === 'medication-safety');
 
       if (redFlagVeto) {
         result.triage.level = 'EMERGENCY';
@@ -2623,17 +2778,25 @@ export async function runPipeline(
           : 'Warning: A potentially dangerous medication interaction was detected. Do not take these medications together and consult a doctor or pharmacist immediately.';
         result.content = medWarning;
         finalContent = medWarning;
+      } else {
+        const abstentionFallback = lang === 'ur'
+          ? 'طبی رہنمائی کے معیار پر پورا نہ اترنے کی وجہ سے یہ جواب روک دیا گیا ہے۔ برائے مہربانی فوری طور پر مستند ڈاکٹر سے رجوع کریں۔'
+          : lang === 'roman'
+          ? 'Tibbi rehnumai ke mayaar par poora na utarne ki wajah se yeh جواب rok diya gaya hai. Barah-e-karam fori certified doctor se rabta karein.'
+          : 'This response has been withheld by clinical safety validators. Please consult a qualified healthcare professional directly for guidance on this matter.';
+        result.content = abstentionFallback;
+        finalContent = abstentionFallback;
       }
     }
 
     // Log constellation result (no PHI)
     structuredLog('info', 'constellation.run', {
-      approved: constellationResult.approved,
-      mustAbstain: constellationResult.mustAbstain,
-      shouldRevise: constellationResult.shouldRevise,
-      agreementRatio: constellationResult.agreementRatio,
-      latencyMs: constellationResult.totalLatencyMs,
-      vetoNames: constellationResult.results.filter((r) => r.veto).map((r) => r.name),
+      approved: activeConstellation.approved,
+      mustAbstain: activeConstellation.mustAbstain,
+      shouldRevise: activeConstellation.shouldRevise,
+      agreementRatio: activeConstellation.agreementRatio,
+      latencyMs: activeConstellation.totalLatencyMs,
+      vetoNames: activeConstellation.results.filter((r) => r.veto).map((r) => r.name),
     });
   } catch {
     // constellation must never break the response — if it fails, the existing L2 judge still ran

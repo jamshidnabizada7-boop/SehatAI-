@@ -92,7 +92,8 @@ export async function joinCall(opts: { consultationId: string; userId: string; r
   }
   await auditCare({ actorId: opts.userId, actorRole: opts.role, action: 'call.join', consultationId: c.id, detail: { callId: call.id } });
 
-  return { call, token: issueRoomToken({ consultationId: c.id, userId: opts.userId, role: opts.role }) };
+  const token = await getVideoProvider().issueToken({ consultationId: c.id, userId: opts.userId, role: opts.role });
+  return { call, token };
 }
 
 /** §28 — low-bandwidth fallback ladder: VIDEO → AUDIO → SECURE CHAT. */

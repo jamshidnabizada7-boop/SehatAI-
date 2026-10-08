@@ -27,7 +27,7 @@ export type ProviderTier = 'tier0_qwen' | 'tier1_gemini' | 'tier2_groq' | 'tier3
 export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 
 export interface LlmMessage {
-  role: 'assistant' | 'user'; // SDK convention: system prompt is sent as 'assistant'
+  role: 'system' | 'assistant' | 'user'; // True system role supported across providers (§8.10)
   content: string;
 }
 
@@ -608,8 +608,8 @@ function prepareGeminiMessages(messages: LlmMessage[]) {
 
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
-    if (i === 0 && msg.role === 'assistant') {
-      systemInstruction = msg.content;
+    if (msg.role === 'system' || (i === 0 && msg.role === 'assistant')) {
+      systemInstruction = systemInstruction ? `${systemInstruction}\n\n${msg.content}` : msg.content;
     } else {
       contents.push({
         role: msg.role === 'assistant' ? 'model' : 'user',
@@ -621,7 +621,7 @@ function prepareGeminiMessages(messages: LlmMessage[]) {
   if (contents.length === 0) {
     contents.push({
       role: 'user',
-      parts: [{ text: systemInstruction || '' }],
+      parts: [{ text: systemInstruction || 'Begin clinical evaluation.' }],
     });
     systemInstruction = undefined;
   } else if (contents[0].role !== 'user') {
@@ -693,7 +693,7 @@ export async function llmChat(
               const res = await client.chatCompletions({
                 model: modelName,
                 messages: messages.map((m) => ({
-                  role: m.role === 'assistant' ? 'assistant' : 'user',
+                  role: m.role,
                   content: m.content,
                 })),
                 temperature: opts.temperature ?? 0.3,
@@ -787,7 +787,7 @@ export async function llmChat(
                 {
                   model: modelName,
                   messages: messages.map((m) => ({
-                    role: m.role === 'assistant' ? 'assistant' : 'user',
+                    role: m.role,
                     content: m.content,
                   })),
                   temperature: opts.temperature ?? 0.3,
@@ -839,7 +839,7 @@ export async function llmChat(
               const res = await client.chatCompletions({
                 model: modelName,
                 messages: messages.map((m) => ({
-                  role: m.role === 'assistant' ? 'assistant' : 'user',
+                  role: m.role,
                   content: m.content,
                 })),
                 temperature: opts.temperature ?? 0.3,
@@ -890,7 +890,7 @@ export async function llmChat(
               const res = await client.chatCompletions({
                 model: modelName,
                 messages: messages.map((m) => ({
-                  role: m.role === 'assistant' ? 'assistant' : 'user',
+                  role: m.role,
                   content: m.content,
                 })),
                 temperature: opts.temperature ?? 0.3,
@@ -938,7 +938,7 @@ export async function llmChat(
               const res = await client.chatCompletions({
                 model: modelName,
                 messages: messages.map((m) => ({
-                  role: m.role === 'assistant' ? 'assistant' : 'user',
+                  role: m.role,
                   content: m.content,
                 })),
                 temperature: opts.temperature ?? 0.3,
@@ -1004,7 +1004,7 @@ export async function llmChatStream(
   if (typeof messagesOrSystem === 'string') {
     const systemPrompt = messagesOrSystem;
     const rawMsgs = Array.isArray(onDeltaOrMessages) ? onDeltaOrMessages : [];
-    messages = [{ role: 'assistant', content: systemPrompt }, ...rawMsgs];
+    messages = [{ role: 'system', content: systemPrompt }, ...rawMsgs];
     onDelta = typeof optsOrOnDelta === 'function' ? optsOrOnDelta : () => {};
     opts = maybeOpts ?? {};
   } else {
@@ -1031,7 +1031,7 @@ export async function llmChatStream(
               const res = await client.chatCompletions({
                 model: modelName,
                 messages: messages.map((m) => ({
-                  role: m.role === 'assistant' ? 'assistant' : 'user',
+                  role: m.role,
                   content: m.content,
                 })),
                 stream: true,
@@ -1170,7 +1170,7 @@ export async function llmChatStream(
                 {
                   model: modelName,
                   messages: messages.map((m) => ({
-                    role: m.role === 'assistant' ? 'assistant' : 'user',
+                    role: m.role,
                     content: m.content,
                   })),
                   stream: true,
@@ -1242,7 +1242,7 @@ export async function llmChatStream(
               const res = await client.chatCompletions({
                 model: modelName,
                 messages: messages.map((m) => ({
-                  role: m.role === 'assistant' ? 'assistant' : 'user',
+                  role: m.role,
                   content: m.content,
                 })),
                 stream: true,
@@ -1331,7 +1331,7 @@ export async function llmChatStream(
               const res = await client.chatCompletions({
                 model: modelName,
                 messages: messages.map((m) => ({
-                  role: m.role === 'assistant' ? 'assistant' : 'user',
+                  role: m.role,
                   content: m.content,
                 })),
                 stream: true,
@@ -1417,7 +1417,7 @@ export async function llmChatStream(
               const res = await client.chatCompletions({
                 model: modelName,
                 messages: messages.map((m) => ({
-                  role: m.role === 'assistant' ? 'assistant' : 'user',
+                  role: m.role,
                   content: m.content,
                 })),
                 stream: true,
@@ -1662,7 +1662,7 @@ export async function llmJSON<T>(
   // Tier 2b / Fallback: General Chat + Block Parser
   try {
     const messages: LlmMessage[] = [
-      { role: 'assistant', content: system },
+      { role: 'system', content: system },
       { role: 'user', content: user },
     ];
     const rawText = await llmChat(messages, { timeoutMs, abortSignal: parentSignal });
