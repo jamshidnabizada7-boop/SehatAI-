@@ -393,14 +393,14 @@ export async function processChargeback(opts: {
  * Returns positive minor integer representing the unrecovered clawback/liability amount,
  * or 0 if doctor has non-negative available balance.
  */
-export async function getDoctorReceivableBalance(doctorProfileId: string, currency = 'PKR'): Promise<{
+export async function getDoctorReceivableBalance(doctorProfileId: string, currency = 'PKR', txClient?: any): Promise<{
   doctorProfileId: string;
   currency: string;
   hasDeficit: boolean;
   receivableMinor: number;
   availableMinor: number;
 }> {
-  const wallet = await doctorWallet(doctorProfileId, currency);
+  const wallet = await doctorWallet(doctorProfileId, currency, txClient);
   const hasDeficit = wallet.availableMinor < 0;
   return {
     doctorProfileId,
@@ -422,6 +422,7 @@ export async function getDoctorReceivableBalance(doctorProfileId: string, curren
  *   - PLATFORM_FEE: DEBIT writeOffAmount (recognizing bad-debt platform loss)
  * Preserves the mathematical zero-imbalance ledger invariant.
  * Prevents double recovery: rejects if receivable is zero or already written off.
+ * Concurrency protected: serializes under transaction with DoctorProfile row-level lock.
  */
 export async function allocatePlatformLoss(opts: {
   doctorProfileId: string;
@@ -432,63 +433,75 @@ export async function allocatePlatformLoss(opts: {
   actorRole?: 'FINANCE' | 'SYSTEM';
 }) {
   const ccy = (opts.currency ?? 'PKR').toUpperCase();
-  const receivableInfo = await getDoctorReceivableBalance(opts.doctorProfileId, ccy);
 
-  if (!receivableInfo.hasDeficit || receivableInfo.receivableMinor <= 0) {
-    throw new RefundError('NO_RECEIVABLE_TO_ALLOCATE', 409);
-  }
+  return await db.$transaction(async (tx) => {
+    // Acquire row-level lock on DoctorProfile to serialize concurrent loss allocations
+    await tx.doctorProfile.update({
+      where: { id: opts.doctorProfileId },
+      data: { updatedAt: new Date() },
+    });
 
-  const writeOffMinor =
-    opts.amountMinor != null
-      ? Math.min(opts.amountMinor, receivableInfo.receivableMinor)
-      : receivableInfo.receivableMinor;
+    const receivableInfo = await getDoctorReceivableBalance(opts.doctorProfileId, ccy, tx);
 
-  if (writeOffMinor <= 0) {
-    throw new RefundError('INVALID_LOSS_ALLOCATION_AMOUNT', 400);
-  }
+    if (!receivableInfo.hasDeficit || receivableInfo.receivableMinor <= 0) {
+      throw new RefundError('NO_RECEIVABLE_TO_ALLOCATE', 409);
+    }
 
-  const lossTxId = `loss_alloc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const txRes = await postTransaction({
-    reference: `loss:${opts.doctorProfileId}:${lossTxId}`,
-    idempotencyKey: `loss:${opts.doctorProfileId}:${lossTxId}`,
-    legs: [
+    const writeOffMinor =
+      opts.amountMinor != null
+        ? Math.min(opts.amountMinor, receivableInfo.receivableMinor)
+        : receivableInfo.receivableMinor;
+
+    if (writeOffMinor <= 0) {
+      throw new RefundError('INVALID_LOSS_ALLOCATION_AMOUNT', 400);
+    }
+
+    const lossTxId = `loss_alloc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const txRes = await postTransaction(
       {
-        accountKind: 'DOCTOR_AVAILABLE',
-        ownerDoctorProfileId: opts.doctorProfileId,
-        direction: 'CREDIT',
-        amountMinor: writeOffMinor,
-        currency: ccy,
-        memo: `platform loss write-off: clears doctor receivable deficit (${opts.reason})`,
+        reference: `loss:${opts.doctorProfileId}:${lossTxId}`,
+        idempotencyKey: `loss:${opts.doctorProfileId}:${lossTxId}`,
+        legs: [
+          {
+            accountKind: 'DOCTOR_AVAILABLE',
+            ownerDoctorProfileId: opts.doctorProfileId,
+            direction: 'CREDIT',
+            amountMinor: writeOffMinor,
+            currency: ccy,
+            memo: `platform loss write-off: clears doctor receivable deficit (${opts.reason})`,
+          },
+          {
+            accountKind: 'PLATFORM_FEE',
+            direction: 'DEBIT',
+            amountMinor: writeOffMinor,
+            currency: ccy,
+            memo: `bad debt absorption / platform loss allocation (${opts.reason})`,
+          },
+        ],
       },
-      {
-        accountKind: 'PLATFORM_FEE',
-        direction: 'DEBIT',
-        amountMinor: writeOffMinor,
+      tx
+    );
+
+    await auditCare({
+      actorId: opts.actorId ?? 'SYSTEM',
+      actorRole: opts.actorRole ?? 'FINANCE',
+      action: 'financial.platform_loss_allocated',
+      detail: {
+        doctorProfileId: opts.doctorProfileId,
         currency: ccy,
-        memo: `bad debt absorption / platform loss allocation (${opts.reason})`,
+        amountMinor: writeOffMinor,
+        remainingDeficitMinor: receivableInfo.receivableMinor - writeOffMinor,
+        reason: opts.reason,
       },
-    ],
-  });
+    });
 
-  await auditCare({
-    actorId: opts.actorId ?? 'SYSTEM',
-    actorRole: opts.actorRole ?? 'FINANCE',
-    action: 'financial.platform_loss_allocated',
-    detail: {
-      doctorProfileId: opts.doctorProfileId,
-      currency: ccy,
-      amountMinor: writeOffMinor,
-      remainingDeficitMinor: receivableInfo.receivableMinor - writeOffMinor,
-      reason: opts.reason,
-    },
-  });
+    const updatedWallet = await doctorWallet(opts.doctorProfileId, ccy, tx);
 
-  const updatedWallet = await doctorWallet(opts.doctorProfileId, ccy);
-
-  return {
-    success: true,
-    allocatedMinor: writeOffMinor,
-    newAvailableMinor: updatedWallet.availableMinor,
-    transactionReference: txRes.reference,
-  };
+    return {
+      success: true,
+      allocatedMinor: writeOffMinor,
+      newAvailableMinor: updatedWallet.availableMinor,
+      transactionReference: txRes.reference,
+    };
+  }, { timeout: 15_000 });
 }

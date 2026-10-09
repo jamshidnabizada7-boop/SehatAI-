@@ -200,9 +200,14 @@ export async function requireActiveDoctor(): Promise<{ id: string; email: string
     (err as any).status = 403;
     throw err;
   }
-  const profile = await db.doctorProfile.findUnique({ where: { userId: u.id } });
-  if (!profile || !profile.pmdcVerifiedAt) {
-    const err = new Error('Forbidden — PMDC verification pending');
+  const profile = await db.doctorProfile.findUnique({
+    where: { userId: u.id },
+    include: { credentials: true },
+  });
+  const hasVerifiedCred = profile?.credentials?.some((c) => c.status === 'VERIFIED');
+  const isVerified = profile?.pmdcVerifiedAt != null || Boolean(hasVerifiedCred);
+  if (!profile || !isVerified) {
+    const err = new Error('Forbidden — Doctor license verification pending');
     (err as any).status = 403;
     throw err;
   }

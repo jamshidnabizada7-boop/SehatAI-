@@ -49,7 +49,8 @@ export async function createConsultation(input: CreateConsultationInput) {
     where: { id: input.doctorProfileId },
     include: {
       user: { select: { id: true, accountStatus: true, email: true, name: true } },
-      jurisdictions: { select: { countryCode: true, status: true } },
+      jurisdictions: { select: { countryCode: true, status: true, verifiedAt: true, verifiedById: true } },
+      credentials: true,
     },
   });
   if (!doctor) throw new ConsultationError('DOCTOR_NOT_FOUND', 404);
@@ -71,8 +72,28 @@ export async function createConsultation(input: CreateConsultationInput) {
     }
   }
 
+  // Doctor must have a verified license (PM&DC for Pakistani, MoPH/independent for Afghan)
+  // and active account status
+  const country = (doctor.country ?? 'PK').trim().toUpperCase();
+  const hasVerifiedCred = doctor.credentials?.some(
+    (c) =>
+      c.status === 'VERIFIED' &&
+      (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+      (country === 'AF'
+        ? (c.country ?? '').toUpperCase() === 'AF' ||
+          (c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
+          (c.issuingBody ?? '').toUpperCase().includes('AFGHAN')
+        : (c.country ?? '').toUpperCase() === 'PK' ||
+          (c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
+          (c.issuingBody ?? '').toUpperCase().includes('PMDC'))
+  );
+  const isVerified =
+    (country === 'PK' ? doctor.pmdcVerifiedAt != null : false) ||
+    hasVerifiedCred ||
+    (doctor.pmdcVerifiedAt != null && country === 'AF');
+
   const doctorActive =
-    doctor.pmdcVerifiedAt != null &&
+    Boolean(isVerified) &&
     doctor.user.accountStatus === 'active' &&
     (doctor.careStatus == null || doctor.careStatus === 'ACTIVE');
   if (!doctorActive) throw new ConsultationError('DOCTOR_NOT_ACTIVE', 409);

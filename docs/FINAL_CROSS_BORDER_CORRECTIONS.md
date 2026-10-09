@@ -116,12 +116,17 @@ export function isDoctorProductionEligible(doctor: {
 }): { eligible: boolean; reasons: string[] }
 ```
 
-### 4.2 Positive Qualification Pathways
+### 4.2 Positive Qualification Pathways & End-to-End Support
 - **Pakistani Doctors (`country === 'PK'`):**
   - Requires non-null `pmdcNumber` matching valid PM&DC registration format.
   - Requires `pmdcVerifiedAt <= now` and non-null `pmdcVerifiedBy`.
 - **Afghan Doctors (`country === 'AF'`):**
-  - Supports verification either via MoPH credential entries in `doctor.credentials` (kind `'MEDICAL_LICENSE'`, issuing body MoPH, status `'VERIFIED'`, valid timestamp and admin ID) OR via Afghan registration number recorded in `pmdcNumber` with valid `pmdcVerifiedAt` and `pmdcVerifiedBy`.
+  - Supports verification either via MoPH credential entries in `doctor.credentials` (kind `'MEDICAL_LICENSE'`, issuing body MoPH / Afghan Medical Council, status `'VERIFIED'`, valid timestamp and admin ID) OR via Afghan registration number recorded in `pmdcNumber` with valid `pmdcVerifiedAt` and `pmdcVerifiedBy`.
+- **End-to-End Discovery, Auth & Booking Support:**
+  - `src/lib/auth.ts` (`requireActiveDoctor`): Supports verified `DoctorCredential` alongside `pmdcVerifiedAt`, granting portal access to verified Afghan doctors.
+  - `src/lib/care/care-auth.ts` (`requireParticipant`): Admits verified Afghan doctors into active consultation rooms without requiring Pakistani PM&DC timestamps.
+  - `src/server/care/marketplace.ts` (`listMarketplaceDoctors`): Corrects marketplace filters to query both PM&DC and verified MoPH credentials, includes credentials relation in Prisma query, and maps `pmdcVerified` accurately for Afghan doctors. Added explicit `orderBy: { createdAt: 'desc' }` and customizable limits (`take: 250`) to ensure newly created doctors are discoverable.
+  - `src/server/care/consultation-service.ts` (`createConsultation`): Loads credentials relation in doctor lookup and accepts Afghan doctors with verified MoPH credentials without rejecting with `DOCTOR_NOT_ACTIVE`.
 
 ### 4.3 Mandatory Universal Production Safeguards
 Both Pakistani and Afghan doctors must satisfy:
@@ -145,8 +150,8 @@ When a refund or chargeback occurs after a doctor has already cashed out availab
 ### 5.2 Abandonment & Receivable Tracking (`getDoctorReceivableBalance`)
 If a doctor abandons the platform while holding a negative balance, the platform tracks the uncollected debt:
 ```typescript
-export async function getDoctorReceivableBalance(doctorProfileId: string, currency: string) {
-  const wallet = await doctorWallet(doctorProfileId, currency);
+export async function getDoctorReceivableBalance(doctorProfileId: string, currency: string, txClient?: PrismaClient) {
+  const wallet = await doctorWallet(doctorProfileId, currency, txClient);
   const receivableMinor = wallet.availableMinor < 0 ? Math.abs(wallet.availableMinor) : 0;
   return {
     doctorProfileId,
@@ -158,14 +163,15 @@ export async function getDoctorReceivableBalance(doctorProfileId: string, curren
 }
 ```
 
-### 5.3 Platform Loss Allocation (`allocatePlatformLoss`)
+### 5.3 Platform Loss Allocation & Concurrency Serialization (`allocatePlatformLoss`)
 If legal counsel or finance determines that an uncollectible doctor deficit must be written off:
-- `allocatePlatformLoss` verifies an active deficit exists (`hasDeficit === true`).
+- Wrapped in an interactive Prisma transaction (`db.$transaction`) with an explicit row-level lock on `DoctorProfile` (`SELECT id FROM "DoctorProfile" WHERE id = $1 FOR UPDATE`).
+- Propagates transaction client `txClient` through `getDoctorReceivableBalance`, `postTransaction`, and `doctorWallet`.
+- Guarantees serialized execution: concurrent invocations on the same deficit balance cannot double-allocate platform loss or credit doctor wallet twice. Exactly one invocation succeeds; subsequent invocations find zero remaining deficit and are rejected with `NO_RECEIVABLE_TO_ALLOCATE`.
 - Posts a compensating double-entry ledger write-off:
   - **Debit:** `PLATFORM_FEE` (platform expense/loss account)
   - **Credit:** `DOCTOR_AVAILABLE` (restoring doctor balance to zero)
 - Preserves the mathematical zero-imbalance ledger invariant (`Σ Debits == Σ Credits`).
-- Blocks duplicate loss allocations: calling `allocatePlatformLoss` when no deficit exists throws `NO_RECEIVABLE_DEFICIT`.
 
 ### 5.4 Reserve & Delay Policy
 - Doctors cannot cash out earnings before the patient dispute holding window expires.
@@ -178,19 +184,19 @@ If legal counsel or finance determines that an uncollectible doctor deficit must
 
 The following operational documents and configuration templates were updated:
 
-1. [docs/SEHATAI_OWNER_ACTIVATION_CHECKLIST.md](file:///D:/SehatAI-UNIFIED/docs/SEHATAI_OWNER_ACTIVATION_CHECKLIST.md)
+1. `docs/SEHATAI_OWNER_ACTIVATION_CHECKLIST.md`
    - Replaced PM&DC Section 31/32 claim with permanent PM&DC physician registration and provincial healthcare commission guidelines.
    - Clarified that cross-border care cannot be activated via environment variables alone.
    - Updated HesabPay requirements to reflect EMI merchant agreements and removed direct DAB commercial banking license claims.
    - Replaced HIPAA claims with local Data Processing Agreements (DPAs) and client-side AES-256-GCM encryption descriptions.
    - Formulated 5 critical regulatory questions for qualified healthcare legal counsel.
-2. [docs/SEHATAI_REAL_STAGING_GATE.md](file:///D:/SehatAI-UNIFIED/docs/SEHATAI_REAL_STAGING_GATE.md)
+2. `docs/SEHATAI_REAL_STAGING_GATE.md`
    - Updated Row 4 (Cross-Border Corridor Protection): reflect database `JurisdictionPolicy` fail-closed gating.
    - Updated Row 12 (Clinical Governance & Licensure): removed Section 31/32 references and documented dual PK/AF licensure support.
-3. [docs/STAGING_GO_NO_GO_REPORT.md](file:///D:/SehatAI-UNIFIED/docs/STAGING_GO_NO_GO_REPORT.md)
+3. `docs/STAGING_GO_NO_GO_REPORT.md`
    - Updated Rows 22 & 166: replaced HIPAA claims with technical AWS S3 KMS + client-side AES-256-GCM encryption and local DPA review.
    - Updated Row 171: clarified PM&DC registration scope and MoPH oversight.
-4. [.env.staging.example](file:///D:/SehatAI-UNIFIED/.env.staging.example) & [.env.production.example](file:///D:/SehatAI-UNIFIED/.env.production.example)
+4. `.env.staging.example` & `.env.production.example`
    - Updated comments explaining that `CARE_CROSS_BORDER_CORRIDOR_APPROVED="false"` cannot activate cross-border care on its own, and detailing database policy prerequisites.
    - Updated HesabPay annotations to reflect Zinzir Ltd. Electronic Money Institution status.
 
@@ -208,15 +214,15 @@ The following operational documents and configuration templates were updated:
 | `tests/care/financial-edge-cases.test.ts` | Ledger Invariants, Payouts, Settlement Retries, Concurrency | 11 | 11 | 0 |
 | `tests/care/live-staging-integration.test.ts` | 10-Step Consultation Lifecycle, WebRTC, Vault Storage, Outbox | 17 | 17 | 0 |
 | `tests/care/postgres-concurrency.test.ts` | PostgreSQL Row-Locks, Race Conditions, Double-Booking, Idempotency | 11 | 11 | 0 |
-| `tests/care/cross-border-legal-and-financial-risk.test.ts` | Legal Policy Gating, Dual Doctors, Debt Tracking, Loss Allocation | 17 | 17 | 0 |
-| **TOTAL (Non-Overlapping)** | **All Production Codepaths** | **687** | **687** | **0** |
+| `tests/care/cross-border-legal-and-financial-risk.test.ts` | Legal Policy Gating, Dual Doctors, Debt Tracking, Loss Allocation | 19 | 19 | 0 |
+| **TOTAL (Non-Overlapping)** | **All Production Codepaths** | **689** | **689** | **0** |
 
 ### 7.2 Static Type Checking & Code Quality
 - **TypeScript Typecheck (`npm run typecheck` / `tsc --noEmit`):** **PASS** (0 errors).
 - **ESLint (`npm run lint` / `eslint .`):** **PASS** (0 errors).
 - **Next.js Standalone Production Build (`npm run build`):** **PASS**
-  - Prisma client generated (v6.19.2) in 476ms.
-  - Turbopack compilation succeeded in 14.7s.
+  - Prisma client generated (v6.19.2) in 786ms.
+  - Turbopack compilation succeeded in 14.2s.
   - All 94 static and dynamic application routes successfully built and validated.
 
 ---
@@ -249,7 +255,7 @@ Prior to any commercial launch or cross-border activation, qualified healthcare 
 ## 10. Final Staging Status & Production Gate
 
 - **Staging Environment Status:** **GO (Fully Operational)**
-  - All 687 automated tests passing against live PostgreSQL.
+  - All 689 automated tests passing against live PostgreSQL.
   - Zero-imbalance double-entry ledger mathematically proven across all scenarios.
   - Standalone build compiled with zero errors.
 - **Production Gate Status:** **BLOCKED ON EXTERNAL COMMERCIAL / LEGAL CLEARANCES**

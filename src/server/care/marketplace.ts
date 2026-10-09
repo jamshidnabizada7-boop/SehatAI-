@@ -23,6 +23,7 @@ export interface MarketplaceFilters {
   sort?: 'relevance' | 'price_asc' | 'price_desc' | 'rating';
   sponsoredFirst?: boolean; // caller opts in; result is always labeled
   includeTest?: boolean; // prevents test doctors from appearing as real services unless explicitly enabled
+  limit?: number;
 }
 
 export interface MarketplaceDoctor {
@@ -296,8 +297,15 @@ export function robustRating(reviews: Array<{ overall: number; createdAt: Date }
 export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promise<MarketplaceDoctor[]> {
   const careStatusActiveFilter = {
     user: { accountStatus: 'active' as const },
-    pmdcVerifiedAt: { not: null },
-    OR: [{ careStatus: null }, { careStatus: { in: ['ACTIVE', 'VERIFIED'] } }],
+    OR: [
+      { pmdcVerifiedAt: { not: null } },
+      { credentials: { some: { status: 'VERIFIED' } } },
+    ],
+    AND: [
+      {
+        OR: [{ careStatus: null }, { careStatus: { in: ['ACTIVE', 'VERIFIED'] } }],
+      },
+    ],
   };
 
   const where = {
@@ -313,7 +321,8 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
     where,
     include: {
       user: { select: { name: true, id: true, email: true, accountStatus: true } },
-      jurisdictions: { select: { countryCode: true, status: true } },
+      jurisdictions: { select: { countryCode: true, status: true, verifiedAt: true, verifiedById: true } },
+      credentials: true,
       services: { where: { enabled: true } },
       careReviews: {
         where: { state: 'PUBLISHED' },
@@ -324,7 +333,8 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
       _count: { select: { consultations: { where: { status: 'COMPLETED' } } } },
       favorites: filters.patientId ? { where: { patientId: filters.patientId }, select: { id: true } } : false,
     },
-    take: 100,
+    orderBy: { createdAt: 'desc' },
+    take: filters.limit ?? 250,
   });
 
   // Post-filters that need loaded relations:
@@ -388,7 +398,9 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
       languages: safeJsonArray(d.languages),
       gender: d.gender,
       onlineNow: d.onlineNow && d.onlineNowUntil != null && d.onlineNowUntil > new Date(),
-      pmdcVerified: d.pmdcVerifiedAt != null,
+      pmdcVerified:
+        d.pmdcVerifiedAt != null ||
+        (Array.isArray(d.credentials) && d.credentials.some((c) => c.status === 'VERIFIED')),
       careStatusActive: d.careStatus == null || d.careStatus === 'ACTIVE',
       bio: d.bio,
       services: d.services.map((s) => ({

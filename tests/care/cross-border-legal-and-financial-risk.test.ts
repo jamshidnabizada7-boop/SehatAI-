@@ -18,7 +18,8 @@
 import { describe, expect, test, beforeAll, afterAll } from 'bun:test';
 import { PrismaClient } from '@prisma/client';
 import { evaluateJurisdiction } from '../../src/server/care/jurisdiction';
-import { isDoctorProductionEligible } from '../../src/server/care/marketplace';
+import { isDoctorProductionEligible, listMarketplaceDoctors } from '../../src/server/care/marketplace';
+import { createConsultation } from '../../src/server/care/consultation-service';
 import {
   requestRefund,
   processChargeback,
@@ -447,6 +448,80 @@ describe('Task 3 — Support Both Pakistani and Afghan Doctors', () => {
     expect(isDoctorProductionEligible(revokedDoc).eligible).toBe(false);
     expect(isDoctorProductionEligible(revokedDoc).reasons).toContain('JURISDICTION_REVOKED');
   });
+
+  test('5. Afghan doctor with null pmdcVerifiedAt and verified DoctorCredential is discovered in marketplace and booked in consultation', async () => {
+    const afDocUser = await db.user.create({
+      data: {
+        email: `${stamp}-af-doc@jamhuriat.af`,
+        name: 'Dr Mohammad Afghan',
+        role: 'doctor',
+        accountStatus: 'active',
+        passwordHash: 'dummy',
+      },
+    });
+
+    const afDocProfile = await db.doctorProfile.create({
+      data: {
+        userId: afDocUser.id,
+        pmdcNumber: `MOPH-${stamp.slice(-6)}`,
+        pmdcVerifiedAt: null, // No PM&DC verification timestamp
+        pmdcVerifiedBy: null,
+        country: 'AF',
+        careStatus: 'ACTIVE',
+        specialty: 'Internal Medicine',
+        facilityName: 'Jamhuriat Hospital Kabul',
+        facilityCity: 'Kabul',
+        consultationFee: 50000,
+        services: {
+          create: {
+            type: 'TEXT',
+            priceMinor: 50000,
+            currency: 'AFN',
+            durationMinutes: 30,
+            enabled: true,
+          },
+        },
+        credentials: {
+          create: {
+            kind: 'MEDICAL_LICENSE',
+            registrationNumber: `AF-LIC-${stamp.slice(-6)}`,
+            issuingBody: 'Ministry of Public Health (MoPH)',
+            country: 'AF',
+            status: 'VERIFIED',
+            verifiedAt: new Date('2026-02-01'),
+            verifiedById: 'admin-af-compliance',
+            expiresAt: new Date('2028-02-01'),
+          },
+        },
+      },
+      include: { credentials: true, user: true },
+    });
+
+    // 1. isDoctorProductionEligible passes with credential verification alone
+    const elig = isDoctorProductionEligible(afDocProfile);
+    expect(elig.eligible).toBe(true);
+
+    // 2. Marketplace listings include this Afghan doctor and verify pmdcVerified=true
+    const marketDocs = await listMarketplaceDoctors({
+      country: 'AF',
+      specialty: 'Internal Medicine',
+    });
+    const foundDoc = marketDocs.find((d) => d.doctorProfileId === afDocProfile.id);
+    expect(foundDoc).toBeDefined();
+    expect(foundDoc?.pmdcVerified).toBe(true);
+
+    // 3. createConsultation succeeds for this Afghan doctor
+    const res = await createConsultation({
+      patientId: testPatientId,
+      doctorProfileId: afDocProfile.id,
+      type: 'TEXT',
+      patientCountry: 'AF',
+    });
+    expect(res.consultation.id).toBeDefined();
+    expect(res.consultation.doctorProfileId).toBe(afDocProfile.id);
+    expect(res.consultation.status).toBe('PAYMENT_PENDING');
+    expect(res.jurisdiction.allowed).toBe(true);
+  });
 });
 
 describe('Task 5 — Post-Payout Financial Risk, Debt Tracking & Loss Allocation', () => {
@@ -732,7 +807,53 @@ describe('Task 5 — Post-Payout Financial Risk, Debt Tracking & Loss Allocation
     expect(wallet.pendingMinor).toBeGreaterThanOrEqual(80000);
   });
 
-  test('7. Global mathematical zero-imbalance ledger invariant preserved across suite', async () => {
+  test('7. Concurrency protection: concurrent allocatePlatformLoss calls serialize and prevent double write-off', async () => {
+    const { docUser, docProfile, consultation, docFee } = await setupFundedDoctor('race-loss', 100000);
+
+    // Payout and refund creates deficit
+    const payout = await requestPayout({ doctorProfileId: docProfile.id, doctorUserId: docUser.id, currency: 'PKR' });
+    await processPayout({ payoutId: payout.id });
+    await requestRefund({ consultationId: consultation.id, actorId: testPatientId, actorRole: 'SUPPORT', reason: 'technical_failure' });
+
+    const rec = await getDoctorReceivableBalance(docProfile.id, 'PKR');
+    expect(rec.hasDeficit).toBe(true);
+    expect(rec.receivableMinor).toBe(docFee);
+
+    // Concurrently fire two write-off requests for the full deficit
+    const [res1, res2] = await Promise.allSettled([
+      allocatePlatformLoss({
+        doctorProfileId: docProfile.id,
+        currency: 'PKR',
+        reason: 'concurrent_claim_attempt_1',
+        actorRole: 'FINANCE',
+      }),
+      allocatePlatformLoss({
+        doctorProfileId: docProfile.id,
+        currency: 'PKR',
+        reason: 'concurrent_claim_attempt_2',
+        actorRole: 'FINANCE',
+      }),
+    ]);
+
+    // Exactly one must succeed and one must be rejected with NO_RECEIVABLE_TO_ALLOCATE
+    const successes = [res1, res2].filter((r) => r.status === 'fulfilled');
+    const rejections = [res1, res2].filter((r) => r.status === 'rejected');
+    expect(successes.length).toBe(1);
+    expect(rejections.length).toBe(1);
+
+    const rejReason = (rejections[0] as PromiseRejectedResult).reason;
+    expect(rejReason?.message).toContain('NO_RECEIVABLE_TO_ALLOCATE');
+
+    // Doctor available balance must be exactly 0 (no over-crediting / double write-off)
+    const wallet = await doctorWallet(docProfile.id, 'PKR');
+    expect(wallet.availableMinor).toBe(0);
+
+    const afterRec = await getDoctorReceivableBalance(docProfile.id, 'PKR');
+    expect(afterRec.hasDeficit).toBe(false);
+    expect(afterRec.receivableMinor).toBe(0);
+  });
+
+  test('8. Global mathematical zero-imbalance ledger invariant preserved across suite', async () => {
     const allEntries = await db.ledgerEntry.findMany({
       where: { reference: { contains: stamp } },
     });

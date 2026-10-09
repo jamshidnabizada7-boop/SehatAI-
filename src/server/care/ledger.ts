@@ -87,7 +87,10 @@ export async function getOrCreateAccount(opts: {
  * - zero/negative amounts
  * - duplicate idempotencyKey (already posted) → returns { alreadyPosted: true }
  */
-export async function postTransaction(input: PostTransactionInput): Promise<{ posted: boolean; reference: string }> {
+export async function postTransaction(
+  input: PostTransactionInput,
+  existingTx?: any
+): Promise<{ posted: boolean; reference: string }> {
   if (!input.legs.length) throw new LedgerError('EMPTY_LEGS');
   const byCurrency = new Map<string, { debit: number; credit: number }>();
   for (const leg of input.legs) {
@@ -121,39 +124,45 @@ export async function postTransaction(input: PostTransactionInput): Promise<{ po
     }
   }
 
+  const runTransaction = async (tx: any) => {
+    // Idempotency probe: leg keys are deterministic `${key}:${index}` —
+    // if leg 0 exists, this transaction was already posted → replay, skip.
+    const existing = await tx.ledgerEntry.findFirst({
+      where: { idempotencyKey: `${input.idempotencyKey}:0` },
+      select: { id: true },
+    });
+    if (existing) return { posted: false, reference: input.reference };
+
+    for (const [index, leg] of input.legs.entries()) {
+      const code = ACCOUNT_CODE[leg.accountKind](leg.currency.toUpperCase(), leg.ownerDoctorProfileId);
+      const account = accountsByCode.get(code)!;
+      await tx.ledgerEntry.create({
+        data: {
+          accountId: account.id,
+          direction: leg.direction,
+          amountMinor: leg.amountMinor,
+          currency: leg.currency.toUpperCase(),
+          consultationId: input.consultationId,
+          paymentId: input.paymentId,
+          payoutId: input.payoutId,
+          refundId: input.refundId,
+          reference: input.reference,
+          idempotencyKey: `${input.idempotencyKey}:${index}`,
+          memo: leg.memo,
+        },
+      });
+    }
+    return { posted: true, reference: input.reference };
+  };
+
+  if (existingTx) {
+    return await runTransaction(existingTx);
+  }
+
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await db.$transaction(async (tx) => {
-        // Idempotency probe: leg keys are deterministic `${key}:${index}` —
-        // if leg 0 exists, this transaction was already posted → replay, skip.
-        const existing = await tx.ledgerEntry.findFirst({
-          where: { idempotencyKey: `${input.idempotencyKey}:0` },
-          select: { id: true },
-        });
-        if (existing) return { posted: false, reference: input.reference };
-
-        for (const [index, leg] of input.legs.entries()) {
-          const code = ACCOUNT_CODE[leg.accountKind](leg.currency.toUpperCase(), leg.ownerDoctorProfileId);
-          const account = accountsByCode.get(code)!;
-          await tx.ledgerEntry.create({
-            data: {
-              accountId: account.id,
-              direction: leg.direction,
-              amountMinor: leg.amountMinor,
-              currency: leg.currency.toUpperCase(),
-              consultationId: input.consultationId,
-              paymentId: input.paymentId,
-              payoutId: input.payoutId,
-              refundId: input.refundId,
-              reference: input.reference,
-              idempotencyKey: `${input.idempotencyKey}:${index}`,
-              memo: leg.memo,
-            },
-          });
-        }
-        return { posted: true, reference: input.reference };
-      }, { timeout: 15_000 });
+      return await db.$transaction(runTransaction, { timeout: 15_000 });
     } catch (err: any) {
       if (err && typeof err === 'object' && err.code === 'P2002') {
         const target = err.meta?.target;
@@ -204,24 +213,25 @@ export interface LedgerBalance {
   netMinor: number;
 }
 
-export async function balanceOf(code: string): Promise<LedgerBalance | null> {
-  const account = await db.ledgerAccount.findUnique({ where: { code } });
+export async function balanceOf(code: string, txClient?: any): Promise<LedgerBalance | null> {
+  const client = txClient ?? db;
+  const account = await client.ledgerAccount.findUnique({ where: { code } });
   if (!account) return null;
-  const grouped = await db.ledgerEntry.groupBy({
+  const grouped = await client.ledgerEntry.groupBy({
     by: ['direction'],
     where: { accountId: account.id },
     _sum: { amountMinor: true },
   });
-  const debit = grouped.find((g) => g.direction === 'DEBIT')?._sum.amountMinor ?? 0;
-  const credit = grouped.find((g) => g.direction === 'CREDIT')?._sum.amountMinor ?? 0;
+  const debit = grouped.find((g: any) => g.direction === 'DEBIT')?._sum.amountMinor ?? 0;
+  const credit = grouped.find((g: any) => g.direction === 'CREDIT')?._sum.amountMinor ?? 0;
   return { currency: account.currency, debitMinor: debit, creditMinor: credit, netMinor: credit - debit };
 }
 
-export async function doctorWallet(doctorProfileId: string, currency: string) {
+export async function doctorWallet(doctorProfileId: string, currency: string, txClient?: any) {
   const ccy = currency.toUpperCase();
   const [pending, available] = await Promise.all([
-    balanceOf(`doctor:pending:${doctorProfileId}:${ccy}`),
-    balanceOf(`doctor:available:${doctorProfileId}:${ccy}`),
+    balanceOf(`doctor:pending:${doctorProfileId}:${ccy}`, txClient),
+    balanceOf(`doctor:available:${doctorProfileId}:${ccy}`, txClient),
   ]);
   return {
     currency: ccy,
