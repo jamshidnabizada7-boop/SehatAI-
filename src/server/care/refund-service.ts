@@ -415,11 +415,11 @@ export async function getDoctorReceivableBalance(doctorProfileId: string, curren
  * Platform loss allocation handler.
  * When a doctor stops using the marketplace with an unrecovered negative balance,
  * or where arbitration determines the deficit cannot be recovered from the doctor,
- * finance may formally allocate/write off the bad debt to PLATFORM_FEE / platform loss.
+ * finance may formally allocate/write off the bad debt to PLATFORM_LOSS (write-off expense).
  *
  * Posts compensating double-entry ledger legs:
  *   - DOCTOR_AVAILABLE: CREDIT writeOffAmount (restoring doctor balance to zero or offset)
- *   - PLATFORM_FEE: DEBIT writeOffAmount (recognizing bad-debt platform loss)
+ *   - PLATFORM_LOSS: DEBIT writeOffAmount (recognizing bad-debt write-off expense without netting against fee revenue)
  * Preserves the mathematical zero-imbalance ledger invariant.
  * Prevents double recovery: rejects if receivable is zero or already written off.
  * Concurrency protected: serializes under transaction with DoctorProfile row-level lock.
@@ -471,11 +471,11 @@ export async function allocatePlatformLoss(opts: {
             memo: `platform loss write-off: clears doctor receivable deficit (${opts.reason})`,
           },
           {
-            accountKind: 'PLATFORM_FEE',
+            accountKind: 'PLATFORM_LOSS',
             direction: 'DEBIT',
             amountMinor: writeOffMinor,
             currency: ccy,
-            memo: `bad debt absorption / platform loss allocation (${opts.reason})`,
+            memo: `bad debt expense write-off / platform loss allocation (${opts.reason})`,
           },
         ],
       },

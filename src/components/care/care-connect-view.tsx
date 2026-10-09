@@ -46,6 +46,8 @@ interface DoctorCardData {
   gender?: string | null;
   onlineNow: boolean;
   pmdcVerified: boolean;
+  licenseVerified?: boolean;
+  licensingAuthority?: string | null;
   services: CareService[];
   rating: { average: number; robustScore: number; count: number };
   completedConsultations: number;
@@ -314,7 +316,12 @@ function FindDoctors({ T, uiLang, isLoggedIn, onOpenConsultation }: {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-semibold">{d.name}</span>
-                        {d.pmdcVerified ? <BadgeCheck className="h-4 w-4 text-blue-600" aria-label="PMDC verified" /> : null}
+                        {(d.licenseVerified ?? d.pmdcVerified) ? (
+                          <BadgeCheck
+                            className="h-4 w-4 text-blue-600"
+                            aria-label={d.pmdcVerified ? 'PMDC verified' : (d.licensingAuthority ? `${d.licensingAuthority} verified` : 'License verified')}
+                          />
+                        ) : null}
                         {d.onlineNow ? <Badge className="bg-green-600 text-[10px]">{T('care.onlineNow')}</Badge> : null}
                         {d.consultedBefore ? <Badge variant="secondary" className="text-[10px]">{T('care.consultedBefore')}</Badge> : null}
                         {d.sponsoredLabel ? <Badge variant="outline" className="text-[10px] text-amber-600">{d.sponsoredLabel}</Badge> : null}
@@ -490,7 +497,12 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {doctor.name}
-            {doctor.pmdcVerified ? <BadgeCheck className="h-5 w-5 text-blue-600" aria-label="verified" /> : null}
+            {(doctor.licenseVerified ?? doctor.pmdcVerified) ? (
+              <BadgeCheck
+                className="h-5 w-5 text-blue-600"
+                aria-label={doctor.pmdcVerified ? 'PMDC verified' : (doctor.licensingAuthority ? `${doctor.licensingAuthority} verified` : 'License verified')}
+              />
+            ) : null}
           </DialogTitle>
         </DialogHeader>
         <div className="text-sm text-muted-foreground">

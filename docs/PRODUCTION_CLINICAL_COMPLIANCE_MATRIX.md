@@ -41,17 +41,17 @@ The database maintains a strict clinician credentialing state machine:
 
 ```
 [DRAFT]
-   │  (Uploads PMDC Card, CNIC, MBBS Degree)
+   │  (Uploads License Card [PM&DC for PK, MoPH for AF], ID, Medical Degree)
    ▼
 [PENDING_VERIFICATION]
-   │  (Admin review: verify against PMDC Registry)
+   │  (Admin review: verify against national medical registry)
    ├───> [REJECTED] / [MORE_INFO_REQUIRED]
    │
    ▼
 [VERIFIED]
    │  (Clinician configures availability & payout method)
    ▼
-[ACTIVE] (Eligible to receive patient bookings and sign prescriptions)
+[ACTIVE] (Eligible to receive domestic bookings; foreign practice blocked)
    │
    ├───> [SUSPENDED] (Dispute, malpractice flag, or license expiry)
    │       • Call joining BLOCKED (DOCTOR_SUSPENDED)

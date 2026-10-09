@@ -18,6 +18,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     include: {
       user: { select: { name: true, accountStatus: true, email: true } },
       services: { where: { enabled: true }, orderBy: { priceMinor: 'asc' } },
+      credentials: true,
       careReviews: {
         where: { state: 'PUBLISHED' },
         include: { patient: { select: { name: true } } },
@@ -28,8 +29,47 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       _count: { select: { consultations: { where: { status: 'COMPLETED' } } } },
     },
   });
-  if (!doctor || doctor.pmdcVerifiedAt == null) {
+
+  if (!doctor) {
     return NextResponse.json({ error: 'DOCTOR_NOT_FOUND' }, { status: 404 });
+  }
+
+  const docCountry = (doctor.country ?? 'PK').toUpperCase();
+  const hasPmdcCred = doctor.credentials.some(
+    (c) =>
+      c.status === 'VERIFIED' &&
+      (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+      ((c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
+       (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
+       (c.country ?? '').toUpperCase() === 'PK')
+  );
+  const isPmdcVerified = docCountry === 'PK' ? (doctor.pmdcVerifiedAt != null || hasPmdcCred) : false;
+
+  const afCred = docCountry === 'AF'
+    ? doctor.credentials.find(
+        (c) =>
+          c.status === 'VERIFIED' &&
+          (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+          ((c.country ?? '').toUpperCase() === 'AF' ||
+           (c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
+           (c.issuingBody ?? '').toUpperCase().includes('AFGHAN'))
+      )
+    : null;
+  const isAfVerified = docCountry === 'AF' && afCred != null;
+
+  const licenseVerified = (docCountry === 'AF' ? isAfVerified : isPmdcVerified) || doctor.pmdcVerifiedAt != null || doctor.credentials.some(c => c.status === 'VERIFIED');
+  if (!licenseVerified) {
+    return NextResponse.json({ error: 'DOCTOR_NOT_FOUND' }, { status: 404 });
+  }
+
+  let licensingAuthority: string | null = null;
+  if (isPmdcVerified) {
+    licensingAuthority = 'PM&DC';
+  } else if (isAfVerified && afCred) {
+    licensingAuthority = afCred.issuingBody ?? 'Ministry of Public Health (MoPH)';
+  } else {
+    const verifiedCred = doctor.credentials.find(c => c.status === 'VERIFIED');
+    licensingAuthority = verifiedCred?.issuingBody ?? (doctor.pmdcVerifiedAt != null ? 'PM&DC' : null);
   }
 
   const isTest = isTestDoctorProfile(doctor);
@@ -69,7 +109,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       languages: safeArray(doctor.languages),
       gender: doctor.gender,
       avatarUrl: doctor.avatarUrl,
-      pmdcVerified: true,
+      pmdcVerified: isPmdcVerified,
+      licenseVerified: true,
+      licensingAuthority,
       onlineNow: doctor.onlineNow && doctor.onlineNowUntil != null && doctor.onlineNowUntil > new Date(),
       licensedIn: doctor.jurisdictions.map((j) => j.countryCode),
       services: doctor.services.map((s) => ({

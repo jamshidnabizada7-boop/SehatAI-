@@ -74,7 +74,7 @@
   * `CARE_S3_KEY` (IAM Access Key ID)
   * `CARE_S3_SECRET` (IAM Secret Access Key)
 * **Expected Cost Category:** $15 – $60 / month (pay-as-you-go based on stored GB and signed GET requests).
-* **Necessary Merchant / Legal Approval:** Data Processing Agreement (DPA) and data protection addendum compliant with local data privacy laws (e.g. PECA 2016 in Pakistan, MoPH health data guidelines in Afghanistan). Note: HIPAA is a US-specific statute (45 CFR Parts 160/164) and does not apply to non-US operations; technical protections (AES-256-GCM client-side encryption, AWS KMS SSE, IAM least-privilege) safeguard PHI at the infrastructure level.
+* **Necessary Merchant / Legal Approval:** Data Processing Agreement (DPA) and data protection addendum compliant with local data privacy laws (e.g. PECA 2016 in Pakistan, MoPH health data guidelines in Afghanistan). Note: Direct U.S. statutory HIPAA (45 CFR Parts 160/164) directly binds US covered entities and does not apply extraterritorially as a direct statutory mandate; however, local telehealth legislation (e.g. Sindh Telemedicine and Telehealth Act, 2021) specifically references and benchmarks technical safeguards against HIPAA privacy and security standards. Technical protections (AES-256-GCM client-side encryption, AWS KMS SSE, IAM least-privilege) safeguard ePHI at the infrastructure level.
 * **Verification Steps:**
   1. Upload test medical image via `PUT /api/care/storage/upload`.
   2. Confirm S3 direct web URL returns `403 Forbidden`.
@@ -194,8 +194,8 @@
 * **Regulatory & Licensure Framework (Pakistan):**
   * **Licensing Body:** Pakistan Medical & Dental Council (PM&DC).
   * **Licensure Requirement:** Permanent medical registration and verified license status for individual physicians.
-  * **Clarification on PM&DC Act 2022:** Sections 31 and 32 govern inspector appointments and withdrawal of qualification recognition; they do NOT govern digital health or telemedicine platform registration.
-  * **Telehealth Governance:** Digital health operations are subject to provincial healthcare commission guidelines (e.g. Punjab Healthcare Commission Telemedicine Regulations 2020, Sindh Healthcare Commission, KP Healthcare Commission) and qualified legal counsel review.
+  * **Clarification on PM&DC Act (Official Pakistan Code):** Section 31 addresses information concerning medical and dental education, Section 32 addresses inspection of institutions and examinations, and Section 33 addresses withdrawal of recognition. The PM&DC Act does NOT govern digital health or telemedicine platform registration.
+  * **Telehealth Governance:** Digital health operations are subject to provincial healthcare commission guidelines and statutes, notably Sindh's Telemedicine and Telehealth Act, 2021 (governing platform registration with SHCC, international provider restrictions, and HIPAA privacy benchmarks), Punjab Healthcare Commission Telemedicine Regulations 2020, KP Healthcare Commission, and qualified legal counsel review.
   * **Doctor Onboarding Mandate:** Admin manual verification required (`pmdcVerifiedBy` ID and timestamp) before any doctor is permitted to appear in marketplace search or accept patient bookings.
 * **Regulatory & Licensure Framework (Afghanistan):**
   * **Licensing Body:** Ministry of Public Health (MoPH) Directorate of Private Health Sector Regulation.

@@ -1035,7 +1035,7 @@ model PlatformFee {
 model LedgerAccount {
   id                   String         @id @default(cuid())
   code                 String         @unique // e.g. platform:fee:PKR, doctor:pending:{doctorId}:PKR
-  kind                 String // PLATFORM_CASH | PLATFORM_FEE | DOCTOR_PENDING | DOCTOR_AVAILABLE | PROCESSOR_FEE | REFUND_RESERVE | SUSPENSE
+  kind                 String // PLATFORM_CASH | PLATFORM_FEE | DOCTOR_PENDING | DOCTOR_AVAILABLE | PROCESSOR_FEE | REFUND_RESERVE | SUSPENSE | PLATFORM_LOSS
   ownerDoctorProfileId String?
   ownerDoctorProfile   DoctorProfile? @relation(fields: [ownerDoctorProfileId], references: [id])
   currency             String

@@ -501,16 +501,18 @@ describe('Task 3 — Support Both Pakistani and Afghan Doctors', () => {
     const elig = isDoctorProductionEligible(afDocProfile);
     expect(elig.eligible).toBe(true);
 
-    // 2. Marketplace listings include this Afghan doctor and verify pmdcVerified=true
+    // 2. Marketplace listings include this Afghan doctor and verify authority-neutral licenseVerified=true while pmdcVerified=false
     const marketDocs = await listMarketplaceDoctors({
       country: 'AF',
       specialty: 'Internal Medicine',
     });
     const foundDoc = marketDocs.find((d) => d.doctorProfileId === afDocProfile.id);
     expect(foundDoc).toBeDefined();
-    expect(foundDoc?.pmdcVerified).toBe(true);
+    expect(foundDoc?.pmdcVerified).toBe(false);
+    expect(foundDoc?.licenseVerified).toBe(true);
+    expect(foundDoc?.licensingAuthority).toContain('MoPH');
 
-    // 3. createConsultation succeeds for this Afghan doctor
+    // 3. createConsultation succeeds for this Afghan doctor on domestic AF corridor
     const res = await createConsultation({
       patientId: testPatientId,
       doctorProfileId: afDocProfile.id,
@@ -521,6 +523,38 @@ describe('Task 3 — Support Both Pakistani and Afghan Doctors', () => {
     expect(res.consultation.doctorProfileId).toBe(afDocProfile.id);
     expect(res.consultation.status).toBe('PAYMENT_PENDING');
     expect(res.jurisdiction.allowed).toBe(true);
+
+    // 4. Foreign practice rights blocked: Afghan doctor cannot treat Pakistani patient without corridor policy
+    await expect(
+      createConsultation({
+        patientId: testPatientId,
+        doctorProfileId: afDocProfile.id,
+        type: 'TEXT',
+        patientCountry: 'PK',
+      })
+    ).rejects.toThrow('JURISDICTION_BLOCKED');
+
+    // 5. Pakistani doctor without PM&DC verification is not production eligible in PK
+    const unverifiedPkDoc = {
+      ...afDocProfile,
+      country: 'PK',
+      pmdcNumber: null,
+      pmdcVerifiedAt: null,
+      pmdcVerifiedBy: null,
+    };
+    const pkElig = isDoctorProductionEligible(unverifiedPkDoc);
+    expect(pkElig.eligible).toBe(false);
+    expect(pkElig.reasons).toContain('LICENSE_NOT_VERIFIED');
+
+    // 6. Afghan doctor with null license number is rejected with INVALID_OR_MISSING_LICENSE_NUMBER
+    const afDocNoLic = {
+      ...afDocProfile,
+      pmdcNumber: null,
+      credentials: [],
+    };
+    const afElig = isDoctorProductionEligible(afDocNoLic);
+    expect(afElig.eligible).toBe(false);
+    expect(afElig.reasons).toContain('INVALID_OR_MISSING_LICENSE_NUMBER');
   });
 });
 
@@ -724,11 +758,19 @@ describe('Task 5 — Post-Payout Financial Risk, Debt Tracking & Loss Allocation
     expect(rec.receivableMinor).toBe(0);
 
     // Verify loss allocation ledger entries balanced
-    const lossEntries = await db.ledgerEntry.findMany({ where: { reference: lossRes.transactionReference } });
+    const lossEntries = await db.ledgerEntry.findMany({
+      where: { reference: lossRes.transactionReference },
+      include: { account: true },
+    });
     const debits = lossEntries.filter((e) => e.direction === 'DEBIT').reduce((s, e) => s + e.amountMinor, 0);
     const credits = lossEntries.filter((e) => e.direction === 'CREDIT').reduce((s, e) => s + e.amountMinor, 0);
     expect(debits).toBe(credits);
     expect(debits).toBe(docFee);
+
+    // Verify bad debt / platform loss write-off expense account debited (NOT platform fee revenue)
+    const debitLeg = lossEntries.find((e) => e.direction === 'DEBIT');
+    expect(debitLeg?.account.kind).toBe('PLATFORM_LOSS');
+    expect(debitLeg?.account.code).toBe('platform:loss:PKR');
   });
 
   test('5. No duplicate recovery: cannot allocate loss when no deficit exists', async () => {

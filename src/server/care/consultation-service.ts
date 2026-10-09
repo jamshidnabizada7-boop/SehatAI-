@@ -88,9 +88,9 @@ export async function createConsultation(input: CreateConsultationInput) {
           (c.issuingBody ?? '').toUpperCase().includes('PMDC'))
   );
   const isVerified =
-    (country === 'PK' ? doctor.pmdcVerifiedAt != null : false) ||
-    hasVerifiedCred ||
-    (doctor.pmdcVerifiedAt != null && country === 'AF');
+    country === 'AF'
+      ? Boolean(hasVerifiedCred)
+      : (doctor.pmdcVerifiedAt != null || Boolean(hasVerifiedCred));
 
   const doctorActive =
     Boolean(isVerified) &&

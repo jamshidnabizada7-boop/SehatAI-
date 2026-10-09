@@ -39,6 +39,8 @@ export interface MarketplaceDoctor {
   gender?: string | null;
   onlineNow: boolean;
   pmdcVerified: boolean;
+  licenseVerified: boolean;
+  licensingAuthority?: string | null;
   careStatusActive: boolean;
   bio?: string | null;
   services: Array<{
@@ -398,9 +400,55 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
       languages: safeJsonArray(d.languages),
       gender: d.gender,
       onlineNow: d.onlineNow && d.onlineNowUntil != null && d.onlineNowUntil > new Date(),
-      pmdcVerified:
-        d.pmdcVerifiedAt != null ||
-        (Array.isArray(d.credentials) && d.credentials.some((c) => c.status === 'VERIFIED')),
+      pmdcVerified: (() => {
+        const docCountry = (d.country ?? 'PK').toUpperCase();
+        const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
+          (c) =>
+            c.status === 'VERIFIED' &&
+            (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+            ((c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
+             (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
+             (c.country ?? '').toUpperCase() === 'PK')
+        );
+        return docCountry === 'PK' ? (d.pmdcVerifiedAt != null || hasPmdcCred) : false;
+      })(),
+      licenseVerified: (() => {
+        const docCountry = (d.country ?? 'PK').toUpperCase();
+        const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
+          (c) =>
+            c.status === 'VERIFIED' &&
+            (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+            ((c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
+             (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
+             (c.country ?? '').toUpperCase() === 'PK')
+        );
+        const isPmdc = docCountry === 'PK' && (d.pmdcVerifiedAt != null || hasPmdcCred);
+        const hasAfCred = Array.isArray(d.credentials) && d.credentials.some(
+          (c) =>
+            c.status === 'VERIFIED' &&
+            (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+            ((c.country ?? '').toUpperCase() === 'AF' ||
+             (c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
+             (c.issuingBody ?? '').toUpperCase().includes('AFGHAN'))
+        );
+        const isAf = docCountry === 'AF' && hasAfCred;
+        const hasAnyCred = Array.isArray(d.credentials) && d.credentials.some(
+          (c) => c.status === 'VERIFIED' && (!c.expiresAt || new Date(c.expiresAt) > new Date())
+        );
+        return isPmdc || isAf || hasAnyCred || d.pmdcVerifiedAt != null;
+      })(),
+      licensingAuthority: (() => {
+        const docCountry = (d.country ?? 'PK').toUpperCase();
+        if (docCountry === 'PK' && (d.pmdcVerifiedAt != null || (Array.isArray(d.credentials) && d.credentials.some(c => c.status === 'VERIFIED' && (c.country === 'PK' || c.issuingBody?.toUpperCase().includes('PMDC') || c.issuingBody?.toUpperCase().includes('PM&DC')))))) {
+          return 'PM&DC';
+        }
+        if (docCountry === 'AF') {
+          const afCred = Array.isArray(d.credentials) ? d.credentials.find(c => c.status === 'VERIFIED' && (c.country === 'AF' || c.issuingBody?.toUpperCase().includes('MOPH') || c.issuingBody?.toUpperCase().includes('AFGHAN'))) : null;
+          if (afCred) return afCred.issuingBody ?? 'Ministry of Public Health (MoPH)';
+        }
+        const anyCred = Array.isArray(d.credentials) ? d.credentials.find(c => c.status === 'VERIFIED') : null;
+        return anyCred?.issuingBody ?? (d.pmdcVerifiedAt != null ? 'PM&DC' : null);
+      })(),
       careStatusActive: d.careStatus == null || d.careStatus === 'ACTIVE',
       bio: d.bio,
       services: d.services.map((s) => ({

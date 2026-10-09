@@ -214,7 +214,8 @@ This audit was conducted strictly against real running infrastructure and verifi
      - `requireUser()` and `requireActiveDoctor()` in `src/lib/auth.ts` enforce live database verification on every request.
      - Doctor suspension or role demotion takes effect immediately; JWT session expiration is not waited on.
   3. **Regulatory Separation (Pakistan vs. Afghanistan):**
-     - Telemedicine legality and licensing requirements are distinct between Pakistan (PM&DC regulations) and Afghanistan (MoPH directives).
+     - Physician medical licensure is distinct between Pakistan (PM&DC permanent medical registration) and Afghanistan (MoPH registration).
+     - Telemedicine operations in Pakistan are subject to provincial healthcare commission frameworks (notably Sindh's Telemedicine and Telehealth Act, 2021 and SHCC registration, PHC Telemedicine Regulations 2020, KPHCC).
      - Cross-border practice is blocked by default in `JurisdictionPolicy`.
      - E-prescribing is gated by jurisdiction flag and completely blocks controlled substances.
   4. **Legal Compliance Documents:**

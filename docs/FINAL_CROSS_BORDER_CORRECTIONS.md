@@ -21,18 +21,25 @@ All existing SehatAI clinical and Care Connect functionalities have been preserv
 
 ## 2. Primary Legal & Statutory Corrections (Task 1)
 
-### 2.1 PM&DC Act 2022 Statutory Baseline
+### 2.1 PM&DC Act (Official Pakistan Code) Statutory Baseline
 - **Previous Erroneous Assumption:** Documentation previously cited "PM&DC Section 31/32 Telemedicine Practice Regulations" as governing digital health platform operations and online marketplace registration.
-- **Statutory Fact:** In the Pakistan Medical and Dental Council Act, 2022:
-  - **Section 31:** Governs the "Appointment of inspectors" for inspecting medical institutions and examination centers.
-  - **Section 32:** Governs the "Withdrawal of recognition" of medical institutions or qualifications.
-  - The PM&DC Act 2022 does **NOT** provide a digital health aggregator registration, telemedicine portal licensing regime, or marketplace operator certificate.
-- **Operational Reality:** Individual Pakistani physicians are licensed via PM&DC permanent medical registration. Telemedicine service operations in Pakistan are subject to provincial healthcare commissions (e.g., Punjab Healthcare Commission Telemedicine Regulations 2020, Sindh Healthcare Commission, and KP Healthcare Commission) and require formal review by qualified Pakistani healthcare counsel.
+- **Statutory Fact (Official Pakistan Code):** In the Pakistan Medical and Dental Council Act:
+  - **Section 31:** Addresses "Information to be furnished by medical and dental institutions" (Council's power to require information concerning medical and dental education and examination courses).
+  - **Section 32:** Addresses "Inspection of institutions" (Appointment of medical and dental inspectors to inspect examination centers and medical institutions).
+  - **Section 33:** Addresses "Withdrawal of recognition" (Council's authority to withdraw recognition of institutions or qualifications failing to maintain statutory standards).
+  - The PM&DC Act contains **NO** provisions governing digital health aggregators, telemedicine software portals, or marketplace operator licensing.
+- **Operational Reality & Provincial Telehealth Frameworks:**
+  - Individual Pakistani physicians are licensed via PM&DC permanent medical registration.
+  - Telemedicine practice in Pakistan is governed at the provincial level. Most notably, **Sindh's Telemedicine and Telehealth Act, 2021** (passed by the Provincial Assembly of Sindh) governs digital clinical practice:
+    1. **Telemedicine Registration:** All healthcare professionals and digital telehealth platforms/centers operating in Sindh must be registered and licensed with the Sindh Healthcare Commission (SHCC).
+    2. **International & Cross-Border Providers:** The Act strictly regulates international and cross-border telehealth practitioners, requiring formal recognition and authorization before providing clinical consultations to patients residing in the province.
+    3. **Privacy Standards & HIPAA Alignment:** The Act explicitly references and benchmarks privacy, confidentiality, and data transmission safeguards against international standards, specifically citing **HIPAA privacy and security standards** for electronic protected health information (ePHI).
+  - Similar regulatory guidelines operate under the Punjab Healthcare Commission (PHC Telemedicine Regulations 2020) and Khyber Pakhtunkhwa Healthcare Commission (KPHCC).
 
 ### 2.2 Cross-Border Clinical Corridor (PK <-> AF)
 - **Previous Erroneous Assumption:** Documentation cited a mandatory "bilateral PM&DC–MoPH MoU" as the statutory prerequisite to enabling cross-border telemedicine.
 - **Statutory Fact:** No statutory "bilateral PM&DC–MoPH MoU" is codified or recognized in either Pakistani or Afghan statutory health law. Cross-border medical practice is governed territorially: physicians treating a patient residing in another country are legally subject to the jurisdiction and medical licensing authority of the patient's physical location.
-- **Fail-Closed Standard:** Cross-border clinical corridors (`PK -> AF` and `AF -> PK`) must remain **FAIL-CLOSED AND DISABLED BY DEFAULT**. Enabling a corridor cannot be achieved via a single environment variable; it requires a versioned database policy with verified legal authority citation, human administrative signoff, date validity bounds, authorized clinical scope, and individual foreign licensing verification for participating doctors.
+- **Fail-Closed Standard:** Cross-border clinical corridors (`PK -> AF` and `AF -> PK`) must remain **FAIL-CLOSED AND DISABLED BY DEFAULT**. Enabling a corridor cannot be achieved via a single environment variable; it requires a versioned database policy with verified legal authority citation, human administrative signoff, date validity bounds, authorized clinical scope, and individual foreign licensing verification for participating doctors. All cross-border clinical booking remains disabled pending verified jurisdiction-specific authorization.
 
 ### 2.3 Da Afghanistan Bank (DAB) & Payment Clearing
 - **Previous Erroneous Assumption:** Documentation asserted that merchants operating telehealth services require direct Da Afghanistan Bank (DAB) commercial e-payment licenses.
@@ -41,10 +48,14 @@ All existing SehatAI clinical and Care Connect functionalities have been preserv
   2. Ministry of Industry and Commerce (MoIC) business license or accepted corporate entity registration.
   3. Legal counsel review regarding international sanctions exemptions (e.g., US Treasury OFAC General License 20 and relevant UN sanctions humanitarian and medical carve-outs).
 
-### 2.4 HIPAA Territorial Inapplicability
-- **Previous Erroneous Assumption:** Internal documentation and checklists repeatedly asserted "HIPAA compliance" for AWS S3 private buckets and LiveKit video infrastructure.
-- **Legal Fact:** The Health Insurance Portability and Accountability Act (45 CFR Parts 160 and 164) is a United States federal statute applicable strictly to US covered entities and business associates. It does not apply to healthcare platforms operating between Pakistan and Afghanistan.
-- **Technical & Legal Standard:** Data privacy in Pakistan and Afghanistan is governed by local statutes (e.g., Pakistan Prevention of Electronic Crimes Act 2016, provincial health privacy rules, and MoPH directives). Storage protections are technically implemented via **client-side AES-256-GCM encryption**, AWS KMS server-side envelope encryption, and IAM least-privilege private access policies. Legal compliance requires local Data Processing Agreements (DPAs) and privacy counsel review, not US HIPAA certification.
+### 2.4 Distinguishing Direct U.S. HIPAA Applicability from Local Statutory Privacy Standards
+- **Previous Erroneous Assumption:** Documentation previously either asserted blanket "US HIPAA compliance" for infrastructure or conversely asserted that HIPAA had zero relevance outside the United States.
+- **Direct U.S. HIPAA Inapplicability:** The Health Insurance Portability and Accountability Act (45 CFR Parts 160 and 164) is a United States federal statute that directly binds U.S. "covered entities" and their "business associates" subject to U.S. federal jurisdiction. It does not exert direct extraterritorial statutory jurisdiction over Pakistani or Afghan domestic operations.
+- **Privacy Standards Referenced by Local Law:** However, provincial healthcare legislation—specifically **Sindh's Telemedicine and Telehealth Act, 2021**—and provincial healthcare commission guidelines expressly reference, incorporate, and benchmark platform privacy, encryption, and confidentiality requirements against HIPAA privacy and security rules.
+- **Technical & Legal Standard:**
+  - Absolute claims that "HIPAA is fully certified under US law" are legally false for foreign entities without a US nexus.
+  - Absolute claims that "HIPAA is completely irrelevant" are legally false where local law incorporates HIPAA benchmarks as compliance standards.
+  - SehatAI satisfies local statutory privacy mandates (PECA 2016, Sindh Telemedicine and Telehealth Act 2021) by implementing the technical safeguards referenced by international and local standards: client-side AES-256-GCM encryption, AWS KMS server-side envelope encryption, TLS 1.3 transit encryption, strict RBAC, and immutable audit logs, complemented by local Data Processing Agreements (DPAs) rather than unauthorized claims of US statutory certification.
 
 ---
 

@@ -17,7 +17,8 @@ export type LedgerAccountKind =
   | 'DOCTOR_AVAILABLE'
   | 'REFUND_RESERVE'
   | 'PAYOUT_CLEARING'
-  | 'SUSPENSE';
+  | 'SUSPENSE'
+  | 'PLATFORM_LOSS';
 
 export interface LedgerLeg {
   accountKind: LedgerAccountKind;
@@ -55,6 +56,7 @@ const ACCOUNT_CODE: Record<LedgerAccountKind, (ccy: string, owner?: string | nul
   REFUND_RESERVE: (ccy) => `refund:reserve:${ccy}`,
   PAYOUT_CLEARING: (ccy) => `payout:clearing:${ccy}`,
   SUSPENSE: (ccy) => `suspense:${ccy}`,
+  PLATFORM_LOSS: (ccy) => `platform:loss:${ccy}`,
 };
 
 export async function getOrCreateAccount(opts: {
