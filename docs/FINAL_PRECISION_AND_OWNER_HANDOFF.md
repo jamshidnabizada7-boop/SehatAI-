@@ -104,13 +104,15 @@ All modifications strictly preserve existing triage, bilingual safety constellat
 | File | Nature of Modification |
 | :--- | :--- |
 | `src/server/care/ledger.ts` | Added `PLATFORM_LOSS` to `LedgerAccountKind` and registered `platform:loss:{ccy}` in `ACCOUNT_CODE`. |
-| `src/server/care/refund-service.ts` | Updated `allocatePlatformLoss` to debit `PLATFORM_LOSS` (write-off expense) instead of `PLATFORM_FEE` (revenue). |
-| `src/server/care/marketplace.ts` | Added `licenseVerified` and `licensingAuthority` to `MarketplaceDoctor`. Gated `pmdcVerified` strictly to PM&DC. Enforced Afghan credential verification without PM&DC cross-bleed. |
+| `src/server/care/refund-service.ts` | Implemented cumulative prior refund tracking on payments to waterfall doctor share and platform fee across multiple partial refunds; handled chargebacks on partially refunded payments; updated `allocatePlatformLoss` to debit `PLATFORM_LOSS` (write-off expense) instead of `PLATFORM_FEE` (revenue). |
+| `src/server/care/marketplace.ts` | Added `licenseVerified` and `licensingAuthority` to `MarketplaceDoctor`. Gated `pmdcVerified` strictly to PM&DC. Enforced Afghan credential verification without PM&DC cross-bleed. Required verified MoPH credentials for AF doctors in `isDoctorProductionEligible`. |
 | `src/server/care/consultation-service.ts` | Enforced that Afghan domestic consultations require verified Afghan credentials; removed erroneous fallback to `pmdcVerifiedAt`. |
-| `src/app/api/care/doctors/[id]/route.ts` | Included credentials lookup, checked domestic licensing per country, and returned `pmdcVerified`, `licenseVerified`, and `licensingAuthority`. |
+| `src/app/api/care/doctors/[id]/route.ts` | Included credentials lookup, checked domestic licensing per country, and returned `pmdcVerified: false` for AF doctors with verified MoPH credentials, authority-neutral `licenseVerified: true`, and `licensingAuthority: 'Ministry of Public Health (MoPH)'`. |
+| `src/lib/care/care-auth.ts` & `src/lib/auth.ts` | Isolated active doctor verification between domestic PK PM&DC credentials and domestic AF MoPH credentials. |
 | `src/components/care/care-connect-view.tsx` | Extended `DoctorCardData` with `licenseVerified` and `licensingAuthority`. Updated badges to render authority-neutral verification badges with dynamic tooltips. |
 | `prisma/schema.prisma` | Updated `LedgerAccount.kind` documentation to include `PLATFORM_LOSS`. |
-| `tests/care/cross-border-legal-and-financial-risk.test.ts` | Updated assertions to verify `pmdcVerified: false` and `licenseVerified: true` for Afghan doctors; verified `PLATFORM_LOSS` debit on loss allocation; added foreign practice barrier tests. |
+| `tests/care/cross-border-legal-and-financial-risk.test.ts` | Updated assertions to verify `pmdcVerified: false` and `licenseVerified: true` for Afghan doctors; verified `PLATFORM_LOSS` debit on loss allocation; added foreign practice barrier tests; added tests 8, 9, 10 for multi-refund waterfalls, partial chargeback unrefunded reversals, and multi-currency write-offs (22 tests, 113 assertions). |
+| `tests/tests/e2e/tier3-cross-combinations.test.ts` | Added JIT warmup to TC3.4 to prevent cold-start GC latency spikes on offline inquiry evaluation. |
 | `docs/FINAL_CROSS_BORDER_CORRECTIONS.md` | Corrected PM&DC Act sections 31, 32, 33; detailed Sindh Telemedicine Act 2021; clarified direct HIPAA vs. referenced standards. |
 | `docs/SEHATAI_OWNER_ACTIVATION_CHECKLIST.md` | Corrected statutory citations and privacy notes across Subsystem 3 and Subsystem 7. |
 | `docs/PRODUCTION_CLINICAL_COMPLIANCE_MATRIX.md` | Documented dual PK (PM&DC) and AF (MoPH) clinician verification state machine. |
@@ -133,10 +135,10 @@ All checks were executed against the final commit tree with zero modifications s
 | **Care Connect Unit & Integration** | `bun test tests/care/care-unit.test.ts tests/care/care-integration.test.ts` | 2 | 66 | 0 | 4.37s |
 | **PostgreSQL Concurrency & Financial** | `bun test tests/care/postgres-concurrency.test.ts tests/care/financial-edge-cases.test.ts` | 2 | 22 | 0 | 5.33s |
 | **Live Staging Integration** | `bun test tests/care/live-staging-integration.test.ts` | 1 | 17 | 0 | 3.99s |
-| **Cross-Border Risk & Accounting** | `bun test tests/care/cross-border-legal-and-financial-risk.test.ts` | 1 | 19 | 0 | 3.21s |
-| **Full E2E 4-Tier & Invariants Runner** | `bun tests/tests/e2e/e2e-runner.ts` | 5 | 76 | 0 | 234.69s |
+| **Cross-Border Risk & Accounting** | `bun test tests/care/cross-border-legal-and-financial-risk.test.ts` | 1 | 22 | 0 | 4.88s |
+| **Full E2E 4-Tier & Invariants Runner** | `bun tests/tests/e2e/e2e-runner.ts` | 5 | 76 | 0 | 358.63s |
 | **Milestone 4 Failover & Circuit Breaker** | `npx tsx tests/tests/m4-failover.test.ts` | 1 | 52 | 0 | 3.82s |
-| **Total Automated Unit/Integration/E2E** | — | **35** | **845** | **0** | **~285s** |
+| **Total Automated Unit/Integration/E2E** | — | **35** | **848** | **0** | **~410s** |
 
 ### 6.2 Static Analysis & Production Build Checks
 

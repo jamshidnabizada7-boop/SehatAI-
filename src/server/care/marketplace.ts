@@ -213,20 +213,29 @@ export function isDoctorProductionEligible(doctor: {
     }
   } else if (licensingCountry === 'AF') {
     // Afghan doctors: verified via independently established Afghan licensing (Ministry of Public Health / MoPH / Afghan Medical Council)
+    const hasCredentialsArray = Array.isArray(doctor.credentials);
     const afCred = doctor.credentials?.find(
       (c) =>
         (c.country ?? '').toUpperCase() === 'AF' ||
         (c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
         (c.issuingBody ?? '').toUpperCase().includes('AFGHAN')
     );
+
+    if (hasCredentialsArray && !afCred) {
+      reasons.push('AFGHAN_CREDENTIAL_REQUIRED');
+      reasons.push('LICENSE_NOT_VERIFIED');
+    }
+
     const licenseNumber = (afCred?.registrationNumber ?? doctor.pmdcNumber ?? '').trim();
     if (!licenseNumber || licenseNumber.length < 3) {
       reasons.push('INVALID_OR_MISSING_LICENSE_NUMBER');
     }
 
-    const verifiedAtRaw = afCred?.verifiedAt ?? doctor.pmdcVerifiedAt;
+    const verifiedAtRaw = afCred?.verifiedAt ?? (hasCredentialsArray ? null : doctor.pmdcVerifiedAt);
     if (!verifiedAtRaw) {
-      reasons.push('LICENSE_NOT_VERIFIED');
+      if (!reasons.includes('LICENSE_NOT_VERIFIED')) {
+        reasons.push('LICENSE_NOT_VERIFIED');
+      }
     } else {
       const verifiedDate = new Date(verifiedAtRaw);
       if (isNaN(verifiedDate.getTime()) || verifiedDate > new Date()) {
@@ -234,7 +243,7 @@ export function isDoctorProductionEligible(doctor: {
       }
     }
 
-    const verifiedBy = afCred?.verifiedById ?? doctor.pmdcVerifiedBy;
+    const verifiedBy = afCred?.verifiedById ?? (hasCredentialsArray ? null : doctor.pmdcVerifiedBy);
     if (!verifiedBy || verifiedBy.trim().length === 0) {
       reasons.push('ADMIN_APPROVAL_REQUIRED');
     }
@@ -414,40 +423,57 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
       })(),
       licenseVerified: (() => {
         const docCountry = (d.country ?? 'PK').toUpperCase();
-        const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
-          (c) =>
-            c.status === 'VERIFIED' &&
-            (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
-            ((c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
-             (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
-             (c.country ?? '').toUpperCase() === 'PK')
-        );
-        const isPmdc = docCountry === 'PK' && (d.pmdcVerifiedAt != null || hasPmdcCred);
-        const hasAfCred = Array.isArray(d.credentials) && d.credentials.some(
-          (c) =>
-            c.status === 'VERIFIED' &&
-            (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
-            ((c.country ?? '').toUpperCase() === 'AF' ||
-             (c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
-             (c.issuingBody ?? '').toUpperCase().includes('AFGHAN'))
-        );
-        const isAf = docCountry === 'AF' && hasAfCred;
-        const hasAnyCred = Array.isArray(d.credentials) && d.credentials.some(
-          (c) => c.status === 'VERIFIED' && (!c.expiresAt || new Date(c.expiresAt) > new Date())
-        );
-        return isPmdc || isAf || hasAnyCred || d.pmdcVerifiedAt != null;
+        if (docCountry === 'PK') {
+          const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
+            (c) =>
+              c.status === 'VERIFIED' &&
+              (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+              ((c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
+               (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
+               (c.country ?? '').toUpperCase() === 'PK')
+          );
+          return d.pmdcVerifiedAt != null || hasPmdcCred;
+        }
+        if (docCountry === 'AF') {
+          return Array.isArray(d.credentials) && d.credentials.some(
+            (c) =>
+              c.status === 'VERIFIED' &&
+              (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+              ((c.country ?? '').toUpperCase() === 'AF' ||
+               (c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
+               (c.issuingBody ?? '').toUpperCase().includes('AFGHAN'))
+          );
+        }
+        return false;
       })(),
       licensingAuthority: (() => {
         const docCountry = (d.country ?? 'PK').toUpperCase();
-        if (docCountry === 'PK' && (d.pmdcVerifiedAt != null || (Array.isArray(d.credentials) && d.credentials.some(c => c.status === 'VERIFIED' && (c.country === 'PK' || c.issuingBody?.toUpperCase().includes('PMDC') || c.issuingBody?.toUpperCase().includes('PM&DC')))))) {
-          return 'PM&DC';
+        if (docCountry === 'PK') {
+          const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
+            (c) =>
+              c.status === 'VERIFIED' &&
+              (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+              ((c.country ?? '').toUpperCase() === 'PK' ||
+               (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
+               (c.issuingBody ?? '').toUpperCase().includes('PM&DC'))
+          );
+          if (d.pmdcVerifiedAt != null || hasPmdcCred) return 'PM&DC';
+          return null;
         }
         if (docCountry === 'AF') {
-          const afCred = Array.isArray(d.credentials) ? d.credentials.find(c => c.status === 'VERIFIED' && (c.country === 'AF' || c.issuingBody?.toUpperCase().includes('MOPH') || c.issuingBody?.toUpperCase().includes('AFGHAN'))) : null;
-          if (afCred) return afCred.issuingBody ?? 'Ministry of Public Health (MoPH)';
+          const afCred = Array.isArray(d.credentials)
+            ? d.credentials.find(
+                (c) =>
+                  c.status === 'VERIFIED' &&
+                  (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+                  ((c.country ?? '').toUpperCase() === 'AF' ||
+                   (c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
+                   (c.issuingBody ?? '').toUpperCase().includes('AFGHAN'))
+              )
+            : null;
+          return afCred?.issuingBody ?? (afCred ? 'Ministry of Public Health (MoPH)' : null);
         }
-        const anyCred = Array.isArray(d.credentials) ? d.credentials.find(c => c.status === 'VERIFIED') : null;
-        return anyCred?.issuingBody ?? (d.pmdcVerifiedAt != null ? 'PM&DC' : null);
+        return null;
       })(),
       careStatusActive: d.careStatus == null || d.careStatus === 'ACTIVE',
       bio: d.bio,

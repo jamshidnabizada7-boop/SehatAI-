@@ -107,15 +107,19 @@ export async function authorizeConsultationAccess(
           credentials: { select: { status: true, issuingBody: true, country: true } },
         },
       });
+      const docCountry = (dp?.country ?? 'PK').toUpperCase();
       const hasVerifiedCred = dp?.credentials?.some(
         (c) =>
           c.status === 'VERIFIED' &&
-          ((c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
-            (c.country ?? '').toUpperCase() === 'AF' ||
-            (c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
-            (c.country ?? '').toUpperCase() === 'PK')
+          (docCountry === 'AF'
+            ? ((c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
+               (c.country ?? '').toUpperCase() === 'AF' ||
+               (c.issuingBody ?? '').toUpperCase().includes('AFGHAN'))
+            : ((c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
+               (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
+               (c.country ?? '').toUpperCase() === 'PK'))
       );
-      const isVerified = dp?.pmdcVerifiedAt != null || Boolean(hasVerifiedCred);
+      const isVerified = docCountry === 'AF' ? Boolean(hasVerifiedCred) : (dp?.pmdcVerifiedAt != null || Boolean(hasVerifiedCred));
       const active = isVerified && dp?.careStatus !== 'SUSPENDED' && dp?.careStatus !== 'REJECTED';
       if (!active) throw new CareAuthzError('DOCTOR_NOT_ACTIVE', 403);
     }

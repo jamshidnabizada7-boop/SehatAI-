@@ -57,19 +57,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     : null;
   const isAfVerified = docCountry === 'AF' && afCred != null;
 
-  const licenseVerified = (docCountry === 'AF' ? isAfVerified : isPmdcVerified) || doctor.pmdcVerifiedAt != null || doctor.credentials.some(c => c.status === 'VERIFIED');
+  const licenseVerified = docCountry === 'AF' ? isAfVerified : isPmdcVerified;
   if (!licenseVerified) {
     return NextResponse.json({ error: 'DOCTOR_NOT_FOUND' }, { status: 404 });
   }
 
   let licensingAuthority: string | null = null;
-  if (isPmdcVerified) {
+  if (docCountry === 'PK' && isPmdcVerified) {
     licensingAuthority = 'PM&DC';
-  } else if (isAfVerified && afCred) {
+  } else if (docCountry === 'AF' && isAfVerified && afCred) {
     licensingAuthority = afCred.issuingBody ?? 'Ministry of Public Health (MoPH)';
-  } else {
-    const verifiedCred = doctor.credentials.find(c => c.status === 'VERIFIED');
-    licensingAuthority = verifiedCred?.issuingBody ?? (doctor.pmdcVerifiedAt != null ? 'PM&DC' : null);
   }
 
   const isTest = isTestDoctorProfile(doctor);
@@ -110,7 +107,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       gender: doctor.gender,
       avatarUrl: doctor.avatarUrl,
       pmdcVerified: isPmdcVerified,
-      licenseVerified: true,
+      licenseVerified,
       licensingAuthority,
       onlineNow: doctor.onlineNow && doctor.onlineNowUntil != null && doctor.onlineNowUntil > new Date(),
       licensedIn: doctor.jurisdictions.map((j) => j.countryCode),

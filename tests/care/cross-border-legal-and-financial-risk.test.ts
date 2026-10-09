@@ -22,6 +22,8 @@ import { isDoctorProductionEligible, listMarketplaceDoctors } from '../../src/se
 import { createConsultation } from '../../src/server/care/consultation-service';
 import {
   requestRefund,
+  confirmRefund,
+  transitionRefund,
   processChargeback,
   getDoctorReceivableBalance,
   allocatePlatformLoss,
@@ -546,7 +548,7 @@ describe('Task 3 — Support Both Pakistani and Afghan Doctors', () => {
     expect(pkElig.eligible).toBe(false);
     expect(pkElig.reasons).toContain('LICENSE_NOT_VERIFIED');
 
-    // 6. Afghan doctor with null license number is rejected with INVALID_OR_MISSING_LICENSE_NUMBER
+    // 6. Afghan doctor without Afghan credentials is rejected with AFGHAN_CREDENTIAL_REQUIRED
     const afDocNoLic = {
       ...afDocProfile,
       pmdcNumber: null,
@@ -554,7 +556,19 @@ describe('Task 3 — Support Both Pakistani and Afghan Doctors', () => {
     };
     const afElig = isDoctorProductionEligible(afDocNoLic);
     expect(afElig.eligible).toBe(false);
-    expect(afElig.reasons).toContain('INVALID_OR_MISSING_LICENSE_NUMBER');
+    expect(afElig.reasons).toContain('AFGHAN_CREDENTIAL_REQUIRED');
+
+    // 7. Afghan doctor with stray Pakistani PM&DC data but no Afghan credentials is still rejected
+    const afDocStrayPk = {
+      ...afDocProfile,
+      pmdcNumber: 'PK-99999',
+      pmdcVerifiedAt: new Date(),
+      pmdcVerifiedBy: 'admin-pk-1',
+      credentials: [],
+    };
+    const afStrayElig = isDoctorProductionEligible(afDocStrayPk);
+    expect(afStrayElig.eligible).toBe(false);
+    expect(afStrayElig.reasons).toContain('AFGHAN_CREDENTIAL_REQUIRED');
   });
 });
 
@@ -895,7 +909,199 @@ describe('Task 5 — Post-Payout Financial Risk, Debt Tracking & Loss Allocation
     expect(afterRec.receivableMinor).toBe(0);
   });
 
-  test('8. Global mathematical zero-imbalance ledger invariant preserved across suite', async () => {
+  test('8. Multiple partial refunds on the same payment waterfall doctor share and platform fee accurately', async () => {
+    const { docUser, docProfile, consultation, payment, docFee } = await setupFundedDoctor('multi-refund', 100000);
+    // Consultation payment: 100000 minor, docFee = 80000, platformFee = 20000
+    // Refund 1: 50000 minor (50%). Doctor leg takes 50000, platform leg takes 0.
+    const r1 = await db.refund.create({
+      data: {
+        paymentId: payment.id,
+        consultationId: consultation.id,
+        amountMinor: 50000,
+        currency: 'PKR',
+        reason: 'partial_refund_1',
+        state: 'REQUESTED',
+        requestedById: testPatientId,
+      },
+    });
+    await transitionRefund(r1.id, 'REFUND_PENDING');
+    await confirmRefund({ refundId: r1.id });
+
+    // Verify first refund ledger legs:
+    const r1Entries = await db.ledgerEntry.findMany({
+      where: { refundId: r1.id },
+      include: { account: true },
+    });
+    const r1DocLeg = r1Entries.find((e) => e.account.kind === 'DOCTOR_AVAILABLE' || e.account.kind === 'DOCTOR_PENDING');
+    const r1PlatFeeLeg = r1Entries.find((e) => e.account.kind === 'PLATFORM_FEE');
+    expect(r1DocLeg?.amountMinor).toBe(50000);
+    expect(r1PlatFeeLeg).toBeUndefined(); // Platform fee leg not touched yet because doctor portion covered 50000
+
+    // Refund 2: 50000 minor (remaining 50%).
+    // Remaining doctor share is 80000 - 50000 = 30000.
+    // Doctor leg takes 30000, platform leg takes 20000.
+    // Together: 30000 + 20000 = 50000.
+    const r2 = await db.refund.create({
+      data: {
+        paymentId: payment.id,
+        consultationId: consultation.id,
+        amountMinor: 50000,
+        currency: 'PKR',
+        reason: 'partial_refund_2',
+        state: 'REQUESTED',
+        requestedById: testPatientId,
+      },
+    });
+    await transitionRefund(r2.id, 'REFUND_PENDING');
+    await confirmRefund({ refundId: r2.id });
+
+    const r2Entries = await db.ledgerEntry.findMany({
+      where: { refundId: r2.id },
+      include: { account: true },
+    });
+    const r2DocLeg = r2Entries.find((e) => e.account.kind === 'DOCTOR_AVAILABLE' || e.account.kind === 'DOCTOR_PENDING');
+    const r2PlatFeeLeg = r2Entries.find((e) => e.account.kind === 'PLATFORM_FEE');
+    expect(r2DocLeg?.amountMinor).toBe(30000); // Remaining doctor share
+    expect(r2PlatFeeLeg?.amountMinor).toBe(20000); // Full platform fee refunded
+
+    // Verify total doctor debited across both refunds is exactly 80000, and platform fee debited is exactly 20000
+    const totalDocDebited = (r1DocLeg?.amountMinor ?? 0) + (r2DocLeg?.amountMinor ?? 0);
+    const totalPlatFeeDebited = (r1PlatFeeLeg?.amountMinor ?? 0) + (r2PlatFeeLeg?.amountMinor ?? 0);
+    expect(totalDocDebited).toBe(80000);
+    expect(totalPlatFeeDebited).toBe(20000);
+
+    // Earning should be marked REVERSED
+    const earnings = await db.doctorEarning.findMany({ where: { consultationId: consultation.id } });
+    expect(earnings.every((e) => e.state === 'REVERSED')).toBe(true);
+  });
+
+  test('9. Post-settlement chargeback on a partially refunded payment reverses only remaining unrefunded amount', async () => {
+    const { docUser, docProfile, consultation, payment, docFee } = await setupFundedDoctor('cb-partial', 100000);
+    // Payout first
+    const payout = await requestPayout({ doctorProfileId: docProfile.id, doctorUserId: docUser.id, currency: 'PKR' });
+    await processPayout({ payoutId: payout.id });
+
+    // Partial refund of 40000 minor
+    const r1 = await db.refund.create({
+      data: {
+        paymentId: payment.id,
+        consultationId: consultation.id,
+        amountMinor: 40000,
+        currency: 'PKR',
+        reason: 'partial_refund_prior',
+        state: 'REQUESTED',
+        requestedById: testPatientId,
+      },
+    });
+    await transitionRefund(r1.id, 'REFUND_PENDING');
+    await confirmRefund({ refundId: r1.id });
+
+    // Chargeback occurs on the partially refunded payment
+    // Remaining unrefunded amount is 100000 - 40000 = 60000.
+    // Doctor portion already refunded: min(80000, 40000) = 40000. Remaining doctor portion: 40000.
+    // Platform fee already refunded: 0. Remaining platform fee: 20000.
+    // On chargeback: cash exit is 60000, doctor leg is 40000, platform fee leg is 20000.
+    const cbRes = await processChargeback({
+      paymentId: payment.id,
+      reason: 'partial_cardholder_chargeback',
+      actorRole: 'FINANCE',
+    });
+    expect(cbRes.success).toBe(true);
+
+    const cbEntries = await db.ledgerEntry.findMany({
+      where: { reference: `chargeback:${payment.id}` },
+      include: { account: true },
+    });
+    const cashExit = cbEntries.find((e) => e.account.kind === 'PLATFORM_CASH' && e.direction === 'CREDIT');
+    const docClawback = cbEntries.find((e) => e.account.kind === 'DOCTOR_AVAILABLE' && e.direction === 'DEBIT');
+    const platFeeRev = cbEntries.find((e) => e.account.kind === 'PLATFORM_FEE' && e.direction === 'DEBIT');
+
+    expect(cashExit?.amountMinor).toBe(60000);
+    expect(docClawback?.amountMinor).toBe(40000);
+    expect(platFeeRev?.amountMinor).toBe(20000);
+
+    // Sum of debits must equal sum of credits
+    const debits = cbEntries.filter((e) => e.direction === 'DEBIT').reduce((s, e) => s + e.amountMinor, 0);
+    const credits = cbEntries.filter((e) => e.direction === 'CREDIT').reduce((s, e) => s + e.amountMinor, 0);
+    expect(debits).toBe(credits);
+    expect(debits).toBe(60000);
+  });
+
+  test('10. Multi-currency doctor deficit tracking and isolated platform loss write-offs', async () => {
+    // Setup a doctor with deficits in both PKR and USD
+    const multiDocUser = await db.user.create({
+      data: {
+        email: `${stamp}-multi-curr-doc@test.local`,
+        name: 'Dr Multi Currency',
+        role: 'doctor',
+        accountStatus: 'active',
+        passwordHash: 'dummy',
+      },
+    });
+    const multiDocProfile = await db.doctorProfile.create({
+      data: {
+        userId: multiDocUser.id,
+        country: 'PK',
+        pmdcNumber: 'PK-MULTI-101',
+        pmdcVerifiedAt: new Date(),
+        pmdcVerifiedBy: 'admin-1',
+        specialty: 'Cardiology',
+        careStatus: 'ACTIVE',
+      },
+    });
+
+    // Create deficits: -5000 PKR and -50 USD in DOCTOR_AVAILABLE
+    await postTransaction({
+      reference: `${stamp}-deficit-pkr`,
+      idempotencyKey: `${stamp}-deficit-pkr`,
+      legs: [
+        { accountKind: 'DOCTOR_AVAILABLE', ownerDoctorProfileId: multiDocProfile.id, direction: 'DEBIT', amountMinor: 5000, currency: 'PKR', memo: 'clawback PKR' },
+        { accountKind: 'PLATFORM_CASH', direction: 'CREDIT', amountMinor: 5000, currency: 'PKR', memo: 'cash out' },
+      ],
+    });
+    await postTransaction({
+      reference: `${stamp}-deficit-usd`,
+      idempotencyKey: `${stamp}-deficit-usd`,
+      legs: [
+        { accountKind: 'DOCTOR_AVAILABLE', ownerDoctorProfileId: multiDocProfile.id, direction: 'DEBIT', amountMinor: 5000, currency: 'USD', memo: 'clawback USD' },
+        { accountKind: 'PLATFORM_CASH', direction: 'CREDIT', amountMinor: 5000, currency: 'USD', memo: 'cash out' },
+      ],
+    });
+
+    const pkrRec = await getDoctorReceivableBalance(multiDocProfile.id, 'PKR');
+    const usdRec = await getDoctorReceivableBalance(multiDocProfile.id, 'USD');
+    expect(pkrRec.receivableMinor).toBe(5000);
+    expect(usdRec.receivableMinor).toBe(5000);
+
+    // Concurrently write off PKR and USD
+    const [pkrLoss, usdLoss] = await Promise.all([
+      allocatePlatformLoss({
+        doctorProfileId: multiDocProfile.id,
+        currency: 'PKR',
+        reason: 'write_off_pkr',
+        actorRole: 'FINANCE',
+      }),
+      allocatePlatformLoss({
+        doctorProfileId: multiDocProfile.id,
+        currency: 'USD',
+        reason: 'write_off_usd',
+        actorRole: 'FINANCE',
+      }),
+    ]);
+
+    expect(pkrLoss.success).toBe(true);
+    expect(pkrLoss.allocatedMinor).toBe(5000);
+    expect(usdLoss.success).toBe(true);
+    expect(usdLoss.allocatedMinor).toBe(5000);
+
+    // Both currencies should now be zero deficit
+    const pkrRecAfter = await getDoctorReceivableBalance(multiDocProfile.id, 'PKR');
+    const usdRecAfter = await getDoctorReceivableBalance(multiDocProfile.id, 'USD');
+    expect(pkrRecAfter.hasDeficit).toBe(false);
+    expect(usdRecAfter.hasDeficit).toBe(false);
+  });
+
+  test('11. Global mathematical zero-imbalance ledger invariant preserved across suite', async () => {
     const allEntries = await db.ledgerEntry.findMany({
       where: { reference: { contains: stamp } },
     });

@@ -164,10 +164,22 @@ export async function confirmRefund(opts: { refundId: string; providerRef?: stri
     const doctorNet = breakdown.doctorFeeMinor ?? 0;
     const platformFee = breakdown.platformFeeMinor ?? 0;
     const ccy = refund.currency;
-    // Waterfall: refund the doctor's portion first, then platform fee.
-    const doctorLeg = Math.min(doctorNet, refund.amountMinor);
+    // Calculate prior completed refunds for this payment to preserve exact leg allocation across partial refunds
+    const priorRefunds = await db.refund.findMany({
+      where: { paymentId: payment.id, state: 'REFUNDED', id: { not: refund.id } },
+      select: { amountMinor: true },
+    });
+    const priorRefundedTotal = priorRefunds.reduce((sum, r) => sum + r.amountMinor, 0);
+    const priorDoctorRefunded = Math.min(doctorNet, priorRefundedTotal);
+    const priorPlatformRefunded = Math.max(0, priorRefundedTotal - priorDoctorRefunded);
+
+    const remainingDoctorShare = Math.max(0, doctorNet - priorDoctorRefunded);
+    const remainingPlatformShare = Math.max(0, platformFee - priorPlatformRefunded);
+
+    // Waterfall: refund the doctor's portion first (up to remaining share), then platform fee.
+    const doctorLeg = Math.min(remainingDoctorShare, refund.amountMinor);
     const platformLeg = refund.amountMinor - doctorLeg;
-    if (platformLeg > platformFee) throw new RefundError('REFUND_EXCEEDS_LEDGER', 409);
+    if (platformLeg > remainingPlatformShare) throw new RefundError('REFUND_EXCEEDS_LEDGER', 409);
 
     const consultation = await db.consultation.findUnique({ where: { id: refund.consultationId }, select: { doctorProfileId: true } });
 
@@ -230,11 +242,12 @@ export async function confirmRefund(opts: { refundId: string; providerRef?: stri
       ],
     });
 
-    // Reverse the doctor's earning for a full refund.
-    if (doctorLeg >= doctorNet && doctorNet > 0 && consultation) {
+    // Reverse the doctor's earning when cumulative refund covers doctor's full fee.
+    const totalDoctorRefunded = priorDoctorRefunded + doctorLeg;
+    if (totalDoctorRefunded >= doctorNet && doctorNet > 0 && consultation) {
       await db.doctorEarning.updateMany({
         where: { consultationId: refund.consultationId, state: { in: ['PENDING', 'AVAILABLE', 'PAID'] } },
-        data: { state: 'REVERSED' },
+        data: { state: 'REVERSED', netMinor: 0 },
       });
     } else if (doctorLeg > 0 && consultation) {
       // Partial: reduce the earning row to keep reporting consistent.
@@ -311,10 +324,26 @@ export async function processChargeback(opts: {
     doctorFeeMinor?: number; platformFeeMinor?: number;
   };
   const doctorNet = breakdown.doctorFeeMinor ?? Math.round(payment.amountMinor * 0.8);
+  const platformFee = breakdown.platformFeeMinor ?? (payment.amountMinor - doctorNet);
   const ccy = payment.currency;
 
-  const doctorLegTotal = Math.min(doctorNet, payment.amountMinor);
-  const platformLegTotal = payment.amountMinor - doctorLegTotal;
+  // Account for prior refunds on this payment to avoid double-charging back already refunded cash/shares
+  const priorRefunds = await db.refund.aggregate({
+    where: { paymentId: payment.id, state: 'REFUNDED' },
+    _sum: { amountMinor: true },
+  });
+  const priorRefundedMinor = priorRefunds._sum.amountMinor ?? 0;
+  const chargebackAmount = payment.amountMinor - priorRefundedMinor;
+
+  if (chargebackAmount <= 0) {
+    throw new RefundError('CANNOT_CHARGEBACK_ALREADY_REFUNDED', 409);
+  }
+
+  const priorDoctorRefunded = Math.min(doctorNet, priorRefundedMinor);
+  const remainingDoctorShare = Math.max(0, doctorNet - priorDoctorRefunded);
+
+  const doctorLegTotal = Math.min(remainingDoctorShare, chargebackAmount);
+  const platformLegTotal = chargebackAmount - doctorLegTotal;
 
   const doctorEarnings = await db.doctorEarning.findMany({
     where: { consultationId: payment.consultationId },
@@ -363,7 +392,7 @@ export async function processChargeback(opts: {
     paymentId: payment.id,
     consultationId: payment.consultationId,
     legs: [
-      { accountKind: 'PLATFORM_CASH', direction: 'CREDIT', amountMinor: payment.amountMinor, currency: ccy, memo: 'chargeback settlement exit' },
+      { accountKind: 'PLATFORM_CASH', direction: 'CREDIT', amountMinor: chargebackAmount, currency: ccy, memo: 'chargeback settlement exit' },
       ...doctorLegs,
       ...(platformLegTotal > 0
         ? [{ accountKind: 'PLATFORM_FEE' as const, direction: 'DEBIT' as const, amountMinor: platformLegTotal, currency: ccy, memo: 'reverse platform commission on chargeback' }]

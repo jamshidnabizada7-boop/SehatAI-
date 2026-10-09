@@ -204,8 +204,20 @@ export async function requireActiveDoctor(): Promise<{ id: string; email: string
     where: { userId: u.id },
     include: { credentials: true },
   });
-  const hasVerifiedCred = profile?.credentials?.some((c) => c.status === 'VERIFIED');
-  const isVerified = profile?.pmdcVerifiedAt != null || Boolean(hasVerifiedCred);
+  const docCountry = (profile?.country ?? 'PK').toUpperCase();
+  const hasVerifiedCred = profile?.credentials?.some(
+    (c) =>
+      c.status === 'VERIFIED' &&
+      (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
+      (docCountry === 'AF'
+        ? ((c.country ?? '').toUpperCase() === 'AF' ||
+           (c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
+           (c.issuingBody ?? '').toUpperCase().includes('AFGHAN'))
+        : ((c.country ?? '').toUpperCase() === 'PK' ||
+           (c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
+           (c.issuingBody ?? '').toUpperCase().includes('PMDC')))
+  );
+  const isVerified = docCountry === 'AF' ? Boolean(hasVerifiedCred) : (profile?.pmdcVerifiedAt != null || Boolean(hasVerifiedCred));
   if (!profile || !isVerified) {
     const err = new Error('Forbidden — Doctor license verification pending');
     (err as any).status = 403;
