@@ -1313,9 +1313,14 @@ model JurisdictionPolicy {
   requiresGuardian          Boolean  @default(false)
   requiresLocalDoctor       Boolean  @default(false)
   policyVersion             String
-  effectiveDate             DateTime @default(now())
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  effectiveDate             DateTime  @default(now())
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  scope                     String?   @default("DOMESTIC") // DOMESTIC | CROSS_BORDER | SECOND_OPINION
+  legalApprovalSource       String?   // Legal authorization or regulatory directive reference
+  approvalExpiresAt         DateTime? // Sunset / expiration of legal clearance
+  humanApprovedById         String?   // Admin userId who activated the policy
+  humanApprovedAt           DateTime? // Timestamp of administrative activation
 
   @@unique([countryCode, doctorCountry, policyVersion])
   @@index([countryCode, doctorCountry])

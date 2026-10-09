@@ -19,7 +19,7 @@
 | **Consultation Lifecycle End-to-End (10 Steps)** | **PASS** | **READY** | Operational in Staging Sandbox |
 | **Double-Entry Financial Ledger** | **PASS** | **READY** | Strict Zero-Imbalance Invariant Verified |
 | **Durable Notification Outbox Worker** | **PASS** | **READY** | Background Service Daemon Operational |
-| **Private Object Storage (AES-256-GCM)** | **PASS** | **READY** | Blocked on Production AWS S3 HIPAA/SOC2 Bucket |
+| **Private Object Storage (AES-256-GCM)** | **PASS** | **READY** | Blocked on Production AWS S3 Private Encrypted KMS Bucket (client-side AES-256-GCM + SSE-KMS; local DPA review) |
 | **WebRTC Telemedicine & LiveKit Cluster** | **PASS** | **READY** | Blocked on LiveKit Cloud Production Server |
 | **Payment Gateways & Doctor Payouts** | **SANDBOX PASS** | **CONTROLLED PILOT** | Blocked on Banking Merchant Accounts & Escrow |
 | **Clinical Governance & Regulatory Compliance** | **POLICY PASS** | **CONTROLLED PILOT** | Blocked on PM&DC / MoPH Written Licenses |
@@ -163,12 +163,12 @@ While the isolated staging environment is fully functional, production launch is
 | Subsystem | Staging Solution | Production Requirement | Blocker Status | Required Agreements / Credentials |
 | :--- | :--- | :--- | :---: | :--- |
 | **PostgreSQL Database** | WSL2 ext4 loopback instance (`127.0.0.1:5432`) | Managed Cloud Multi-AZ PostgreSQL (Neon / Supabase / AWS RDS) | **BLOCKED** | Managed Cloud Database URL, Connection Pooler endpoint, Automated backup policy |
-| **Object Storage** | Local AES-256-GCM private filesystem adapter | Private HIPAA-compliant AWS S3 Bucket with KMS customer-managed keys | **BLOCKED** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `CARE_S3_BUCKET`, `CARE_S3_REGION`, BAA / DPA executed |
+| **Object Storage** | Local AES-256-GCM private filesystem adapter | Private AWS S3 Bucket with KMS customer-managed keys & client-side AES-256-GCM | **BLOCKED** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `CARE_S3_BUCKET`, `CARE_S3_REGION`, DPA / Cloud Terms executed (HIPAA is US-specific; local data privacy review required) |
 | **WebRTC Video Calling** | Local WebSocket signaling relay + staging JWT provider | LiveKit Cloud Managed Server or self-hosted High-Availability cluster | **BLOCKED** | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, Global TURN/STUN relays |
 | **Pakistan Payments** | Signed HMAC Mock Sandbox Provider | Licensed Payment Service Provider (1Link / JazzCash / Easypaisa / PayFast) | **BLOCKED** | `CARE_PK_GATEWAY_KEY`, `CARE_PK_GATEWAY_SECRET`, Merchant Escrow Bank Account, SBP merchant compliance |
 | **Afghanistan Payments** | Signed HMAC Mock Sandbox Provider | HesabPay Merchant API | **BLOCKED** | `HESABPAY_API_KEY`, `HESABPAY_MERCHANT_ID`, Merchant Agreement, Cross-border compliance clearance |
 | **Doctor Payouts** | Internal Ledger State Transition Simulator | Automated Bank ACH / 1Link Raast Bulk Transfer Payout Gateway | **BLOCKED** | Corporate Banking API credentials, Raast instant payout authorization, 2FA maker-checker workflow |
-| **Clinical Governance** | Pre-triage disclaimer, clinical documentation guards | Health Regulatory Licensing | **BLOCKED** | PM&DC Digital Health / Telemedicine Registration, Afghanistan MoPH Directorate of Private Health licensing |
+| **Clinical Governance** | Pre-triage disclaimer, clinical documentation guards, dual PK/AF doctor verification | Health Regulatory Governance | **BLOCKED** | Permanent PM&DC physician registration & provincial health commission guidelines (PK); MoPH licensing & private health directorate clearance (AF); counsel review (Note: PM&DC Act 2022 Sec 31/32 does not provide digital platform registration) |
 
 ---
 

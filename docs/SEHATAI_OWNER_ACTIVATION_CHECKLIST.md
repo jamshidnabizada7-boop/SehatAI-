@@ -74,7 +74,7 @@
   * `CARE_S3_KEY` (IAM Access Key ID)
   * `CARE_S3_SECRET` (IAM Secret Access Key)
 * **Expected Cost Category:** $15 – $60 / month (pay-as-you-go based on stored GB and signed GET requests).
-* **Necessary Merchant / Legal Approval:** HIPAA / BAA (Business Associate Agreement) or local data protection policy addendum.
+* **Necessary Merchant / Legal Approval:** Data Processing Agreement (DPA) and data protection addendum compliant with local data privacy laws (e.g. PECA 2016 in Pakistan, MoPH health data guidelines in Afghanistan). Note: HIPAA is a US-specific statute (45 CFR Parts 160/164) and does not apply to non-US operations; technical protections (AES-256-GCM client-side encryption, AWS KMS SSE, IAM least-privilege) safeguard PHI at the infrastructure level.
 * **Verification Steps:**
   1. Upload test medical image via `PUT /api/care/storage/upload`.
   2. Confirm S3 direct web URL returns `403 Forbidden`.
@@ -88,7 +88,7 @@
 
 ### Subsystem 3: WebRTC Telemedicine SFU & Video Infrastructure
 * **Account to Create:** LiveKit Cloud (`cloud.livekit.io`) or Self-Hosted LiveKit Cluster on Kubernetes / AWS ECS.
-* **Account / Plan Type:** LiveKit Cloud Pro Plan (or Enterprise with HIPAA compliance).
+* **Account / Plan Type:** LiveKit Cloud Pro Plan (or Enterprise with dedicated Data Processing Agreement / DPA).
 * **Required Configuration:**
   * Video SFU region selection: `ap-south-1` (Mumbai / Karachi latency optimization).
   * Dedicated STUN/TURN allocation: port 3478 / 5349 for mobile NAT traversal across cellular carrier CGNAT (Jazz, Zong, Telenor, Roshan, Afghan Telecom).
@@ -147,8 +147,8 @@
 ---
 
 ### Subsystem 5: Afghanistan Domestic Payment Corridor
-* **Account to Create:** **HesabPay Corporate Merchant Account** (Zinzir Ltd. / licensed by Da Afghanistan Bank).
-* **Account / Plan Type:** API Enterprise Merchant (supporting Hawala / HesabPay Wallet / DAB Interbank clearing).
+* **Account to Create:** **HesabPay Corporate Merchant Account** (operated by Zinzir Ltd., an Electronic Money Institution licensed by Da Afghanistan Bank).
+* **Account / Plan Type:** API Enterprise Merchant (supporting HesabPay Wallet / domestic Afghani payment processing).
 * **Required Configuration:**
   * Currency: AFN (Afghan Afghani).
   * Webhook callback URL: `https://sehatai.health/api/care/payments/webhooks/hesabpay`.
@@ -158,14 +158,15 @@
   * `HESABPAY_MERCHANT_ID`
 * **Expected Cost Category:** 1.0% – 2.0% per transaction.
 * **Necessary Merchant / Legal Approval:**
-  * Ministry of Industry and Commerce (MoIC) Business License.
-  * Da Afghanistan Bank (DAB) e-payment compliance authorization.
+  * Ministry of Industry and Commerce (MoIC) Business License or accepted corporate entity registration.
+  * HesabPay Corporate Merchant Agreement (as an EMI merchant, telehealth platforms do not require direct DAB commercial banking licenses).
+  * Legal counsel review of OFAC General Licenses (e.g., GL 20) and UN sanctions exemptions applicable to humanitarian and healthcare payment processing in Afghanistan.
 * **Verification Steps:**
   1. Initiate test AFN payment transaction via HesabPay sandbox checkout.
   2. Confirm webhook receipt and verify signature.
   3. Confirm ledger entry credited in `AFN` minor units.
 * **Remaining Coding Work:** Production adapter hookup in `src/server/care/payments/`.
-* **Current Status:** **BLOCKED: Awaiting Owner HesabPay Merchant Contract & DAB Clearances**.
+* **Current Status:** **BLOCKED: Awaiting Owner HesabPay Merchant Agreement & Counsel Sanctions Review**.
 
 ---
 
@@ -190,19 +191,29 @@
 ---
 
 ### Subsystem 7: Doctor Licensure & Telemedicine Legal Clearances
-* **Regulatory Body (Pakistan):** **Pakistan Medical & Dental Council (PM&DC)**.
-  * Section 31/32 Telemedicine Practice Regulations.
-  * Requirement: Electronic verification of doctor PM&DC registration numbers, permanent licenses, and good standing certificates.
-  * Doctor Onboarding Mandate: Admin manual verification required (`pmdcVerifiedBy` ID and timestamp) before any doctor is permitted to appear in marketplace search or accept patient bookings.
-* **Regulatory Body (Afghanistan):** **Ministry of Public Health (MoPH)**.
-  * Department of Private Health Sector Regulation.
-  * Telemedicine operating permit and clinical oversight protocols.
-* **Cross-Border Corridor Policy:**
-  * Pakistan–Afghanistan cross-border consultations (`PK -> AF` and `AF -> PK`) are **HARD-DISABLED BY DEFAULT** in codebase (`CARE_CROSS_BORDER_CORRIDOR_APPROVED="false"`).
-  * Legal Requirement: Formal written bilateral MoU or cross-border medical licensing framework between PM&DC and MoPH before this flag may be enabled.
+* **Regulatory & Licensure Framework (Pakistan):**
+  * **Licensing Body:** Pakistan Medical & Dental Council (PM&DC).
+  * **Licensure Requirement:** Permanent medical registration and verified license status for individual physicians.
+  * **Clarification on PM&DC Act 2022:** Sections 31 and 32 govern inspector appointments and withdrawal of qualification recognition; they do NOT govern digital health or telemedicine platform registration.
+  * **Telehealth Governance:** Digital health operations are subject to provincial healthcare commission guidelines (e.g. Punjab Healthcare Commission Telemedicine Regulations 2020, Sindh Healthcare Commission, KP Healthcare Commission) and qualified legal counsel review.
+  * **Doctor Onboarding Mandate:** Admin manual verification required (`pmdcVerifiedBy` ID and timestamp) before any doctor is permitted to appear in marketplace search or accept patient bookings.
+* **Regulatory & Licensure Framework (Afghanistan):**
+  * **Licensing Body:** Ministry of Public Health (MoPH) Directorate of Private Health Sector Regulation.
+  * **Licensure Requirement:** Verified MoPH registration and clinical oversight compliance.
+  * **Support for Afghan Doctors:** Afghan physicians with valid MoPH credentials and verified active practice status are eligible for domestic Afghanistan consultations.
+* **Cross-Border Corridor Policy (PK <-> AF):**
+  * Pakistan–Afghanistan cross-border consultations (`PK -> AF` and `AF -> PK`) are **FAIL-CLOSED AND DISABLED BY DEFAULT** in codebase (`CROSS_BORDER_CORRIDOR_DISABLED_PENDING_APPROVAL`).
+  * **No Single-Boolean Bypass:** An ordinary environment variable alone (`CARE_CROSS_BORDER_CORRIDOR_APPROVED`) CANNOT activate cross-border care. Activation strictly requires a database-level `JurisdictionPolicy` with valid non-null `legalApprovalSource`, `humanApprovedById`, valid effective window (`effectiveDate <= now` and unexpired `approvalExpiresAt`), authorized scope (`CROSS_BORDER` or `SECOND_OPINION`), and individual doctor foreign licensing authorization.
+  * **Legal Reality:** No statutory bilateral PM&DC–MoPH MoU is codified in law. Medical practice is territorially governed by the patient's jurisdiction. Cross-border corridors cannot open without counsel-approved foreign practice legal opinions.
+* **Questions for Qualified Legal Counsel:**
+  1. What provincial healthcare commission registrations or exemptions apply to digital health aggregators in Punjab, Sindh, KPK, and ICT?
+  2. Under what statutory framework can a Pakistani doctor legally consult with or provide second opinions to patients residing in Afghanistan, and vice versa?
+  3. Does cross-border clinical practice require secondary medical registration with the patient's domestic council (e.g., MoPH registration for PK doctors consulting AF patients)?
+  4. Are electronic prescriptions legally recognized across international borders under the Drug Regulatory Authority of Pakistan (DRAP) Act and Afghan pharmacy laws?
+  5. What OFAC General Licenses (e.g., GL 20) and UN sanctions exemptions apply to payments for medical services delivered in Afghanistan?
 * **Required Action:**
   * Legal counsel must formalize Terms of Service, Patient Informed Consent, Doctor Service Level Agreements, and Electronic Prescriptions Liability Waivers.
-* **Current Status:** **BLOCKED: Awaiting PM&DC / MoPH Written Regulatory Filings & Legal Counsel Approvals**.
+* **Current Status:** **BLOCKED: Awaiting Qualified Legal Counsel Review & Regulatory Clearances**.
 
 ---
 

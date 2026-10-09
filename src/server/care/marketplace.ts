@@ -113,12 +113,18 @@ export interface DoctorEligibilityCheck {
 /**
  * Strict production eligibility verification (§18, §14, §15).
  * Ensures no doctor becomes eligible for real booking solely through name-prefix filtering.
- * Requires:
+ *
+ * Supports jurisdiction-specific credential verification:
+ * - Pakistani doctors: PM&DC registration verification and permanent licensure
+ * - Afghan doctors: independently established Afghan Ministry of Public Health (MoPH) licensing
+ *
+ * Common mandatory invariants for both jurisdictions:
  * 1. Explicit non-test status (not a test fixture)
- * 2. Current license verification (valid PM&DC number and non-expired verified timestamp)
- * 3. Admin approval (pmdcVerifiedBy is recorded)
- * 4. Jurisdiction authorization (valid licensing country, no revoked jurisdiction)
- * 5. Active service status (careStatus is explicitly ACTIVE and user.accountStatus is active)
+ * 2. Active user account status (`accountStatus === 'active'`)
+ * 3. Active service eligibility (`careStatus === 'ACTIVE'`)
+ * 4. Human administrative approval recorded (`pmdcVerifiedBy` or credential `verifiedById`)
+ * 5. Current non-expired credential status with non-future verification timestamp
+ * 6. Valid licensing jurisdiction with no revoked jurisdictional rights
  */
 export function isDoctorProductionEligible(doctor: {
   id?: string;
@@ -130,7 +136,17 @@ export function isDoctorProductionEligible(doctor: {
   facilityName?: string | null;
   bio?: string | null;
   user?: { email?: string | null; name?: string | null; accountStatus?: string | null } | null;
-  jurisdictions?: Array<{ countryCode?: string; status?: string }> | null;
+  jurisdictions?: Array<{ countryCode?: string; status?: string; verifiedAt?: Date | string | null; verifiedById?: string | null }> | null;
+  credentials?: Array<{
+    kind?: string;
+    registrationNumber?: string | null;
+    issuingBody?: string | null;
+    country?: string | null;
+    status?: string;
+    verifiedAt?: Date | string | null;
+    verifiedById?: string | null;
+    expiresAt?: Date | string | null;
+  }> | null;
 }): DoctorEligibilityCheck {
   const reasons: string[] = [];
 
@@ -139,29 +155,98 @@ export function isDoctorProductionEligible(doctor: {
     reasons.push('TEST_PROFILE_NOT_ELIGIBLE');
   }
 
-  // 2. Current license verification
-  if (!doctor.pmdcNumber || doctor.pmdcNumber.trim().length < 3) {
-    reasons.push('INVALID_OR_MISSING_LICENSE_NUMBER');
+  // 2. Active service status & active user account
+  if (doctor.careStatus !== 'ACTIVE') {
+    reasons.push('CARE_STATUS_NOT_ACTIVE');
   }
-  if (!doctor.pmdcVerifiedAt) {
-    reasons.push('LICENSE_NOT_VERIFIED');
-  } else {
-    const verifiedDate = new Date(doctor.pmdcVerifiedAt);
-    if (isNaN(verifiedDate.getTime()) || verifiedDate > new Date()) {
-      reasons.push('INVALID_LICENSE_VERIFICATION_DATE');
+  if (doctor.user?.accountStatus !== 'active') {
+    reasons.push('USER_ACCOUNT_NOT_ACTIVE');
+  }
+
+  // 3. Licensing jurisdiction validation
+  const licensingCountry = (doctor.country ?? '').trim().toUpperCase();
+  if (!licensingCountry || licensingCountry.length !== 2) {
+    reasons.push('MISSING_LICENSING_JURISDICTION');
+  } else if (!['PK', 'AF'].includes(licensingCountry)) {
+    reasons.push('UNSUPPORTED_LICENSING_JURISDICTION');
+  }
+
+  // 4. Jurisdiction-specific credential verification
+  if (licensingCountry === 'PK') {
+    // Pakistani doctors: verified via Pakistan Medical & Dental Council (PM&DC)
+    const pmdcCred = doctor.credentials?.find(
+      (c) =>
+        (c.issuingBody ?? '').toUpperCase().includes('PM&DC') ||
+        (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
+        (c.country ?? '').toUpperCase() === 'PK'
+    );
+    const licenseNumber = (doctor.pmdcNumber ?? pmdcCred?.registrationNumber ?? '').trim();
+    if (!licenseNumber || licenseNumber.length < 3) {
+      reasons.push('INVALID_OR_MISSING_LICENSE_NUMBER');
+    }
+
+    const verifiedAtRaw = doctor.pmdcVerifiedAt ?? pmdcCred?.verifiedAt;
+    if (!verifiedAtRaw) {
+      reasons.push('LICENSE_NOT_VERIFIED');
+    } else {
+      const verifiedDate = new Date(verifiedAtRaw);
+      if (isNaN(verifiedDate.getTime()) || verifiedDate > new Date()) {
+        reasons.push('INVALID_LICENSE_VERIFICATION_DATE');
+      }
+    }
+
+    const verifiedBy = doctor.pmdcVerifiedBy ?? pmdcCred?.verifiedById;
+    if (!verifiedBy || verifiedBy.trim().length === 0) {
+      reasons.push('ADMIN_APPROVAL_REQUIRED');
+    }
+
+    if (pmdcCred) {
+      if (pmdcCred.status !== 'VERIFIED') {
+        reasons.push('CREDENTIAL_NOT_VERIFIED');
+      }
+      if (pmdcCred.expiresAt && new Date(pmdcCred.expiresAt) <= new Date()) {
+        reasons.push('CREDENTIAL_EXPIRED');
+      }
+    }
+  } else if (licensingCountry === 'AF') {
+    // Afghan doctors: verified via independently established Afghan licensing (Ministry of Public Health / MoPH / Afghan Medical Council)
+    const afCred = doctor.credentials?.find(
+      (c) =>
+        (c.country ?? '').toUpperCase() === 'AF' ||
+        (c.issuingBody ?? '').toUpperCase().includes('MOPH') ||
+        (c.issuingBody ?? '').toUpperCase().includes('AFGHAN')
+    );
+    const licenseNumber = (afCred?.registrationNumber ?? doctor.pmdcNumber ?? '').trim();
+    if (!licenseNumber || licenseNumber.length < 3) {
+      reasons.push('INVALID_OR_MISSING_LICENSE_NUMBER');
+    }
+
+    const verifiedAtRaw = afCred?.verifiedAt ?? doctor.pmdcVerifiedAt;
+    if (!verifiedAtRaw) {
+      reasons.push('LICENSE_NOT_VERIFIED');
+    } else {
+      const verifiedDate = new Date(verifiedAtRaw);
+      if (isNaN(verifiedDate.getTime()) || verifiedDate > new Date()) {
+        reasons.push('INVALID_LICENSE_VERIFICATION_DATE');
+      }
+    }
+
+    const verifiedBy = afCred?.verifiedById ?? doctor.pmdcVerifiedBy;
+    if (!verifiedBy || verifiedBy.trim().length === 0) {
+      reasons.push('ADMIN_APPROVAL_REQUIRED');
+    }
+
+    if (afCred) {
+      if (afCred.status !== 'VERIFIED') {
+        reasons.push('CREDENTIAL_NOT_VERIFIED');
+      }
+      if (afCred.expiresAt && new Date(afCred.expiresAt) <= new Date()) {
+        reasons.push('CREDENTIAL_EXPIRED');
+      }
     }
   }
 
-  // 3. Admin approval
-  if (!doctor.pmdcVerifiedBy || doctor.pmdcVerifiedBy.trim().length === 0) {
-    reasons.push('ADMIN_APPROVAL_REQUIRED');
-  }
-
-  // 4. Jurisdiction authorization
-  const licensingCountry = (doctor.country ?? '').toUpperCase();
-  if (!licensingCountry || licensingCountry.length !== 2) {
-    reasons.push('MISSING_LICENSING_JURISDICTION');
-  }
+  // 5. Jurisdiction authorizations
   if (doctor.jurisdictions && doctor.jurisdictions.length > 0) {
     const hasRevoked = doctor.jurisdictions.some((j) => j.status === 'REVOKED');
     if (hasRevoked) {
@@ -173,14 +258,6 @@ export function isDoctorProductionEligible(doctor: {
     if (countryJurisdiction && countryJurisdiction.status !== 'LICENSED') {
       reasons.push('JURISDICTION_NOT_LICENSED');
     }
-  }
-
-  // 5. Active service status
-  if (doctor.careStatus !== 'ACTIVE') {
-    reasons.push('CARE_STATUS_NOT_ACTIVE');
-  }
-  if (doctor.user?.accountStatus !== 'active') {
-    reasons.push('USER_ACCOUNT_NOT_ACTIVE');
   }
 
   return {

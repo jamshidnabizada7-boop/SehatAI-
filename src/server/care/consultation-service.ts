@@ -91,6 +91,7 @@ export async function createConsultation(input: CreateConsultationInput) {
     patientCountry: input.patientCountry,
     doctorCountry: doctor.country ?? 'PK',
     type: input.type,
+    doctorProfileId: doctor.id,
   });
   if (!decision.allowed) throw new ConsultationError(`JURISDICTION_BLOCKED:${decision.reason}`, 403);
 

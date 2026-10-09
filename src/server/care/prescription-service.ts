@@ -47,7 +47,7 @@ export class PrescriptionError extends Error {
 async function assertPrescribingAllowed(consultationId: string) {
   const c = await db.consultation.findUnique({
     where: { id: consultationId },
-    select: { patientCountry: true, doctorCountry: true, status: true, jurisdictionKey: true, policyVersion: true },
+    select: { patientCountry: true, doctorCountry: true, doctorProfileId: true, status: true, jurisdictionKey: true, policyVersion: true },
   });
   if (!c) throw new PrescriptionError('CONSULTATION_NOT_FOUND', 404);
   if (!['WAITING', 'IN_PROGRESS'].includes(c.status)) {
@@ -57,6 +57,8 @@ async function assertPrescribingAllowed(consultationId: string) {
     patientCountry: c.patientCountry ?? 'PK',
     doctorCountry: c.doctorCountry ?? 'PK',
     type: 'TEXT', // prescribing rides on any permitted consultation mode
+    doctorProfileId: c.doctorProfileId,
+    isPrescribingRequested: true,
   });
   if (!decision.allowed || !decision.prescribingAllowed) {
     throw new PrescriptionError('PRESCRIBING_NOT_ALLOWED_IN_JURISDICTION', 403);
