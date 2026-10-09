@@ -28,14 +28,18 @@ export async function POST(req: NextRequest) {
   const text = String(body.text ?? '').slice(0, 4000).trim();
   if (!text) return NextResponse.json({ error: 'TEXT_REQUIRED' }, { status: 400 });
 
+  // Declared physical location takes strict precedence for emergency guidance and jurisdiction decisions (§17)
+  const declaredCountry = body.country && typeof body.country === 'string' ? body.country.trim().toUpperCase() : null;
+  const declaredCity = body.city && typeof body.city === 'string' ? body.city.trim() : null;
+  const resolvedCountry = declaredCountry ?? (afLocationRegex.test(text) ? 'AF' : 'PK');
+  const resolvedRegion = declaredCity ?? (text.match(afRegionRegex)?.[1] ?? undefined);
+
   // §85/§86 — existing deterministic emergency detection runs FIRST and is
   // upstream of any commercial surface. Never "pay $10 to speak with doctor"
   // after an emergency is detected.
   const l0 = runL0Triage(text);
   const redFlags = matchRedFlags(text);
   if (l0.level === 'EMERGENCY') {
-    const resolvedCountry = body.country ?? (afLocationRegex.test(text) ? 'AF' : 'PK');
-    const resolvedRegion = body.city ?? (text.match(afRegionRegex)?.[1] ?? undefined);
     const emergencyNumbers = getEmergencyNumbers(resolvedCountry, resolvedRegion);
 
     return NextResponse.json({
@@ -62,11 +66,13 @@ export async function POST(req: NextRequest) {
     specialty: top.specialty,
     consultationType: validType as 'TEXT' | 'AUDIO' | 'VIDEO',
     patientId: session?.id ?? null,
+    country: declaredCountry ?? undefined,
   });
   if (doctors.length === 0 && top.specialty !== 'Family Medicine') {
     doctors = await listMarketplaceDoctors({
       consultationType: validType as 'TEXT' | 'AUDIO' | 'VIDEO',
       patientId: session?.id ?? null,
+      country: declaredCountry ?? undefined,
     });
   }
 

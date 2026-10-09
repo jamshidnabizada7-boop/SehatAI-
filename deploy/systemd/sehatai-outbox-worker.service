@@ -1,0 +1,35 @@
+[Unit]
+Description=SehatAI Care Connect Durable Outbox Worker Daemon (§17)
+After=network.target postgresql.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=sehatai
+Group=sehatai
+WorkingDirectory=/var/www/sehatai
+EnvironmentFile=/etc/sehatai/sehatai.env
+
+ExecStart=/usr/local/bin/bun scripts/run-outbox-worker.ts --interval 3000 --batch 25
+Restart=always
+RestartSec=5s
+
+# Process security hardening
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+
+# Resource limits
+LimitNOFILE=65535
+MemoryMax=1G
+CPUQuota=100%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sehatai-outbox-worker
+
+[Install]
+WantedBy=multi-user.target

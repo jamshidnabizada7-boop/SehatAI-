@@ -112,3 +112,116 @@ export function resetMetrics(): void {
   METRICS.errors = 0;
   METRICS.startedAt = Date.now();
 }
+
+// ============================================================
+// PHI-Sanitized Error Reporting (Sentry / GlitchTip / Aggregator)
+// Scrubs all Protected Health Information (PHI) before logging or dispatch.
+// ============================================================
+
+const PHI_PATTERNS = [
+  /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, // emails
+  /(\+?92|0)?3\d{2}[-\s]?\d{7}/g,                    // PK phone numbers
+  /(\+?93)?7\d{8}/g,                                // AF phone numbers
+  /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b/g, // Credit card numbers
+  /\b(?:pmdc|PMDC)[-:\s]*\w+/gi,                   // PMDC credentials
+];
+
+export function scrubPhi(input: string): string {
+  let cleaned = input;
+  for (const pattern of PHI_PATTERNS) {
+    cleaned = cleaned.replace(pattern, '[REDACTED_PHI]');
+  }
+  return cleaned;
+}
+
+export function sanitizeContext(context: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(context)) {
+    const lower = k.toLowerCase();
+    if (
+      lower.includes('password') ||
+      lower.includes('secret') ||
+      lower.includes('token') ||
+      lower.includes('key') ||
+      lower.includes('credential') ||
+      lower.includes('medical') ||
+      lower.includes('clinical') ||
+      lower.includes('symptom') ||
+      lower.includes('prescription') ||
+      lower.includes('notes')
+    ) {
+      result[k] = '[REDACTED]';
+    } else if (typeof v === 'string') {
+      result[k] = scrubPhi(v);
+    } else if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+      result[k] = sanitizeContext(v as Record<string, unknown>);
+    } else {
+      result[k] = v;
+    }
+  }
+  return result;
+}
+
+export async function captureException(
+  error: unknown,
+  context: {
+    event?: string;
+    subsystem?: string;
+    action?: string;
+    extra?: Record<string, unknown>;
+  } = {}
+): Promise<void> {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorStack = error instanceof Error ? error.stack : undefined;
+  const sanitizedMsg = scrubPhi(errorMessage);
+  const sanitizedContext = context.extra ? sanitizeContext(context.extra) : {};
+
+  structuredLog('error', context.event ?? 'UNHANDLED_EXCEPTION', {
+    subsystem: context.subsystem ?? 'core',
+    action: context.action,
+    message: sanitizedMsg,
+    stack: errorStack ? scrubPhi(errorStack) : undefined,
+    ...sanitizedContext,
+  });
+
+  const sentryDsn = process.env.SENTRY_DSN;
+  if (!sentryDsn) return;
+
+  try {
+    const url = new URL(sentryDsn);
+    const projectId = url.pathname.replace(/^\/+/, '');
+    const publicKey = url.username;
+    if (!projectId || !publicKey) return;
+
+    const sentryEndpoint = `${url.protocol}//${url.host}/api/${projectId}/store/?sentry_key=${publicKey}&sentry_version=7`;
+    const eventPayload = {
+      event_id: (Math.random().toString(36).substring(2) + Date.now().toString(36)).slice(0, 32),
+      timestamp: new Date().toISOString().replace('Z', ''),
+      logger: context.subsystem ?? 'sehatai-backend',
+      platform: 'node',
+      level: 'error',
+      environment: process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV ?? 'development',
+      message: sanitizedMsg,
+      extra: sanitizedContext,
+      tags: {
+        subsystem: context.subsystem ?? 'core',
+        action: context.action ?? 'unknown',
+      },
+    };
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+    await fetch(sentryEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'SehatAI-Observability/1.0',
+      },
+      body: JSON.stringify(eventPayload),
+      signal: controller.signal,
+    }).catch(() => undefined).finally(() => clearTimeout(timeout));
+  } catch {
+    // Observability must NEVER crash application code
+  }
+}
+

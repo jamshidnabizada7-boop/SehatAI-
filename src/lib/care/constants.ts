@@ -89,7 +89,7 @@ export const PAYOUT_TRANSITIONS: Record<PayoutState, PayoutState[]> = {
   PENDING: ['PROCESSING', 'FAILED'],
   PROCESSING: ['PAID', 'FAILED'],
   PAID: ['REVERSED'],
-  FAILED: ['PENDING'],
+  FAILED: ['PENDING', 'PROCESSING', 'REVERSED'],
   REVERSED: [],
 };
 

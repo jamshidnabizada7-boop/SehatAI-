@@ -1,0 +1,25 @@
+[
+  {
+    "AllowedHeaders": [
+      "Authorization",
+      "Content-Type",
+      "x-amz-date",
+      "x-amz-content-sha256",
+      "x-amz-server-side-encryption"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "PUT",
+      "HEAD"
+    ],
+    "AllowedOrigins": [
+      "https://staging.sehatai.health",
+      "https://sehatai.health"
+    ],
+    "ExposeHeaders": [
+      "ETag",
+      "x-amz-version-id"
+    ],
+    "MaxAgeSeconds": 3000
+  }
+]

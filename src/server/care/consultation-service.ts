@@ -18,7 +18,7 @@ import {
 import { evaluateJurisdiction } from './jurisdiction';
 import { assertSlotBookable } from './availability';
 import { notify, notifyMany } from './notifications';
-import { isTestDoctorProfile } from './marketplace';
+import { isTestDoctorProfile, isDoctorProductionEligible } from './marketplace';
 
 export class ConsultationError extends Error {
   status: number;
@@ -47,17 +47,28 @@ export interface CreateConsultationInput {
 export async function createConsultation(input: CreateConsultationInput) {
   const doctor = await db.doctorProfile.findUnique({
     where: { id: input.doctorProfileId },
-    include: { user: { select: { id: true, accountStatus: true, email: true, name: true } } },
+    include: {
+      user: { select: { id: true, accountStatus: true, email: true, name: true } },
+      jurisdictions: { select: { countryCode: true, status: true } },
+    },
   });
   if (!doctor) throw new ConsultationError('DOCTOR_NOT_FOUND', 404);
 
   // Prevent internal test doctors from appearing as real services in production or public rollout (§18)
-  if (
-    isTestDoctorProfile(doctor) &&
+  const isProd =
     (process.env.NODE_ENV === 'production' || process.env.CARE_ROLLOUT_STAGE === '5') &&
-    process.env.CARE_ALLOW_TEST_DOCTORS !== 'true'
-  ) {
-    throw new ConsultationError('DOCTOR_NOT_FOUND', 404);
+    process.env.CARE_ALLOW_TEST_DOCTORS !== 'true';
+
+  if (isProd) {
+    if (isTestDoctorProfile(doctor)) {
+      throw new ConsultationError('DOCTOR_NOT_FOUND', 404);
+    }
+    // Gating: Ensure no doctor becomes eligible for real booking solely through name-prefix filtering.
+    // Require explicit non-test status, current license verification, admin approval, jurisdiction authorization, and active service status.
+    const eligibility = isDoctorProductionEligible(doctor);
+    if (!eligibility.eligible) {
+      throw new ConsultationError(`DOCTOR_NOT_ELIGIBLE:${eligibility.reasons[0]}`, 409);
+    }
   }
 
   const doctorActive =

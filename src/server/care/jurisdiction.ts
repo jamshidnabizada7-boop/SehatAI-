@@ -36,6 +36,22 @@ export async function evaluateJurisdiction(opts: {
   const pc = opts.patientCountry.toUpperCase();
   const dc = opts.doctorCountry.toUpperCase();
 
+  // Cross-border safeguard: Pakistan–Afghanistan clinical corridors remain disabled by default pending verified approval
+  const isPakAfghanCorridor = (pc === 'PK' && dc === 'AF') || (pc === 'AF' && dc === 'PK');
+  if (isPakAfghanCorridor && process.env.CARE_CROSS_BORDER_CORRIDOR_APPROVED !== 'true') {
+    return {
+      allowed: false,
+      policyKey: `${pc}>${dc}`,
+      policyVersion: null,
+      reason: 'CROSS_BORDER_CORRIDOR_DISABLED_PENDING_APPROVAL',
+      prescribingAllowed: false,
+      controlledDrugAllowed: false,
+      medicalCertificateAllowed: false,
+      requiresGuardian: false,
+      requiresLocalDoctor: false,
+    };
+  }
+
   const policy = await db.jurisdictionPolicy.findFirst({
     where: { countryCode: pc, doctorCountry: dc },
     orderBy: { effectiveDate: 'desc' },

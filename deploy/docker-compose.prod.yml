@@ -1,0 +1,105 @@
+# ============================================================
+# SehatAI Care Connect — Production Docker Compose Stack
+# Multi-container high availability architecture with resource limits
+# ============================================================
+version: '3.8'
+
+services:
+  # 1. Main Next.js Web Application Container
+  sehatai-web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        DOCKER_BUILD: "1"
+    container_name: sehatai-prod-web
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
+        reservations:
+          cpus: '0.5'
+          memory: 1024M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/care/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - sehatai_prod_net
+
+  # 2. Dedicated Outbox Worker Daemon (§17)
+  sehatai-outbox-worker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: sehatai-prod-outbox-worker
+    restart: always
+    command: ["bun", "scripts/run-outbox-worker.ts", "--interval", "2000", "--batch", "50"]
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=production
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    depends_on:
+      - sehatai-web
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - sehatai_prod_net
+
+  # 3. Production Ingress Proxy (Caddy with Automatic TLS & Security Headers)
+  sehatai-ingress:
+    image: caddy:2-alpine
+    container_name: sehatai-prod-ingress
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_prod_data:/data
+      - caddy_prod_config:/config
+    depends_on:
+      - sehatai-web
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    networks:
+      - sehatai_prod_net
+
+volumes:
+  caddy_prod_data:
+  caddy_prod_config:
+
+networks:
+  sehatai_prod_net:
+    driver: bridge

@@ -109,7 +109,9 @@ export async function requestPayout(opts: { doctorProfileId: string; doctorUserI
       where: { doctorProfileId: opts.doctorProfileId, currency, state: 'AVAILABLE' },
       orderBy: { availableAt: 'asc' },
     });
-    const currentAvailableMinor = earnings.reduce((sum, e) => sum + e.netMinor, 0);
+    const earningsSumMinor = earnings.reduce((sum, e) => sum + e.netMinor, 0);
+    // Ledger invariant: Payout cannot exceed ledger wallet balance (debt recovery)
+    const currentAvailableMinor = Math.min(earningsSumMinor, wallet.availableMinor);
     if (currentAvailableMinor <= 0) {
       throw new PayoutError('NOTHING_AVAILABLE', 409);
     }
@@ -130,16 +132,21 @@ export async function requestPayout(opts: { doctorProfileId: string; doctorUserI
     for (const earning of earnings) {
       if (remaining <= 0) break;
       const take = Math.min(remaining, earning.netMinor);
-      const claimed = await tx.doctorEarning.updateMany({
-        where: { id: earning.id, state: 'AVAILABLE' },
-        data: { state: 'PAID' },
-      });
-      if (claimed.count > 0) {
-        await tx.payoutItem.create({
-          data: { payoutId: created.id, earningId: earning.id, amountMinor: take, currency },
+      if (take === earning.netMinor) {
+        await tx.doctorEarning.updateMany({
+          where: { id: earning.id, state: 'AVAILABLE' },
+          data: { state: 'PAID' },
         });
-        remaining -= take;
+      } else {
+        await tx.doctorEarning.update({
+          where: { id: earning.id },
+          data: { netMinor: { decrement: take } },
+        });
       }
+      await tx.payoutItem.create({
+        data: { payoutId: created.id, earningId: earning.id, amountMinor: take, currency },
+      });
+      remaining -= take;
     }
     if (remaining > 0) throw new PayoutError('LEDGER_MISMATCH', 500);
     return created;
@@ -205,6 +212,75 @@ async function transitionPayout(payoutId: string, to: PayoutState) {
   if (!payout) throw new PayoutError('PAYOUT_NOT_FOUND', 404);
   assertTransition(PAYOUT_TRANSITIONS, payout.state as PayoutState, to);
   return db.payout.update({ where: { id: payoutId }, data: { state: to } });
+}
+
+/**
+ * Retry a failed payout settlement.
+ * Transitions FAILED -> PENDING, then executes processPayout.
+ */
+export async function retryPayout(opts: { payoutId: string; actorId?: string; actorRole?: string }) {
+  const payout = await db.payout.findUnique({ where: { id: opts.payoutId } });
+  if (!payout) throw new PayoutError('PAYOUT_NOT_FOUND', 404);
+  if (payout.state !== 'FAILED') {
+    throw new PayoutError(`CANNOT_RETRY_PAYOUT_STATE_${payout.state}`, 409);
+  }
+
+  // Reset to PENDING per state machine
+  await db.payout.update({
+    where: { id: payout.id },
+    data: { state: 'PENDING', failureReason: null },
+  });
+
+  return processPayout(opts);
+}
+
+/**
+ * Revert a failed payout settlement back to the doctor's available balance.
+ * Returns funds from PAYOUT_CLEARING to DOCTOR_AVAILABLE and restores claimed earnings.
+ */
+export async function revertFailedPayout(opts: { payoutId: string; actorId?: string; actorRole?: string; reason?: string }) {
+  const payout = await db.payout.findUnique({
+    where: { id: opts.payoutId },
+    include: { items: true },
+  });
+  if (!payout) throw new PayoutError('PAYOUT_NOT_FOUND', 404);
+  if (payout.state !== 'FAILED' && payout.state !== 'PROCESSING') {
+    throw new PayoutError(`CANNOT_REVERT_PAYOUT_STATE_${payout.state}`, 409);
+  }
+
+  // Compensating ledger transaction: return funds from PAYOUT_CLEARING back to DOCTOR_AVAILABLE
+  await postTransaction({
+    reference: `payout:revert:${payout.id}`,
+    idempotencyKey: `payout:revert:${payout.id}:compensate`,
+    payoutId: payout.id,
+    legs: [
+      { accountKind: 'PAYOUT_CLEARING', direction: 'DEBIT', amountMinor: payout.amountMinor, currency: payout.currency, memo: 'revert failed clearing' },
+      { accountKind: 'DOCTOR_AVAILABLE', ownerDoctorProfileId: payout.doctorProfileId, direction: 'CREDIT', amountMinor: payout.amountMinor, currency: payout.currency, memo: 'restore doctor available balance' },
+    ],
+  });
+
+  // Restore claimed earnings back to AVAILABLE
+  const earningIds = payout.items.map((pi) => pi.earningId);
+  if (earningIds.length > 0) {
+    await db.doctorEarning.updateMany({
+      where: { id: { in: earningIds }, state: 'PAID' },
+      data: { state: 'AVAILABLE' },
+    });
+  }
+
+  await db.payout.update({
+    where: { id: payout.id },
+    data: { state: 'REVERSED', failureReason: opts.reason ?? 'settlement failed, returned to doctor wallet' },
+  });
+
+  await auditCare({
+    actorId: opts.actorId ?? 'SYSTEM',
+    actorRole: opts.actorRole ?? 'FINANCE',
+    action: 'payout.reverted',
+    detail: { payoutId: payout.id, amountMinor: payout.amountMinor, reason: opts.reason },
+  });
+
+  return db.payout.findUnique({ where: { id: payout.id } });
 }
 
 function safeParse(v: string | null): Record<string, string> {

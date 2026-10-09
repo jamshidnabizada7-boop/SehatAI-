@@ -105,6 +105,90 @@ export function isTestDoctorProfile(doctor: {
   return isTestEmail || isTestPmdc || isTestName || isTestFacility || isTestBio;
 }
 
+export interface DoctorEligibilityCheck {
+  eligible: boolean;
+  reasons: string[];
+}
+
+/**
+ * Strict production eligibility verification (§18, §14, §15).
+ * Ensures no doctor becomes eligible for real booking solely through name-prefix filtering.
+ * Requires:
+ * 1. Explicit non-test status (not a test fixture)
+ * 2. Current license verification (valid PM&DC number and non-expired verified timestamp)
+ * 3. Admin approval (pmdcVerifiedBy is recorded)
+ * 4. Jurisdiction authorization (valid licensing country, no revoked jurisdiction)
+ * 5. Active service status (careStatus is explicitly ACTIVE and user.accountStatus is active)
+ */
+export function isDoctorProductionEligible(doctor: {
+  id?: string;
+  pmdcNumber?: string | null;
+  pmdcVerifiedAt?: Date | string | null;
+  pmdcVerifiedBy?: string | null;
+  country?: string | null;
+  careStatus?: string | null;
+  facilityName?: string | null;
+  bio?: string | null;
+  user?: { email?: string | null; name?: string | null; accountStatus?: string | null } | null;
+  jurisdictions?: Array<{ countryCode?: string; status?: string }> | null;
+}): DoctorEligibilityCheck {
+  const reasons: string[] = [];
+
+  // 1. Explicit non-test status
+  if (isTestDoctorProfile(doctor)) {
+    reasons.push('TEST_PROFILE_NOT_ELIGIBLE');
+  }
+
+  // 2. Current license verification
+  if (!doctor.pmdcNumber || doctor.pmdcNumber.trim().length < 3) {
+    reasons.push('INVALID_OR_MISSING_LICENSE_NUMBER');
+  }
+  if (!doctor.pmdcVerifiedAt) {
+    reasons.push('LICENSE_NOT_VERIFIED');
+  } else {
+    const verifiedDate = new Date(doctor.pmdcVerifiedAt);
+    if (isNaN(verifiedDate.getTime()) || verifiedDate > new Date()) {
+      reasons.push('INVALID_LICENSE_VERIFICATION_DATE');
+    }
+  }
+
+  // 3. Admin approval
+  if (!doctor.pmdcVerifiedBy || doctor.pmdcVerifiedBy.trim().length === 0) {
+    reasons.push('ADMIN_APPROVAL_REQUIRED');
+  }
+
+  // 4. Jurisdiction authorization
+  const licensingCountry = (doctor.country ?? '').toUpperCase();
+  if (!licensingCountry || licensingCountry.length !== 2) {
+    reasons.push('MISSING_LICENSING_JURISDICTION');
+  }
+  if (doctor.jurisdictions && doctor.jurisdictions.length > 0) {
+    const hasRevoked = doctor.jurisdictions.some((j) => j.status === 'REVOKED');
+    if (hasRevoked) {
+      reasons.push('JURISDICTION_REVOKED');
+    }
+    const countryJurisdiction = doctor.jurisdictions.find(
+      (j) => (j.countryCode ?? '').toUpperCase() === licensingCountry
+    );
+    if (countryJurisdiction && countryJurisdiction.status !== 'LICENSED') {
+      reasons.push('JURISDICTION_NOT_LICENSED');
+    }
+  }
+
+  // 5. Active service status
+  if (doctor.careStatus !== 'ACTIVE') {
+    reasons.push('CARE_STATUS_NOT_ACTIVE');
+  }
+  if (doctor.user?.accountStatus !== 'active') {
+    reasons.push('USER_ACCOUNT_NOT_ACTIVE');
+  }
+
+  return {
+    eligible: reasons.length === 0,
+    reasons,
+  };
+}
+
 // §45 Bayesian average: avoids "one 5-star review outranks hundreds".
 // Prior m=5 pseudo-reviews at C=4.0, plus recency decay on review weight.
 export function robustRating(reviews: Array<{ overall: number; createdAt: Date }>): {
@@ -151,7 +235,8 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
   const candidates = await db.doctorProfile.findMany({
     where,
     include: {
-      user: { select: { name: true, id: true, email: true } },
+      user: { select: { name: true, id: true, email: true, accountStatus: true } },
+      jurisdictions: { select: { countryCode: true, status: true } },
       services: { where: { enabled: true } },
       careReviews: {
         where: { state: 'PUBLISHED' },
@@ -171,6 +256,9 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
   // Prevent internal test doctors from appearing as real clinical services (§18)
   if (!filters.includeTest) {
     rows = rows.filter((d) => !isTestDoctorProfile(d));
+    if (process.env.NODE_ENV === 'production' || process.env.CARE_ROLLOUT_STAGE === '5') {
+      rows = rows.filter((d) => isDoctorProductionEligible(d).eligible);
+    }
   }
 
   if (filters.language) {

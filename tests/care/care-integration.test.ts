@@ -73,7 +73,7 @@ describe('§16 jurisdiction engine', () => {
   test('cross-border AF×PK corridor requires local doctor → booking blocked', async () => {
     const d = await evaluateJurisdiction({ patientCountry: 'AF', doctorCountry: 'PK', type: 'VIDEO' });
     expect(d.allowed).toBe(false);
-    expect(d.reason).toBe('CONSULTATION_NOT_ALLOWED');
+    expect(['CONSULTATION_NOT_ALLOWED', 'CROSS_BORDER_CORRIDOR_DISABLED_PENDING_APPROVAL']).toContain(d.reason);
   });
   test('createConsultation enforces jurisdiction', async () => {
     await expect(createConsultation({

@@ -170,16 +170,27 @@ export async function confirmRefund(opts: { refundId: string; providerRef?: stri
 
     const consultation = await db.consultation.findUnique({ where: { id: refund.consultationId }, select: { doctorProfileId: true } });
 
-    // Inspect whether doctor earnings were already promoted to DOCTOR_AVAILABLE (§13)
+    // Inspect whether doctor earnings were already promoted to DOCTOR_AVAILABLE or PAID (§13)
     const doctorEarnings = await db.doctorEarning.findMany({
       where: { consultationId: refund.consultationId },
     });
     const availableAmount = doctorEarnings
       .filter((e) => e.state === 'AVAILABLE')
       .reduce((sum, e) => sum + e.netMinor, 0);
+    const paidAmount = doctorEarnings
+      .filter((e) => e.state === 'PAID')
+      .reduce((sum, e) => sum + e.netMinor, 0);
 
-    const debitAvailable = Math.min(doctorLeg, availableAmount);
-    const debitPending = doctorLeg - debitAvailable;
+    // If earnings were already PAID out to doctor, debit DOCTOR_AVAILABLE to establish
+    // a clawback liability (negative balance to be recovered from subsequent earnings).
+    let debitAvailable = 0;
+    let debitPending = 0;
+    if (paidAmount > 0) {
+      debitAvailable = doctorLeg;
+    } else {
+      debitAvailable = Math.min(doctorLeg, availableAmount);
+      debitPending = doctorLeg - debitAvailable;
+    }
 
     const doctorLegs: LedgerLeg[] = [];
     if (debitAvailable > 0 && consultation) {
@@ -189,7 +200,7 @@ export async function confirmRefund(opts: { refundId: string; providerRef?: stri
         direction: 'DEBIT' as const,
         amountMinor: debitAvailable,
         currency: ccy,
-        memo: 'reverse doctor earning (matured)',
+        memo: paidAmount > 0 ? 'clawback post-payout refund (negative balance)' : 'reverse doctor earning (matured)',
       });
     }
     if (debitPending > 0 && consultation) {
@@ -221,7 +232,7 @@ export async function confirmRefund(opts: { refundId: string; providerRef?: stri
     // Reverse the doctor's earning for a full refund.
     if (doctorLeg >= doctorNet && doctorNet > 0 && consultation) {
       await db.doctorEarning.updateMany({
-        where: { consultationId: refund.consultationId, state: { in: ['PENDING', 'AVAILABLE'] } },
+        where: { consultationId: refund.consultationId, state: { in: ['PENDING', 'AVAILABLE', 'PAID'] } },
         data: { state: 'REVERSED' },
       });
     } else if (doctorLeg > 0 && consultation) {
@@ -252,4 +263,126 @@ export async function transitionRefund(refundId: string, to: RefundState) {
   if (!refund) throw new RefundError('REFUND_NOT_FOUND', 404);
   assertTransition(REFUND_TRANSITIONS, refund.state as RefundState, to);
   return db.refund.update({ where: { id: refundId }, data: { state: to } });
+}
+
+/**
+ * Handle payment chargeback from payment processor.
+ * Transitions payment to CHARGEDBACK/DISPUTED, consultation to DISPUTED,
+ * executes compensating ledger entries (reversing platform commission and clawing back doctor share),
+ * and records dispute audit trail.
+ */
+export async function processChargeback(opts: {
+  paymentId: string;
+  reason?: string;
+  actorId?: string;
+  actorRole?: 'PATIENT' | 'SUPPORT' | 'FINANCE' | 'SYSTEM';
+}) {
+  const payment = await db.payment.findUnique({
+    where: { id: opts.paymentId },
+    include: { consultation: { select: { id: true, doctorProfileId: true } } },
+  });
+  if (!payment) throw new RefundError('PAYMENT_NOT_FOUND', 404);
+  if (payment.status === 'REFUNDED') {
+    throw new RefundError('CANNOT_CHARGEBACK_ALREADY_REFUNDED', 409);
+  }
+  if (!['PAID', 'PARTIALLY_REFUNDED'].includes(payment.status)) {
+    throw new RefundError(`CANNOT_CHARGEBACK_STATUS_${payment.status}`, 409);
+  }
+
+  // 1. Transition payment state
+  const { PAYMENT_TRANSITIONS, assertTransition: assertPayTrans } = await import('@/lib/care/constants');
+  if (payment.status !== 'DISPUTED' && payment.status !== 'CHARGEDBACK') {
+    assertPayTrans(PAYMENT_TRANSITIONS, payment.status as never, 'DISPUTED' as never);
+    await db.payment.update({ where: { id: payment.id }, data: { status: 'DISPUTED' } });
+  }
+  await db.payment.update({ where: { id: payment.id }, data: { status: 'CHARGEDBACK' } });
+
+  // 2. Transition consultation to DISPUTED
+  if (payment.consultation) {
+    await db.consultation.update({
+      where: { id: payment.consultation.id },
+      data: { status: 'DISPUTED' },
+    }).catch(() => undefined);
+  }
+
+  // 3. Compensating ledger reversal
+  const breakdown = JSON.parse(payment.breakdownJson ?? '{}') as {
+    doctorFeeMinor?: number; platformFeeMinor?: number;
+  };
+  const doctorNet = breakdown.doctorFeeMinor ?? Math.round(payment.amountMinor * 0.8);
+  const ccy = payment.currency;
+
+  const doctorLegTotal = Math.min(doctorNet, payment.amountMinor);
+  const platformLegTotal = payment.amountMinor - doctorLegTotal;
+
+  const doctorEarnings = await db.doctorEarning.findMany({
+    where: { consultationId: payment.consultationId },
+  });
+  const availableAmount = doctorEarnings
+    .filter((e) => e.state === 'AVAILABLE')
+    .reduce((sum, e) => sum + e.netMinor, 0);
+  const paidAmount = doctorEarnings
+    .filter((e) => e.state === 'PAID')
+    .reduce((sum, e) => sum + e.netMinor, 0);
+
+  let debitAvailable = 0;
+  let debitPending = 0;
+  if (paidAmount > 0) {
+    debitAvailable = doctorLegTotal;
+  } else {
+    debitAvailable = Math.min(doctorLegTotal, availableAmount);
+    debitPending = doctorLegTotal - debitAvailable;
+  }
+
+  const doctorLegs: LedgerLeg[] = [];
+  if (debitAvailable > 0 && payment.consultation) {
+    doctorLegs.push({
+      accountKind: 'DOCTOR_AVAILABLE' as const,
+      ownerDoctorProfileId: payment.consultation.doctorProfileId,
+      direction: 'DEBIT' as const,
+      amountMinor: debitAvailable,
+      currency: ccy,
+      memo: paidAmount > 0 ? 'chargeback doctor clawback (negative balance)' : 'chargeback doctor clawback (available)',
+    });
+  }
+  if (debitPending > 0 && payment.consultation) {
+    doctorLegs.push({
+      accountKind: 'DOCTOR_PENDING' as const,
+      ownerDoctorProfileId: payment.consultation.doctorProfileId,
+      direction: 'DEBIT' as const,
+      amountMinor: debitPending,
+      currency: ccy,
+      memo: 'chargeback doctor clawback (pending)',
+    });
+  }
+
+  const txRes = await postTransaction({
+    reference: `chargeback:${payment.id}`,
+    idempotencyKey: `chargeback:${payment.id}:reversal`,
+    paymentId: payment.id,
+    consultationId: payment.consultationId,
+    legs: [
+      { accountKind: 'PLATFORM_CASH', direction: 'CREDIT', amountMinor: payment.amountMinor, currency: ccy, memo: 'chargeback settlement exit' },
+      ...doctorLegs,
+      ...(platformLegTotal > 0
+        ? [{ accountKind: 'PLATFORM_FEE' as const, direction: 'DEBIT' as const, amountMinor: platformLegTotal, currency: ccy, memo: 'reverse platform commission on chargeback' }]
+        : []),
+    ],
+  });
+
+  // 4. Update earnings to REVERSED
+  await db.doctorEarning.updateMany({
+    where: { consultationId: payment.consultationId },
+    data: { state: 'REVERSED' },
+  });
+
+  await auditCare({
+    actorId: opts.actorId ?? 'SYSTEM',
+    actorRole: opts.actorRole ?? 'FINANCE',
+    action: 'payment.chargeback',
+    consultationId: payment.consultationId,
+    detail: { paymentId: payment.id, amountMinor: payment.amountMinor, reason: opts.reason },
+  });
+
+  return { success: true, paymentId: payment.id, transactionReference: txRes.reference };
 }

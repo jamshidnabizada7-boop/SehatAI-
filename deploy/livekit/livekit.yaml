@@ -1,0 +1,41 @@
+# ============================================================
+# SehatAI Care Connect — LiveKit SFU Server Configuration
+# ============================================================
+port: 7880
+bind_addresses:
+  - "0.0.0.0"
+
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 60000
+  use_external_ip: true
+  enable_loopback_candidate: false
+
+turn:
+  enabled: true
+  domain: turn.sehatai.health
+  tls_port: 5349
+  udp_port: 3478
+  external_tls: false
+
+keys:
+  # Map of API Key to API Secret (matches LIVEKIT_API_KEY and LIVEKIT_API_SECRET)
+  # Replace with actual high-entropy production keypair in secret manager
+  prod-livekit-api-key: "GENERATE_WITH_openssl_rand_hex_32"
+
+logging:
+  json: true
+  level: info
+
+room:
+  auto_create: true
+  empty_timeout: 300 # 5 minutes after last participant disconnects
+  max_participants: 4 # Strict limit: Doctor, Patient, Guardian, Interpreter
+  enable_remote_unmute: false
+
+webhook:
+  # Webhook dispatched back to SehatAI on room events
+  api_key: "prod-livekit-api-key"
+  urls:
+    - "https://sehatai.health/api/care/video/events"
