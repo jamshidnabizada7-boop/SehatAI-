@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ImagePlus,
@@ -11,6 +11,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Sparkles,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -69,6 +70,20 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [disabledInStaging, setDisabledInStaging] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      void fetch('/api/vlm-analyze')
+        .then((r) => r.json())
+        .then((j) => {
+          if (j.enabled === false) {
+            setDisabledInStaging(true);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [open]);
 
   const reset = useCallback(() => {
     setImagePreview(null);
@@ -274,6 +289,7 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
                 accept="image/jpeg,image/png,image/webp"
                 capture="environment"
                 className="sr-only"
+                disabled={disabledInStaging}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) handleFile(file);
@@ -289,7 +305,8 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
                   />
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    disabled={disabledInStaging}
+                    onClick={() => !disabledInStaging && fileInputRef.current?.click()}
                     className="absolute right-2 top-2 rounded-lg bg-background/90 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
                   >
                     {labels.changeImage}
@@ -298,14 +315,28 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
               ) : (
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-emerald-500/40 bg-emerald-50/50 p-8 transition-colors hover:border-emerald-500/60 hover:bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20"
+                  disabled={disabledInStaging}
+                  onClick={() => !disabledInStaging && fileInputRef.current?.click()}
+                  className={cn(
+                    "flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 transition-colors",
+                    disabledInStaging
+                      ? "border-muted-foreground/30 bg-muted/40 cursor-not-allowed opacity-80"
+                      : "border-emerald-500/40 bg-emerald-50/50 hover:border-emerald-500/60 hover:bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20"
+                  )}
                 >
                   <span className="flex h-12 w-12 items-center justify-center rounded-full bg-background shadow-sm">
-                    <ImagePlus className="h-6 w-6 text-emerald-600 dark:text-emerald-400" aria-hidden />
+                    {disabledInStaging ? (
+                      <Lock className="h-6 w-6 text-muted-foreground" aria-hidden />
+                    ) : (
+                      <ImagePlus className="h-6 w-6 text-emerald-600 dark:text-emerald-400" aria-hidden />
+                    )}
                   </span>
-                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{labels.pickImage}</span>
-                  <span className="text-[11px] text-muted-foreground">{labels.imageHint}</span>
+                  <span className={cn("text-sm font-bold", disabledInStaging ? "text-muted-foreground" : "text-emerald-700 dark:text-emerald-400")}>
+                    {disabledInStaging ? 'Image upload disabled in staging' : labels.pickImage}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {disabledInStaging ? 'Disabled to protect patient health information (PHI)' : labels.imageHint}
+                  </span>
                 </button>
               )}
 
@@ -383,10 +414,15 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
               <Button
                 type="button"
                 onClick={handleAnalyze}
-                disabled={!imageBase64 || analyzing}
+                disabled={disabledInStaging || !imageBase64 || analyzing}
                 className="gap-1.5 rounded-xl bg-violet-600 px-4 font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
               >
-                {analyzing ? (
+                {disabledInStaging ? (
+                  <>
+                    <Lock className="h-4 w-4" aria-hidden />
+                    Disabled in staging (PHI protected)
+                  </>
+                ) : analyzing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                     {labels.analyzing}

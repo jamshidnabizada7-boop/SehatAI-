@@ -322,12 +322,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const isBlocked = process.env.STAGING_BLOCK_UPLOADS === 'true';
   return NextResponse.json({
+    enabled: !isBlocked,
+    reason: isBlocked ? 'PHI_UPLOADS_HARD_BLOCKED_IN_STAGING' : undefined,
     service: 'SehatAI VLM Analysis API',
     description: 'Vision-based health image analysis (rash, wound, skin conditions)',
     model: 'gemini-3.6-flash',
     endpoint: 'POST /api/vlm-analyze { image: base64, question?: string }',
     safety: 'Advisory only — never a diagnosis. Available to all authenticated users.',
     access: 'Patient (general guidance) + Doctor (clinical differential)',
+    message: isBlocked ? 'Medical image uploads are strictly disabled in staging to protect patient health information.' : undefined,
   });
 }

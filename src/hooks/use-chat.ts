@@ -204,6 +204,7 @@ export function useChat() {
             };
             const messageId = done.messageId || assistantId;
             finalContent = done.content || finalContent;
+            const existingMsg = chat.messages.find((m) => m.id === assistantId);
             chat.finishStream(assistantId, {
               id: messageId,
               content: finalContent,
@@ -215,6 +216,8 @@ export function useChat() {
               confidence: done.confidence ?? null,
               drugCheck: done.drugCheck ?? null,
               differential: done.differential ?? null,
+              emergency: done.emergency ?? existingMsg?.emergency ?? null,
+              pipelineMeta: done.pipelineMeta ?? (done as any).meta ?? existingMsg?.pipelineMeta,
               latencyMs: done.latencyMs,
             });
             if (done.conversationId) {

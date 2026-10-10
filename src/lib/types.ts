@@ -320,6 +320,8 @@ export interface DoneStageData {
   drugCheck?: DrugCheckSummary | null;
   /** Phase 2: 3-tier differential (Glass-style Most Likely / Plausible / Can't-Miss) */
   differential?: Differential | null;
+  emergency?: EmergencyStageData | null;
+  pipelineMeta?: Record<string, unknown>;
 }
 
 export interface SSEEvent {
@@ -422,6 +424,7 @@ export interface ChatMessage {
   /** Phase 2: 3-tier differential (Glass-style Most Likely / Plausible / Can't-Miss). */
   differential?: Differential | null;
   latencyMs?: number;
+  pipelineMeta?: Record<string, unknown>;
   createdAt: number;
   streaming?: boolean;
 }

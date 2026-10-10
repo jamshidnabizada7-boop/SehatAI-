@@ -992,17 +992,22 @@ function CareCallModal({
           }
         } catch (err: any) {
           if (!active) return;
-          console.error('[LiveKit] Connection failed:', err);
-          const msg = String(err?.message || '').toLowerCase();
-          if (msg.includes('expired') || msg.includes('unauthorized') || msg.includes('token') || msg.includes('jwt') || msg.includes('401')) {
-            setStatusText('Room token expired or unauthorized. Please re-join the consultation.');
-          } else {
-            setStatusText(err instanceof Error ? err.message : 'Could not connect to LiveKit server');
+          console.warn('[LiveKit] SFU connection failed:', err);
+          if (roomRef.current) {
+            try { await roomRef.current.disconnect(); } catch {}
+            roomRef.current = null;
           }
-          setStatus('ended');
-          void reportState('FAILED', undefined, 'livekit_connection_failed');
+          const msg = String(err?.message || '').toLowerCase();
+          if (msg.includes('expired') || msg.includes('unauthorized') || msg.includes('jwt') || msg.includes('401')) {
+            setStatusText('Room token expired or unauthorized. Please re-join the consultation.');
+            setStatus('ended');
+            void reportState('FAILED', undefined, 'livekit_token_unauthorized');
+            return;
+          }
+          // SFU connection failed (DNS/Network/Fetch error) — initiate automatic resilient WebRTC P2P fallback
+          console.info('[LiveKit] Falling back to direct WebRTC signaling relay...');
+          setStatusText('LiveKit SFU unreachable; connected via direct WebRTC');
         }
-        return;
       }
 
       // ------------------------------------------------------------
@@ -1023,10 +1028,10 @@ function CareCallModal({
           localVideoRef.current.srcObject = stream;
         }
 
-        const wsUrl = call.signalingUrl
+        const wsUrl = (call.signalingUrl && !call.signalingUrl.includes('livekit'))
           ? call.signalingUrl
           : (typeof window !== 'undefined'
-              ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/?XTransformPort=3004`
+              ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:3004`
               : 'ws://localhost:3004');
 
         const ws = new WebSocket(wsUrl);

@@ -585,9 +585,15 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
                 <span className="font-bold">{formatMoney({ amountMinor: s.priceMinor, currency: s.currency })}</span>
               </div>
               {s.type !== 'TEXT' ? (
-                <Button variant="outline" size="sm" className="mt-2 min-h-11 w-full" onClick={() => { setChosen({ slot: null, service: s }); void loadSlots(s); }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 min-h-11 w-full"
+                  disabled={doctor.isTestProfile}
+                  onClick={() => { setChosen({ slot: null, service: s }); void loadSlots(s); }}
+                >
                   <CalendarClock className="mr-1 h-4 w-4" aria-hidden />
-                  {T('care.selectTime')}
+                  {doctor.isTestProfile ? 'Demo only — appointments unavailable' : T('care.selectTime')}
                 </Button>
               ) : (
                 <Button
@@ -714,7 +720,7 @@ function MyConsultations({ T, onOpen }: { T: TFn; onOpen: (id: string) => void }
 
   if (loading) return <Skeleton className="h-32 w-full rounded-2xl" />;
   if (items.length === 0) {
-    return <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">{T('care.noDoctors')}</p>;
+    return <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">No consultations scheduled yet.</p>;
   }
   return (
     <ul className="flex flex-col gap-2">

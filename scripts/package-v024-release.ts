@@ -147,6 +147,15 @@ for (const p of sensitiveEntries) {
   }
 }
 
+// 6b. Stage public legal documentation into standalone bundle
+const standaloneLegalDir = path.join(STANDALONE, 'docs', 'legal');
+const sourceLegalDir = path.join(process.cwd(), 'docs', 'legal');
+if (fs.existsSync(sourceLegalDir)) {
+  console.log('  + Staging public legal policies to standalone bundle...');
+  fs.mkdirSync(standaloneLegalDir, { recursive: true });
+  fs.cpSync(sourceLegalDir, standaloneLegalDir, { recursive: true });
+}
+
 // Recursive scan to remove any nested .env, .key, .pem, .crt, .csr, .sql, .pdf files
 function cleanLeaks(dir: string) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });

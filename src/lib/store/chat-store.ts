@@ -45,18 +45,7 @@ interface ChatState {
   startStream: () => void;
   finishStream: (
     assistantId: string,
-    patch: {
-      id?: string;
-      content?: string;
-      language?: Lang;
-      triage?: TriageStageData;
-      citations?: Citation[];
-      validation?: ValidationStageData | null;
-      offline?: boolean;
-      confidence?: ResponseConfidence | null;
-      drugCheck?: DrugCheckSummary | null;
-      differential?: Differential | null;
-      latencyMs?: number;
+    patch: Partial<ChatMessage> & {
       error?: boolean;
     },
   ) => void;

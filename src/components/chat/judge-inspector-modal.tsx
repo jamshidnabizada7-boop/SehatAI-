@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import type { ChatMessage, Lang } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { extractEmergencySymptoms } from '@/lib/engine/safety-engine';
 
 interface JudgeInspectorModalProps {
   open: boolean;
@@ -36,12 +37,15 @@ export function JudgeInspectorModal({
   message,
   lang,
 }: JudgeInspectorModalProps) {
-  const isEmergency = message.triage?.level === 'EMERGENCY' || message.emergency;
+  const isEmergency = Boolean(message.triage?.level === 'EMERGENCY' || message.emergency);
   const isUrgent = message.triage?.level === 'URGENT';
-  const metaObj = (message as any).pipelineMeta as Record<string, unknown> | undefined;
-  const isShortCircuited =
-    message.triage?.shortCircuited ??
-    (isEmergency || metaObj?.path === 'emergency-short-circuit' || Boolean((metaObj?.l0 as Record<string, unknown> | undefined)?.shortCircuited));
+  const metaObj = ((message as any).pipelineMeta || (message as any).meta) as Record<string, unknown> | undefined;
+  const isShortCircuited = Boolean(
+    message.triage?.shortCircuited ||
+    isEmergency ||
+    metaObj?.path === 'emergency-short-circuit' ||
+    (metaObj?.l0 as Record<string, unknown> | undefined)?.shortCircuited
+  );
   const confidenceScore = Math.round((message.confidence?.score ?? (isEmergency ? 1.0 : 0.85)) * 100);
   const actualTotalLatency = (metaObj?.latencies as Record<string, unknown> | undefined)?.total ?? message.latencyMs;
   const latency = actualTotalLatency != null ? String(actualTotalLatency) : (message.offline ? '4' : (isShortCircuited ? '< 5' : '1240'));
@@ -50,7 +54,12 @@ export function JudgeInspectorModal({
   const l1Lat = (metaObj?.latencies as Record<string, unknown> | undefined)?.l1;
   const genLat = (metaObj?.latencies as Record<string, unknown> | undefined)?.generation;
   const l2Lat = (metaObj?.latencies as Record<string, unknown> | undefined)?.l2;
-  const extractedSymptoms = (metaObj?.symptoms || (metaObj?.l0 as Record<string, unknown> | undefined)?.symptoms || (metaObj?.l1 as Record<string, unknown> | undefined)?.symptoms) as string[] | undefined;
+  const rawSymptoms = (metaObj?.symptoms || (metaObj?.l0 as Record<string, unknown> | undefined)?.symptoms || (metaObj?.l1 as Record<string, unknown> | undefined)?.symptoms) as string[] | undefined;
+  const extractedSymptoms = rawSymptoms && rawSymptoms.length > 0
+    ? rawSymptoms
+    : (isEmergency
+        ? extractEmergencySymptoms(message.content || message.emergency?.reason || '', message.emergency?.templateCategory)
+        : undefined);
 
   const checks = message.validation?.checks ?? [];
 

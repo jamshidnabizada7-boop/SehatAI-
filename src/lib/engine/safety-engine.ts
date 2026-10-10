@@ -2015,3 +2015,69 @@ export function calibrateTriage(params: {
 
   return null;
 }
+
+export function extractEmergencySymptoms(message: string, category?: string): string[] {
+  const text = message.toLowerCase();
+  const symptoms: string[] = [];
+
+  // Cardiac / Chest symptoms
+  if (/crushing chest pain|chest pain|chest tightness|chest pressure|chest discomfort|sine me dard|seene me dard|seene mein dard|سینے میں درد/i.test(text)) {
+    symptoms.push('Severe chest pain');
+  }
+  if (/radiat|arm and jaw|left arm|right arm|jaw|neck|shoulder|kandhe|bazu|baazu|جبڑے|بازو/i.test(text)) {
+    symptoms.push('Radiation to arm/jaw');
+  }
+  if (/sweat|diaphoresis|perspir|paseena|paseenay|پسینہ/i.test(text)) {
+    symptoms.push('Profuse sweating');
+  }
+  if (/shortness of breath|breathless|difficulty breathing|dyspnea|saans|dam ghut|سانس/i.test(text)) {
+    symptoms.push('Shortness of breath');
+  }
+  if (/dizziness|lightheaded|syncope|faint|chakkar|چکر/i.test(text)) {
+    symptoms.push('Dizziness');
+  }
+  if (/palpitation|racing heart|fluttering|dil ki dharkan|دل کی دھڑکن/i.test(text)) {
+    symptoms.push('Palpitations');
+  }
+
+  // Neurological / Stroke
+  if (/weakness|numbness|facial droop|paralysis|hemiplegia|kamzori|sunn|فالج|کمزوری/i.test(text)) {
+    symptoms.push('Neurological weakness/numbness');
+  }
+  if (/slurred speech|speech difficulty|unable to speak|bolne me|بولنے میں دشواری/i.test(text)) {
+    symptoms.push('Speech difficulty');
+  }
+  if (/severe headache|thunderclap|worst headache|shadeed sar dard|شدید سر درد/i.test(text)) {
+    symptoms.push('Severe sudden headache');
+  }
+  if (/unconscious|fainted|loss of consciousness|unresponsive|behosh|behoshi|بے ہوش|بے ہوشی/i.test(text)) {
+    symptoms.push('Loss of consciousness');
+  }
+  if (/seizure|convulsion|fit|fits|jhatkay|جھٹکے/i.test(text)) {
+    symptoms.push('Seizure / Convulsions');
+  }
+
+  // Trauma / Bleeding
+  if (/bleeding|hemorrhage|blood|khoon|خون/i.test(text)) {
+    symptoms.push('Severe bleeding');
+  }
+  if (/vomiting blood|coughing blood|blood in vomit|hematemesis|hemoptysis|khoon ki ulti|خون کی الٹی/i.test(text)) {
+    symptoms.push('Internal bleeding / Hemoptysis');
+  }
+
+  // Anaphylaxis
+  if (/throat closing|stridor|anaphylaxis|swollen lips|tongue swelling|hives|gala band|سوجن/i.test(text)) {
+    symptoms.push('Airway swelling / Anaphylaxis signs');
+  }
+
+  // Default fallback if no specific keyword matched
+  if (symptoms.length === 0) {
+    if (category === 'cardiac') symptoms.push('Acute cardiac symptoms');
+    else if (category === 'stroke') symptoms.push('Acute neurological deficits');
+    else if (category === 'respiratory') symptoms.push('Acute respiratory distress');
+    else if (category === 'trauma') symptoms.push('Acute traumatic injury');
+    else symptoms.push('Acute emergency danger signs');
+  }
+
+  return symptoms;
+}
