@@ -28,14 +28,16 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  ...(process.env.DOCKER_BUILD === "1" || process.env.STANDALONE_BUILD === "1" ? { output: "standalone" } : {}),
+  output: process.env.CAPACITOR_BUILD === "1" ? "export" : "standalone",
+
+
   // Capacitor native builds use a fully static export (served from the device)
   ...(process.env.CAPACITOR_BUILD === "1" ? {
-    output: "export" as const,
     images: { unoptimized: true },
     trailingSlash: true,
   } : {
     async headers() {
+
       return [
         {
           source: "/:path*",

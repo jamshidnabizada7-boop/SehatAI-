@@ -104,7 +104,18 @@ export async function verifyTargetCloudDatabase() {
     if (missingPatients.length > 0) {
       throw new Error(`Missing expected baseline patient accounts: ${missingPatients.join(', ')}`);
     }
-    console.log('✓ All 5 baseline synthetic accounts (3 doctors + 2 patients) verified.');
+
+    if (users.length !== 5) {
+      throw new Error(`Expected exactly 5 baseline accounts in cloud database, but found ${users.length} users! Extraneous users detected.`);
+    }
+    if (doctorProfiles.length !== 3) {
+      throw new Error(`Expected exactly 3 baseline doctor profiles, but found ${doctorProfiles.length}!`);
+    }
+    if (patientProfiles.length !== 2) {
+      throw new Error(`Expected exactly 2 baseline patient profiles, but found ${patientProfiles.length}!`);
+    }
+    console.log('✓ All 5 baseline synthetic accounts (3 doctors + 2 patients) verified (strict count: exactly 5 users, 3 doctor profiles, 2 patient profiles).');
+
 
     return {
       tableCount,

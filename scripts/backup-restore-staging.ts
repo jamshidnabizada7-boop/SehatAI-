@@ -95,12 +95,22 @@ async function run() {
         throw new Error(`Missing expected baseline patient: ${pat}`);
       }
     }
-    console.log('  ✓ Verified 5 baseline synthetic accounts in cloud DB:');
+    if (cloudUsers.length !== 5) {
+      throw new Error(`Expected exactly 5 baseline synthetic accounts in cloud DB, but found ${cloudUsers.length}`);
+    }
+    console.log('  ✓ Verified exactly 5 baseline synthetic accounts in cloud DB:');
     console.log(`    Doctors (3): ${expectedDoctors.join(', ')}`);
     console.log(`    Patients (2): ${expectedPatients.join(', ')}`);
 
     cloudDoctorProfilesCount = await cloudPrisma.doctorProfile.count();
     cloudPatientProfilesCount = await cloudPrisma.patientProfile.count();
+    if (cloudDoctorProfilesCount !== 3) {
+      throw new Error(`Expected exactly 3 baseline doctor profiles in cloud DB, but found ${cloudDoctorProfilesCount}`);
+    }
+    if (cloudPatientProfilesCount !== 2) {
+      throw new Error(`Expected exactly 2 baseline patient profiles in cloud DB, but found ${cloudPatientProfilesCount}`);
+    }
+
     const docServiceCount = await cloudPrisma.doctorService.count();
     const docJurisdictionCount = await cloudPrisma.doctorJurisdiction.count();
     const docCredentialCount = await cloudPrisma.doctorCredential.count();
@@ -222,21 +232,17 @@ async function run() {
       console.log(`    ✓ Table ${table}: ${actualCount}/${expectedCount} (100% Parity)`);
     }
 
-    // Verify 5 baseline accounts in restored DB
-    const restoredDocEmails = restoredUsers.filter((u) => u.role === 'doctor').map((u) => u.email);
-    const restoredPatientEmails = restoredUsers.filter((u) => u.role === 'user').map((u) => u.email);
+    if (restoredUsers.length !== 5) {
+      throw new Error(`Restored DB user count mismatch! Expected 5, got ${restoredUsers.length}`);
+    }
+    if (restoredDoctorProfilesCount !== 3) {
+      throw new Error(`Restored DB doctor profile count mismatch! Expected 3, got ${restoredDoctorProfilesCount}`);
+    }
+    if (restoredPatientProfilesCount !== 2) {
+      throw new Error(`Restored DB patient profile count mismatch! Expected 2, got ${restoredPatientProfilesCount}`);
+    }
+    console.log('  ✓ All 5 baseline synthetic accounts verified in restored disposable database (strict count: 5 users, 3 doctors, 2 patients).');
 
-    for (const doc of expectedDoctors) {
-      if (!restoredDocEmails.includes(doc)) {
-        throw new Error(`Restored DB missing doctor: ${doc}`);
-      }
-    }
-    for (const pat of expectedPatients) {
-      if (!restoredPatientEmails.includes(pat)) {
-        throw new Error(`Restored DB missing patient: ${pat}`);
-      }
-    }
-    console.log('  ✓ All 5 baseline synthetic accounts verified in restored disposable database.');
   } finally {
     await localPrisma.$disconnect();
   }

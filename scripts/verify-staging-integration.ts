@@ -812,11 +812,12 @@ async function main() {
     );
 
     // 8.2 Database write route reports failure (actual HTTP status recorded; NOT marked pass if successful)
+    const failPtEmail = `${stamp}-fail-pt@sehatai.local`;
     const failSignupRes = await fetch(`${DISCONNECTED_URL}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'fail-pt@sehatai.local',
+        email: failPtEmail,
         password: 'Password123!',
         consent: true,
       }),
@@ -832,7 +833,14 @@ async function main() {
     );
   } finally {
     disconnectedProcess.kill();
+    // Safety cleanup in case of unexpected fallback writes
+    const cleanupPrisma = new PrismaClient({ datasources: { db: { url: stagingDbUrl } } });
+    await cleanupPrisma.user.deleteMany({
+      where: { email: { in: [`${stamp}-fail-pt@sehatai.local`, 'fail-pt@sehatai.local'] } },
+    }).catch(() => undefined);
+    await cleanupPrisma.$disconnect();
   }
+
 
   // --------------------------------------------------------------------------
   // Browser CDP Sessions

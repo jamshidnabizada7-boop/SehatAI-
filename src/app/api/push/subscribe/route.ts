@@ -3,8 +3,9 @@
 // POST /api/push/send { subscription, payload } → sends a push notification
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
-import { getVapidConfig } from '../vapid/route';
+import { getVapidConfig } from '@/lib/care/vapid';
 import { db } from '@/lib/db';
+
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 

@@ -67,6 +67,11 @@ const sensitiveEntries = [
   path.join(STANDALONE, 'temp'),
   path.join(STANDALONE, 'backups'),
   path.join(STANDALONE, 'deploy'),
+  path.join(STANDALONE, 'storage'),
+  path.join(STANDALONE, 'tests'),
+  path.join(STANDALONE, 'docs'),
+  path.join(STANDALONE, 'examples'),
+  path.join(STANDALONE, 'submission'),
 ];
 
 for (const p of sensitiveEntries) {
@@ -76,7 +81,7 @@ for (const p of sensitiveEntries) {
   }
 }
 
-// Recursive scan to remove any nested .env, .key, .pem, .crt, .csr files
+// Recursive scan to remove any nested .env, .key, .pem, .crt, .csr, .sql, .pdf files
 function cleanLeaks(dir: string) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
@@ -90,9 +95,11 @@ function cleanLeaks(dir: string) {
         lower.endsWith('.key') ||
         lower.endsWith('.pem') ||
         lower.endsWith('.crt') ||
-        lower.endsWith('.csr')
+        lower.endsWith('.csr') ||
+        lower.endsWith('.sql') ||
+        lower.endsWith('.pdf')
       ) {
-        console.log(`  - Removing leaked file: ${path.relative(STANDALONE, full)}`);
+        console.log(`  - Removing leaked/extraneous file: ${path.relative(STANDALONE, full)}`);
         fs.rmSync(full, { force: true });
       }
     }
@@ -100,6 +107,7 @@ function cleanLeaks(dir: string) {
 }
 cleanLeaks(STANDALONE);
 console.log('✓ Sensitive scrubbing complete.');
+
 
 // 5. Ensure deploy directory exists
 if (!fs.existsSync(DEPLOY_DIR)) {

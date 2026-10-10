@@ -81,21 +81,29 @@ engines.forEach((e) => {
 const hasArm64Engine = engines.some((e) => e.includes('linux-arm64'));
 console.log(`✓ Linux ARM64 query engine present: ${hasArm64Engine}`);
 
-// 3. Sensitive file and credential leak scan
-console.log('\n--- Sensitive Files & Credential Leak Scan ---');
-const leakPatterns = ['.env', '.key', '.pem', '.crt', '.csr', 'id_rsa', 'id_ed25519', '.git'];
+// 3. Sensitive file, credential, and test artifact leak scan
+console.log('\n--- Sensitive Files & Test Artifact Leak Scan ---');
+const leakPatterns = ['.env', '.key', '.pem', '.crt', '.csr', 'id_rsa', 'id_ed25519', '.git', '.sql', '.pdf'];
 const leaks = findFiles(EXTRACT_DIR, (n) => {
   const lower = n.toLowerCase();
   return leakPatterns.some((p) => lower.endsWith(p) || lower.includes('.env'));
 });
 
+// Check for extraneous directory leaks
+const forbiddenDirs = ['tests', 'storage', 'backups', 'certs', 'temp'];
+const leakedDirs = forbiddenDirs.filter((d) => fs.existsSync(path.join(EXTRACT_DIR, d)));
+if (leakedDirs.length > 0) {
+  leaks.push(...leakedDirs.map((d) => `Directory: ${d}`));
+}
+
 if (leaks.length > 0) {
-  console.error('❌ LEAKS DETECTED in standalone archive:');
-  leaks.forEach((l) => console.error(`  - ${path.relative(EXTRACT_DIR, l)}`));
+  console.error('❌ LEAKS / TEST ARTIFACTS DETECTED in standalone archive:');
+  leaks.forEach((l) => console.error(`  - ${l}`));
   process.exit(1);
 } else {
-  console.log('✓ PASS: Zero .env, .git, private keys, or certificates embedded in release archive.');
+  console.log('✓ PASS: Zero .env, .git, private keys, certificates, test artifacts, or storage files embedded in release archive.');
 }
+
 
 console.log('\n======================================================================');
 console.log('==> ARCHIVE AUDIT RESULT: PASSED');

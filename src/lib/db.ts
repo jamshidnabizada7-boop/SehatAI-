@@ -60,8 +60,10 @@ export function verifyAndLoadDatabaseEnv(): DatabaseEnvInfo {
   const isStagingMode = Boolean(
     process.env.APP_ENV === 'staging' ||
     process.env.SEHATAI_STAGING === '1' ||
+    process.env.STAGING_MODE === 'true' ||
     process.env.NEXT_PUBLIC_APP_URL?.includes('staging')
   );
+
 
   let sourceFile = '.env';
 
