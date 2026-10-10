@@ -8,7 +8,7 @@
 // 5. Doctor suspension gating & completed consultation rejoin prevention
 // 6. Double-entry financial ledger idempotency
 // ============================================================
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test, afterAll } from 'bun:test';
 import { runL0Triage } from '@/lib/engine/safety-engine';
 import { runPipeline } from '@/server/pipeline/run';
 import { scanForInjection } from '@/lib/prompt-security';
@@ -159,6 +159,10 @@ describe('X4. Cross-border prescription & corridor blocking', () => {
   });
 });
 
+const createdUserIds: string[] = [];
+const createdConsultationIds: string[] = [];
+const createdLedgerRefs: string[] = [];
+
 describe('X5. Doctor suspension gating & call state transitions', () => {
   test('blocks suspended doctor from joining WebRTC consultation call', async () => {
     const stamp = Date.now();
@@ -169,6 +173,7 @@ describe('X5. Doctor suspension gating & call state transitions', () => {
     const docUser = await db.user.create({
       data: { email: `x_doc_${stamp}@test.local`, role: 'doctor', name: 'Suspended Doc', accountStatus: 'suspended' },
     });
+    createdUserIds.push(patient.id, docUser.id);
     const docProfile = await db.doctorProfile.create({
       data: {
         userId: docUser.id,
@@ -187,6 +192,7 @@ describe('X5. Doctor suspension gating & call state transitions', () => {
         status: 'DOCTOR_ACCEPTED',
       },
     });
+    createdConsultationIds.push(consultation.id);
 
     let thrownError: unknown = null;
     try {
@@ -211,6 +217,7 @@ describe('X5. Doctor suspension gating & call state transitions', () => {
     const docUser = await db.user.create({
       data: { email: `x_doc_comp_${stamp}@test.local`, role: 'doctor', name: 'Active Doc' },
     });
+    createdUserIds.push(patient.id, docUser.id);
     const docProfile = await db.doctorProfile.create({
       data: {
         userId: docUser.id,
@@ -229,6 +236,7 @@ describe('X5. Doctor suspension gating & call state transitions', () => {
         status: 'COMPLETED',
       },
     });
+    createdConsultationIds.push(consultation.id);
 
     let thrownError: unknown = null;
     try {
@@ -252,6 +260,7 @@ describe('X6. Financial ledger idempotency and double-spend immunity', () => {
     const docUser = await db.user.create({
       data: { email: `x_doc_ledger_${stamp}@test.local`, role: 'doctor', name: 'Ledger Doc' },
     });
+    createdUserIds.push(docUser.id);
     const docProfile = await db.doctorProfile.create({
       data: {
         userId: docUser.id,
@@ -280,6 +289,7 @@ describe('X6. Financial ledger idempotency and double-spend immunity', () => {
         },
       ],
     };
+    createdLedgerRefs.push(`ref_x_${stamp}`);
 
     // First post: must succeed
     const firstPost = await postTransaction(txn);
@@ -296,4 +306,18 @@ describe('X6. Financial ledger idempotency and double-spend immunity', () => {
     const balAfterSecond = await balanceOf(`doctor:available:${docProfile.id}:PKR`);
     expect(balAfterSecond?.netMinor).toBe(250000);
   });
+});
+
+afterAll(async () => {
+  for (const ref of createdLedgerRefs) {
+    await db.ledgerEntry.deleteMany({ where: { reference: ref } }).catch(() => {});
+  }
+  for (const cId of createdConsultationIds) {
+    await db.consultationCall.deleteMany({ where: { consultationId: cId } }).catch(() => {});
+    await db.consultation.deleteMany({ where: { id: cId } }).catch(() => {});
+  }
+  for (const uId of createdUserIds) {
+    await db.doctorProfile.deleteMany({ where: { userId: uId } }).catch(() => {});
+    await db.user.deleteMany({ where: { id: uId } }).catch(() => {});
+  }
 });
