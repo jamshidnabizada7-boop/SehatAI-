@@ -40,6 +40,8 @@
   "exclude": [
     "node_modules",
     "examples",
-    "scripts"
+    "scripts",
+    "temp",
+    "deploy"
   ]
 }

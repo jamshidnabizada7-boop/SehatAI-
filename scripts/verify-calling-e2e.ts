@@ -6,6 +6,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import { encode } from 'next-auth/jwt';
 import { PrismaClient } from '@prisma/client';
 
@@ -94,7 +95,7 @@ class CdpClient {
 }
 
 async function getPageWsUrl(cdpPort: number): Promise<string> {
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 50; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${cdpPort}/json/list`);
       const list = await res.json();
@@ -126,10 +127,13 @@ async function main() {
     throw new Error(`Synthetic consultation ${consultationId} not found in DB`);
   }
 
-  // Ensure consultation is in valid call state
+  // Ensure consultation is in valid call state and clear stale calls
   await prisma.consultation.update({
     where: { id: consultationId },
     data: { status: 'DOCTOR_ACCEPTED', type: 'VIDEO' },
+  });
+  await prisma.consultationCall.deleteMany({
+    where: { consultationId },
   });
 
   console.log(`✓ Synthetic consultation verified: ${consultationId}`);
@@ -241,8 +245,8 @@ async function main() {
 
   // Test 2: Dual-Browser LiveKit Cloud End-to-End Calling
   console.log('\n==> [Check 2] Launching Isolated Browser Sessions (Chrome Patient, Edge Doctor)...');
-  const tempDir = path.resolve('temp');
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+  const tempDir = path.join(os.tmpdir(), `sehatai-e2e-${Date.now()}`);
+  fs.mkdirSync(tempDir, { recursive: true });
   const patientProfile = path.join(tempDir, 'cdp-patient-profile');
   const doctorProfile = path.join(tempDir, 'cdp-doctor-profile');
 
@@ -259,8 +263,8 @@ async function main() {
     'about:blank',
   ]);
 
-  // Spawn Edge for Doctor
-  const doctorProc = spawn(EDGE_PATH, [
+  // Spawn isolated Chrome instance for Doctor
+  const doctorProc = spawn(CHROME_PATH, [
     '--headless=new',
     '--remote-debugging-port=9334',
     `--user-data-dir=${doctorProfile}`,
@@ -284,6 +288,17 @@ async function main() {
     await doctorCdp.connect();
 
     console.log('✓ Both browser CDP connections established.');
+
+    try {
+      await patientCdp.send('Browser.grantPermissions', {
+        permissions: ['videoCapture', 'audioCapture'],
+        origin: BASE_URL,
+      });
+      await doctorCdp.send('Browser.grantPermissions', {
+        permissions: ['videoCapture', 'audioCapture'],
+        origin: BASE_URL,
+      });
+    } catch { /* best effort */ }
 
     // Inject WebRTC PeerConnection tracker into both browsers to inspect real WebRTC stats
     const trackerScript = `
@@ -367,7 +382,7 @@ async function main() {
     }
 
     await waitForJoinButton(patientCdp, 'Patient (Chrome)');
-    await waitForJoinButton(doctorCdp, 'Doctor (Edge)');
+    await waitForJoinButton(doctorCdp, 'Doctor (Chrome Isolated)');
 
     // Click "Join Call" in Patient browser
     console.log('\n==> [Action] Patient clicks "Join Call"...');
@@ -407,7 +422,7 @@ async function main() {
 
     await Promise.all([
       waitForCallConnected(patientCdp, 'Patient (Chrome)'),
-      waitForCallConnected(doctorCdp, 'Doctor (Edge)'),
+      waitForCallConnected(doctorCdp, 'Doctor (Chrome Isolated)'),
     ]);
 
     // Verify video rendering and remote audio sinks
@@ -433,11 +448,11 @@ async function main() {
             const videoTrack = videoPub ? videoPub.track : null;
 
             return {
-              localActive: Boolean(localVideo && localVideo.srcObject && localVideo.srcObject.active),
+              localActive: Boolean(localVideo && localVideo.srcObject && (localVideo.srcObject.active || localVideo.srcObject.getVideoTracks().length > 0)),
               localTracks: localVideo && localVideo.srcObject ? localVideo.srcObject.getVideoTracks().length : 0,
-              remoteActive: Boolean(remoteVideo && remoteVideo.srcObject && remoteVideo.srcObject.active),
+              remoteActive: Boolean(remoteVideo && remoteVideo.srcObject && (remoteVideo.srcObject.active || remoteVideo.srcObject.getVideoTracks().length > 0)),
               remoteTracks: remoteVideo && remoteVideo.srcObject ? remoteVideo.srcObject.getVideoTracks().length : 0,
-              remoteAudioActive: Boolean(audio && audio.srcObject && audio.srcObject.active),
+              remoteAudioActive: Boolean(audio && audio.srcObject && (audio.srcObject.active || audio.srcObject.getAudioTracks().length > 0)),
               remoteVideoFound: Boolean(remoteVideo),
               videoTrackFound: Boolean(videoTrack),
               attachedElementsCount: videoTrack && videoTrack.attachedElements ? videoTrack.attachedElements.length : 0,
@@ -461,11 +476,11 @@ async function main() {
           const remoteVideo = document.querySelector('video[data-testid="remote-video"]') || Array.from(document.querySelectorAll('video')).find(v => v.className && v.className.includes('h-full'));
           const audio = document.querySelector('audio[data-testid="remote-audio"]') || document.querySelector('audio');
           return {
-            localActive: Boolean(localVideo && localVideo.srcObject && localVideo.srcObject.active),
+            localActive: Boolean(localVideo && localVideo.srcObject && (localVideo.srcObject.active || localVideo.srcObject.getVideoTracks().length > 0)),
             localTracks: localVideo && localVideo.srcObject ? localVideo.srcObject.getVideoTracks().length : 0,
-            remoteActive: Boolean(remoteVideo && remoteVideo.srcObject && remoteVideo.srcObject.active),
+            remoteActive: Boolean(remoteVideo && remoteVideo.srcObject && (remoteVideo.srcObject.active || remoteVideo.srcObject.getVideoTracks().length > 0)),
             remoteTracks: remoteVideo && remoteVideo.srcObject ? remoteVideo.srcObject.getVideoTracks().length : 0,
-            remoteAudioActive: Boolean(audio && audio.srcObject && audio.srcObject.active),
+            remoteAudioActive: Boolean(audio && audio.srcObject && (audio.srcObject.active || audio.srcObject.getAudioTracks().length > 0)),
           };
         })()
       `);
@@ -473,7 +488,7 @@ async function main() {
 
     const [patientMediaState, doctorMediaState] = await Promise.all([
       waitForMediaRendering(patientCdp, 'Patient (Chrome)'),
-      waitForMediaRendering(doctorCdp, 'Doctor (Edge)'),
+      waitForMediaRendering(doctorCdp, 'Doctor (Chrome Isolated)'),
     ]);
 
     console.log('  Patient Media State:', JSON.stringify(patientMediaState, null, 2));

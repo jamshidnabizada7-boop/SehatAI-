@@ -175,27 +175,40 @@ export function startHttpsProxy() {
     console.log(`✓ Forwarding to Next.js:   http://127.0.0.1:${TARGET_PORT}`);
   });
 
-  // HTTP Helper server to download CA Certificate easily on mobile
-  const caServer = http.createServer((req, res) => {
-    if (req.url === '/ca.crt' || req.url === '/cert' || req.url === '/download') {
-      res.writeHead(200, {
-        'Content-Type': 'application/x-x509-ca-cert',
-        'Content-Disposition': 'attachment; filename="sehatai-ca.crt"',
-      });
-      fs.createReadStream(caCrt).pipe(res);
-      return;
-    }
+  // HTTP Helper server to download CA Certificate easily on mobile (optional / restrictable)
+  let caServer: http.Server | null = null;
+  const disableCaHttp = process.env.DISABLE_CA_HTTP === 'true';
+  const caBindHost = process.env.ALLOW_LAN === 'true' ? '0.0.0.0' : '127.0.0.1';
 
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(`
+  if (!disableCaHttp) {
+    caServer = http.createServer((req, res) => {
+      // Security Invariant: Private keys and traverse paths are strictly forbidden
+      if (req.url?.includes('.key') || req.url?.includes('.pem') || req.url?.includes('..')) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('403 Forbidden: Private keys and traversal paths are never accessible via HTTP.');
+        return;
+      }
+
+      if (req.url === '/ca.crt' || req.url === '/cert' || req.url === '/download') {
+        res.writeHead(200, {
+          'Content-Type': 'application/x-x509-ca-cert',
+          'Content-Disposition': 'attachment; filename="sehatai-ca.crt"',
+        });
+        fs.createReadStream(caCrt).pipe(res);
+        return;
+      }
+
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(`
 <!DOCTYPE html>
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SehatAI Local CA Setup</title>
+  <title>SehatAI Local CA Setup & Removal Guide</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; line-height: 1.5; }
-    .card { background: #f4f4f5; border-radius: 12px; padding: 1.5rem; margin-top: 1rem; }
+    body { font-family: system-ui, sans-serif; max-width: 650px; margin: 2rem auto; padding: 1rem; line-height: 1.5; color: #18181b; }
+    .card { background: #f4f4f5; border-radius: 12px; padding: 1.5rem; margin-top: 1rem; border: 1px solid #e4e4e7; }
+    .removal-card { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; }
     .btn { display: inline-block; background: #0284c7; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 1rem; }
     code { background: #e4e4e7; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9em; }
     ol { padding-left: 1.2rem; }
@@ -203,11 +216,11 @@ export function startHttpsProxy() {
 </head>
 <body>
   <h2>SehatAI Mobile Camera & Mic HTTPS Setup</h2>
-  <p>To access camera and microphone from mobile browsers, install the local development root certificate:</p>
+  <p>To access camera and microphone from mobile browsers during local telemedicine testing, install the local development root certificate:</p>
   <a href="/ca.crt" class="btn">📥 1. Download CA Certificate</a>
 
   <div class="card">
-    <h3>iOS (Safari) Instructions:</h3>
+    <h3>iOS (Safari) Installation:</h3>
     <ol>
       <li>Tap Download above and select <strong>Allow</strong>.</li>
       <li>Open <strong>Settings > Profile Downloaded</strong> (or Settings > General > VPN & Device Management).</li>
@@ -219,7 +232,7 @@ export function startHttpsProxy() {
   </div>
 
   <div class="card">
-    <h3>Android (Chrome) Instructions:</h3>
+    <h3>Android (Chrome) Installation:</h3>
     <ol>
       <li>Tap Download above.</li>
       <li>Open <strong>Settings > Security > More security settings > Encryption & credentials</strong>.</li>
@@ -228,15 +241,36 @@ export function startHttpsProxy() {
       <li>Open Chrome and visit <a href="https://${lanIp}:${HTTPS_PORT}">https://${lanIp}:${HTTPS_PORT}</a>.</li>
     </ol>
   </div>
+
+  <div class="removal-card">
+    <h3 style="color: #991b1b; margin-top: 0;">🗑️ Safe Certificate Removal Procedure (When Done Testing)</h3>
+    <p>Always remove test certificates after testing is concluded:</p>
+    <h4>iOS (Safari):</h4>
+    <ol>
+      <li>Open <strong>Settings > General > VPN & Device Management</strong>.</li>
+      <li>Under <em>Configuration Profiles</em>, tap <strong>SehatAI Local Development CA</strong>.</li>
+      <li>Tap <strong>Remove Profile</strong>, enter your device passcode, and confirm. The certificate and all trust settings are completely deleted.</li>
+    </ol>
+    <h4>Android:</h4>
+    <ol>
+      <li>Open <strong>Settings > Security > More security settings > Encryption & credentials</strong>.</li>
+      <li>Tap <strong>User credentials</strong> (or <em>Trusted credentials > User</em> tab).</li>
+      <li>Tap <strong>SehatAI Local Development CA</strong> and select <strong>Remove</strong> / <strong>Delete</strong>.</li>
+    </ol>
+  </div>
 </body>
 </html>
-    `);
-  });
+      `);
+    });
 
-  caServer.listen(CA_HTTP_PORT, '0.0.0.0', () => {
-    console.log(`✓ Mobile CA Install Portal: http://${lanIp}:${CA_HTTP_PORT}/`);
+    caServer.listen(CA_HTTP_PORT, caBindHost, () => {
+      console.log(`✓ Mobile CA Install Portal: http://${lanIp}:${CA_HTTP_PORT}/ (Bound to: ${caBindHost})`);
+      console.log(`======================================================================\n`);
+    });
+  } else {
+    console.log(`✓ Mobile CA HTTP portal disabled via DISABLE_CA_HTTP=true.`);
     console.log(`======================================================================\n`);
-  });
+  }
 
   return { httpsServer, caServer };
 }
