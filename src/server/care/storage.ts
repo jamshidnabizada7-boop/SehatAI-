@@ -199,6 +199,9 @@ export class PrivateObjectStorageProvider implements StorageProvider {
   }
 
   async put(key: string, data: Buffer): Promise<StoredObject> {
+    if (process.env.STAGING_BLOCK_UPLOADS === 'true') {
+      throw new Error('PHI_UPLOADS_HARD_BLOCKED_IN_STAGING: Medical document and attachment uploads are prohibited in staging environment');
+    }
     const safeKey = key.replace(/[^a-zA-Z0-9._/-]/g, '_');
     const checksumSha256 = createHash('sha256').update(data).digest('hex');
     const encryptedBlob = encrypt(data);
