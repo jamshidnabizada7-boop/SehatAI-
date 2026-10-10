@@ -670,17 +670,28 @@ function CareCallModal({
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const disconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const roomRef = useRef<any>(null);
 
   const [mode, setMode] = useState<'VIDEO' | 'AUDIO'>(initialType === 'AUDIO' ? 'AUDIO' : 'VIDEO');
   const [status, setStatus] = useState<'connecting' | 'waiting' | 'connected' | 'fell_back' | 'ended'>('connecting');
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(initialType !== 'AUDIO');
+  const [remoteVideoMuted, setRemoteVideoMuted] = useState(false);
   const [statusText, setStatusText] = useState('Connecting…');
+
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   const cleanup = useCallback(() => {
     if (disconnectTimerRef.current) {
       clearTimeout(disconnectTimerRef.current);
       disconnectTimerRef.current = null;
+    }
+    if (roomRef.current) {
+      try {
+        roomRef.current.disconnect();
+      } catch { /* ignore */ }
+      roomRef.current = null;
     }
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -715,6 +726,12 @@ function CareCallModal({
   }, [call.callId, consultationId]);
 
   const handleLeave = useCallback(async () => {
+    if (roomRef.current) {
+      try {
+        await roomRef.current.disconnect();
+      } catch { /* ignore */ }
+      roomRef.current = null;
+    }
     cleanup();
     setStatus('ended');
     await reportState('ENDED');
@@ -724,6 +741,11 @@ function CareCallModal({
   const handleFallbackToAudio = useCallback(async () => {
     setMode('AUDIO');
     setCamOn(false);
+    if (roomRef.current) {
+      try {
+        await roomRef.current.localParticipant.setCameraEnabled(false);
+      } catch { /* ignore */ }
+    }
     if (localStreamRef.current) {
       localStreamRef.current.getVideoTracks().forEach((t) => {
         t.enabled = false;
@@ -736,6 +758,12 @@ function CareCallModal({
   }, [reportState]);
 
   const handleFallbackToText = useCallback(async () => {
+    if (roomRef.current) {
+      try {
+        await roomRef.current.disconnect();
+      } catch { /* ignore */ }
+      roomRef.current = null;
+    }
     cleanup();
     await reportState('FELL_BACK', 'TEXT', 'call_unreachable');
     onClose();
@@ -783,7 +811,7 @@ function CareCallModal({
         setStatusText('Reconnecting…');
         if (!disconnectTimerRef.current) {
           disconnectTimerRef.current = setTimeout(() => {
-            if (mode === 'VIDEO') {
+            if (modeRef.current === 'VIDEO') {
               void handleFallbackToAudio();
             } else {
               void handleFallbackToText();
@@ -792,7 +820,7 @@ function CareCallModal({
         }
       } else if (s === 'failed') {
         setStatusText('Connection failed');
-        if (mode === 'VIDEO') {
+        if (modeRef.current === 'VIDEO') {
           void handleFallbackToAudio();
         } else {
           void handleFallbackToText();
@@ -802,15 +830,157 @@ function CareCallModal({
 
     stream.getTracks().forEach((track) => pc.addTrack(track, stream));
     return pc;
-  }, [call.iceServers, mode, handleFallbackToAudio, handleFallbackToText, reportState]);
+  }, [call.iceServers, handleFallbackToAudio, handleFallbackToText, reportState]);
 
   useEffect(() => {
     let active = true;
+    const initialMode = initialType === 'AUDIO' ? 'AUDIO' : 'VIDEO';
 
     async function start() {
+      // ------------------------------------------------------------
+      // 1. LIVEKIT CLOUD / MANAGED SFU INTEGRATION
+      // Triggered when CARE_VIDEO_PROVIDER=livekit on server.
+      // Room token contains HS256 JWT with short-lived TTL and room claim.
+      // ------------------------------------------------------------
+      if (call.provider === 'livekit' && call.signalingUrl && call.token) {
+        try {
+          const { Room, RoomEvent, Track } = await import('livekit-client');
+          if (!active) return;
+
+          const room = new Room({
+            adaptiveStream: true,
+            dynacast: true,
+          });
+          roomRef.current = room;
+
+          // Wire remote media tracks
+          room.on(RoomEvent.TrackSubscribed, (track: any) => {
+            if (track.kind === Track.Kind.Video && remoteVideoRef.current) {
+              track.attach(remoteVideoRef.current);
+              setRemoteVideoMuted(false);
+            } else if (track.kind === Track.Kind.Audio && remoteAudioRef.current) {
+              track.attach(remoteAudioRef.current);
+            }
+            setStatus('connected');
+            setStatusText('Connected');
+            void reportState('ACTIVE');
+          });
+
+          room.on(RoomEvent.TrackUnsubscribed, (track: any) => {
+            track.detach();
+          });
+
+          room.on(RoomEvent.TrackMuted, (pub: any) => {
+            if (pub.kind === Track.Kind.Video) {
+              setRemoteVideoMuted(true);
+            }
+          });
+
+          room.on(RoomEvent.TrackUnmuted, (pub: any) => {
+            if (pub.kind === Track.Kind.Video) {
+              setRemoteVideoMuted(false);
+              if (remoteVideoRef.current && pub.track) {
+                pub.track.attach(remoteVideoRef.current);
+              }
+            }
+          });
+
+          room.on(RoomEvent.ParticipantConnected, () => {
+            setStatus('connected');
+            setStatusText('Connected');
+            void reportState('ACTIVE');
+          });
+
+          room.on(RoomEvent.ParticipantDisconnected, () => {
+            if (room.remoteParticipants.size === 0) {
+              setStatus('waiting');
+              setStatusText('Other participant left the call');
+              if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+              if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+            }
+          });
+
+          room.on(RoomEvent.LocalTrackPublished, (pub: any) => {
+            if (pub.track && pub.source === Track.Source.Camera && localVideoRef.current) {
+              pub.track.attach(localVideoRef.current);
+            }
+          });
+
+          room.on(RoomEvent.LocalTrackUnpublished, (pub: any) => {
+            if (pub.source === Track.Source.Camera && localVideoRef.current) {
+              localVideoRef.current.srcObject = null;
+            }
+          });
+
+          room.on(RoomEvent.Reconnecting, () => {
+            setStatusText('Reconnecting…');
+          });
+
+          room.on(RoomEvent.Reconnected, () => {
+            setStatus('connected');
+            setStatusText('Connected');
+          });
+
+          room.on(RoomEvent.Disconnected, (reason?: any) => {
+            if (active && status !== 'ended') {
+              const r = String(reason || '').toLowerCase();
+              if (r.includes('token') || r.includes('expired') || r.includes('auth') || r.includes('unauthorized')) {
+                setStatusText('Room token expired. Please re-join the consultation.');
+              } else {
+                setStatusText('Call ended');
+              }
+            }
+          });
+
+          setStatus('connecting');
+          setStatusText('Connecting to LiveKit SFU…');
+          await room.connect(call.signalingUrl, call.token);
+          if (!active) {
+            await room.disconnect();
+            return;
+          }
+
+          // Publish local tracks
+          if (initialMode === 'VIDEO') {
+            await room.localParticipant.enableCameraAndMicrophone();
+            const camPub = room.localParticipant.getTrackPublication(Track.Source.Camera);
+            if (camPub?.videoTrack && localVideoRef.current) {
+              camPub.videoTrack.attach(localVideoRef.current);
+            }
+          } else {
+            await room.localParticipant.setMicrophoneEnabled(true);
+          }
+
+          if (room.remoteParticipants.size > 0) {
+            setStatus('connected');
+            setStatusText('Connected');
+            void reportState('ACTIVE');
+          } else {
+            setStatus('waiting');
+            setStatusText('Waiting for other participant…');
+          }
+        } catch (err: any) {
+          if (!active) return;
+          console.error('[LiveKit] Connection failed:', err);
+          const msg = String(err?.message || '').toLowerCase();
+          if (msg.includes('expired') || msg.includes('unauthorized') || msg.includes('token') || msg.includes('jwt') || msg.includes('401')) {
+            setStatusText('Room token expired or unauthorized. Please re-join the consultation.');
+          } else {
+            setStatusText(err instanceof Error ? err.message : 'Could not connect to LiveKit server');
+          }
+          setStatus('ended');
+          void reportState('FAILED', undefined, 'livekit_connection_failed');
+        }
+        return;
+      }
+
+      // ------------------------------------------------------------
+      // 2. LOCAL WEBRTC SIGNALING RELAY (DEVELOPMENT FALLBACK)
+      // mini-services/video-signal on port 3004
+      // ------------------------------------------------------------
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: mode === 'VIDEO' ? { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } : false,
+          video: initialMode === 'VIDEO' ? { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } : false,
           audio: true,
         });
         if (!active) {
@@ -818,7 +988,7 @@ function CareCallModal({
           return;
         }
         localStreamRef.current = stream;
-        if (localVideoRef.current && mode === 'VIDEO') {
+        if (localVideoRef.current && initialMode === 'VIDEO') {
           localVideoRef.current.srcObject = stream;
         }
 
@@ -902,24 +1072,39 @@ function CareCallModal({
       active = false;
       cleanup();
     };
-  }, [call.roomId, call.signalingUrl, mode, createPeerConnection, cleanup]);
+  }, [call.roomId, call.signalingUrl, call.provider, call.token, initialType, createPeerConnection, cleanup]);
 
   function toggleMic() {
+    const next = !micOn;
+    if (roomRef.current) {
+      void roomRef.current.localParticipant.setMicrophoneEnabled(next);
+    }
     if (localStreamRef.current) {
       localStreamRef.current.getAudioTracks().forEach((t) => {
-        t.enabled = !micOn;
+        t.enabled = next;
       });
-      setMicOn(!micOn);
     }
+    setMicOn(next);
   }
 
   function toggleCam() {
+    const next = !camOn;
+    if (roomRef.current) {
+      void roomRef.current.localParticipant.setCameraEnabled(next).then((pub: any) => {
+        if (next && localVideoRef.current) {
+          const track = pub?.videoTrack ?? roomRef.current?.localParticipant.getTrackPublication('camera' as any)?.videoTrack;
+          if (track) track.attach(localVideoRef.current);
+        } else if (!next && localVideoRef.current) {
+          localVideoRef.current.srcObject = null;
+        }
+      });
+    }
     if (localStreamRef.current) {
       localStreamRef.current.getVideoTracks().forEach((t) => {
-        t.enabled = !camOn;
+        t.enabled = next;
       });
-      setCamOn(!camOn);
     }
+    setCamOn(next);
   }
 
   return (
@@ -938,9 +1123,16 @@ function CareCallModal({
 
         {/* Media viewports */}
         <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
+          <audio ref={remoteAudioRef} autoPlay playsInline className="sr-only" aria-hidden="true" />
           {mode === 'VIDEO' ? (
             <>
               <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
+              {remoteVideoMuted ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/90 text-neutral-400">
+                  <VideoOff className="h-12 w-12 mb-2 text-neutral-500 animate-pulse" />
+                  <p className="text-sm font-medium">Remote participant camera is off</p>
+                </div>
+              ) : null}
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -958,7 +1150,6 @@ function CareCallModal({
                 <Phone className="h-10 w-10 animate-bounce" />
               </div>
               <p className="text-sm text-neutral-400">Audio call in progress</p>
-              <audio ref={remoteAudioRef} autoPlay />
             </div>
           )}
 

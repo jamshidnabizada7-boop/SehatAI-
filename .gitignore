@@ -35,6 +35,9 @@ yarn-error.log*
 !.env.example
 !.env.staging.example
 !.env.production.example
+deploy/*.env
+*.tar.gz
+*.tgz
 
 
 # vercel

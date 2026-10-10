@@ -1,0 +1,31 @@
+[Unit]
+Description=SehatAI Care Connect Staging Service (Loopback Isolated)
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=sehatai
+Group=sehatai
+WorkingDirectory=/opt/sehatai/current
+EnvironmentFile=/etc/sehatai/staging.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+TimeoutStopSec=15
+
+# Strict cgroup v2 resource limits (Guarantee ARIA Hub Headroom)
+MemoryMax=2048M
+MemoryHigh=1800M
+CPUQuota=100%
+TasksMax=512
+
+# Security sandboxing
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/sehatai/shared/logs /opt/sehatai/shared/storage
+
+[Install]
+WantedBy=multi-user.target

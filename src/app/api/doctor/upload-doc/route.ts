@@ -41,6 +41,12 @@ function validateMagicBytes(buf: Uint8Array, mime: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  if (process.env.STAGING_BLOCK_UPLOADS === 'true') {
+    return NextResponse.json(
+      { error: 'PHI_UPLOADS_HARD_BLOCKED_IN_STAGING', message: 'Document uploads are disabled in staging.' },
+      { status: 403 }
+    );
+  }
   let user;
   try {
     user = await requireDoctor();

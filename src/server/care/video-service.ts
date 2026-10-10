@@ -102,12 +102,19 @@ export async function joinCall(opts: { consultationId: string; userId: string; r
   if (c.type === 'TEXT') throw new ConsultationError('NOT_A_CALL_CONSULTATION', 409);
 
   // Active call record (state machine: RINGING → ACTIVE → ENDED/FELL_BACK).
+  const activeVideoProvider = getVideoProvider();
+  const providerKey = activeVideoProvider.name === 'livekit-prod' ? 'livekit' : 'webrtc-local';
   let call = await db.consultationCall.findFirst({
     where: { consultationId: c.id, state: { in: ['RINGING', 'ACTIVE'] } },
   });
   if (!call) {
     call = await db.consultationCall.create({
-      data: { consultationId: c.id, provider: 'webrtc-local', roomId: `care-${c.id}`, state: 'RINGING' },
+      data: { consultationId: c.id, provider: providerKey, roomId: `care-${c.id}`, state: 'RINGING' },
+    });
+  } else if (call.provider !== providerKey) {
+    call = await db.consultationCall.update({
+      where: { id: call.id },
+      data: { provider: providerKey },
     });
   }
   if (c.status !== 'IN_PROGRESS') {

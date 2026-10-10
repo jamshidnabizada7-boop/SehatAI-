@@ -22,13 +22,16 @@ interface VideoCallProps {
 export function VideoCall({ appointmentId, onClose }: VideoCallProps) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const roomRef = useRef<any>(null);
 
   const [status, setStatus] = useState<'connecting' | 'waiting' | 'connected' | 'ended'>('connecting');
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
+  const [remoteVideoMuted, setRemoteVideoMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const roomId = `appt-${appointmentId}`;
@@ -39,6 +42,12 @@ export function VideoCall({ appointmentId, onClose }: VideoCallProps) {
   ];
 
   const cleanup = useCallback(() => {
+    if (roomRef.current) {
+      try {
+        roomRef.current.disconnect();
+      } catch { /* ignore */ }
+      roomRef.current = null;
+    }
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop());
       localStreamRef.current = null;
@@ -48,7 +57,9 @@ export function VideoCall({ appointmentId, onClose }: VideoCallProps) {
       pcRef.current = null;
     }
     if (wsRef.current) {
-      wsRef.current.close();
+      try {
+        wsRef.current.close();
+      } catch { /* ignore */ }
       wsRef.current = null;
     }
   }, []);
@@ -80,7 +91,129 @@ export function VideoCall({ appointmentId, onClose }: VideoCallProps) {
 
   const startCall = useCallback(async () => {
     try {
-      // Get local media
+      // 1. Fetch appointment room info to check for LiveKit SFU credentials
+      let roomInfo: {
+        provider?: string;
+        token?: string | null;
+        signalingUrl?: string | null;
+        roomId?: string;
+      } | null = null;
+
+      try {
+        const res = await fetch(`/api/video-call?appointmentId=${encodeURIComponent(appointmentId)}`);
+        if (res.ok) {
+          roomInfo = await res.json();
+        }
+      } catch {
+        // Fall back to WebRTC local loopback
+      }
+
+      // 2. LIVEKIT SFU PROVIDER BRANCH
+      if (roomInfo?.provider === 'livekit' && roomInfo.token && roomInfo.signalingUrl) {
+        try {
+          const { Room, RoomEvent, Track } = await import('livekit-client');
+          const room = new Room({
+            adaptiveStream: true,
+            dynacast: true,
+          });
+          roomRef.current = room;
+
+          room.on(RoomEvent.TrackSubscribed, (track: any) => {
+            if (track.kind === Track.Kind.Video && remoteVideoRef.current) {
+              track.attach(remoteVideoRef.current);
+              setRemoteVideoMuted(false);
+            } else if (track.kind === Track.Kind.Audio && remoteAudioRef.current) {
+              track.attach(remoteAudioRef.current);
+            }
+            setStatus('connected');
+          });
+
+          room.on(RoomEvent.TrackUnsubscribed, (track: any) => {
+            track.detach();
+          });
+
+          room.on(RoomEvent.TrackMuted, (pub: any) => {
+            if (pub.kind === Track.Kind.Video) {
+              setRemoteVideoMuted(true);
+            }
+          });
+
+          room.on(RoomEvent.TrackUnmuted, (pub: any) => {
+            if (pub.kind === Track.Kind.Video) {
+              setRemoteVideoMuted(false);
+              if (remoteVideoRef.current && pub.track) {
+                pub.track.attach(remoteVideoRef.current);
+              }
+            }
+          });
+
+          room.on(RoomEvent.ParticipantConnected, () => {
+            setStatus('connected');
+          });
+
+          room.on(RoomEvent.ParticipantDisconnected, () => {
+            if (room.remoteParticipants.size === 0) {
+              setStatus('waiting');
+              if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+              if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+            }
+          });
+
+          room.on(RoomEvent.LocalTrackPublished, (pub: any) => {
+            if (pub.track && pub.source === Track.Source.Camera && localVideoRef.current) {
+              pub.track.attach(localVideoRef.current);
+            }
+          });
+
+          room.on(RoomEvent.LocalTrackUnpublished, (pub: any) => {
+            if (pub.source === Track.Source.Camera && localVideoRef.current) {
+              localVideoRef.current.srcObject = null;
+            }
+          });
+
+          room.on(RoomEvent.Reconnecting, () => {
+            setStatus('connecting');
+          });
+
+          room.on(RoomEvent.Reconnected, () => {
+            setStatus('connected');
+          });
+
+          room.on(RoomEvent.Disconnected, (reason?: any) => {
+            const r = String(reason || '').toLowerCase();
+            if (r.includes('token') || r.includes('expired') || r.includes('auth') || r.includes('unauthorized')) {
+              setError('Room token expired. Please re-open the call.');
+            }
+            setStatus('ended');
+          });
+
+          await room.connect(roomInfo.signalingUrl, roomInfo.token);
+          await room.localParticipant.enableCameraAndMicrophone();
+
+          const camPub = room.localParticipant.getTrackPublication(Track.Source.Camera);
+          if (camPub?.videoTrack && localVideoRef.current) {
+            camPub.videoTrack.attach(localVideoRef.current);
+          }
+
+          if (room.remoteParticipants.size > 0) {
+            setStatus('connected');
+          } else {
+            setStatus('waiting');
+          }
+          return;
+        } catch (lkErr: any) {
+          const msg = String(lkErr?.message || '').toLowerCase();
+          if (msg.includes('expired') || msg.includes('unauthorized') || msg.includes('token') || msg.includes('jwt') || msg.includes('401')) {
+            setError('Room token expired or unauthorized. Please re-open the call.');
+          } else {
+            setError(lkErr instanceof Error ? lkErr.message : 'Could not connect to LiveKit');
+          }
+          setStatus('ended');
+          return;
+        }
+      }
+
+      // 3. WEBRTC LOCAL SIGNALING FALLBACK BRANCH (mini-services/video-signal)
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
         audio: true,
@@ -165,7 +298,7 @@ export function VideoCall({ appointmentId, onClose }: VideoCallProps) {
       setError(err instanceof Error ? err.message : 'Failed to access camera/microphone');
       setStatus('ended');
     }
-  }, [roomId, createPeerConnection]);
+  }, [appointmentId, roomId, createPeerConnection]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -174,26 +307,51 @@ export function VideoCall({ appointmentId, onClose }: VideoCallProps) {
   }, [startCall, cleanup]);
 
   const toggleMic = () => {
+    const next = !micOn;
+    if (roomRef.current) {
+      void roomRef.current.localParticipant.setMicrophoneEnabled(next);
+      setMicOn(next);
+      return;
+    }
     if (localStreamRef.current) {
       const audioTrack = localStreamRef.current.getAudioTracks()[0];
       if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setMicOn(audioTrack.enabled);
+        audioTrack.enabled = next;
+        setMicOn(next);
       }
     }
   };
 
   const toggleCam = () => {
+    const next = !camOn;
+    if (roomRef.current) {
+      void roomRef.current.localParticipant.setCameraEnabled(next).then((pub: any) => {
+        if (next && localVideoRef.current) {
+          const track = pub?.videoTrack ?? roomRef.current?.localParticipant.getTrackPublication('camera' as any)?.videoTrack;
+          if (track) track.attach(localVideoRef.current);
+        } else if (!next && localVideoRef.current) {
+          localVideoRef.current.srcObject = null;
+        }
+      });
+      setCamOn(next);
+      return;
+    }
     if (localStreamRef.current) {
       const videoTrack = localStreamRef.current.getVideoTracks()[0];
       if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setCamOn(videoTrack.enabled);
+        videoTrack.enabled = next;
+        setCamOn(next);
       }
     }
   };
 
   const endCall = () => {
+    if (roomRef.current) {
+      try {
+        roomRef.current.disconnect();
+      } catch {}
+      roomRef.current = null;
+    }
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'leave', room: roomId }));
     }
@@ -211,12 +369,20 @@ export function VideoCall({ appointmentId, onClose }: VideoCallProps) {
     >
       {/* Remote video (full screen) */}
       <div className="relative flex-1 overflow-hidden">
+        <audio ref={remoteAudioRef} autoPlay playsInline className="sr-only" aria-hidden="true" />
         <video
           ref={remoteVideoRef}
           autoPlay
           playsInline
           className="h-full w-full object-cover"
         />
+
+        {status === 'connected' && remoteVideoMuted && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-900/90 text-neutral-400">
+            <VideoOff className="h-12 w-12 text-neutral-500 animate-pulse" />
+            <p className="text-sm font-medium">Remote participant camera is off</p>
+          </div>
+        )}
 
         {/* Status overlay */}
         {status !== 'connected' && (

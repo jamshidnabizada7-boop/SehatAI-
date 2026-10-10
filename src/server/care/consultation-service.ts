@@ -45,6 +45,10 @@ export interface CreateConsultationInput {
 }
 
 export async function createConsultation(input: CreateConsultationInput) {
+  if (process.env.STAGING_BLOCK_BOOKING === 'true') {
+    throw new ConsultationError('BOOKING_HARD_BLOCKED_IN_STAGING', 403);
+  }
+
   const doctor = await db.doctorProfile.findUnique({
     where: { id: input.doctorProfileId },
     include: {
@@ -54,6 +58,12 @@ export async function createConsultation(input: CreateConsultationInput) {
     },
   });
   if (!doctor) throw new ConsultationError('DOCTOR_NOT_FOUND', 404);
+
+  if (process.env.STAGING_REQUIRE_SYNTHETIC === 'true') {
+    if (!isTestDoctorProfile(doctor)) {
+      throw new ConsultationError('STAGING_VIOLATION_NON_SYNTHETIC_DOCTOR', 403);
+    }
+  }
 
   // Prevent internal test doctors from appearing as real services in production or public rollout (§18)
   const isProd =

@@ -1,0 +1,142 @@
+// Care Connect §54 — security headers proxy (Next.js 16 proxy convention).
+// Replaces deprecated middleware.ts in accordance with Next.js 16 standards.
+// Invariant: No query parameter authentication (?staging_key= is strictly barred).
+import { NextResponse, type NextRequest } from 'next/server';
+
+export function proxy(req: NextRequest) {
+  // Security invariant: Query parameter secret passing is strictly barred across all paths
+  if (
+    req.nextUrl.searchParams.has('staging_key') ||
+    req.nextUrl.searchParams.has('stagingKey') ||
+    req.nextUrl.searchParams.has('staging_secret')
+  ) {
+    return NextResponse.json(
+      {
+        error: 'STAGING_ACCESS_DENIED',
+        message: 'Passing secrets in URL query parameters is strictly forbidden. Authenticate via header or cookie.',
+      },
+      { status: 401 }
+    );
+  }
+
+  // Private staging access control for approved testers (Section 9.5)
+  // Fail-closed invariant: If staging auth is required, STAGING_ACCESS_SECRET must be configured.
+  if (process.env.STAGING_AUTH_REQUIRED === 'true') {
+    const stagingSecret = process.env.STAGING_ACCESS_SECRET;
+    if (!stagingSecret) {
+      return NextResponse.json(
+        {
+          error: 'STAGING_AUTH_MISCONFIGURED',
+          message: 'Staging authentication is required but STAGING_ACCESS_SECRET is not configured on this server.',
+        },
+        { status: 500 }
+      );
+    }
+
+    const isPublicPath =
+      req.nextUrl.pathname === '/api/care/health' ||
+      req.nextUrl.pathname === '/api/health' ||
+      req.nextUrl.pathname === '/api/staging/unlock' ||
+      req.nextUrl.pathname === '/staging/unlock' ||
+      req.nextUrl.pathname.startsWith('/_next') ||
+      req.nextUrl.pathname === '/favicon.ico' ||
+      req.nextUrl.pathname === '/robots.txt' ||
+      req.nextUrl.pathname === '/manifest.json';
+
+    if (!isPublicPath) {
+      const headerKey = req.headers.get('x-staging-access-key');
+      const cookieKey = req.cookies.get('sehatai_staging_key')?.value;
+
+      const isAuthorized =
+        (headerKey && headerKey === stagingSecret) ||
+        (cookieKey && cookieKey === stagingSecret);
+
+      if (!isAuthorized) {
+        return NextResponse.json(
+          {
+            error: 'STAGING_ACCESS_DENIED',
+            message: 'Private staging access requires approved tester authorization (via header or cookie).',
+          },
+          { status: 401 }
+        );
+      }
+    }
+  }
+
+  // Staging defensive guards (Section 9.4)
+  if (process.env.STAGING_BLOCK_PAYMENTS === 'true') {
+    if (
+      req.nextUrl.pathname.startsWith('/api/care/payments') ||
+      req.nextUrl.pathname.startsWith('/api/care/checkout') ||
+      req.nextUrl.pathname.startsWith('/api/care/refunds') ||
+      req.nextUrl.pathname.startsWith('/api/doctor/care/payouts')
+    ) {
+      return NextResponse.json(
+        { error: 'PAYMENTS_HARD_BLOCKED_IN_STAGING', message: 'Payment processing is disabled in staging.' },
+        { status: 403 }
+      );
+    }
+  }
+
+  if (process.env.STAGING_BLOCK_BOOKING === 'true') {
+    if (
+      (req.nextUrl.pathname === '/api/appointments' && req.method === 'POST') ||
+      (req.nextUrl.pathname === '/api/care/consultations' && req.method === 'POST')
+    ) {
+      return NextResponse.json(
+        { error: 'BOOKING_HARD_BLOCKED_IN_STAGING', message: 'Public booking is disabled in staging.' },
+        { status: 403 }
+      );
+    }
+  }
+
+  if (process.env.STAGING_BLOCK_UPLOADS === 'true') {
+    const isUploadRoute =
+      req.method === 'POST' &&
+      (req.nextUrl.pathname === '/api/doctor/upload-doc' ||
+        req.nextUrl.pathname === '/api/vlm-analyze' ||
+        /^\/api\/care\/consultations\/[^/]+\/attachments$/.test(req.nextUrl.pathname));
+
+    if (isUploadRoute) {
+      return NextResponse.json(
+        { error: 'PHI_UPLOADS_HARD_BLOCKED_IN_STAGING', message: 'PHI and document uploads are prohibited on staging VM.' },
+        { status: 403 }
+      );
+    }
+  }
+
+  const res = NextResponse.next();
+  const isDev = process.env.NODE_ENV !== 'production';
+
+  // §54 — CSP: allow Next's inline runtime via nonce-less 'unsafe-inline'
+  // in dev only; production uses strict-dynamic for chunk loading.
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "media-src 'self' blob:",
+    "connect-src 'self' ws: wss:",
+    "font-src 'self' data:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ');
+
+  res.headers.set('Content-Security-Policy', csp);
+  res.headers.set('X-Frame-Options', 'DENY');
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
+  if (!isDev) {
+    res.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  }
+  return res;
+}
+
+export { proxy as middleware };
+export default proxy;
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+};

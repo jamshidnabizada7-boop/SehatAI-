@@ -81,6 +81,12 @@ function getGeminiApiKeys(): string[] {
 }
 
 export async function POST(req: NextRequest) {
+  if (process.env.STAGING_BLOCK_UPLOADS === 'true') {
+    return NextResponse.json(
+      { error: 'PHI_UPLOADS_HARD_BLOCKED_IN_STAGING', message: 'Image analysis uploads are disabled in staging.' },
+      { status: 403 }
+    );
+  }
   // Auth check — any authenticated user (patient, doctor, or admin)
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {

@@ -72,7 +72,7 @@ export function isTestDoctorProfile(doctor: {
   const bio = (doctor.bio ?? '').toLowerCase();
 
   const isTestEmail =
-    /@(test\.local|local\.test|t\.local|example\.com|example\.org|test\.com)$/i.test(email) ||
+    /@(test\.local|local\.test|t\.local|example\.com|example\.org|test\.com|sehatai\.local)$/i.test(email) ||
     email.startsWith('test-') ||
     email.startsWith('test_') ||
     email.startsWith('staging-') ||
@@ -80,8 +80,8 @@ export function isTestDoctorProfile(doctor: {
     email.includes('.test@');
 
   const isTestPmdc =
-    /^(TEST|STG|DEMO|SIM|MOCK|DUMMY|STAGE|STAGING|RED|PAY|SUSP|LOCK|IT|SMOKE|PG)/i.test(pmdc) ||
-    /(TEST|STG|DEMO|SIM|MOCK|DUMMY|STAGING)/i.test(pmdc);
+    /^(TEST|STG|DEMO|SIM|MOCK|DUMMY|STAGE|STAGING|RED|PAY|SUSP|LOCK|IT|SMOKE|PG|SYNTH)/i.test(pmdc) ||
+    /(TEST|STG|DEMO|SIM|MOCK|DUMMY|STAGING|SYNTH)/i.test(pmdc);
 
   const isTestName =
     name.includes('[test]') ||

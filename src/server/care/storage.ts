@@ -67,6 +67,9 @@ export class LocalPrivateStorage implements StorageProvider {
   readonly name = 'local-private';
 
   async put(key: string, data: Buffer): Promise<StoredObject> {
+    if (process.env.STAGING_BLOCK_UPLOADS === 'true') {
+      throw new Error('PHI_UPLOADS_HARD_BLOCKED_IN_STAGING: Medical document and attachment uploads are prohibited in staging environment');
+    }
     // Path-traversal hardening (§87 file traversal): flatten the key.
     const safeKey = key.replace(/[^a-zA-Z0-9._-]/g, '_');
     const bucket = safeKey.slice(0, 2);

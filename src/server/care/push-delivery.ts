@@ -25,6 +25,16 @@ export async function deliverPendingPush(userId: string): Promise<{ sent: number
     take: 10,
   });
   if (notifications.length === 0) return { sent: 0, failed: 0 };
+  if (process.env.STAGING_BLOCK_EXTERNAL_DELIVERY === 'true') {
+    // In synthetic staging: mark processed without triggering external webpush packets
+    for (const notification of notifications) {
+      await db.notification.update({
+        where: { id: notification.id },
+        data: { state: 'SENT', sentAt: new Date() },
+      }).catch(() => undefined);
+    }
+    return { sent: notifications.length, failed: 0 };
+  }
   if (!ensureVapid()) return { sent: 0, failed: 0, unconfigured: true };
 
   const subscriptions = await db.pushSubscription.findMany({ where: { userId }, take: 5 });

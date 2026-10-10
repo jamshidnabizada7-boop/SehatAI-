@@ -21,6 +21,7 @@ async function main() {
       secondOpinionAllowed: true, minorConsultationAllowed: true,
       requiresGuardian: false, requiresLocalDoctor: false,
       policyVersion: '2026.10-initial',
+      effectiveDate: new Date('2026-01-01T00:00:00Z'),
     },
     // Afghanistan domestic corridor
     {
@@ -30,6 +31,7 @@ async function main() {
       secondOpinionAllowed: true, minorConsultationAllowed: true,
       requiresGuardian: false, requiresLocalDoctor: false,
       policyVersion: '2026.10-initial',
+      effectiveDate: new Date('2026-01-01T00:00:00Z'),
     },
     // Cross-border: Afghan patient, PK-licensed doctor — second opinions only,
     // no local claims. NOTE: requiresLocalDoctor=true blocks routine booking
@@ -41,6 +43,7 @@ async function main() {
       secondOpinionAllowed: true, minorConsultationAllowed: true,
       requiresGuardian: false, requiresLocalDoctor: true,
       policyVersion: '2026.10-initial',
+      effectiveDate: new Date('2026-01-01T00:00:00Z'),
     },
     {
       countryCode: 'PK', doctorCountry: 'AF',
@@ -49,6 +52,7 @@ async function main() {
       secondOpinionAllowed: true, minorConsultationAllowed: true,
       requiresGuardian: false, requiresLocalDoctor: true,
       policyVersion: '2026.10-initial',
+      effectiveDate: new Date('2026-01-01T00:00:00Z'),
     },
   ];
   for (const p of policies) {

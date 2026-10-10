@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth';
+import { liveKitConfigured, generateLiveKitToken } from '@/server/care/video-service';
 
 export const runtime = 'nodejs';
 
@@ -33,11 +34,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Not authorized for this appointment' }, { status: 403 });
   }
 
+  const role = isDoctor ? 'DOCTOR' : 'PATIENT';
+  const roomId = `appt-${appointmentId}`;
+  let liveKitToken: string | null = null;
+  let liveKitUrl: string | null = null;
+
+  if (liveKitConfigured() && process.env.CARE_VIDEO_PROVIDER === 'livekit') {
+    liveKitUrl = process.env.LIVEKIT_URL ?? null;
+    liveKitToken = generateLiveKitToken({
+      roomId,
+      userId: user.id,
+      role,
+      consultationId: appointmentId,
+      apiKey: process.env.LIVEKIT_API_KEY!,
+      apiSecret: process.env.LIVEKIT_API_SECRET!,
+    });
+  }
+
   return NextResponse.json({
-    roomId: `appt-${appointmentId}`,
+    roomId,
     signalPort: SIGNAL_PORT,
     role: isDoctor ? 'doctor' : 'patient',
     appointmentStatus: appt.status,
+    provider: liveKitToken ? 'livekit' : 'webrtc-local',
+    token: liveKitToken,
+    signalingUrl: liveKitUrl,
   });
 }
 
@@ -79,10 +100,27 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  let liveKitToken: string | null = null;
+  let liveKitUrl: string | null = null;
+  if (liveKitConfigured() && process.env.CARE_VIDEO_PROVIDER === 'livekit') {
+    liveKitUrl = process.env.LIVEKIT_URL ?? null;
+    liveKitToken = generateLiveKitToken({
+      roomId: `appt-${appointmentId}`,
+      userId: user.id,
+      role: isDoctor ? 'DOCTOR' : 'PATIENT',
+      consultationId: appointmentId,
+      apiKey: process.env.LIVEKIT_API_KEY!,
+      apiSecret: process.env.LIVEKIT_API_SECRET!,
+    });
+  }
+
   return NextResponse.json({
     ok: true,
     roomId: `appt-${appointmentId}`,
     signalPort: SIGNAL_PORT,
     action,
+    provider: liveKitToken ? 'livekit' : 'webrtc-local',
+    token: liveKitToken,
+    signalingUrl: liveKitUrl,
   });
 }

@@ -455,7 +455,16 @@ describe('2. Complete Patient-to-Doctor Consultation Staging Lifecycle', () => {
     const liveKitProvider = new LiveKitVideoProvider();
     expect(liveKitProvider.isProductionReady).toBe(true);
     // Without cloud env configured, livekit throws
+    const prevLiveKitUrl = process.env.LIVEKIT_URL;
+    delete process.env.LIVEKIT_URL;
     expect(() => liveKitProvider.issueToken({ consultationId, userId: patientId, role: 'PATIENT' })).toThrow();
+    process.env.LIVEKIT_URL = prevLiveKitUrl;
+
+    if (prevLiveKitUrl) {
+      const issued = liveKitProvider.issueToken({ consultationId, userId: patientId, role: 'PATIENT' });
+      expect(issued.provider).toBe('livekit');
+      expect(issued.token).toBeDefined();
+    }
 
     // With staging credentials, generates valid LiveKit token with recorder: false
     const stagingLiveKitJwt = generateLiveKitToken({
