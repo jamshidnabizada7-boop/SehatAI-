@@ -76,6 +76,15 @@ export function CareConnectView() {
   const [tab, setTab] = useState<Tab>(role === 'doctor' ? 'consultations' : 'find');
   const [openConsultationId, setOpenConsultationId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    const cid = url.searchParams.get('consultationId');
+    if (cid && !openConsultationId) {
+      setOpenConsultationId(cid);
+    }
+  }, [openConsultationId]);
+
   if (openConsultationId) {
     return (
       <div className="h-full">

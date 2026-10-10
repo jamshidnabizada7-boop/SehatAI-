@@ -688,6 +688,9 @@ function CareCallModal({
       disconnectTimerRef.current = null;
     }
     if (roomRef.current) {
+      if (typeof window !== 'undefined' && (window as any).__liveKitRoom === roomRef.current) {
+        (window as any).__liveKitRoom = null;
+      }
       try {
         roomRef.current.disconnect();
       } catch { /* ignore */ }
@@ -852,6 +855,9 @@ function CareCallModal({
             dynacast: true,
           });
           roomRef.current = room;
+          if (typeof window !== 'undefined') {
+            (window as any).__liveKitRoom = room;
+          }
 
           // Wire remote media tracks
           room.on(RoomEvent.TrackSubscribed, (track: any) => {
@@ -952,6 +958,18 @@ function CareCallModal({
           }
 
           if (room.remoteParticipants.size > 0) {
+            room.remoteParticipants.forEach((p: any) => {
+              p.trackPublications.forEach((pub: any) => {
+                if (pub.track) {
+                  if (pub.track.kind === Track.Kind.Video && remoteVideoRef.current) {
+                    pub.track.attach(remoteVideoRef.current);
+                    setRemoteVideoMuted(false);
+                  } else if (pub.track.kind === Track.Kind.Audio && remoteAudioRef.current) {
+                    pub.track.attach(remoteAudioRef.current);
+                  }
+                }
+              });
+            });
             setStatus('connected');
             setStatusText('Connected');
             void reportState('ACTIVE');
@@ -1123,10 +1141,10 @@ function CareCallModal({
 
         {/* Media viewports */}
         <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-          <audio ref={remoteAudioRef} autoPlay playsInline className="sr-only" aria-hidden="true" />
+          <audio ref={remoteAudioRef} data-testid="remote-audio" autoPlay playsInline className="sr-only" aria-hidden="true" />
           {mode === 'VIDEO' ? (
             <>
-              <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
+              <video ref={remoteVideoRef} data-testid="remote-video" autoPlay playsInline className="h-full w-full object-cover" />
               {remoteVideoMuted ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/90 text-neutral-400">
                   <VideoOff className="h-12 w-12 mb-2 text-neutral-500 animate-pulse" />
@@ -1135,6 +1153,7 @@ function CareCallModal({
               ) : null}
               <video
                 ref={localVideoRef}
+                data-testid="local-video"
                 autoPlay
                 playsInline
                 muted

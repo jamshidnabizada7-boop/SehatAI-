@@ -23,6 +23,11 @@ node_modules
 # misc
 .DS_Store
 *.pem
+certs/
+*.crt
+*.key
+*.csr
+temp/
 
 # debug
 npm-debug.log*

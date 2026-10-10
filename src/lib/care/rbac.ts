@@ -72,6 +72,7 @@ const ROLE_CAPABILITIES: Record<CareRole, CareCapability[]> = {
     'prescription.view',
     'attachment.upload',
     'attachment.download',
+    'call.token',
     'payout.request', // n/a for patients (route gates by doctor ownership) — harmless
   ],
   DOCTOR: [
