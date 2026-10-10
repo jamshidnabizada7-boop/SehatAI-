@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
     onlineNow: url.searchParams.get('onlineNow') === 'true',
     patientId: session?.id ?? null,
     sort: (url.searchParams.get('sort') as 'relevance' | 'price_asc' | 'price_desc' | 'rating') || 'relevance',
+    includeTest: url.searchParams.get('includeTest') === 'true' || process.env.APP_ENV === 'staging' || process.env.SEHATAI_STAGING === '1' || process.env.STAGING_MODE === 'true',
   });
 
   return NextResponse.json({

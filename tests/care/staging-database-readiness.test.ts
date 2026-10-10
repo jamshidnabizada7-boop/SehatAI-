@@ -27,7 +27,7 @@ import { createConsultation, ConsultationError } from '../../src/server/care/con
 import { createCheckoutForConsultation, PaymentError } from '../../src/server/care/payments/payment-service';
 import { getStorage } from '../../src/server/care/storage';
 
-const prisma = new PrismaClient();
+import { db as prisma } from '../../src/lib/db';
 const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET || '32-character-secret-for-testing-only-12345';
 const stamp = `stg_ready_${Date.now()}`;
 

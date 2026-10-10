@@ -28,6 +28,8 @@ certs/
 *.key
 *.csr
 temp/
+backups/
+storage/care/**/*.pdf
 
 # debug
 npm-debug.log*

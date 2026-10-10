@@ -1,16 +1,16 @@
 // scripts/verify-archive-extraction.ts
-// Verifies standalone release archive v0.2.2:
+// Verifies standalone release archive v0.2.3:
 // Extracts into clean temp directory, inspects assets, node_modules, Prisma ARM64 binary, and checks for secret leaks.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 
-const ARCHIVE_PATH = path.resolve('deploy/sehatai-staging-v0.2.2-arm64-standalone.tar.gz');
-const EXTRACT_DIR = path.resolve('temp/v022-extract-verify');
+const ARCHIVE_PATH = path.resolve('deploy/sehatai-staging-v0.2.3-arm64-standalone.tar.gz');
+const EXTRACT_DIR = path.resolve('temp/v023-extract-verify');
 
 console.log('======================================================================');
-console.log('==> AUDITING STANDALONE RELEASE ARCHIVE (v0.2.2)');
+console.log('==> AUDITING STANDALONE RELEASE ARCHIVE (v0.2.3)');
 console.log('======================================================================');
 
 if (!fs.existsSync(ARCHIVE_PATH)) {

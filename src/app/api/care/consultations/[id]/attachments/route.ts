@@ -14,6 +14,9 @@ export const runtime = 'nodejs';
 function err(e: unknown) {
   if (e instanceof CareAuthzError) return NextResponse.json({ error: e.message }, { status: e.status });
   if (e instanceof ConsultationError) return NextResponse.json({ error: e.code }, { status: e.status });
+  if (e instanceof Error && e.message.includes('PHI_UPLOADS_HARD_BLOCKED_IN_STAGING')) {
+    return NextResponse.json({ error: 'PHI_UPLOADS_HARD_BLOCKED_IN_STAGING' }, { status: 403 });
+  }
   return NextResponse.json({ error: e instanceof Error ? e.message : 'ERROR' }, { status: 500 });
 }
 
