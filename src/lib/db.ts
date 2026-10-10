@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { NextResponse } from 'next/server';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -136,3 +137,68 @@ export const db =
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
+
+/**
+ * Detects whether an error represents a database connectivity failure or initialization error (§Check 1).
+ * Prevents leaking connection strings, credentials, or internal stack traces to clients.
+ */
+export function isDatabaseDisconnectionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as Record<string, any>;
+  const name = String(err.name || '');
+  const message = String(err.message || '');
+  const code = String(err.code || '');
+
+  // Prisma Client initialization or rust engine panic
+  if (name === 'PrismaClientInitializationError' || name === 'PrismaClientRustPanicError') {
+    return true;
+  }
+
+  // Prisma Client known request connection errors (P1000..P1017)
+  if (name === 'PrismaClientKnownRequestError') {
+    if (code === 'P1000' || code === 'P1001' || code === 'P1002' || code === 'P1003' || code === 'P1008' || code === 'P1017') {
+      return true;
+    }
+  }
+
+  // Underlying OS/network socket errors
+  if (['ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'EHOSTUNREACH', 'ECONNRESET', 'EPIPE'].includes(code)) {
+    return true;
+  }
+
+  // Explicit database unavailable status attached
+  if (err.status === 503 || err.isDatabaseUnavailable === true) {
+    return true;
+  }
+
+  // Common connection failure substrings
+  if (
+    message.includes("Can't reach database server") ||
+    message.includes('Connection refused') ||
+    message.includes('connection timed out') ||
+    message.includes('database is not running') ||
+    message.includes('timed out waiting for a connection') ||
+    message.includes('Server has closed the connection') ||
+    message.includes('connect_timeout')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Standard controlled HTTP 503 Service Unavailable response for database connectivity issues.
+ * Sanitizes all output to ensure internal connection strings, credentials, or stack traces are never leaked.
+ */
+export function databaseUnavailableResponse(): NextResponse {
+  return NextResponse.json(
+    { error: 'Database service currently unavailable. Please retry shortly.' },
+    {
+      status: 503,
+      headers: {
+        'Retry-After': '30',
+      },
+    }
+  );
+}

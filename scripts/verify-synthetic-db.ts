@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import { db } from '../src/lib/db';
 
-const prisma = new PrismaClient();
+const prisma = db as unknown as PrismaClient;
 
 const CNIC_REGEX = /\b\d{5}-?\d{7}-?\d{1}\b/;
 

@@ -10,7 +10,8 @@ export async function GET() {
     await db.$queryRawUnsafe('SELECT 1');
   } catch (e: any) {
     dbStatus = 'disconnected';
-    dbError = (e as Error).message;
+    // Controlled error message without exposing connection strings, passwords, or stack traces (§Check 1)
+    dbError = 'Database service currently unavailable. Please retry shortly.';
   }
 
   const isHealthy = dbStatus === 'connected';

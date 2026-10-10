@@ -7,7 +7,7 @@
 // The role is decided by the SERVER based on the route the client used + the intendedRole hint —
 // never trust a client-supplied role field directly.
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, isDatabaseDisconnectionError, databaseUnavailableResponse } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -41,7 +41,8 @@ function rateLimitOk(ip: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  // Care Connect §56 — DB-backed rate limit on all signups (additive to
+  try {
+    // Care Connect §56 — DB-backed rate limit on all signups (additive to
   // the in-memory doctor-signup limiter below; works across instances).
   const { rateLimit, clientIpFrom, RATE_LIMITS } = await import('@/lib/care/rate-limit');
   const rl = await rateLimit(`signup:${clientIpFrom(req)}`, RATE_LIMITS.signup.limit, RATE_LIMITS.signup.windowSeconds);
@@ -187,4 +188,11 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ ok: true, userId: user.id, role: 'user', accountStatus: 'active' });
+  } catch (err: any) {
+    if (isDatabaseDisconnectionError(err) || err?.status === 503) {
+      return databaseUnavailableResponse();
+    }
+    console.error('[signup] error:', err?.message || err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

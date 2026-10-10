@@ -19,7 +19,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 // Use the shared prisma client (not a new instance) when possible
-import { db } from '@/lib/db';
+import { db, isDatabaseDisconnectionError } from '@/lib/db';
 
 if (!process.env.NEXTAUTH_SECRET) {
   // Fail fast in dev if secret missing — never use a default secret in prod
@@ -52,7 +52,17 @@ export const authOptions: NextAuthOptions = {
           const rl = await rateLimit(`login:${email}`, 10, 300);
           if (!rl.allowed) return null;
         } catch { /* fail-open */ }
-        const user = await prisma.user.findUnique({ where: { email } });
+        let user;
+        try {
+          user = await prisma.user.findUnique({ where: { email } });
+        } catch (err) {
+          if (isDatabaseDisconnectionError(err)) {
+            const dbErr = new Error('Database service currently unavailable. Please retry shortly.');
+            (dbErr as any).status = 503;
+            throw dbErr;
+          }
+          return null;
+        }
         // To prevent user enumeration, return null both for "no user" and "bad password"
         if (!user || !user.passwordHash) return null;
         const ok = await bcrypt.compare(credentials.password, user.passwordHash);
@@ -145,27 +155,38 @@ export async function requireUser(): Promise<{ id: string; email: string; role: 
   }
 
   // Live database re-verification: guarantees immediate revocation of suspended accounts or demoted roles
-  const user = await db.user.findUnique({
-    where: { email: session.user.email.toLowerCase() },
-    select: { id: true, email: true, role: true, accountStatus: true },
-  });
-  if (!user) {
-    const err = new Error('Unauthorized');
-    (err as any).status = 401;
-    throw err;
-  }
-  if (user.accountStatus === 'suspended' || user.accountStatus === 'deleted') {
-    const err = new Error('Forbidden — account suspended');
-    (err as any).status = 403;
-    throw err;
-  }
+  try {
+    const user = await db.user.findUnique({
+      where: { email: session.user.email.toLowerCase() },
+      select: { id: true, email: true, role: true, accountStatus: true },
+    });
+    if (!user) {
+      const err = new Error('Unauthorized');
+      (err as any).status = 401;
+      throw err;
+    }
+    if (user.accountStatus === 'suspended' || user.accountStatus === 'deleted') {
+      const err = new Error('Forbidden — account suspended');
+      (err as any).status = 403;
+      throw err;
+    }
 
-  return {
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    accountStatus: user.accountStatus,
-  };
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      accountStatus: user.accountStatus,
+    };
+  } catch (err: any) {
+    if (err?.status) throw err;
+    if (isDatabaseDisconnectionError(err)) {
+      const dbErr = new Error('Database service currently unavailable. Please retry shortly.');
+      (dbErr as any).status = 503;
+      (dbErr as any).isDatabaseUnavailable = true;
+      throw dbErr;
+    }
+    throw err;
+  }
 }
 
 // Helper: require an authenticated doctor (role === 'doctor').
@@ -200,10 +221,21 @@ export async function requireActiveDoctor(): Promise<{ id: string; email: string
     (err as any).status = 403;
     throw err;
   }
-  const profile = await db.doctorProfile.findUnique({
-    where: { userId: u.id },
-    include: { credentials: true },
-  });
+  let profile;
+  try {
+    profile = await db.doctorProfile.findUnique({
+      where: { userId: u.id },
+      include: { credentials: true },
+    });
+  } catch (err: any) {
+    if (isDatabaseDisconnectionError(err)) {
+      const dbErr = new Error('Database service currently unavailable. Please retry shortly.');
+      (dbErr as any).status = 503;
+      (dbErr as any).isDatabaseUnavailable = true;
+      throw dbErr;
+    }
+    throw err;
+  }
   const docCountry = (profile?.country ?? 'PK').toUpperCase();
   const hasVerifiedCred = profile?.credentials?.some(
     (c) =>

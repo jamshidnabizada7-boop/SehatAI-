@@ -360,6 +360,44 @@ async function main() {
     });
     doctorSessionCookie = `next-auth.session-token=${docToken}; __Secure-next-auth.session-token=${docToken}`;
 
+    // 1.5 Genuine Authenticated Doctor API Access Check (Positive Test: HTTP 200 OK) (§Check 2)
+    const docProfileRes = await fetch(`${BASE_URL}/api/doctor/profile`, {
+      headers: { Cookie: doctorSessionCookie },
+    });
+    const docProfileData = await docProfileRes.json();
+    record(
+      '1. Auth',
+      'Doctor-only route positive access with verified doctor session (GET /api/doctor/profile)',
+      docProfileRes.status,
+      200,
+      docProfileRes.status === 200 && docProfileData.ok === true && docProfileData.profile?.pmdcNumber === 'PMC-77441',
+      docProfileData
+    );
+
+    // 1.6 Unauthorized Patient Access Rejected (Negative Test: HTTP 403 FORBIDDEN) (§Check 2)
+    const ptDoctorRes = await fetch(`${BASE_URL}/api/doctor/profile`, {
+      headers: { Cookie: patientSessionCookie },
+    });
+    const ptDoctorData = await ptDoctorRes.json();
+    record(
+      '1. Auth',
+      'Doctor-only route negative test: Patient role strictly rejected (GET /api/doctor/profile -> 403)',
+      ptDoctorRes.status,
+      403,
+      ptDoctorRes.status === 403,
+      ptDoctorData
+    );
+
+    // 1.7 Anonymous Unauthenticated Access Rejected (Negative Test: HTTP 401 UNAUTHORIZED)
+    const anonDoctorRes = await fetch(`${BASE_URL}/api/doctor/profile`);
+    record(
+      '1. Auth',
+      'Doctor-only route negative test: Anonymous unauthenticated rejected (GET /api/doctor/profile -> 401)',
+      anonDoctorRes.status,
+      401,
+      anonDoctorRes.status === 401
+    );
+
     // --------------------------------------------------------------------------
     // Test 2: User profiles and database reads/writes
     // --------------------------------------------------------------------------
@@ -799,19 +837,20 @@ async function main() {
     const ready = await waitForServer(DISCONNECTED_URL, 30);
     if (!ready) throw new Error('Disconnected server failed to start');
 
-    // 8.1 Health check reports degraded with 503
+    // 8.1 Health check reports degraded with 503 and sanitized database status
     const healthRes = await fetch(`${DISCONNECTED_URL}/api/care/health`);
     const healthData = await healthRes.json();
+    const noInternalLeaks = !JSON.stringify(healthData).includes('postgres:') && !JSON.stringify(healthData).includes('invalid_password_test');
     record(
       '8. DB Disconnection',
-      'Health check reports degraded & 503 during database failure',
+      'Health check reports degraded & 503 without leaking database internals',
       healthRes.status,
       503,
-      healthRes.status === 503 && healthData.status === 'degraded' && healthData.database?.status === 'disconnected',
+      healthRes.status === 503 && healthData.status === 'degraded' && healthData.database?.status === 'disconnected' && noInternalLeaks,
       healthData
     );
 
-    // 8.2 Database write route reports failure (actual HTTP status recorded; NOT marked pass if successful)
+    // 8.2 Database write route returns controlled HTTP 503 Service Unavailable (§Check 1)
     const failPtEmail = `${stamp}-fail-pt@sehatai.local`;
     const failSignupRes = await fetch(`${DISCONNECTED_URL}/api/auth/signup`, {
       method: 'POST',
@@ -822,14 +861,14 @@ async function main() {
         consent: true,
       }),
     });
-    // Record actual HTTP status code
+    const failSignupData = await failSignupRes.json().catch(() => ({}));
     record(
       '8. DB Disconnection',
-      `Signup fails properly during DB disconnection (Got HTTP ${failSignupRes.status})`,
+      `Signup returns controlled HTTP 503 Service Unavailable during DB failure (Got HTTP ${failSignupRes.status})`,
       failSignupRes.status,
-      500,
-      failSignupRes.status >= 500, // True failure behavior: must NOT succeed (e.g. 500 Internal Error)
-      { statusText: failSignupRes.statusText }
+      503,
+      failSignupRes.status === 503 && failSignupData.error === 'Database service currently unavailable. Please retry shortly.',
+      failSignupData
     );
   } finally {
     disconnectedProcess.kill();

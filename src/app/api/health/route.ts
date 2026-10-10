@@ -11,13 +11,15 @@ export async function GET() {
   try {
     await db.facility.count();
   } catch {
-    dbStatus = 'error';
+    dbStatus = 'disconnected';
   }
+  const isHealthy = dbStatus === 'connected';
   return NextResponse.json({
-    status: dbStatus === 'connected' ? 'ok' : 'degraded',
+    status: isHealthy ? 'ok' : 'degraded',
     db: dbStatus,
     corpus: CORPUS.length,
     lexicon: RED_FLAG_PATTERNS.length,
     time: new Date().toISOString(),
-  });
+    ...(isHealthy ? {} : { error: 'Database service currently unavailable. Please retry shortly.' }),
+  }, { status: isHealthy ? 200 : 503 });
 }
