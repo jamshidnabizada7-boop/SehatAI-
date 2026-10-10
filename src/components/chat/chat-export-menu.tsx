@@ -77,7 +77,7 @@ export function ChatExportMenu({ messages, lang, className }: ChatExportMenuProp
 
   const printTranscript = useCallback(() => {
     if (messages.length === 0) return;
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
+    const printWindow = window.open('', '_blank');
     if (!printWindow) {
       toast({ description: 'Pop-up blocked — allow pop-ups to print', variant: 'destructive' });
       return;

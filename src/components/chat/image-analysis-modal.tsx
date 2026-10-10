@@ -152,9 +152,19 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
       setResult(data);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
-      setError(msg);
+      const isPhiBlocked = msg.includes('PHI_UPLOADS_HARD_BLOCKED_IN_STAGING') || msg.includes('403');
+      const errorMsg = isPhiBlocked
+        ? (lang === 'ur'
+            ? 'سٹيجنگ ماحول میں رازداری کی خاطر تصاویر اپ لوڈ کرنے پر پابندی ہے (PHI_UPLOADS_HARD_BLOCKED_IN_STAGING)'
+            : lang === 'roman'
+              ? 'Staging mahol mein images upload band hain (PHI_UPLOADS_HARD_BLOCKED_IN_STAGING)'
+              : 'Medical image uploads are disabled in staging for patient privacy (PHI_UPLOADS_HARD_BLOCKED_IN_STAGING).')
+        : msg;
+      setError(errorMsg);
       toast({
-        description: lang === 'ur' ? 'تجزیہ ناکام ہوا' : lang === 'roman' ? 'Tajziya nakam howa' : 'Analysis failed',
+        description: isPhiBlocked
+          ? (lang === 'ur' ? 'سٹيجنگ میں تصویری اپ لوڈ معطل ہے' : lang === 'roman' ? 'Staging mein upload band hai' : 'Image analysis disabled in staging')
+          : (lang === 'ur' ? 'تجزیہ ناکام ہوا' : lang === 'roman' ? 'Tajziya nakam howa' : 'Analysis failed'),
         variant: 'destructive',
       });
     } finally {
@@ -235,6 +245,25 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
 
             {/* Scrollable content */}
             <div className="custom-scrollbar flex-1 overflow-y-auto p-5">
+              {/* Staging environment privacy notice */}
+              <div className="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div>
+                    <p className="font-bold">
+                      {lang === 'ur' ? 'سٹيجنگ رازداری کی پالیسی' : lang === 'roman' ? 'Staging Privacy Notice' : 'Staging Privacy Notice'}
+                    </p>
+                    <p className="text-[11px] mt-0.5 leading-relaxed text-amber-900/80 dark:text-amber-300/80">
+                      {lang === 'ur'
+                        ? 'مریضوں کی ذاتی معلومات (PHI) کے تحفظ کے لیے سٹيجنگ ماحول میں تصاویر اپ لوڈ کرنا معطل ہے۔'
+                        : lang === 'roman'
+                          ? 'Mareezon ki private health information ke tahaffuz ke liye staging par image upload band hai (PHI_UPLOADS_HARD_BLOCKED_IN_STAGING).'
+                          : 'Medical image uploads are strictly disabled in private staging to protect patient health information (PHI_UPLOADS_HARD_BLOCKED_IN_STAGING). Diagnostic image analysis is enabled only in certified production environments.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Image upload zone */}
               <p className="mb-2 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 {labels.imageLabel}

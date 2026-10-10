@@ -109,6 +109,7 @@ export interface PipelineResult extends DoneStageData {
   urduVersion?: string;
   emergency?: EmergencyStageData | null;
   events: { stage: PipelineStage; data: unknown }[];
+  meta?: Record<string, unknown>;
 }
 
 // ---------- L1 structured extraction ----------
@@ -500,6 +501,72 @@ function escalateOne(level: TriageLevel): TriageLevel {
   return 'URGENT';
 }
 
+export function extractEmergencySymptoms(message: string, category?: string): string[] {
+  const text = message.toLowerCase();
+  const symptoms: string[] = [];
+
+  // Cardiac / Chest symptoms
+  if (/crushing chest pain|chest pain|chest tightness|chest pressure|chest discomfort|sine me dard|seene me dard|seene mein dard|سینے میں درد/i.test(text)) {
+    symptoms.push('Severe chest pain');
+  }
+  if (/radiat|arm and jaw|left arm|right arm|jaw|neck|shoulder|kandhe|bazu|baazu|جبڑے|بازو/i.test(text)) {
+    symptoms.push('Radiation to arm/jaw');
+  }
+  if (/sweat|diaphoresis|perspir|paseena|paseenay|پسینہ/i.test(text)) {
+    symptoms.push('Profuse sweating');
+  }
+  if (/shortness of breath|breathless|difficulty breathing|dyspnea|saans|dam ghut|سانس/i.test(text)) {
+    symptoms.push('Shortness of breath');
+  }
+  if (/dizziness|lightheaded|syncope|faint|chakkar|چکر/i.test(text)) {
+    symptoms.push('Dizziness');
+  }
+  if (/palpitation|racing heart|fluttering|dil ki dharkan|دل کی دھڑکن/i.test(text)) {
+    symptoms.push('Palpitations');
+  }
+
+  // Neurological / Stroke
+  if (/weakness|numbness|facial droop|paralysis|hemiplegia|kamzori|sunn|فالج|کمزوری/i.test(text)) {
+    symptoms.push('Neurological weakness/numbness');
+  }
+  if (/slurred speech|speech difficulty|unable to speak|bolne me|بولنے میں دشواری/i.test(text)) {
+    symptoms.push('Speech difficulty');
+  }
+  if (/severe headache|thunderclap|worst headache|shadeed sar dard|شدید سر درد/i.test(text)) {
+    symptoms.push('Severe sudden headache');
+  }
+  if (/unconscious|fainted|loss of consciousness|unresponsive|behosh|behoshi|بے ہوش|بے ہوشی/i.test(text)) {
+    symptoms.push('Loss of consciousness');
+  }
+  if (/seizure|convulsion|fit|fits|jhatkay|جھٹکے/i.test(text)) {
+    symptoms.push('Seizure / Convulsions');
+  }
+
+  // Trauma / Bleeding
+  if (/bleeding|hemorrhage|blood|khoon|خون/i.test(text)) {
+    symptoms.push('Severe bleeding');
+  }
+  if (/vomiting blood|coughing blood|blood in vomit|hematemesis|hemoptysis|khoon ki ulti|خون کی الٹی/i.test(text)) {
+    symptoms.push('Internal bleeding / Hemoptysis');
+  }
+
+  // Anaphylaxis
+  if (/throat closing|stridor|anaphylaxis|swollen lips|tongue swelling|hives|gala band|سوجن/i.test(text)) {
+    symptoms.push('Airway swelling / Anaphylaxis signs');
+  }
+
+  // Default fallback if no specific keyword matched
+  if (symptoms.length === 0) {
+    if (category === 'cardiac') symptoms.push('Acute cardiac symptoms');
+    else if (category === 'stroke') symptoms.push('Acute neurological deficits');
+    else if (category === 'respiratory') symptoms.push('Acute respiratory distress');
+    else if (category === 'trauma') symptoms.push('Acute traumatic injury');
+    else symptoms.push('Acute emergency danger signs');
+  }
+
+  return symptoms;
+}
+
 function buildEmergencyContent(
   tplTitle: string,
   reasonIntro: string,
@@ -514,10 +581,10 @@ function buildEmergencyContent(
   lines.push(reasonIntro);
   lines.push('');
   lines.push(lang === 'ur' ? 'فوری اقدام:' : lang === 'roman' ? 'Fori iqdam:' : 'Immediate actions:');
-  actions.forEach((a) => lines.push(`• ${a}`));
+  actions.forEach((a) => lines.push(`- ${a}`));
   lines.push('');
   lines.push(lang === 'ur' ? 'نہ کریں:' : lang === 'roman' ? 'Na karein:' : 'Do NOT:');
-  doNot.forEach((d) => lines.push(`• ${d}`));
+  doNot.forEach((d) => lines.push(`- ${d}`));
   lines.push('');
 
   const nums = emergencyNumbers && emergencyNumbers.length > 0 ? emergencyNumbers : EMERGENCY_NUMBERS;
@@ -1785,6 +1852,7 @@ export async function runPipeline(
     const content = buildEmergencyContent(tpl.title[lang], tpl.reasonIntro[lang], emergencyData.actions, emergencyData.doNot, lang, emergencyNumbers);
     const citations = templateCitations(tpl.sources);
     const totalMs = Date.now() - t0;
+    const extractedSymptoms = extractEmergencySymptoms(message, templateCategory);
 
     const meta = {
       version: 1,
@@ -1792,6 +1860,14 @@ export async function runPipeline(
       engine: triageEngine,
       templateCategory,
       matchedPatternId: patternId,
+      symptoms: extractedSymptoms,
+      l0: {
+        shortCircuited: true,
+        engine: triageEngine,
+        templateCategory,
+        symptoms: extractedSymptoms,
+        signals,
+      },
       latencies: { ...latencies, total: totalMs },
       stages: events.map((e) => e.stage),
     };
@@ -1826,6 +1902,7 @@ export async function runPipeline(
       emergency: emergencyData,
       confidence: { band: 'HIGH', score: 1, reasons: ['emergency short-circuit — deterministic template'] },
       events,
+      meta: meta as Record<string, unknown>,
     };
     // Phase 1: audit-log the completed emergency run for authenticated users
     await logPipelineAudit({
@@ -2799,6 +2876,7 @@ export async function runPipeline(
     emergency: null,
     confidence: finalConfidence,
     events,
+    meta: meta as Record<string, unknown>,
   };
 
   // Phase 1 — Observability: record aggregated metrics (no PHI).

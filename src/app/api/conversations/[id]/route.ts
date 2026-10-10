@@ -56,9 +56,12 @@ export async function GET(
     const conv = (await db.conversation.findUnique({
       where: { id },
       include: {
-        messages: { orderBy: { createdAt: 'asc' } },
+        messages: {
+          include: { triageEvents: true },
+          orderBy: { createdAt: 'asc' },
+        },
       },
-    })) as unknown as (ConversationRow & { messages: MessageRow[] }) | null;
+    })) as unknown as (ConversationRow & { messages: (MessageRow & { triageEvents?: Array<{ level: string; engine: string; shortCircuited: boolean; signals: string }> })[] }) | null;
 
     if (!conv) {
       return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
@@ -72,16 +75,32 @@ export async function GET(
 
     let isAuthorizedDoctor = false;
     if (session?.user && (session.user as { role?: string }).role === 'doctor' && sessionUserId) {
-      const doctorProfile = await db.doctorProfile.findUnique({ where: { userId: sessionUserId } });
-      if (doctorProfile?.pmdcVerifiedAt && conv.userId) {
-        const consent = await db.patientConsentForDoctor.findFirst({
-          where: { doctorId: doctorProfile.id, patientId: conv.userId, revokedAt: null },
+      // 1. Check Care Connect consultation where doctor is assigned to this patient
+      if (conv.userId) {
+        const careConsult = await db.consultation.findFirst({
+          where: {
+            doctorUserId: sessionUserId,
+            patientId: conv.userId,
+          },
         });
-        const appointment = await db.appointment.findFirst({
-          where: { doctorProfileId: doctorProfile.id, patientId: conv.userId },
-        });
-        if (consent || appointment) {
+        if (careConsult) {
           isAuthorizedDoctor = true;
+        }
+      }
+
+      // 2. Check legacy consent / appointment
+      if (!isAuthorizedDoctor) {
+        const doctorProfile = await db.doctorProfile.findUnique({ where: { userId: sessionUserId } });
+        if (doctorProfile && conv.userId) {
+          const consent = await db.patientConsentForDoctor.findFirst({
+            where: { doctorId: doctorProfile.id, patientId: conv.userId, revokedAt: null },
+          });
+          const appointment = await db.appointment.findFirst({
+            where: { doctorProfileId: doctorProfile.id, patientId: conv.userId },
+          });
+          if (consent || appointment) {
+            isAuthorizedDoctor = true;
+          }
         }
       }
     }
@@ -90,15 +109,48 @@ export async function GET(
       return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
     }
 
-    const messages: ChatMessageDto[] = conv.messages.map((m) => ({
-      id: m.id,
-      role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
-      content: m.content,
-      language: m.language,
-      triageLevel: m.triageLevel,
-      emergency: m.emergency,
-      createdAt: m.createdAt.getTime(),
-    }));
+    const messages = conv.messages.map((m) => {
+      let meta: Record<string, unknown> | null = null;
+      if (m.pipelineMeta) {
+        try { meta = JSON.parse(m.pipelineMeta); } catch {}
+      }
+      let citations: unknown[] = [];
+      if (m.citations) {
+        try { citations = JSON.parse(m.citations); } catch {}
+      }
+      let redFlags: unknown[] = [];
+      if (m.redFlags) {
+        try { redFlags = JSON.parse(m.redFlags); } catch {}
+      }
+
+      const latestTriageEvent = m.triageEvents?.[m.triageEvents.length - 1];
+      const isShortCircuited =
+        latestTriageEvent?.shortCircuited ??
+        (meta?.path === 'emergency-short-circuit' || Boolean((meta?.l0 as Record<string, unknown> | undefined)?.shortCircuited) || m.emergency);
+
+      const triage = m.triageLevel ? {
+        level: m.triageLevel,
+        engine: latestTriageEvent?.engine ?? (meta?.engine as string) ?? (m.emergency ? 'L0' : 'L1'),
+        shortCircuited: Boolean(isShortCircuited),
+        reason: (meta?.templateCategory as string) ?? '',
+        signals: latestTriageEvent?.signals ? JSON.parse(latestTriageEvent.signals) : (meta?.l0 as Record<string, unknown> | undefined)?.signals ?? [],
+      } : undefined;
+
+      return {
+        id: m.id,
+        role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.content,
+        language: m.language,
+        triageLevel: m.triageLevel,
+        emergency: m.emergency,
+        triage,
+        pipelineMeta: meta,
+        citations,
+        redFlags,
+        latencyMs: (meta?.latencies as Record<string, unknown> | undefined)?.total ?? (meta?.latencies as Record<string, unknown> | undefined)?.l0,
+        createdAt: m.createdAt.getTime(),
+      };
+    });
 
     return NextResponse.json({
       conversation: {

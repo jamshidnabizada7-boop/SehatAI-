@@ -116,7 +116,7 @@ export function proxy(req: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "media-src 'self' blob:",
-    "connect-src 'self' ws: wss:",
+    "connect-src 'self' ws: wss: https: https://*.livekit.cloud wss://*.livekit.cloud https://*.supabase.co",
     "font-src 'self' data:",
     "frame-ancestors 'none'",
     "base-uri 'self'",

@@ -54,6 +54,8 @@ interface DoctorCardData {
   consultedBefore: boolean;
   favorite: boolean;
   sponsoredLabel: string | null;
+  isTestProfile?: boolean;
+  testDisclaimer?: string | null;
 }
 interface MatchResponse {
   emergency: boolean;
@@ -325,7 +327,11 @@ function FindDoctors({ T, uiLang, isLoggedIn, onOpenConsultation }: {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-semibold">{d.name}</span>
-                        {(d.licenseVerified ?? d.pmdcVerified) ? (
+                        {d.isTestProfile ? (
+                          <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
+                            DEMO / SYNTHETIC — NOT A REAL CLINICIAN
+                          </Badge>
+                        ) : (d.licenseVerified ?? d.pmdcVerified) ? (
                           <BadgeCheck
                             className="h-4 w-4 text-blue-600"
                             aria-label={d.pmdcVerified ? 'PMDC verified' : (d.licensingAuthority ? `${d.licensingAuthority} verified` : 'License verified')}
@@ -429,7 +435,7 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
     }
   }, [doctor.doctorProfileId]);
 
-  const [telemedicineConsent, setTelemedicineConsent] = useState(true);
+  const [telemedicineConsent, setTelemedicineConsent] = useState(false);
 
   async function ensureConsent() {
     if (!telemedicineConsent) return;
@@ -506,11 +512,16 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {doctor.name}
-            {(doctor.licenseVerified ?? doctor.pmdcVerified) ? (
+            {!doctor.isTestProfile && (doctor.licenseVerified ?? doctor.pmdcVerified) ? (
               <BadgeCheck
                 className="h-5 w-5 text-blue-600"
                 aria-label={doctor.pmdcVerified ? 'PMDC verified' : (doctor.licensingAuthority ? `${doctor.licensingAuthority} verified` : 'License verified')}
               />
+            ) : null}
+            {doctor.isTestProfile ? (
+              <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
+                DEMO / SYNTHETIC
+              </Badge>
             ) : null}
           </DialogTitle>
         </DialogHeader>
@@ -518,6 +529,19 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
           {doctor.specialty}{doctor.subSpecialty ? ` · ${doctor.subSpecialty}` : ''}
           {doctor.facilityCity ? ` · ${doctor.facilityCity}` : ''}
         </div>
+
+        {doctor.isTestProfile ? (
+          <div role="note" className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
+            <p className="font-bold flex items-center gap-1.5">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              DEMO / SYNTHETIC PROFILE — NOT A REAL CLINICIAN
+            </p>
+            <p className="mt-0.5">
+              This profile is an automated test fixture. Real clinical bookings and payments are disabled in private staging.
+            </p>
+          </div>
+        ) : null}
+
         {doctor.bio ? <p className="mt-1 text-sm">{doctor.bio}</p> : null}
 
         {/* §47 Instant consultation ("Talk now") */}
@@ -537,13 +561,13 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
               <Button
                 size="sm"
                 className="min-h-11 bg-green-600 hover:bg-green-700 text-white font-semibold"
-                disabled={booking || !isLoggedIn || !telemedicineConsent}
+                disabled={doctor.isTestProfile || booking || !isLoggedIn || !telemedicineConsent}
                 onClick={() => {
                   const s = textService ?? doctor.services[0];
                   if (s) void book(s, undefined, true);
                 }}
               >
-                Talk now
+                {doctor.isTestProfile ? 'Demo only — appointments unavailable' : 'Talk now'}
               </Button>
             </div>
           </div>
@@ -566,8 +590,13 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
                   {T('care.selectTime')}
                 </Button>
               ) : (
-                <Button size="sm" className="mt-2 min-h-11 w-full" disabled={booking || !isLoggedIn || !telemedicineConsent} onClick={() => void book(s)}>
-                  {T('care.bookNow')}
+                <Button
+                  size="sm"
+                  className="mt-2 min-h-11 w-full"
+                  disabled={doctor.isTestProfile || booking || !isLoggedIn || !telemedicineConsent}
+                  onClick={() => void book(s)}
+                >
+                  {doctor.isTestProfile ? 'Demo only — appointments unavailable' : T('care.bookNow')}
                 </Button>
               )}
             </div>
@@ -593,13 +622,19 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
                   </Button>
                 ))}
                 {slots.length === 0 ? (
-                  <p className="col-span-full text-xs text-muted-foreground">{T('care.noDoctors')}</p>
+                  <p className="col-span-full py-2 text-center text-xs text-muted-foreground">No demo appointment slots available for this doctor.</p>
                 ) : null}
               </div>
             )}
             {chosen.slot ? (
-              <Button className="mt-3 min-h-11 w-full" disabled={booking || !isLoggedIn || !telemedicineConsent} onClick={() => void book(chosen.service, chosen.slot ?? undefined)}>
-                {T('care.payAndBook')} · {formatMoney({ amountMinor: chosen.service.priceMinor, currency: chosen.service.currency })}
+              <Button
+                className="mt-3 min-h-11 w-full"
+                disabled={doctor.isTestProfile || booking || !isLoggedIn || !telemedicineConsent}
+                onClick={() => void book(chosen.service, chosen.slot ?? undefined)}
+              >
+                {doctor.isTestProfile
+                  ? 'Demo only — appointments unavailable'
+                  : `${T('care.payAndBook')} · ${formatMoney({ amountMinor: chosen.service.priceMinor, currency: chosen.service.currency })}`}
               </Button>
             ) : null}
           </section>

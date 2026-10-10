@@ -112,3 +112,33 @@ describe('B. one coherent classification', () => {
     expect(r.needsClarification).toBe(true);
   });
 });
+
+describe('B. cardiac emergency — clinical symptom extraction and short-circuit', () => {
+  test('severe crushing chest pain radiating to left arm and jaw activates L0 cardiac emergency with extracted symptoms', async () => {
+    const inputMsg = 'I have sudden severe crushing chest pain radiating to my left arm and jaw, sweating profusely';
+    const l0 = runL0Triage(inputMsg);
+    expect(l0.level).toBe('EMERGENCY');
+    expect(l0.matchedCategory).toBe('cardiac');
+    expect(l0.shortCircuited).toBe(true);
+
+    const { runPipeline, extractEmergencySymptoms } = await import('@/server/pipeline/run');
+    const symptoms = extractEmergencySymptoms(inputMsg, 'cardiac');
+    expect(symptoms).toContain('Severe chest pain');
+    expect(symptoms).toContain('Radiation to arm/jaw');
+    expect(symptoms).toContain('Profuse sweating');
+
+    const res = await runPipeline({
+      message: inputMsg,
+      language: 'en',
+      sessionId: 'test-cardiac-emergency',
+      persist: false,
+    });
+    expect(res.triage.level).toBe('EMERGENCY');
+    expect(res.triage.shortCircuited).toBe(true);
+    expect(res.meta?.symptoms).toContain('Severe chest pain');
+    expect(res.meta?.symptoms).toContain('Radiation to arm/jaw');
+    expect(res.meta?.symptoms).toContain('Profuse sweating');
+    expect((res.meta?.l0 as any)?.shortCircuited).toBe(true);
+  });
+});
+

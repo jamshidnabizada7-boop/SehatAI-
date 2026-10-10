@@ -36,20 +36,23 @@ export function JudgeInspectorModal({
   message,
   lang,
 }: JudgeInspectorModalProps) {
-  const isEmergency = message.triage?.level === 'EMERGENCY';
+  const isEmergency = message.triage?.level === 'EMERGENCY' || message.emergency;
   const isUrgent = message.triage?.level === 'URGENT';
-  const isShortCircuited = message.triage?.shortCircuited ?? false;
-  const confidenceScore = Math.round((message.confidence?.score ?? 0.85) * 100);
-  const latency = message.latencyMs ?? (message.offline ? 4 : 1240);
+  const metaObj = (message as any).pipelineMeta as Record<string, unknown> | undefined;
+  const isShortCircuited =
+    message.triage?.shortCircuited ??
+    (isEmergency || metaObj?.path === 'emergency-short-circuit' || Boolean((metaObj?.l0 as Record<string, unknown> | undefined)?.shortCircuited));
+  const confidenceScore = Math.round((message.confidence?.score ?? (isEmergency ? 1.0 : 0.85)) * 100);
+  const actualTotalLatency = (metaObj?.latencies as Record<string, unknown> | undefined)?.total ?? message.latencyMs;
+  const latency = actualTotalLatency != null ? String(actualTotalLatency) : (message.offline ? '4' : (isShortCircuited ? '< 5' : '1240'));
 
-  const checks = message.validation?.checks ?? [
-    { name: 'groundedInContext', passed: true },
-    { name: 'safetyNetPresent', passed: true },
-    { name: 'judgeNoDoses', passed: true },
-    { name: 'judgeNoDiagnosis', passed: true },
-    { name: 'judgeNoMedicationInvention', passed: true },
-    { name: 'judgeLanguageMatchesRequest', passed: true },
-  ];
+  const l0Lat = (metaObj?.latencies as Record<string, unknown> | undefined)?.l0;
+  const l1Lat = (metaObj?.latencies as Record<string, unknown> | undefined)?.l1;
+  const genLat = (metaObj?.latencies as Record<string, unknown> | undefined)?.generation;
+  const l2Lat = (metaObj?.latencies as Record<string, unknown> | undefined)?.l2;
+  const extractedSymptoms = (metaObj?.symptoms || (metaObj?.l0 as Record<string, unknown> | undefined)?.symptoms || (metaObj?.l1 as Record<string, unknown> | undefined)?.symptoms) as string[] | undefined;
+
+  const checks = message.validation?.checks ?? [];
 
   const checkLabels: Record<string, { en: string; ur: string }> = {
     groundedInContext: {
@@ -128,32 +131,56 @@ export function JudgeInspectorModal({
               <div className="rounded-lg border border-border/50 bg-background/80 p-2">
                 <p className="text-muted-foreground font-medium">L0 Deterministic</p>
                 <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  {message.offline ? '4 ms (Local)' : '< 1 ms'}
+                  {isShortCircuited ? '< 1 ms (Active)' : (message.offline ? '4 ms (Local)' : '< 1 ms')}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Lexicon + Context</p>
               </div>
               <div className="rounded-lg border border-border/50 bg-background/80 p-2">
                 <p className="text-muted-foreground font-medium">L1 Qwen Triage</p>
                 <p className="font-mono font-bold text-foreground">
-                  {message.offline ? 'Bypassed' : isShortCircuited ? 'Short-circuited' : '~280 ms'}
+                  {isShortCircuited ? 'Bypassed' : (l1Lat != null ? `${l1Lat} ms` : (message.offline ? 'Bypassed' : 'Bypassed'))}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Structured JSON</p>
               </div>
               <div className="rounded-lg border border-border/50 bg-background/80 p-2">
                 <p className="text-muted-foreground font-medium">Generation</p>
                 <p className="font-mono font-bold text-foreground">
-                  {message.offline ? 'Corpus fallback' : '~650 ms'}
+                  {isShortCircuited ? 'Deterministic Template' : (genLat != null ? `${genLat} ms` : (message.offline ? 'Corpus fallback' : 'Safe Template'))}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Qwen 2.5 72B Stream</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{isShortCircuited ? 'Safe Rule Template' : 'Qwen 2.5 72B Stream'}</p>
               </div>
               <div className="rounded-lg border border-border/50 bg-background/80 p-2">
                 <p className="text-muted-foreground font-medium">L2 Judge / Veto</p>
                 <p className="font-mono font-bold text-foreground">
-                  {message.offline ? 'Offline Rules' : '~310 ms'}
+                  {isShortCircuited ? 'Bypassed' : (l2Lat != null ? `${l2Lat} ms` : (message.offline ? 'Offline Rules' : 'Bypassed'))}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">4-Way Constellation</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{isShortCircuited ? 'Zero Drift Risk' : '4-Way Constellation'}</p>
               </div>
             </div>
+          </div>
+
+          {/* Section 1.5: Extracted Clinical Symptoms */}
+          <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
+                <Activity className="h-3.5 w-3.5 text-primary" />
+                {lang === 'ur' ? 'شناخت شدہ علامات' : 'Extracted Clinical Symptoms'}
+              </span>
+              <Badge variant="secondary" className="text-[10px] font-mono">
+                {extractedSymptoms && extractedSymptoms.length > 0 ? `${extractedSymptoms.length} detected` : 'None extracted'}
+              </Badge>
+            </div>
+            {extractedSymptoms && extractedSymptoms.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {extractedSymptoms.map((sym, i) => (
+                  <Badge key={i} variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium">
+                    {sym}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-[10px]">No discrete clinical symptoms identified in input.</p>
+            )}
           </div>
 
           {/* Section 2: Deterministic Safety Guards */}
@@ -198,30 +225,44 @@ export function JudgeInspectorModal({
                 {lang === 'ur' ? 'ویلیڈیٹر کنسٹلیشن فیصلے' : 'Parallel Veto Constellation (Validator Verdicts)'}
               </span>
               <Badge variant="secondary" className="text-[10px] font-mono">
-                100% Agreement (4/4)
+                {isShortCircuited ? 'Bypassed by Design' : checks.length > 0 ? `${checks.filter((c) => c.passed).length}/${checks.length} Passed` : 'N/A'}
               </Badge>
             </div>
-            <div className="space-y-1.5">
-              {checks.map((c, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5"
-                >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-[11px] font-medium text-foreground">
-                      {checkLabels[c.name]?.[lang === 'ur' ? 'ur' : 'en'] || c.name}
-                    </span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-600 dark:text-emerald-400"
+            {isShortCircuited ? (
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-[11px] text-emerald-800 dark:text-emerald-300">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Deterministic Rule Execution (L0 Emergency)
+                </p>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-emerald-900/80 dark:text-emerald-200/80">
+                  LLM validation constellation was intentionally bypassed by design. Obvious cardiac and acute life-threatening emergencies trigger verified deterministic protocols directly at L0 to eliminate model drift, latency, and hallucination risk.
+                </p>
+              </div>
+            ) : checks.length > 0 ? (
+              <div className="space-y-1.5">
+                {checks.map((c, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5"
                   >
-                    PASSED
-                  </Badge>
-                </div>
-              ))}
-            </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-[11px] font-medium text-foreground">
+                        {checkLabels[c.name]?.[lang === 'ur' ? 'ur' : 'en'] || c.name}
+                      </span>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-600 dark:text-emerald-400"
+                    >
+                      {c.passed ? 'PASSED' : 'FLAGGED'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-[10px]">No constellation checks recorded for this turn.</p>
+            )}
           </div>
 
           {/* Section 4: Calibrated Confidence Formula */}

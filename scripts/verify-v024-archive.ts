@@ -1,0 +1,136 @@
+// scripts/verify-v024-archive.ts
+// Verifies standalone release archive v0.2.4:
+// Extracts into clean temp directory, inspects assets, node_modules, Prisma ARM64 binary, and checks for secret leaks.
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { execSync } from 'node:child_process';
+
+const ARCHIVE_PATH = path.resolve('deploy/sehatai-staging-v0.2.4-arm64-standalone.tar.gz');
+const EXTRACT_DIR = path.resolve('temp/v024-extract-verify');
+
+console.log('======================================================================');
+console.log('==> AUDITING STANDALONE RELEASE ARCHIVE (v0.2.4)');
+console.log('======================================================================');
+
+if (!fs.existsSync(ARCHIVE_PATH)) {
+  console.error(`FATAL: Archive not found at ${ARCHIVE_PATH}`);
+  process.exit(1);
+}
+
+const stat = fs.statSync(ARCHIVE_PATH);
+console.log(`✓ Target archive: ${ARCHIVE_PATH}`);
+console.log(`✓ Archive size:   ${stat.size} bytes (${(stat.size / 1024 / 1024).toFixed(2)} MB)`);
+
+// Clean extract dir
+if (fs.existsSync(EXTRACT_DIR)) {
+  fs.rmSync(EXTRACT_DIR, { recursive: true, force: true });
+}
+fs.mkdirSync(EXTRACT_DIR, { recursive: true });
+
+console.log(`==> Extracting to clean temp directory: ${EXTRACT_DIR}...`);
+execSync(`tar -xzf "${ARCHIVE_PATH}" -C "${EXTRACT_DIR}"`, { stdio: 'inherit' });
+console.log('✓ Extraction complete.\n');
+
+// 1. Check top-level directory contents
+const topLevel = fs.readdirSync(EXTRACT_DIR);
+console.log('--- Top Level Directory Entries ---');
+console.log(topLevel.join(', '));
+
+const hasServerJs = fs.existsSync(path.join(EXTRACT_DIR, 'server.js'));
+const hasPackageJson = fs.existsSync(path.join(EXTRACT_DIR, 'package.json'));
+const hasDotNext = fs.existsSync(path.join(EXTRACT_DIR, '.next'));
+const hasNodeModules = fs.existsSync(path.join(EXTRACT_DIR, 'node_modules'));
+
+console.log(`✓ server.js present:     ${hasServerJs}`);
+console.log(`✓ package.json present:  ${hasPackageJson}`);
+console.log(`✓ .next present:         ${hasDotNext}`);
+console.log(`✓ node_modules present:  ${hasNodeModules}`);
+
+if (!hasServerJs || !hasPackageJson || !hasDotNext || !hasNodeModules) {
+  console.error('FATAL: Core standalone files missing!');
+  process.exit(1);
+}
+
+// Check package.json version
+const pkg = JSON.parse(fs.readFileSync(path.join(EXTRACT_DIR, 'package.json'), 'utf8'));
+console.log(`✓ package.json name:     ${pkg.name}`);
+console.log(`✓ package.json version:  ${pkg.version}`);
+if (pkg.version !== '0.2.4') {
+  console.error(`FATAL: Expected version 0.2.4 but got ${pkg.version}`);
+  process.exit(1);
+}
+
+// 2. Search for Linux ARM64 Prisma engines
+console.log('\n--- Prisma Query Engines Check ---');
+function findFiles(dir: string, predicate: (name: string) => boolean): string[] {
+  let results: string[] = [];
+  if (!fs.existsSync(dir)) return results;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results = results.concat(findFiles(fullPath, predicate));
+    } else if (predicate(entry.name)) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
+const engines = findFiles(EXTRACT_DIR, (n) => n.includes('query_engine'));
+engines.forEach((e) => {
+  const s = fs.statSync(e);
+  const rel = path.relative(EXTRACT_DIR, e);
+  console.log(`  Engine: ${rel} (${s.size} bytes)`);
+});
+
+const hasArm64Engine = engines.some((e) => e.includes('linux-arm64'));
+const hasWindowsEngine = engines.some((e) => e.endsWith('.dll.node'));
+
+console.log(`✓ Linux ARM64 query engine present: ${hasArm64Engine}`);
+console.log(`✓ Windows .dll engines suppressed:  ${!hasWindowsEngine}`);
+
+if (!hasArm64Engine) {
+  console.error('FATAL: Linux ARM64 engine missing from archive!');
+  process.exit(1);
+}
+
+if (hasWindowsEngine) {
+  console.error('FATAL: Windows .dll.node binary leaked into archive!');
+  process.exit(1);
+}
+
+// 3. Check @prisma directory structure
+const atPrismaDir = path.join(EXTRACT_DIR, 'node_modules', '@prisma');
+if (fs.existsSync(atPrismaDir)) {
+  const atPrismaEntries = fs.readdirSync(atPrismaDir);
+  console.log(`✓ node_modules/@prisma entries: ${atPrismaEntries.join(', ')}`);
+}
+
+// 4. Sensitive file, credential, and test artifact leak scan
+console.log('\n--- Sensitive Files & Test Artifact Leak Scan ---');
+const leakPatterns = ['.env', '.key', '.pem', '.crt', '.csr', 'id_rsa', 'id_ed25519', '.git', '.sql', '.pdf'];
+const leaks = findFiles(EXTRACT_DIR, (n) => {
+  const lower = n.toLowerCase();
+  return leakPatterns.some((p) => lower.endsWith(p) || lower.includes('.env'));
+});
+
+// Check for extraneous directory leaks
+const forbiddenDirs = ['tests', 'storage', 'backups', 'certs', 'temp'];
+const leakedDirs = forbiddenDirs.filter((d) => fs.existsSync(path.join(EXTRACT_DIR, d)));
+if (leakedDirs.length > 0) {
+  leaks.push(...leakedDirs.map((d) => `Directory: ${d}`));
+}
+
+if (leaks.length > 0) {
+  console.error('❌ LEAKS / TEST ARTIFACTS DETECTED in standalone archive:');
+  leaks.forEach((l) => console.error(`  - ${l}`));
+  process.exit(1);
+} else {
+  console.log('✓ PASS: Zero .env, .git, private keys, certificates, test artifacts, or storage files embedded in release archive.');
+}
+
+console.log('\n======================================================================');
+console.log('==> ARCHIVE AUDIT RESULT: PASSED (v0.2.4 READY)');
+console.log('======================================================================');

@@ -112,10 +112,11 @@ async function main() {
   console.log('==> STARTING CARE CONNECT CALLING VERIFICATION BATTERY (TWO-BROWSER)');
   console.log('======================================================================');
 
-  // Verify synthetic consultation
-  const consultationId = 'cmv23jtrc0009ub14q006nm64';
-  const consult = await prisma.consultation.findUnique({
-    where: { id: consultationId },
+  // Verify synthetic consultation (dynamic lookup by patient)
+  let consult = await prisma.consultation.findFirst({
+    where: {
+      patient: { email: 'test.patient1@sehatai.local' },
+    },
     include: {
       patient: true,
       doctorUser: true,
@@ -124,8 +125,19 @@ async function main() {
   });
 
   if (!consult) {
-    throw new Error(`Synthetic consultation ${consultationId} not found in DB`);
+    consult = await prisma.consultation.findFirst({
+      include: {
+        patient: true,
+        doctorUser: true,
+        doctorProfile: true,
+      },
+    });
   }
+
+  if (!consult) {
+    throw new Error('No synthetic consultation found in DB');
+  }
+  const consultationId = consult.id;
 
   // Ensure consultation is in valid call state and clear stale calls
   await prisma.consultation.update({

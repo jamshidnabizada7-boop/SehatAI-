@@ -19,6 +19,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
 import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -181,6 +184,29 @@ function PatientsTab({ lang }: { lang: 'en' | 'ur' | 'roman' }) {
   const [error, setError] = useState<string | null>(null);
   const [soapLoading, setSoapLoading] = useState(false);
   const [soapResult, setSoapResult] = useState<{ subjective: any; objective: any; assessment: any; plan: any; disclaimer?: string } | null>(null);
+  const [viewConvOpen, setViewConvOpen] = useState(false);
+  const [convLoading, setConvLoading] = useState(false);
+  const [loadedConv, setLoadedConv] = useState<{ id: string; messages: Array<{ id: string; role: string; content: string; triageLevel?: string; createdAt: number }> } | null>(null);
+
+  const openConversation = async (convId: string) => {
+    setViewConvOpen(true);
+    setConvLoading(true);
+    try {
+      const res = await fetch(`/api/conversations/${encodeURIComponent(convId)}`);
+      const data = await res.json();
+      if (res.ok && data.conversation) {
+        setLoadedConv(data.conversation);
+      } else {
+        setLoadedConv(null);
+        toast.error(data.error || 'Failed to load conversation');
+      }
+    } catch {
+      setLoadedConv(null);
+      toast.error('Network error loading conversation');
+    } finally {
+      setConvLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -314,11 +340,9 @@ function PatientsTab({ lang }: { lang: 'en' | 'ur' | 'roman' }) {
               <Button onClick={exportFhir} size="sm" variant="outline" className="min-h-9 gap-1.5">
                 <Download className="h-3.5 w-3.5" /> Export FHIR
               </Button>
-              <a href={`/api/conversations/${selected.conversationId}`} target="_blank" rel="noopener noreferrer">
-                <Button size="sm" variant="ghost" className="min-h-9 gap-1.5">
-                  <FileText className="h-3.5 w-3.5" /> View conversation
-                </Button>
-              </a>
+              <Button onClick={() => void openConversation(selected.conversationId)} size="sm" variant="ghost" className="min-h-9 gap-1.5">
+                <FileText className="h-3.5 w-3.5" /> View conversation
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -360,6 +384,53 @@ function PatientsTab({ lang }: { lang: 'en' | 'ur' | 'roman' }) {
             </CardContent>
           </Card>
         ) : null}
+
+        <Dialog open={viewConvOpen} onOpenChange={setViewConvOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <FileText className="h-4 w-4 text-primary" />
+                Patient Conversation History
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Direct triage exchange and clinical guidance transcript
+              </DialogDescription>
+            </DialogHeader>
+            {convLoading ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" /> Loading transcript…
+              </div>
+            ) : loadedConv && loadedConv.messages?.length > 0 ? (
+              <div className="space-y-3 pt-2 text-xs">
+                {loadedConv.messages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={cn(
+                      'rounded-xl p-3 border',
+                      m.role === 'user'
+                        ? 'border-blue-500/30 bg-blue-500/5 ms-6'
+                        : 'border-border/80 bg-muted/40 me-6'
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-1 text-[10px] text-muted-foreground">
+                      <span className="font-bold uppercase tracking-wider">
+                        {m.role === 'user' ? 'Patient' : 'SehatAI Assistant'}
+                      </span>
+                      {m.triageLevel ? (
+                        <Badge variant="outline" className="text-[9px] py-0">{m.triageLevel}</Badge>
+                      ) : null}
+                    </div>
+                    <p className="whitespace-pre-wrap leading-relaxed text-foreground">{m.content}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                No conversation transcript records found for this encounter.
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getServerSession } from '@/lib/auth';
 import { llmJSON } from '@/server/llm';
-import { hasDosePattern } from '@/server/pipeline/run';
+import { hasDosePattern, extractEmergencySymptoms } from '@/server/pipeline/run';
 import type { Citation, Differential, DifferentialEntry, DoctorSummary, DrugCheckSummary, Lang, ResponseConfidence, TriageLevel } from '@/lib/types';
 import { TRIAGE_ORDER } from '@/lib/types';
 
@@ -64,6 +64,10 @@ function deterministicSummary(conversationId: string, rows: MessageRow[], lang: 
     }
     try {
       const meta = r.pipelineMeta ? (JSON.parse(r.pipelineMeta) as Record<string, unknown>) : null;
+      const directSymptoms = (meta?.symptoms || (meta?.l0 as Record<string, unknown> | undefined)?.symptoms) as string[] | undefined;
+      if (Array.isArray(directSymptoms)) {
+        for (const s of directSymptoms) if (!symptoms.includes(s)) symptoms.push(s);
+      }
       const l1 = meta?.l1 as { symptoms?: string[]; redFlagConcerns?: string[]; conditions?: { name: string; state: string }[]; durationDays?: number | null } | null | undefined;
       if (l1?.symptoms) for (const s of l1.symptoms) if (!symptoms.includes(s)) symptoms.push(s);
       if (l1?.redFlagConcerns) for (const s of l1.redFlagConcerns) if (!redFlags.includes(s)) redFlags.push(s);
@@ -113,6 +117,12 @@ function deterministicSummary(conversationId: string, rows: MessageRow[], lang: 
         // ignore
       }
     }
+  }
+
+  // Ensure symptoms are never empty for emergency presentations
+  if (symptoms.length === 0 && (levels.includes('EMERGENCY') || assistantRows.some((r) => r.emergency))) {
+    const fallbackSym = extractEmergencySymptoms(firstUser);
+    for (const s of fallbackSym) if (!symptoms.includes(s)) symptoms.push(s);
   }
 
   const durationDays = (() => {

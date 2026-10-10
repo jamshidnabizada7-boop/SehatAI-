@@ -399,7 +399,7 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
         ? (d.user.name?.startsWith('[TEST]') ? d.user.name : `[TEST] ${d.user.name ?? 'Doctor'}`)
         : (d.user.name ?? 'Doctor'),
       isTestProfile: isTest,
-      testDisclaimer: isTest ? 'TEST PROFILE — NOT A REAL CLINICAL SERVICE' : null,
+      testDisclaimer: isTest ? 'DEMO / SYNTHETIC — NOT A REAL CLINICIAN' : null,
       avatarUrl: d.avatarUrl,
       specialty: d.specialty,
       subSpecialty: d.subSpecialty,
@@ -409,7 +409,7 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
       languages: safeJsonArray(d.languages),
       gender: d.gender,
       onlineNow: d.onlineNow && d.onlineNowUntil != null && d.onlineNowUntil > new Date(),
-      pmdcVerified: (() => {
+      pmdcVerified: isTest ? false : (() => {
         const docCountry = (d.country ?? 'PK').toUpperCase();
         const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
           (c) =>
@@ -421,7 +421,7 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
         );
         return docCountry === 'PK' ? (d.pmdcVerifiedAt != null || hasPmdcCred) : false;
       })(),
-      licenseVerified: (() => {
+      licenseVerified: isTest ? false : (() => {
         const docCountry = (d.country ?? 'PK').toUpperCase();
         if (docCountry === 'PK') {
           const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
@@ -446,7 +446,7 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
         }
         return false;
       })(),
-      licensingAuthority: (() => {
+      licensingAuthority: isTest ? 'DEMO / SYNTHETIC' : (() => {
         const docCountry = (d.country ?? 'PK').toUpperCase();
         if (docCountry === 'PK') {
           const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(

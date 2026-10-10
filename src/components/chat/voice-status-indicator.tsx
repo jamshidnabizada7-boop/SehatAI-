@@ -45,19 +45,38 @@ function detectUrduVoice(): boolean {
 export function VoiceStatusIndicator() {
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
-  // SSR-safe: detect support lazily on first render (client-only via useSyncExternalStore pattern).
-  // We use a lazy initializer + a one-time effect for the voiceschanged subscription.
   const [support] = useState<VoiceSupport>(() => detectVoiceSupport());
   const [hasUrduVoice, setHasUrduVoice] = useState(false);
+  const [micPermission, setMicPermission] = useState<'granted' | 'prompt' | 'denied' | 'unknown'>('unknown');
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.speechSynthesis === 'undefined') return;
-    const check = () => setHasUrduVoice(detectUrduVoice());
-    check();
-    window.speechSynthesis.onvoiceschanged = check;
+    if (typeof window === 'undefined') return;
+
+    if (typeof window.speechSynthesis !== 'undefined') {
+      const check = () => setHasUrduVoice(detectUrduVoice());
+      check();
+      window.speechSynthesis.onvoiceschanged = check;
+    }
+
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions
+        .query({ name: 'microphone' as PermissionName })
+        .then((status) => {
+          setMicPermission(status.state as 'granted' | 'prompt' | 'denied');
+          status.onchange = () => {
+            setMicPermission(status.state as 'granted' | 'prompt' | 'denied');
+          };
+        })
+        .catch(() => {
+          setMicPermission('unknown');
+        });
+    }
+
     return () => {
-      window.speechSynthesis.onvoiceschanged = null;
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
     };
   }, []);
 
@@ -75,28 +94,52 @@ export function VoiceStatusIndicator() {
     window.speechSynthesis.speak(utter);
   }, [uiLang]);
 
-  const config = {
-    full: {
-      icon: Mic,
-      color: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
-      label: { en: 'Voice ready', ur: 'آواز تیار', roman: 'Aawaz tiyar' },
-    },
-    'stt-only': {
-      icon: Mic,
-      color: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
-      label: { en: 'Voice input only', ur: 'صرف آواز ان پٹ', roman: 'Sirf aawaz input' },
-    },
-    'tts-only': {
-      icon: Volume2,
-      color: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
-      label: { en: 'Voice output only', ur: 'صرف آواز آؤٹ پٹ', roman: 'Sirf aawaz output' },
-    },
-    none: {
+  // Derive dynamic label based on permission and Urdu availability
+  const isMicBlocked = micPermission === 'denied';
+  const isUrduMissing = (uiLang === 'ur' || uiLang === 'roman') && !hasUrduVoice;
+
+  const config = (() => {
+    if (isMicBlocked) {
+      return {
+        icon: MicOff,
+        color: 'bg-red-500/15 text-red-700 dark:text-red-400',
+        label: { en: 'Mic blocked', ur: 'مائیک بلاک', roman: 'Mic blocked' },
+      };
+    }
+    if (support === 'full') {
+      if (isUrduMissing) {
+        return {
+          icon: Mic,
+          color: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+          label: { en: 'Voice ready (EN TTS)', ur: 'صرف انگریزی آواز', roman: 'Sirf English aawaz' },
+        };
+      }
+      return {
+        icon: Mic,
+        color: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+        label: { en: 'Voice ready', ur: 'آواز تیار', roman: 'Aawaz tiyar' },
+      };
+    }
+    if (support === 'stt-only') {
+      return {
+        icon: Mic,
+        color: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+        label: { en: 'Voice input only', ur: 'صرف آواز ان پٹ', roman: 'Sirf aawaz input' },
+      };
+    }
+    if (support === 'tts-only') {
+      return {
+        icon: Volume2,
+        color: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+        label: { en: 'Voice output only', ur: 'صرف آواز آؤٹ پٹ', roman: 'Sirf aawaz output' },
+      };
+    }
+    return {
       icon: MicOff,
       color: 'bg-red-500/15 text-red-700 dark:text-red-400',
       label: { en: 'Voice unavailable', ur: 'آواز دستیاب نہیں', roman: 'Aawaz dastiyab nahin' },
-    },
-  }[support];
+    };
+  })();
 
   const Icon = config.icon;
 

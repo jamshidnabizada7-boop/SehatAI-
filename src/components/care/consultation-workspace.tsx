@@ -340,9 +340,19 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
 
       {/* Patient tools: prescription + summary view */}
       {isPatient && detail.prescriptions.length > 0 ? (
-        <Card className="mx-3 mt-3">
+        <Card className="mx-3 mt-3 border-amber-500/40 bg-amber-500/5">
           <CardContent className="p-3">
-            <div className="mb-1 flex items-center gap-1 text-sm font-semibold"><FileText className="h-4 w-4" /> {T('care.prescription')}</div>
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                <FileText className="h-4 w-4 text-primary" /> {T('care.prescription')}
+              </div>
+              <Badge variant="destructive" className="text-[10px] font-bold tracking-wider uppercase">
+                DEMO — NOT VALID FOR DISPENSING
+              </Badge>
+            </div>
+            <div className="mb-2 rounded-lg bg-amber-500/15 border border-amber-500/30 p-2 text-[11px] text-amber-900 dark:text-amber-200">
+              ⚠️ <strong>DEMO PRESCRIPTION FIXTURE:</strong> This medication list is generated for software testing and UI demonstration only. It does not constitute a valid medical prescription under PM&amp;DC or national pharmacy regulations and cannot be dispensed.
+            </div>
             {detail.prescriptions.map((p) => (
               <div key={p.id} className="text-xs">
                 {p.items.map((item, i) => (
@@ -350,7 +360,10 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
                     💊 {item.medicine} {item.strength ?? ''} {item.frequency ?? ''} {item.durationDays ? `· ${item.durationDays}d` : ''}
                   </div>
                 ))}
-                <Badge variant="outline" className="mt-1 text-[10px]">{p.status}</Badge>
+                <div className="mt-1 flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px]">{p.status}</Badge>
+                  <span className="text-[10px] text-destructive font-mono font-bold">SYNTHETIC FIXTURE</span>
+                </div>
               </div>
             ))}
           </CardContent>

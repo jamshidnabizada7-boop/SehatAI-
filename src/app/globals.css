@@ -219,14 +219,18 @@
   }
   .no-print,
   [data-radix-dialog-overlay],
+  [data-slot="dialog-overlay"],
   [data-slot="dialog-close"],
   button[data-slot="dialog-close"] {
     display: none !important;
   }
-  body:has([role="dialog"]) > *:not([data-radix-portal]) {
+  body:has([role="dialog"]) > *:not([data-slot="dialog-portal"]):not([data-radix-portal]) {
     display: none !important;
   }
+  [data-slot="dialog-portal"],
+  [data-slot="dialog-content"],
   [role="dialog"] {
+    display: block !important;
     position: static !important;
     max-height: none !important;
     max-width: 100% !important;
@@ -234,6 +238,7 @@
     border: none !important;
     padding: 0 !important;
     transform: none !important;
+    visibility: visible !important;
   }
 }
 
