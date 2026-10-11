@@ -152,10 +152,27 @@ async function main() {
   console.log(`  Patient: ${consult.patient.email} (${consult.patient.id})`);
   console.log(`  Doctor:  ${consult.doctorUser.email} (${consult.doctorUser.id})`);
 
+  // Load LiveKit credentials from Downloads if present
+  const livekitEnvPath = 'C:\\Users\\Computer House\\Downloads\\sehatai-livekit.env';
+  const livekitEnv: Record<string, string> = {};
+  if (fs.existsSync(livekitEnvPath)) {
+    for (const line of fs.readFileSync(livekitEnvPath, 'utf8').split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq !== -1) {
+        livekitEnv[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim();
+      }
+    }
+    console.log('✓ Loaded LiveKit Cloud configuration from Downloads.');
+  }
+  Object.assign(process.env, livekitEnv);
+
   // Start Standalone server
   console.log(`\n==> Spawning Standalone Next.js Server on port ${PORT}...`);
   const serverEnv = {
     ...process.env,
+    ...livekitEnv,
     PORT: String(PORT),
     HOSTNAME: '127.0.0.1',
     NODE_ENV: 'production',
