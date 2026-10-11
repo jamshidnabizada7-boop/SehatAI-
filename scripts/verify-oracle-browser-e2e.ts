@@ -320,14 +320,19 @@ async function main() {
     await patientCdp.send('Page.navigate', { url: `${BASE_URL}/?view=care` });
     await new Promise((r) => setTimeout(r, 2500));
 
-    // Inspect doctor card demo label on marketplace
-    const doctorCardDemoText = await patientCdp.eval(`(() => {
-      const cards = Array.from(document.querySelectorAll('[data-slot="card"], .border'));
-      for (const c of cards) {
-        if (c.innerText.includes('DEMO / SYNTHETIC PROFILE') || c.innerText.includes('DEMO / SYNTHETIC')) return c.innerText;
-      }
-      return 'none';
-    })()`);
+    // Inspect doctor card demo label on marketplace with polling
+    let doctorCardDemoText = 'none';
+    for (let i = 0; i < 20; i++) {
+      doctorCardDemoText = await patientCdp.eval(`(() => {
+        const cards = Array.from(document.querySelectorAll('[data-slot="card"], .border, [role="button"]'));
+        for (const c of cards) {
+          if (c.innerText.includes('DEMO / SYNTHETIC PROFILE') || c.innerText.includes('DEMO / SYNTHETIC')) return c.innerText;
+        }
+        return 'none';
+      })()`);
+      if (doctorCardDemoText !== 'none') break;
+      await new Promise((r) => setTimeout(r, 500));
+    }
     console.log(`  Doctor Profile Label: ${doctorCardDemoText.slice(0, 80).replace(/\n/g, ' ')}`);
     if (doctorCardDemoText === 'none') {
       throw new Error('Doctor card on Care marketplace does not display DEMO label!');
