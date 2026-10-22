@@ -56,7 +56,11 @@ function HomeContent() {
     : 'active';
 
   // Allowed views for this role
-  const allowedViews: View[] = role === 'admin' ? ADMIN_VIEWS : role === 'doctor' ? DOCTOR_VIEWS : PATIENT_VIEWS;
+  const allowedViews: View[] = role === 'admin'
+    ? ADMIN_VIEWS
+    : role === 'doctor'
+    ? [...DOCTOR_VIEWS, 'dashboard']
+    : [...PATIENT_VIEWS, 'dashboard'];
   // Safe view — fall back to role default if the current view isn't allowed
   const safeView: View = allowedViews.includes(view) ? view : (DEFAULT_VIEW[role] ?? 'chat');
 

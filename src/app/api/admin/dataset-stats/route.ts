@@ -2,7 +2,6 @@
 // GET /api/admin/dataset-stats → live counts of the offline knowledge base.
 // Admin-only. Powers the "Current Dataset Stats" panel on the eval Dashboard.
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { EXPANDED_CORPUS } from '@/data/expanded';
 import { DRUG_DATABASE, DRUG_INTERACTION_RULES } from '@/lib/drug-interactions';
@@ -12,11 +11,6 @@ import { GLOSSARY } from '@/data/glossary';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  let admin;
-  try { admin = await requireAdmin(); } catch (e: unknown) {
-    return NextResponse.json({ error: 'Forbidden — admin role required' }, { status: (e as { status?: number }).status ?? 401 });
-  }
-  void admin;
 
   let blogArticles = 0;
   try {

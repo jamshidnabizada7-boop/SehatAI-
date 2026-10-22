@@ -1,5 +1,7 @@
 'use client';
 
+import { useSession } from 'next-auth/react';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -11,7 +13,6 @@ import {
   Gauge,
   Link2,
   Loader2,
-  Lock,
   Play,
   ShieldCheck,
   ShieldQuestion,
@@ -32,7 +33,6 @@ import {
   Bar,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +45,6 @@ import { DoctorVerificationsView } from '@/components/admin/doctor-verifications
 // Phase 0 (W5 fix): hardcoded passcode removed. The dashboard is now gated
 // server-side by the user's role (admin) via GET /api/eval/access. The client
 // just checks the access response; no secret is shipped in the bundle.
-const UNLOCK_KEY = 'sehatai.evalUnlocked';
 
 // ---------- normalized run shape (defensive against backend field naming) ----------
 
@@ -180,89 +179,6 @@ function pct(v: number): string {
   return `${(v * 100).toFixed(1)}%`;
 }
 
-// ---------- access gate (Phase 0 W5 fix: server-side role check, no client passcode) ----------
-
-function PasscodeGate({ lang, onUnlock }: { lang: Lang; onUnlock: () => void }) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState(false);
-  const [checking, setChecking] = useState(false);
-
-  const tryUnlock = async () => {
-    setChecking(true);
-    try {
-      // Server-side check: user must be authenticated with role 'admin'.
-      // The passcode field is now just a confirmation prompt (UX preserved),
-      // but the real gate is the session role. Any value works for an admin user.
-      const res = await fetch('/api/eval/access', { method: 'POST' });
-      if (res.ok) {
-        try {
-          sessionStorage.setItem(UNLOCK_KEY, '1');
-        } catch {
-          // session storage blocked — stay unlocked for this render only
-        }
-        onUnlock();
-      } else {
-        setError(true);
-      }
-    } catch {
-      setError(true);
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  return (
-    <div className="flex h-full items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-sm"
-      >
-        <div className="mb-4 flex flex-col items-center gap-2 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-            <Lock className="h-7 w-7 text-primary" aria-hidden />
-          </span>
-          <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-            {t(lang, 'dashboard.admin')}
-          </p>
-          <h1 className="text-lg font-bold text-foreground">{t(lang, 'dashboard.lockTitle')}</h1>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {t(lang, 'dashboard.lockDesc')}
-          </p>
-        </div>
-        <div className="space-y-2">
-          <Input
-            type="password"
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value);
-              setError(false);
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && tryUnlock()}
-            placeholder={t(lang, 'dashboard.passcode')}
-            aria-label={t(lang, 'dashboard.passcode')}
-            aria-invalid={error}
-            className="min-h-11 text-center tracking-widest"
-            dir="ltr"
-          />
-          {error ? (
-            <p className="text-center text-xs font-medium text-red-600 dark:text-red-400">
-              {t(lang, 'dashboard.wrongPasscode')}
-            </p>
-          ) : null}
-          <Button
-            onClick={tryUnlock}
-            disabled={checking}
-            className="min-h-11 w-full bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            {checking ? '…' : t(lang, 'dashboard.unlock')}
-          </Button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 // ---------- metric card ----------
 
 function MetricCard({
@@ -321,11 +237,11 @@ function MetricCard({
 
 export function DashboardView() {
   const { toast } = useToast();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'admin';
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
 
-  const [unlocked, setUnlocked] = useState(false);
-  const [gateReady, setGateReady] = useState(false);
 
   const [runs, setRuns] = useState<NormalizedRun[]>([]);
   const [latestResults, setLatestResults] = useState<EvalRow[]>([]);
@@ -335,14 +251,6 @@ export function DashboardView() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [datasetStats, setDatasetStats] = useState<DatasetStats | null>(null);
 
-  useEffect(() => {
-    try {
-      setUnlocked(sessionStorage.getItem(UNLOCK_KEY) === '1');
-    } catch {
-      setUnlocked(false);
-    }
-    setGateReady(true);
-  }, []);
 
   const loadResults = useCallback(async (): Promise<{ runs: NormalizedRun[]; results: EvalRow[] } | null> => {
     try {
@@ -363,13 +271,11 @@ export function DashboardView() {
   }, []);
 
   useEffect(() => {
-    if (!unlocked) return;
     void loadResults().finally(() => setLoading(false));
-  }, [unlocked, loadResults]);
+  }, [loadResults]);
 
   // Dataset Stats panel — live counts from /api/admin/dataset-stats
   useEffect(() => {
-    if (!unlocked) return;
     void (async () => {
       try {
         const res = await fetch('/api/admin/dataset-stats', { cache: 'no-store' });
@@ -378,7 +284,7 @@ export function DashboardView() {
         // panel stays hidden on failure — non-critical
       }
     })();
-  }, [unlocked]);
+  }, []);
 
   // Drive a serverless-safe eval run: the client POSTs {runId} every few
   // seconds and the server processes the next batch inside that request
@@ -467,11 +373,6 @@ export function DashboardView() {
 
   const m = latestRun?.metrics;
 
-  if (!gateReady) return null;
-
-  if (!unlocked) {
-    return <PasscodeGate lang={uiLang} onUnlock={() => setUnlocked(true)} />;
-  }
 
   return (
     <div className="custom-scrollbar h-full overflow-y-auto px-4 py-4 sm:px-6">
@@ -480,7 +381,7 @@ export function DashboardView() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-              {t(uiLang, 'dashboard.admin')}
+              Clinical Safety & Evaluation Suite
             </p>
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
               {t(uiLang, 'dashboard.latest')}
@@ -834,9 +735,11 @@ export function DashboardView() {
         )}
 
         {/* Doctor PMDC Verifications (admin only) */}
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-          <DoctorVerificationsView />
-        </div>
+        {isAdmin && (
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+            <DoctorVerificationsView />
+          </div>
+        )}
       </div>
     </div>
   );

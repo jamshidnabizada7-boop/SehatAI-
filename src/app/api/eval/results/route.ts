@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
 import type { EvalRunSummary } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -41,12 +40,6 @@ function safeParse(text: string | null): Record<string, unknown> | null {
 
 /** GET /api/eval/results?runId — latest 20 runs + the latest (or requested) run's case rows */
 export async function GET(req: NextRequest) {
-  try {
-    await requireAdmin();
-  } catch (e: unknown) {
-    const status = (e as { status?: number }).status ?? 403;
-    return NextResponse.json({ error: (e as Error).message || 'Forbidden — admin role required' }, { status });
-  }
 
   try {
     const runId = (req.nextUrl.searchParams.get('runId') ?? '').trim();
