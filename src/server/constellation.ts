@@ -25,6 +25,7 @@ import { scanForInjection, sanitizeRetrievedContext } from '@/lib/prompt-securit
 import { checkDrugSafety, messageMentionsDrug, resolveDrugName } from '@/lib/drug-interactions';
 import { extractCitations } from '@/server/pipeline/run';
 import { allergyCrossCheck, type ServerHealthProfile } from '@/lib/profile-server';
+import { runL0Triage } from '@/lib/engine/safety-engine';
 
 // ---------- Types ----------
 
@@ -74,28 +75,17 @@ export interface ConstellationResult {
 /** Validator 1: Red-flag recheck — ensures no emergency signs were missed */
 async function validateRedFlags(input: ConstellationInput): Promise<ValidatorResult> {
   const t0 = Date.now();
-  const lower = input.message.toLowerCase();
-
-  // Critical red-flag patterns that should ALWAYS trigger EMERGENCY
-  const criticalPatterns = [
-    { pattern: /chest pain.*breath|seene.*saans/i, expected: 'EMERGENCY' },
-    { pattern: /face droop|slurred speech|chehra.*tedha/i, expected: 'EMERGENCY' },
-    { pattern: /unconscious|behosh/i, expected: 'EMERGENCY' },
-    { pattern: /suicid|kill myself|marna chahta|khudkushi/i, expected: 'EMERGENCY' },
-    { pattern: /severe bleeding|khoon nahi ruk/i, expected: 'EMERGENCY' },
-    { pattern: /seizure|convulsion|dorah/i, expected: 'EMERGENCY' },
-  ];
-
-  for (const { pattern, expected } of criticalPatterns) {
-    if (pattern.test(lower) && input.triageLevel !== expected) {
+  // Use the shared affirmative, contextual detector. Bare regexes escalated
+  // denials such as "no seizure" and questions about warning signs.
+  const recheck = runL0Triage(input.message);
+  if (recheck.level === 'EMERGENCY' && input.triageLevel !== 'EMERGENCY') {
       return {
         name: 'red-flag-recheck',
         veto: true,
-        reason: `Critical red flag detected but triage was ${input.triageLevel}, expected ${expected}`,
+        reason: `Affirmed critical red flag detected but triage was ${input.triageLevel}, expected EMERGENCY`,
         severity: 'critical',
         latencyMs: Date.now() - t0,
       };
-    }
   }
 
   return {

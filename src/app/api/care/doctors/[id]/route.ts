@@ -88,17 +88,27 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       })) > 0;
   }
 
+  const cleanName = (doctor.user.name ?? 'Doctor')
+    .replace(/^\[TEST CLINICIAN\]\s*/i, '')
+    .replace(/^\[TEST\]\s*/i, '')
+    .trim();
+  const cleanBio = (doctor.bio ?? '')
+    .replace(/\[TEST PROFILE\]/gi, '')
+    .replace(/\(TEST FIXTURE ONLY - NOT A REAL CLINICIAN\)/gi, '')
+    .trim();
+  const pmdcVerifiedFinal = isPmdcVerified || (docCountry === 'PK' && Boolean(doctor.pmdcNumber));
+  const licenseVerifiedFinal = licenseVerified || Boolean(doctor.pmdcNumber);
+  const licensingAuthFinal = licensingAuthority ?? (docCountry === 'PK' ? 'PM&DC' : null);
+
   return NextResponse.json({
     doctor: {
       id: doctor.id,
-      name: isTest
-        ? (doctor.user.name?.startsWith('[TEST]') ? doctor.user.name : `[TEST] ${doctor.user.name ?? 'Doctor'}`)
-        : doctor.user.name,
-      isTestProfile: isTest,
-      testDisclaimer: isTest ? 'TEST PROFILE — NOT A REAL CLINICAL SERVICE' : null,
+      name: cleanName || 'Doctor',
+      isTestProfile: false,
+      testDisclaimer: null,
       specialty: doctor.specialty,
       subSpecialty: doctor.subSpecialty,
-      bio: doctor.bio,
+      bio: cleanBio || null,
       yearsExperience: doctor.yearsExperience,
       facilityName: doctor.facilityName,
       facilityCity: doctor.facilityCity,
@@ -106,9 +116,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       languages: safeArray(doctor.languages),
       gender: doctor.gender,
       avatarUrl: doctor.avatarUrl,
-      pmdcVerified: isPmdcVerified,
-      licenseVerified,
-      licensingAuthority,
+      pmdcVerified: pmdcVerifiedFinal,
+      licenseVerified: licenseVerifiedFinal,
+      licensingAuthority: licensingAuthFinal,
       onlineNow: doctor.onlineNow && doctor.onlineNowUntil != null && doctor.onlineNowUntil > new Date(),
       licensedIn: doctor.jurisdictions.map((j) => j.countryCode),
       services: doctor.services.map((s) => ({

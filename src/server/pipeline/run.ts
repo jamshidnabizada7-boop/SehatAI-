@@ -1472,16 +1472,11 @@ export async function runPipeline(
             convId = undefined; // Deny guest loading other user's or guest's conversation
           }
         }
-      } else if (input.sessionId) {
-        const conv = await db.conversation.findFirst({
-          where: input.userId
-            ? { userId: input.userId }
-            : { sessionToken: input.sessionId, userId: null },
-          orderBy: { updatedAt: 'desc' },
-          select: { id: true },
-        });
-        convId = conv?.id;
       }
+      // Only an explicit owned conversationId resumes clinical history.
+      // New chat clears that ID while retaining the browser session token.
+      // Looking up the latest chat by either user or session resurrected old
+      // emergencies after pressing New chat.
       if (convId) {
         const past = await db.message.findMany({
           where: { conversationId: convId },
@@ -2090,6 +2085,9 @@ export async function runPipeline(
     // Vector RAG failed — fall back to TF-IDF
     hits = retrieveCorpus(message, 3);
   }
+  // An empty vector result is also a retrieval miss. The lexical pack
+  // understands common misspellings such as "headeach".
+  if (hits.length === 0) hits = retrieveCorpus(message, 3);
 
   // Fallback 1: Use L1-extracted symptoms to boost retrieval for follow-up queries
   if (hits.length === 0 && l1?.symptoms?.length) {

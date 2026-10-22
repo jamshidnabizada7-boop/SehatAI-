@@ -115,6 +115,7 @@ export function VideoCall({ appointmentId, onClose }: VideoCallProps) {
           const room = new Room({
             adaptiveStream: true,
             dynacast: true,
+            singlePeerConnection: false,
           });
           roomRef.current = room;
 

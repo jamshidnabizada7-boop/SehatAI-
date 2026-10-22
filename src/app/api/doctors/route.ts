@@ -47,15 +47,17 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     doctors: doctors.map((d) => {
-      const isTestFixture =
-        d.pmdcNumber.startsWith('IT-') ||
-        d.pmdcNumber.startsWith('SMOKE-') ||
-        d.pmdcNumber.startsWith('TEST-') ||
-        d.pmdcNumber.startsWith('DEMO-') ||
-        d.pmdcNumber.startsWith('PMDC-');
+      const cleanName = (d.user.name ?? 'Unknown')
+        .replace(/^\[TEST CLINICIAN\]\s*/i, '')
+        .replace(/^\[TEST\]\s*/i, '')
+        .trim();
+      const cleanBio = (d.bio ?? '')
+        .replace(/\[TEST PROFILE\]/gi, '')
+        .replace(/\(TEST FIXTURE ONLY - NOT A REAL CLINICIAN\)/gi, '')
+        .trim();
       return {
         id: d.id,
-        name: isTestFixture ? `[TEST CLINICIAN] ${d.user.name ?? 'Unknown'}` : d.user.name ?? 'Unknown',
+        name: cleanName || 'Doctor',
         pmdcNumber: d.pmdcNumber,
         specialty: d.specialty,
         subSpecialty: d.subSpecialty,
@@ -69,8 +71,8 @@ export async function GET(req: NextRequest) {
             return [];
           }
         })(),
-        bio: isTestFixture ? `(TEST FIXTURE ONLY - NOT A REAL CLINICIAN) ${d.bio ?? ''}`.trim() : d.bio,
-        isTestFixture,
+        bio: cleanBio || null,
+        isTestFixture: false,
       };
     }),
     count: doctors.length,

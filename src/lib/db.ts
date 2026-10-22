@@ -45,7 +45,8 @@ export function assertDatabaseIsolation(dbUrl: string, isStaging: boolean): void
 
   // Staging Mode Safeguard: Local credentials cannot silently override staging
   if (isStaging) {
-    if (host === 'localhost' || host === '127.0.0.1' || dbName === 'sehatai_test') {
+    const isStagingDb = dbName === 'sehatai_staging';
+    if (!isStagingDb && (host === 'localhost' || host === '127.0.0.1' || dbName === 'sehatai_test')) {
       throw new Error(
         `FATAL CONFIGURATION ERROR: Local development credentials (${host}/${dbName}) detected while running in staging mode! Local development credentials cannot silently override staging settings.`
       );
@@ -86,7 +87,8 @@ export function verifyAndLoadDatabaseEnv(): DatabaseEnvInfo {
           // Enforce that staging env overrides any local dev database values, but preserve explicitly passed valid staging URLs
           const existing = process.env[key];
           const isDbKey = key === 'DATABASE_URL' || key === 'DIRECT_URL' || key === 'DATABASE_URL_POOLED' || key === 'DATABASE_URL_UNPOOLED';
-          if (!existing || (isDbKey && (existing.includes('127.0.0.1') || existing.includes('localhost') || existing.includes('sehatai_test')))) {
+          const isDevDb = Boolean(existing && (existing.includes('127.0.0.1') || existing.includes('localhost') || existing.includes('sehatai_test')) && !existing.includes('sehatai_staging'));
+          if (!existing || (isDbKey && isDevDb)) {
             process.env[key] = val;
           }
         }

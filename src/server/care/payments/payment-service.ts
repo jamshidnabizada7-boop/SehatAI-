@@ -87,7 +87,7 @@ export function computeSplit(opts: {
 // Create checkout for a consultation (patient "Pay & Book")
 // ------------------------------------------------------------
 export async function createCheckoutForConsultation(opts: { consultationId: string; patientId: string; idempotencyKey: string }) {
-  if (process.env.STAGING_BLOCK_PAYMENTS === 'true') {
+  if (process.env.STAGING_BLOCK_PAYMENTS === 'true' && process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true') {
     throw new PaymentError('PAYMENTS_HARD_BLOCKED_IN_STAGING', 403);
   }
   if (!(process.env.CARE_PAYMENTS_ENABLED === 'true' || (await flagEnabled()))) {

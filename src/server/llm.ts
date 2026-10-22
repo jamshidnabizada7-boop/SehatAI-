@@ -209,6 +209,10 @@ export interface KeyPoolItem {
   failures: number;
 }
 
+function isConfiguredApiKey(value: string): boolean {
+  return value.length >= 10 && !/(your[_-]|placeholder|replace[_-]?me|change[_-]?me|configured[-_ ]separately)/i.test(value);
+}
+
 export class ApiKeyPool {
   private items: KeyPoolItem[] = [];
   public readonly name: string;
@@ -223,14 +227,14 @@ export class ApiKeyPool {
     for (const env of envKeys) {
       const val = process.env[env];
       if (val && typeof val === 'string') {
-        const parts = val.split(/[,;\n]+/).map((s) => s.trim()).filter((s) => s.length >= 10 && !s.includes('YOUR_'));
+        const parts = val.split(/[,;\n]+/).map((s) => s.trim()).filter(isConfiguredApiKey);
         rawKeys.push(...parts);
       }
       for (let i = 1; i <= 10; i++) {
         const idxVal = process.env[`${env}_${i}`] || process.env[`${env}${i}`];
         if (idxVal && typeof idxVal === 'string') {
           const trimmed = idxVal.trim();
-          if (trimmed.length >= 10 && !trimmed.includes('YOUR_') && !rawKeys.includes(trimmed)) {
+          if (isConfiguredApiKey(trimmed) && !rawKeys.includes(trimmed)) {
             rawKeys.push(trimmed);
           }
         }
@@ -320,9 +324,9 @@ export function getDashScopePool(): ApiKeyPool {
 
 export function getGeminiPool(): ApiKeyPool {
   if (!geminiPool) {
-    geminiPool = new ApiKeyPool('Gemini', ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GEMINI_API_KEYS', 'GOOGLE_API_KEYS']);
+    geminiPool = new ApiKeyPool('Gemini', ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY', 'GEMINI_API_KEYS', 'GOOGLE_API_KEYS']);
   } else {
-    geminiPool.reload(['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GEMINI_API_KEYS', 'GOOGLE_API_KEYS']);
+    geminiPool.reload(['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY', 'GEMINI_API_KEYS', 'GOOGLE_API_KEYS']);
   }
   return geminiPool;
 }
@@ -565,18 +569,14 @@ export const DASHSCOPE_FALLBACK_MODELS = [
 ];
 
 export const GEMINI_FALLBACK_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
-  'gemini-flash-latest',
   'gemini-flash-lite-latest',
+  'gemini-flash-latest',
 ];
 
 export const GROQ_FALLBACK_MODELS = [
-  'qwen/qwen3.8-27b',
   'openai/gpt-oss-120b',
   'openai/gpt-oss-20b',
-  'qwen/qwen3.6-27b',
-  'allam-2-7b',
+  'qwen/qwen3.8-27b',
 ];
 
 export const CEREBRAS_FALLBACK_MODELS = [
@@ -586,10 +586,7 @@ export const CEREBRAS_FALLBACK_MODELS = [
 ];
 
 export const OPENROUTER_FALLBACK_MODELS = [
-  'meta-llama/llama-3.3-70b-instruct',
-  'google/gemini-2.0-flash-001',
-  'qwen/qwen-2.5-72b-instruct',
-  'mistralai/mistral-small-24b-instruct-2501',
+  'openrouter/free',
 ];
 
 export const MISTRAL_FALLBACK_MODELS = [

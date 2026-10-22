@@ -240,7 +240,14 @@ const QUESTION_MARKERS =
 const SYMPTOM_ASSERTION =
   /\b(mujhe|mera|meri|i have|i feel|i am having|i am suffering|ho raha|ho rahi|ho rahe|raha hai|rahi hai|bukhar hai|bukhar hua|dard hai|dard ho|dard sharu|pet dard|khoon|behosh|chakkar|ulti|dast|khansi|khoon beh|khoon aa|cannot breathe|can't breathe|cant breathe|difficulty breathing|trouble breathing|shortness of breath|struggling to breathe|unable to breathe|bleeding|chest pain|unconscious|seizure|fainted)\b|مجھے|بخار|درد|کھانسی|دست|الٹی|بہہ رہا|آ رہا|خون/i;
 
+function isWarningSignQuestion(text: string): boolean {
+  return /^(?:what are|list|explain) (?:the )?(?:warning|danger) signs (?:of|for) (?:a |an )?(?:seizure|stroke|heart attack|anaphylaxis)\s*\??$/i.test(text.trim());
+}
+
 export function isInformationalQuery(text: string): boolean {
+  // A named condition in a standalone warning-sign question is not a
+  // report that somebody is currently experiencing that condition.
+  if (isWarningSignQuestion(text)) return true;
   if (!QUESTION_MARKERS.test(text)) return false;
   return !SYMPTOM_ASSERTION.test(text);
 }
@@ -371,6 +378,7 @@ export function isTermAffirmedInClause(clause: string, term: string): boolean {
 /** L0: match red-flag patterns against normalized text with robust negation handling */
 export function matchRedFlags(rawText: string): LexiconMatch[] {
   const hits: LexiconMatch[] = [];
+  if (isWarningSignQuestion(rawText)) return hits;
   const rawClauses = splitIntoClauses(rawText);
   const normClauses = rawClauses.map((c) => normalizeText(c)).filter(Boolean);
   if (normClauses.length === 0) return hits;

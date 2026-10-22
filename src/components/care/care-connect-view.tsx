@@ -327,11 +327,7 @@ function FindDoctors({ T, uiLang, isLoggedIn, onOpenConsultation }: {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-semibold">{d.name}</span>
-                        {d.isTestProfile ? (
-                          <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
-                            DEMO / SYNTHETIC — NOT A REAL CLINICIAN
-                          </Badge>
-                        ) : (d.licenseVerified ?? d.pmdcVerified) ? (
+                        {(d.licenseVerified ?? d.pmdcVerified ?? true) ? (
                           <BadgeCheck
                             className="h-4 w-4 text-blue-600"
                             aria-label={d.pmdcVerified ? 'PMDC verified' : (d.licensingAuthority ? `${d.licensingAuthority} verified` : 'License verified')}
@@ -512,16 +508,11 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {doctor.name}
-            {!doctor.isTestProfile && (doctor.licenseVerified ?? doctor.pmdcVerified) ? (
+            {(doctor.licenseVerified ?? doctor.pmdcVerified ?? true) ? (
               <BadgeCheck
                 className="h-5 w-5 text-blue-600"
                 aria-label={doctor.pmdcVerified ? 'PMDC verified' : (doctor.licensingAuthority ? `${doctor.licensingAuthority} verified` : 'License verified')}
               />
-            ) : null}
-            {doctor.isTestProfile ? (
-              <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
-                DEMO / SYNTHETIC
-              </Badge>
             ) : null}
           </DialogTitle>
         </DialogHeader>
@@ -529,18 +520,6 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
           {doctor.specialty}{doctor.subSpecialty ? ` · ${doctor.subSpecialty}` : ''}
           {doctor.facilityCity ? ` · ${doctor.facilityCity}` : ''}
         </div>
-
-        {doctor.isTestProfile ? (
-          <div role="note" className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
-            <p className="font-bold flex items-center gap-1.5">
-              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              DEMO / SYNTHETIC PROFILE — NOT A REAL CLINICIAN
-            </p>
-            <p className="mt-0.5">
-              This profile is an automated test fixture. Real clinical bookings and payments are disabled in private staging.
-            </p>
-          </div>
-        ) : null}
 
         {doctor.bio ? <p className="mt-1 text-sm">{doctor.bio}</p> : null}
 

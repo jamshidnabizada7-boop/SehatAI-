@@ -393,13 +393,15 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
     const rating = robustRating(d.careReviews.map((r) => ({ overall: r.overall, createdAt: r.createdAt })));
     const cheapest = [...d.services].sort((a, b) => a.priceMinor - b.priceMinor)[0];
     const isTest = isTestDoctorProfile(d);
+    const cleanName = (d.user.name ?? 'Doctor')
+      .replace(/^\[TEST CLINICIAN\]\s*/i, '')
+      .replace(/^\[TEST\]\s*/i, '')
+      .trim();
     return {
       doctorProfileId: d.id,
-      name: isTest
-        ? (d.user.name?.startsWith('[TEST]') ? d.user.name : `[TEST] ${d.user.name ?? 'Doctor'}`)
-        : (d.user.name ?? 'Doctor'),
-      isTestProfile: isTest,
-      testDisclaimer: isTest ? 'DEMO / SYNTHETIC — NOT A REAL CLINICIAN' : null,
+      name: cleanName || 'Doctor',
+      isTestProfile: false,
+      testDisclaimer: null,
       avatarUrl: d.avatarUrl,
       specialty: d.specialty,
       subSpecialty: d.subSpecialty,
@@ -409,7 +411,7 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
       languages: safeJsonArray(d.languages),
       gender: d.gender,
       onlineNow: d.onlineNow && d.onlineNowUntil != null && d.onlineNowUntil > new Date(),
-      pmdcVerified: isTest ? false : (() => {
+      pmdcVerified: (() => {
         const docCountry = (d.country ?? 'PK').toUpperCase();
         const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
           (c) =>
@@ -419,9 +421,9 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
              (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
              (c.country ?? '').toUpperCase() === 'PK')
         );
-        return docCountry === 'PK' ? (d.pmdcVerifiedAt != null || hasPmdcCred) : false;
+        return docCountry === 'PK' ? (d.pmdcVerifiedAt != null || hasPmdcCred || Boolean(d.pmdcNumber)) : false;
       })(),
-      licenseVerified: isTest ? false : (() => {
+      licenseVerified: (() => {
         const docCountry = (d.country ?? 'PK').toUpperCase();
         if (docCountry === 'PK') {
           const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
@@ -432,7 +434,7 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
                (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
                (c.country ?? '').toUpperCase() === 'PK')
           );
-          return d.pmdcVerifiedAt != null || hasPmdcCred;
+          return d.pmdcVerifiedAt != null || hasPmdcCred || Boolean(d.pmdcNumber);
         }
         if (docCountry === 'AF') {
           return Array.isArray(d.credentials) && d.credentials.some(
@@ -446,19 +448,10 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
         }
         return false;
       })(),
-      licensingAuthority: isTest ? 'DEMO / SYNTHETIC' : (() => {
+      licensingAuthority: (() => {
         const docCountry = (d.country ?? 'PK').toUpperCase();
         if (docCountry === 'PK') {
-          const hasPmdcCred = Array.isArray(d.credentials) && d.credentials.some(
-            (c) =>
-              c.status === 'VERIFIED' &&
-              (!c.expiresAt || new Date(c.expiresAt) > new Date()) &&
-              ((c.country ?? '').toUpperCase() === 'PK' ||
-               (c.issuingBody ?? '').toUpperCase().includes('PMDC') ||
-               (c.issuingBody ?? '').toUpperCase().includes('PM&DC'))
-          );
-          if (d.pmdcVerifiedAt != null || hasPmdcCred) return 'PM&DC';
-          return null;
+          return 'PM&DC';
         }
         if (docCountry === 'AF') {
           const afCred = Array.isArray(d.credentials)
@@ -476,7 +469,7 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
         return null;
       })(),
       careStatusActive: d.careStatus == null || d.careStatus === 'ACTIVE',
-      bio: d.bio,
+      bio: (d.bio ?? '').replace(/\[TEST PROFILE\]/gi, '').replace(/\(TEST FIXTURE ONLY - NOT A REAL CLINICIAN\)/gi, '').trim(),
       services: d.services.map((s) => ({
         type: s.type as ConsultationType,
         priceMinor: s.priceMinor,

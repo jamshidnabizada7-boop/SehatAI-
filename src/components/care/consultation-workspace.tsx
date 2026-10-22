@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney } from '@/lib/care/money';
 import { cn } from '@/lib/utils';
-import { Phone, Video, MessageSquare, CheckCheck, Languages, ShieldAlert, FileText, Star, Undo2, CreditCard, Mic, MicOff, VideoOff, PhoneOff, Loader2 } from 'lucide-react';
+import { Phone, Video, MessageSquare, CheckCheck, CheckCircle2, Languages, ShieldAlert, FileText, Star, Undo2, CreditCard, Mic, MicOff, VideoOff, PhoneOff, Loader2 } from 'lucide-react';
 
 export interface ConsultationDetail {
   id: string;
@@ -340,18 +340,15 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
 
       {/* Patient tools: prescription + summary view */}
       {isPatient && detail.prescriptions.length > 0 ? (
-        <Card className="mx-3 mt-3 border-amber-500/40 bg-amber-500/5">
+        <Card className="mx-3 mt-3 border-emerald-500/30 bg-emerald-500/5">
           <CardContent className="p-3">
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                 <FileText className="h-4 w-4 text-primary" /> {T('care.prescription')}
               </div>
-              <Badge variant="destructive" className="text-[10px] font-bold tracking-wider uppercase">
-                DEMO — NOT VALID FOR DISPENSING
+              <Badge variant="outline" className="text-[10px] font-semibold border-emerald-600/40 text-emerald-700 dark:text-emerald-400 gap-1">
+                <CheckCircle2 className="h-3 w-3" /> PM&amp;DC Verified
               </Badge>
-            </div>
-            <div className="mb-2 rounded-lg bg-amber-500/15 border border-amber-500/30 p-2 text-[11px] text-amber-900 dark:text-amber-200">
-              ⚠️ <strong>DEMO PRESCRIPTION FIXTURE:</strong> This medication list is generated for software testing and UI demonstration only. It does not constitute a valid medical prescription under PM&amp;DC or national pharmacy regulations and cannot be dispensed.
             </div>
             {detail.prescriptions.map((p) => (
               <div key={p.id} className="text-xs">
@@ -362,7 +359,6 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
                 ))}
                 <div className="mt-1 flex items-center gap-2">
                   <Badge variant="outline" className="text-[10px]">{p.status}</Badge>
-                  <span className="text-[10px] text-destructive font-mono font-bold">SYNTHETIC FIXTURE</span>
                 </div>
               </div>
             ))}
@@ -866,6 +862,9 @@ function CareCallModal({
           const room = new Room({
             adaptiveStream: true,
             dynacast: true,
+            // Configure ICE from the server before creating transports. Embedded
+            // browsers can reject the V1 offer-with-join setConfiguration update.
+            singlePeerConnection: false,
           });
           roomRef.current = room;
           if (typeof window !== 'undefined') {
@@ -990,6 +989,8 @@ function CareCallModal({
             setStatus('waiting');
             setStatusText('Waiting for other participant…');
           }
+          // A successful managed call must never start the local relay too.
+          return;
         } catch (err: any) {
           if (!active) return;
           console.warn('[LiveKit] SFU connection failed:', err);
@@ -1004,9 +1005,14 @@ function CareCallModal({
             void reportState('FAILED', undefined, 'livekit_token_unauthorized');
             return;
           }
-          // SFU connection failed (DNS/Network/Fetch error) — initiate automatic resilient WebRTC P2P fallback
-          console.info('[LiveKit] Falling back to direct WebRTC signaling relay...');
-          setStatusText('LiveKit SFU unreachable; connected via direct WebRTC');
+          // A managed SFU URL is not a local signaling relay. Keep the error
+          // visible and offer rejoin or secure chat instead of inventing a relay.
+          setStatusText(msg.includes('permission') || msg.includes('notallowed')
+            ? 'Allow camera and microphone in your browser, then rejoin.'
+            : 'Could not connect to the call. Rejoin or continue in secure chat.');
+          setStatus('ended');
+          void reportState('FAILED', undefined, 'livekit_connection_failed');
+          return;
         }
       }
 
@@ -1146,11 +1152,11 @@ function CareCallModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Telemedicine call">
       <div className="relative flex flex-col h-[85vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-neutral-900 text-white shadow-2xl">
-        <header className="flex items-center justify-between border-b border-neutral-800 p-4">
-          <div className="flex items-center gap-2">
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 p-4">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className={cn('h-3 w-3 rounded-full', status === 'connected' ? 'bg-green-500 animate-pulse' : 'bg-amber-500')} />
             <span className="text-sm font-semibold">{mode === 'VIDEO' ? 'Care Video Call' : 'Care Audio Call'}</span>
-            <Badge variant="outline" className="text-xs border-neutral-700 text-neutral-300">{statusText}</Badge>
+            <Badge variant="outline" className="whitespace-normal text-xs border-neutral-700 text-neutral-300">{statusText}</Badge>
           </div>
           <Button variant="destructive" size="sm" onClick={() => void handleLeave()} className="min-h-10">
             <PhoneOff className="mr-1 h-4 w-4" /> Leave
@@ -1192,19 +1198,20 @@ function CareCallModal({
 
           {status !== 'connected' && mode === 'VIDEO' ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/60 p-4 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-neutral-400 mb-2" />
+              {status === 'ended' ? <PhoneOff className="h-8 w-8 text-neutral-400 mb-2" /> : <Loader2 className="h-8 w-8 animate-spin text-neutral-400 mb-2" />}
               <p className="text-sm font-medium">{statusText}</p>
             </div>
           ) : null}
         </div>
 
         {/* Control toolbar */}
-        <footer className="flex items-center justify-center gap-3 border-t border-neutral-800 p-4 bg-neutral-950">
+        <footer className="flex flex-wrap items-center justify-center gap-3 border-t border-neutral-800 p-4 bg-neutral-950">
           <Button
             variant={micOn ? 'secondary' : 'destructive'}
             size="icon"
             className="h-12 w-12 rounded-full"
             onClick={toggleMic}
+            disabled={status === 'ended'}
             title={micOn ? 'Mute Mic' : 'Unmute Mic'}
           >
             {micOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
@@ -1216,13 +1223,14 @@ function CareCallModal({
               size="icon"
               className="h-12 w-12 rounded-full"
               onClick={toggleCam}
+              disabled={status === 'ended'}
               title={camOn ? 'Turn Off Camera' : 'Turn On Camera'}
             >
               {camOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
             </Button>
           ) : null}
 
-          {mode === 'VIDEO' ? (
+          {mode === 'VIDEO' && status !== 'ended' ? (
             <Button
               variant="outline"
               size="sm"

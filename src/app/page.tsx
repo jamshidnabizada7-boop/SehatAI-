@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppStore, type View } from '@/lib/store/app-store';
@@ -45,6 +45,7 @@ function HomeContent() {
   const { status, data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const consumedConsultationLink = useRef(false);
 
   // Resolve role (default to 'guest' for unauthenticated)
   const role: string = status === 'authenticated' && session?.user
@@ -106,6 +107,12 @@ function HomeContent() {
     }
     if (role === 'doctor' && (accountStatus === 'suspended' || accountStatus === 'deleted')) {
       router.replace('/onboarding/doctor/rejected');
+      return;
+    }
+    // Preserve consultation deep links when the page is refreshed.
+    if (searchParams.get('consultationId') && !consumedConsultationLink.current && allowedViews.includes('care')) {
+      consumedConsultationLink.current = true;
+      setView('care');
       return;
     }
     // Honor ?view=... query (e.g. from doctor signin redirect) — but only if allowed for this role

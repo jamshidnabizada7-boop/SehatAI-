@@ -19,52 +19,13 @@ export function proxy(req: NextRequest) {
     );
   }
 
-  // Private staging access control for approved testers (Section 9.5)
-  // Fail-closed invariant: If staging auth is required, STAGING_ACCESS_SECRET must be configured.
-  if (process.env.STAGING_AUTH_REQUIRED === 'true') {
-    const stagingSecret = process.env.STAGING_ACCESS_SECRET;
-    if (!stagingSecret) {
-      return NextResponse.json(
-        {
-          error: 'STAGING_AUTH_MISCONFIGURED',
-          message: 'Staging authentication is required but STAGING_ACCESS_SECRET is not configured on this server.',
-        },
-        { status: 500 }
-      );
-    }
-
-    const isPublicPath =
-      req.nextUrl.pathname === '/api/care/health' ||
-      req.nextUrl.pathname === '/api/health' ||
-      req.nextUrl.pathname === '/api/staging/unlock' ||
-      req.nextUrl.pathname === '/staging/unlock' ||
-      req.nextUrl.pathname.startsWith('/_next') ||
-      req.nextUrl.pathname === '/favicon.ico' ||
-      req.nextUrl.pathname === '/robots.txt' ||
-      req.nextUrl.pathname === '/manifest.json';
-
-    if (!isPublicPath) {
-      const headerKey = req.headers.get('x-staging-access-key');
-      const cookieKey = req.cookies.get('sehatai_staging_key')?.value;
-
-      const isAuthorized =
-        (headerKey && headerKey === stagingSecret) ||
-        (cookieKey && cookieKey === stagingSecret);
-
-      if (!isAuthorized) {
-        return NextResponse.json(
-          {
-            error: 'STAGING_ACCESS_DENIED',
-            message: 'Private staging access requires approved tester authorization (via header or cookie).',
-          },
-          { status: 401 }
-        );
-      }
-    }
+  // Redirect deprecated unlock UI directly to public homepage (Decision 1)
+  if (req.nextUrl.pathname === '/staging/unlock') {
+    return NextResponse.redirect(new URL('/', req.url));
   }
 
-  // Staging defensive guards (Section 9.4)
-  if (process.env.STAGING_BLOCK_PAYMENTS === 'true') {
+  // Staging defensive guards (Section 9.4) — unblocked when CARE_ALLOW_MOCK_PAYMENTS=true (Decision 2)
+  if (process.env.STAGING_BLOCK_PAYMENTS === 'true' && process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true') {
     if (
       req.nextUrl.pathname.startsWith('/api/care/payments') ||
       req.nextUrl.pathname.startsWith('/api/care/checkout') ||
@@ -78,7 +39,7 @@ export function proxy(req: NextRequest) {
     }
   }
 
-  if (process.env.STAGING_BLOCK_BOOKING === 'true') {
+  if (process.env.STAGING_BLOCK_BOOKING === 'true' && process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true') {
     if (
       (req.nextUrl.pathname === '/api/appointments' && req.method === 'POST') ||
       (req.nextUrl.pathname === '/api/care/consultations' && req.method === 'POST')

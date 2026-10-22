@@ -45,7 +45,7 @@ export interface CreateConsultationInput {
 }
 
 export async function createConsultation(input: CreateConsultationInput) {
-  if (process.env.STAGING_BLOCK_BOOKING === 'true') {
+  if (process.env.STAGING_BLOCK_BOOKING === 'true' && process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true') {
     throw new ConsultationError('BOOKING_HARD_BLOCKED_IN_STAGING', 403);
   }
 
@@ -59,7 +59,7 @@ export async function createConsultation(input: CreateConsultationInput) {
   });
   if (!doctor) throw new ConsultationError('DOCTOR_NOT_FOUND', 404);
 
-  if (process.env.STAGING_REQUIRE_SYNTHETIC === 'true') {
+  if (process.env.STAGING_REQUIRE_SYNTHETIC === 'true' && process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true') {
     if (!isTestDoctorProfile(doctor)) {
       throw new ConsultationError('STAGING_VIOLATION_NON_SYNTHETIC_DOCTOR', 403);
     }

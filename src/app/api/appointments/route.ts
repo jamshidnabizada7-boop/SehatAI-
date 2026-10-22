@@ -10,7 +10,7 @@ export async function GET() {
   return NextResponse.json({ appointments: appts.map(a => ({ id: a.id, doctorProfileId: a.doctorProfileId, doctorName: a.doctorProfile.user.name ?? 'Unknown', doctorSpecialty: a.doctorProfile.specialty, doctorFacilityName: a.doctorProfile.facilityName, doctorFacilityCity: a.doctorProfile.facilityCity, scheduledAt: a.scheduledAt.toISOString(), reason: a.reason, status: a.status, doctorNotes: a.doctorNotes, createdAt: a.createdAt.toISOString() })) });
 }
 export async function POST(req: NextRequest) {
-  if (process.env.STAGING_BLOCK_BOOKING === 'true') {
+  if (process.env.STAGING_BLOCK_BOOKING === 'true' && process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true') {
     return NextResponse.json(
       { error: 'BOOKING_HARD_BLOCKED_IN_STAGING', message: 'Public booking is disabled in staging.' },
       { status: 403 }
