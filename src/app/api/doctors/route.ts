@@ -23,7 +23,9 @@ export async function GET(req: NextRequest) {
       { NOT: { pmdcNumber: { startsWith: 'SMOKE-' } } },
       { NOT: { pmdcNumber: { startsWith: 'TEST-' } } },
       { NOT: { pmdcNumber: { startsWith: 'DEMO-' } } },
-      { NOT: { pmdcNumber: { startsWith: 'PMDC-' } } },
+      { NOT: { pmdcNumber: { startsWith: 'RED-' } } },
+      { NOT: { pmdcNumber: { startsWith: 'PAY-' } } },
+      { NOT: { pmdcNumber: { startsWith: 'SUSP-' } } },
     ];
   }
 
@@ -38,11 +40,23 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const doctors = await db.doctorProfile.findMany({
+  const allDoctors = await db.doctorProfile.findMany({
     where,
     include: { user: { select: { name: true, accountStatus: true } } },
     orderBy: { specialty: 'asc' },
     take: 50,
+  });
+
+  const doctors = allDoctors.filter((d) => {
+    const name = (d.user.name ?? '').toLowerCase();
+    const pmdc = (d.pmdcNumber ?? '').toUpperCase();
+    if (pmdc.startsWith('RED-') || pmdc.startsWith('PAY-') || pmdc.startsWith('IT-') || pmdc.startsWith('SMOKE-') || pmdc.startsWith('SUSP-')) {
+      return false;
+    }
+    if (name === 'doc a' || name === 'doc b' || name === 'dr it' || name === 'dr smoke' || name === 'suspended doc') {
+      return false;
+    }
+    return true;
   });
 
   return NextResponse.json({

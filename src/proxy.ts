@@ -19,8 +19,54 @@ export function proxy(req: NextRequest) {
     );
   }
 
+  // Private staging access control for approved testers (Section 9.5)
+  // Fail-closed invariant: If staging auth is required, STAGING_ACCESS_SECRET must be configured.
+  // In production activation, STAGING_AUTH_REQUIRED is disabled ('false' or unset).
+  if (process.env.STAGING_AUTH_REQUIRED === 'true') {
+    const stagingSecret = process.env.STAGING_ACCESS_SECRET;
+    if (!stagingSecret) {
+      return NextResponse.json(
+        {
+          error: 'STAGING_AUTH_MISCONFIGURED',
+          message: 'Staging authentication is required but STAGING_ACCESS_SECRET is not configured on this server.',
+        },
+        { status: 500 }
+      );
+    }
+
+    const isPublicPath =
+      req.nextUrl.pathname === '/api/care/health' ||
+      req.nextUrl.pathname === '/api/health' ||
+      req.nextUrl.pathname === '/api/staging/unlock' ||
+      req.nextUrl.pathname === '/staging/unlock' ||
+      req.nextUrl.pathname === '/staging/unlock/' ||
+      req.nextUrl.pathname.startsWith('/_next') ||
+      req.nextUrl.pathname === '/favicon.ico' ||
+      req.nextUrl.pathname === '/robots.txt' ||
+      req.nextUrl.pathname === '/manifest.json';
+
+    if (!isPublicPath) {
+      const headerKey = req.headers.get('x-staging-access-key');
+      const cookieKey = req.cookies.get('sehatai_staging_key')?.value;
+
+      const isAuthorized =
+        (headerKey && headerKey === stagingSecret) ||
+        (cookieKey && cookieKey === stagingSecret);
+
+      if (!isAuthorized) {
+        return NextResponse.json(
+          {
+            error: 'STAGING_ACCESS_DENIED',
+            message: 'Private staging access requires approved tester authorization (via header or cookie).',
+          },
+          { status: 401 }
+        );
+      }
+    }
+  }
+
   // Redirect deprecated unlock UI directly to public homepage (Decision 1)
-  if (req.nextUrl.pathname === '/staging/unlock') {
+  if (req.nextUrl.pathname === '/staging/unlock' || req.nextUrl.pathname === '/staging/unlock/') {
     return NextResponse.redirect(new URL('/', req.url));
   }
 

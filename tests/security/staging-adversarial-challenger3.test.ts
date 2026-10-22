@@ -299,7 +299,9 @@ describe('Challenger 3 Adversarial Challenge 5: In-Depth Server-Side Defense & P
 
       const reqUnlockUI = new NextRequest('http://localhost:4000/staging/unlock');
       const resUnlockUI = middleware(reqUnlockUI);
-      expect(resUnlockUI.status).toBe(200);
+      // Exempt from 401 gate; redirects to / (307) in production activation
+      expect([200, 307]).toContain(resUnlockUI.status);
+      expect(resUnlockUI.status).not.toBe(401);
 
       // 7. Global query parameter rejection even on exempt routes
       const reqHealthWithQuery = new NextRequest('http://localhost:4000/api/care/health?staging_key=secret');

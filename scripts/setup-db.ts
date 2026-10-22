@@ -14,7 +14,8 @@ GRANT ALL PRIVILEGES ON DATABASE sehatai_staging TO sehatai;
 ALTER DATABASE sehatai_staging OWNER TO sehatai;
 `;
 
-const res = spawnSync('ssh', ['ariahub-oracle', 'PGPASSWORD=6bee8b0a4f143de72ea787b1d90b8b1f7f1d7376c2bf7e775b072194d6a39344 psql -h 127.0.0.1 -p 5450 -U postgres -d postgres'], {
+const adminPw = process.env.POSTGRES_ADMIN_PASSWORD || '6bee8b0a4f143de72ea787b1d90b8b1f7f1d7376c2bf7e775b072194d6a39344';
+const res = spawnSync('ssh', ['ariahub-oracle', `PGPASSWORD=${adminPw} psql -h 127.0.0.1 -p 5450 -U postgres -d postgres`], {
   input: sql,
   encoding: 'utf8',
 });

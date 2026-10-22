@@ -53,7 +53,7 @@ if '--reuse-upload' not in sys.argv:
 
 remote = r'''
 from pathlib import Path
-import tarfile, hashlib, subprocess, os, posixpath, shutil
+import tarfile, hashlib, subprocess, os, posixpath, shutil, time
 
 archive = Path('/tmp/sehatai-production-activation-20261022.tar.gz')
 assert hashlib.sha256(archive.read_bytes()).hexdigest() == 'DIGEST', 'Checksum mismatch'
@@ -65,7 +65,7 @@ print('Current active release:', old)
 
 subprocess.run(['node', '-e', "if(require('/opt/sehatai/current/node_modules/next/package.json').version!=='16.1.3'||require('/opt/sehatai/current/node_modules/@prisma/client/package.json').version!=='6.19.2')process.exit(1)"], check=True)
 
-release = Path('/opt/sehatai/releases/20261022_production_activation')
+release = Path(f'/opt/sehatai/releases/{time.strftime("%Y%m%d_%H%M%S")}_production_activation')
 assert current.resolve() != release, 'Do not overwrite an active release'
 if release.exists():
     shutil.rmtree(release)

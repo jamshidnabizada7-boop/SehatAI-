@@ -540,13 +540,13 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
               <Button
                 size="sm"
                 className="min-h-11 bg-green-600 hover:bg-green-700 text-white font-semibold"
-                disabled={doctor.isTestProfile || booking || !isLoggedIn || !telemedicineConsent}
+                disabled={booking || !isLoggedIn || !telemedicineConsent}
                 onClick={() => {
                   const s = textService ?? doctor.services[0];
                   if (s) void book(s, undefined, true);
                 }}
               >
-                {doctor.isTestProfile ? 'Demo only — appointments unavailable' : 'Talk now'}
+                Talk now
               </Button>
             </div>
           </div>
@@ -568,20 +568,19 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
                   variant="outline"
                   size="sm"
                   className="mt-2 min-h-11 w-full"
-                  disabled={doctor.isTestProfile}
                   onClick={() => { setChosen({ slot: null, service: s }); void loadSlots(s); }}
                 >
                   <CalendarClock className="mr-1 h-4 w-4" aria-hidden />
-                  {doctor.isTestProfile ? 'Demo only — appointments unavailable' : T('care.selectTime')}
+                  {T('care.selectTime')}
                 </Button>
               ) : (
                 <Button
                   size="sm"
                   className="mt-2 min-h-11 w-full"
-                  disabled={doctor.isTestProfile || booking || !isLoggedIn || !telemedicineConsent}
+                  disabled={booking || !isLoggedIn || !telemedicineConsent}
                   onClick={() => void book(s)}
                 >
-                  {doctor.isTestProfile ? 'Demo only — appointments unavailable' : T('care.bookNow')}
+                  {T('care.bookNow')}
                 </Button>
               )}
             </div>
@@ -607,19 +606,17 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
                   </Button>
                 ))}
                 {slots.length === 0 ? (
-                  <p className="col-span-full py-2 text-center text-xs text-muted-foreground">No demo appointment slots available for this doctor.</p>
+                  <p className="col-span-full py-2 text-center text-xs text-muted-foreground">No appointment slots available for this doctor.</p>
                 ) : null}
               </div>
             )}
             {chosen.slot ? (
               <Button
                 className="mt-3 min-h-11 w-full"
-                disabled={doctor.isTestProfile || booking || !isLoggedIn || !telemedicineConsent}
+                disabled={booking || !isLoggedIn || !telemedicineConsent}
                 onClick={() => void book(chosen.service, chosen.slot ?? undefined)}
               >
-                {doctor.isTestProfile
-                  ? 'Demo only — appointments unavailable'
-                  : `${T('care.payAndBook')} · ${formatMoney({ amountMinor: chosen.service.priceMinor, currency: chosen.service.currency })}`}
+                {`${T('care.payAndBook')} · ${formatMoney({ amountMinor: chosen.service.priceMinor, currency: chosen.service.currency })}`}
               </Button>
             ) : null}
           </section>

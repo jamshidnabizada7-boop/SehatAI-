@@ -68,7 +68,8 @@ export async function createConsultation(input: CreateConsultationInput) {
   // Prevent internal test doctors from appearing as real services in production or public rollout (§18)
   const isProd =
     (process.env.NODE_ENV === 'production' || process.env.CARE_ROLLOUT_STAGE === '5') &&
-    process.env.CARE_ALLOW_TEST_DOCTORS !== 'true';
+    process.env.CARE_ALLOW_TEST_DOCTORS !== 'true' &&
+    process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true';
 
   if (isProd) {
     if (isTestDoctorProfile(doctor)) {

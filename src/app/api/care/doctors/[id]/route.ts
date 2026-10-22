@@ -71,7 +71,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const isTest = isTestDoctorProfile(doctor);
   // Prevent test doctors from appearing as real services in production or public rollout
-  if (isTest && (process.env.NODE_ENV === 'production' || process.env.CARE_ROLLOUT_STAGE === '5') && process.env.CARE_ALLOW_TEST_DOCTORS !== 'true') {
+  if (isTest && (process.env.NODE_ENV === 'production' || process.env.CARE_ROLLOUT_STAGE === '5') && process.env.CARE_ALLOW_TEST_DOCTORS !== 'true' && process.env.CARE_ALLOW_MOCK_PAYMENTS !== 'true') {
     return NextResponse.json({ error: 'DOCTOR_NOT_FOUND' }, { status: 404 });
   }
 

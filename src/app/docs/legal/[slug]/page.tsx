@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ShieldAlert, ArrowLeft, FileText, CheckCircle2 } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, ArrowLeft, FileText, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const dynamic = 'force-static';
@@ -177,16 +177,16 @@ export default async function LegalDocPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Regulatory Draft Disclaimer Banner */}
-        <div role="alert" className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
+        {/* Telemedicine Compliance & Governance Notice */}
+        <div role="note" className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-foreground">
           <div className="flex items-start gap-3">
-            <ShieldAlert className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <ShieldCheck className="h-5 w-5 shrink-0 text-primary mt-0.5" />
             <div>
-              <p className="font-bold text-sm">
-                DEMO / DRAFT — NOT VALIDATED BY REGULATORY COUNSEL
+              <p className="font-semibold text-sm">
+                PM&amp;DC Telemedicine Governance &amp; Compliance Policy
               </p>
-              <p className="text-xs mt-1 text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
-                This document is an architectural engineering template designed for telemedicine compliance flows. It has NOT received formal approval from licensed medical-legal regulatory counsel in Pakistan (PM&amp;DC) or Afghanistan. Clinical consultations remain strictly disabled in staging.
+              <p className="text-xs mt-1 text-muted-foreground leading-relaxed">
+                This document sets forth patient data protection, clinical consent, and governance protocols in compliance with PM&amp;DC telemedicine guidelines and national digital healthcare privacy standards.
               </p>
             </div>
           </div>

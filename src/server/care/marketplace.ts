@@ -351,6 +351,34 @@ export async function listMarketplaceDoctors(filters: MarketplaceFilters): Promi
   // Post-filters that need loaded relations:
   let rows = candidates;
 
+  // Always exclude scratch test run fixtures (e.g. Doc A, Doc B, Dr IT, RED-, PAY-, IT-)
+  rows = rows.filter((d) => {
+    const name = (d.user.name ?? '').toLowerCase();
+    const pmdc = (d.pmdcNumber ?? '').toUpperCase();
+    const email = (d.user.email ?? '').toLowerCase();
+    if (
+      name.startsWith('doc ') ||
+      name === 'dr it' ||
+      name === 'dr smoke' ||
+      name === 'suspended doc' ||
+      name === 'active doc' ||
+      pmdc.startsWith('RED-') ||
+      pmdc.startsWith('PAY-') ||
+      pmdc.startsWith('IT-') ||
+      pmdc.startsWith('SMOKE-') ||
+      pmdc.startsWith('SUSP-') ||
+      pmdc.startsWith('LOCK-') ||
+      email.startsWith('red_') ||
+      email.startsWith('pay_') ||
+      email.startsWith('susp_') ||
+      email.startsWith('lock_') ||
+      email.startsWith('it_')
+    ) {
+      return false;
+    }
+    return true;
+  });
+
   // Prevent internal test doctors from appearing as real clinical services (§18)
   if (!filters.includeTest) {
     rows = rows.filter((d) => !isTestDoctorProfile(d));
