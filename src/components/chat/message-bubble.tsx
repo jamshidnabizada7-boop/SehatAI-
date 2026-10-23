@@ -4,14 +4,18 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bell,
+  Check,
   CloudOff,
   Copy,
   Cpu,
+  FileText,
   HeartPulse,
   Languages,
+  MapPin,
   RefreshCw,
   Share2,
   Square,
+  Stethoscope,
   ThumbsDown,
   ThumbsUp,
   TriangleAlert,
@@ -245,7 +249,7 @@ export function MessageBubble({
 
         <div
           className={cn(
-            'rounded-2xl rounded-es-md border px-4 py-3 shadow-sm',
+            'rounded-2xl rounded-es-md border px-4 py-3.5 shadow-sm space-y-3',
             message.offline
               ? 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/40'
               : 'bg-card',
@@ -253,27 +257,30 @@ export function MessageBubble({
             isSpeaking && 'ring-2 ring-primary/25',
           )}
         >
-          {/* offline label */}
-          {message.offline ? (
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
-              <CloudOff className="h-3.5 w-3.5" aria-hidden />
-              {t(uiLang, 'chat.offlineLabel')}
-            </div>
-          ) : null}
-
-          {/* triage badge + confidence band pill (assistant metadata row) */}
-          {message.triage?.level !== 'INFORMATIONAL' && (message.triage || message.confidence) ? (
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              {message.triage ? (
+          {/* Assistant Header: Brand, Evidence chip, Triage & Confidence */}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-foreground text-sm">SehatAI</span>
+              <span className="chip green py-0.5 text-[10px] font-semibold">Evidence-based guidance</span>
+              {message.triage && message.triage.level !== 'INFORMATIONAL' ? (
                 <TriageBadge
                   level={message.triage.level}
                   lang={msgLang}
                   reason={message.triage.reason}
                 />
               ) : null}
-              {message.triage?.level !== 'EMERGENCY' ? (
+              {message.confidence && message.triage?.level !== 'EMERGENCY' ? (
                 <ConfidenceBadge confidence={message.confidence} lang={msgLang} />
               ) : null}
+            </div>
+            <span className="text-[11px] text-muted-foreground">{timeLabel(message.createdAt)}</span>
+          </div>
+
+          {/* offline label */}
+          {message.offline ? (
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+              <CloudOff className="h-3.5 w-3.5" aria-hidden />
+              {t(uiLang, 'chat.offlineLabel')}
             </div>
           ) : null}
 
@@ -347,6 +354,47 @@ export function MessageBubble({
               {showingUrdu ? t(uiLang, 'chat.viewRoman') : t(uiLang, 'chat.viewUrdu')}
             </Button>
           ) : null}
+
+          {/* Navigation CTA strip when response is ready */}
+          {!message.streaming && (
+            <div className="pt-2.5 border-t border-border/40">
+              {isEmergency ? (
+                <div className="inset inset-red border border-red-200/60 p-2.5 rounded-xl">
+                  <div className="flex items-start gap-2.5">
+                    <div className="iconbox iconbox-red h-7 w-7 rounded-lg mt-0.5 shrink-0 flex items-center justify-center">
+                      <TriangleAlert className="h-4 w-4" />
+                    </div>
+                    <div className="text-xs">
+                      <b className="text-red-700 dark:text-red-400 text-xs">Emergency Precaution</b>
+                      <p className="text-muted-foreground mt-0.5 leading-relaxed text-[11px]">
+                        Severe symptoms require urgent clinical evaluation. Call <b>1122</b> in Pakistan or proceed to the nearest emergency facility.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => setView('care')}
+                    className="h-8 gap-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90"
+                  >
+                    <Stethoscope className="h-3.5 w-3.5" />
+                    Book a doctor →
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setView('facilities')}
+                    className="h-8 gap-1.5 rounded-lg border-border text-xs font-bold hover:bg-accent"
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+                    Nearby facilities
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* citations */}

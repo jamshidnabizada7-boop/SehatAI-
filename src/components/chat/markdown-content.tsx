@@ -50,9 +50,38 @@ export function MarkdownContent({ content, className, citations }: MarkdownConte
       <ReactMarkdown
         components={{
           p: ({ children }) => <p className="mb-2.5 whitespace-pre-wrap last:mb-0">{children}</p>,
-          strong: ({ children }) => (
-            <strong className="font-bold text-foreground">{children}</strong>
-          ),
+          strong: ({ children }) => {
+            const text = String(children);
+            if (/emergency|call 1122|go immediately/i.test(text)) {
+              return (
+                <span className="inline-flex items-center gap-1 font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded text-xs uppercase tracking-wide">
+                  {children}
+                </span>
+              );
+            }
+            if (/watch for|see a doctor if|danger signs|khatray ki alamaat/i.test(text)) {
+              return (
+                <span className="inline-flex items-center gap-1 font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded text-xs uppercase tracking-wide">
+                  {children}
+                </span>
+              );
+            }
+            if (/next steps|what helps|home care|recommended/i.test(text)) {
+              return (
+                <span className="inline-flex items-center gap-1 font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded text-xs uppercase tracking-wide">
+                  {children}
+                </span>
+              );
+            }
+            if (/likely assessment|assessment|possible causes/i.test(text)) {
+              return (
+                <span className="inline-flex items-center gap-1 font-bold text-[#007b61] bg-[#eaf9f4] px-1.5 py-0.5 rounded text-xs uppercase tracking-wide">
+                  {children}
+                </span>
+              );
+            }
+            return <strong className="font-bold text-foreground">{children}</strong>;
+          },
           em: ({ children }) => <em className="text-muted-foreground italic">{children}</em>,
           ul: ({ children }) => (
             <ul className="mb-2.5 space-y-1.5 ps-5 last:mb-0 [&_li]:relative [&_li]:ps-2.5 [&_li::before]:absolute [&_li::before]:-left-2 [&_li::before]:top-[0.55em] [&_li::before]:h-1.5 [&_li::before]:w-1.5 [&_li::before]:rounded-full [&_li::before]:bg-primary/70 [&_li::before]:content-['']">

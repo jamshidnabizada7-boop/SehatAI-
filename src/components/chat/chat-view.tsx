@@ -249,218 +249,114 @@ export function ChatView() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-4 py-1"
+              transition={{ duration: 0.3 }}
+              className="custom-scrollbar mx-auto flex w-full max-w-2xl flex-col items-center text-center px-4 py-8 sm:px-6 space-y-6"
             >
-              {/* User intake message bubble */}
-              <div className="surface pad20">
-                <div className="flex justify-end">
-                  <div className="rounded-2xl rounded-ee-md bg-[#007958] text-white p-4 max-w-[620px] shadow-sm">
-                    <p className="text-sm font-semibold leading-relaxed">
-                      {uiLang === 'ur'
-                        ? 'مجھے دو دن سے ہلکی خشک کھانسی اور ہلکا بخار ہے۔ مجھے کیا کرنا چاہیے؟'
-                        : uiLang === 'roman'
-                        ? 'Mujhe 2 din se halki khushk khansi aur halka bukhar hai. Mujhe kya karna chahiye?'
-                        : 'I have had a mild dry cough and slight fever for 2 days. What should I do?'}
-                    </p>
-                    <div className="mt-2 text-right text-[11px] text-white/80">
-                      10:42 PM · Sample intake
-                    </div>
-                  </div>
+              {/* Hero branding */}
+              <div className="flex flex-col items-center">
+                <div className="iconbox h-14 w-14 rounded-2xl bg-[#e2f7ef] text-[#009b78] shadow-sm flex items-center justify-center mb-3">
+                  <HeartPulse className="h-7 w-7" aria-hidden />
                 </div>
-                {/* Symptom chips */}
-                <div className="mt-3 flex flex-wrap justify-end gap-2">
-                  {[
-                    { label: 'Dry cough' },
-                    { label: 'Mild fever' },
-                    { label: '2 days' },
-                    { label: '+ Add details', isAdd: true },
-                  ].map((chipItem, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        if (chipItem.isAdd) {
-                          textareaRef.current?.focus();
-                        } else {
-                          doSend(chipItem.label);
-                        }
-                      }}
-                      className="chip green text-xs font-semibold hover:brightness-95 cursor-pointer transition-all"
-                    >
-                      {chipItem.label}
-                    </button>
-                  ))}
+                <div className="inline-flex items-center gap-1.5 chip green mb-2 font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  <span>Clinical Safety Engine Active</span>
                 </div>
-              </div>
-
-              {/* Assistant structured response card */}
-              <div className="surface pad20 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="iconbox">
-                      <HeartPulse className="h-5 w-5 text-[#009b78]" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-foreground text-sm">SehatAI</span>
-                        <span className="chip green">Evidence-based guidance</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        AI health assistant · educational sample
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs text-muted-foreground">10:42 PM</span>
-                </div>
-
-                <p className="text-sm text-foreground/90 leading-relaxed">
+                <h2 className={cn("text-2xl font-bold tracking-tight text-foreground sm:text-3xl", uiLang === 'ur' && 'font-urdu')}>
                   {uiLang === 'ur'
-                    ? 'السلام علیکم! آپ کی تفصیل کے مطابق (دو دن سے ہلکی خشک کھانسی اور معمولی بخار بغیر سانس لینے میں دشواری کے)، یہاں عمومی معلوماتی رہنمائی پیش ہے:'
-                    : 'Assalam-o-Alaikum! Based on your description of a mild dry cough and slight fever for 2 days without difficulty breathing, here is some general guidance:'}
+                    ? 'السلام علیکم! میں سیۃ اے آئی ہوں'
+                    : uiLang === 'roman'
+                    ? 'Assalam-o-Alaikum! Main SehatAI hoon'
+                    : 'Assalam-o-Alaikum! I am SehatAI'}
+                </h2>
+                <p className={cn("mt-1.5 text-xs text-muted-foreground max-w-md leading-relaxed", uiLang === 'ur' && 'font-urdu')}>
+                  {uiLang === 'ur'
+                    ? 'آپ کا محفوظ صحت رہنما۔ علامات، ادویات، حفاظتی ٹیکوں اور ابتدائی طبی امداد کے بارے میں بلا جھجھک پوچھیں۔'
+                    : uiLang === 'roman'
+                    ? 'Aap ka mehfooz sehat rahnuma. Alamaat, adwiyaat, teekon aur ibtidai tibbi imdaad ke baare mein poochein.'
+                    : 'Your safety-first AI health guide for Pakistan. Describe your symptoms, or ask about child vaccines, medications, and first aid below.'}
                 </p>
-
-                {/* Likely Assessment strip with cough_illustration.png */}
-                <div className="inset inset-green flex flex-col sm:flex-row items-center gap-4 overflow-hidden border border-[#91d7c3]/40">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 text-[#007b61] font-bold text-sm">
-                      <FileText className="h-4 w-4" />
-                      <h4>Likely Assessment</h4>
-                    </div>
-                    <p className="text-xs text-foreground/80 mt-1.5 leading-relaxed">
-                      These symptoms can be consistent with a mild respiratory infection, such as a common cold. A clinician can assess other possible causes.
-                    </p>
-                  </div>
-                  <img
-                    src="/assets/cough_illustration.png"
-                    alt="Respiratory illustration"
-                    className="w-32 h-24 object-cover object-bottom rounded-xl shrink-0 border border-emerald-600/10 shadow-2xs"
-                  />
-                </div>
-
-                {/* 2-column Next Steps / Watch Out */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* Next steps */}
-                  <div className="inset inset-blue border border-blue-200/60 space-y-2.5">
-                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold text-xs uppercase tracking-wide">
-                      <Check className="h-4 w-4" />
-                      <h4>Recommended Next Steps</h4>
-                    </div>
-                    <div className="space-y-2 text-xs text-foreground/85">
-                      <div className="flex items-start gap-2">
-                        <span className="chip blue px-1.5 py-0.5 text-[10px]">1</span>
-                        <span><b>Hydration:</b> Drink warm fluids regularly.</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="chip blue px-1.5 py-0.5 text-[10px]">2</span>
-                        <span><b>Rest:</b> Get adequate sleep.</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="chip blue px-1.5 py-0.5 text-[10px]">3</span>
-                        <span><b>Monitor:</b> Check symptoms and temperature.</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Watch for */}
-                  <div className="inset inset-amber border border-amber-200/60 space-y-2">
-                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-bold text-xs uppercase tracking-wide">
-                      <TriangleAlert className="h-4 w-4 text-amber-600" />
-                      <h4>Watch For</h4>
-                    </div>
-                    <p className="text-xs text-foreground/85 leading-relaxed">
-                      Seek medical care if symptoms worsen, fever persists beyond 3 days, or new concerning symptoms appear.
-                    </p>
-                    <p className="text-xs text-amber-900/90 dark:text-amber-300 font-medium">
-                      For severe trouble breathing or chest pain, seek emergency care immediately.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Escalate Now red box */}
-                <div className="inset inset-red border border-red-200/60">
-                  <div className="flex items-start gap-3">
-                    <div className="iconbox iconbox-red h-8 w-8 rounded-lg mt-0.5">
-                      <TriangleAlert className="h-4 w-4" />
-                    </div>
-                    <div className="text-xs">
-                      <b className="text-red-700 dark:text-red-400 text-sm">Escalate Now</b>
-                      <p className="text-muted-foreground mt-0.5 leading-relaxed">
-                        Severe breathlessness, chest pain, or confusion require urgent medical help. Call <b>1122</b> in Pakistan if appropriate.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Metadata & Actions */}
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border/60 text-xs">
-                  <span className="text-[11px] text-muted-foreground">
-                    Sources must be linked to verified guidance when live.
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toast({ description: 'Viewing Urdu translation sample' })}
-                      className="h-8 gap-1.5 text-xs font-semibold rounded-lg"
-                    >
-                      <Languages className="h-3.5 w-3.5" />
-                      View Urdu translation
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void copyTranscript()}
-                      className="h-8 gap-1.5 text-xs font-semibold rounded-lg"
-                    >
-                      <ClipboardCopy className="h-3.5 w-3.5" />
-                      Copy
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Navigation CTA row */}
-                <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                  <Button
-                    size="sm"
-                    onClick={() => setView('care')}
-                    className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90"
-                  >
-                    <Stethoscope className="h-4 w-4" />
-                    Book a doctor →
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setView('facilities')}
-                    className="h-9 gap-1.5 rounded-xl border-border font-bold hover:bg-accent"
-                  >
-                    <MapPin className="h-4 w-4 text-emerald-600" />
-                    Nearby facilities
-                  </Button>
-                </div>
               </div>
 
-              {/* Suggested quick pills */}
-              <div className="surface pad p-3.5">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                  Suggested follow-up questions:
+              {/* Quick starter question pills */}
+              <div className="w-full surface pad p-4 text-start space-y-3">
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  {uiLang === 'ur' ? 'عام سوالات منتخب کریں:' : 'Suggested quick inquiries:'}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    'Can I take paracetamol?',
-                    'How long will this last?',
-                    'When should I see a doctor?',
-                  ].map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      onClick={() => doSend(q)}
-                      className="rounded-full border border-border/80 bg-background px-3.5 py-1.5 text-xs font-medium text-foreground/90 shadow-2xs transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
-                    >
-                      {q}
-                    </button>
-                  ))}
+                    {
+                      icon: Thermometer,
+                      label: uiLang === 'ur' ? 'ہلکا بخار اور کھانسی' : uiLang === 'roman' ? 'Halka bukhar aur khansi' : 'Mild fever and dry cough',
+                      query: uiLang === 'ur' ? 'مجھے دو دن سے ہلکی کھانسی اور بخار ہے، مجھے کیا کرنا چاہیے؟' : uiLang === 'roman' ? 'Mujhe do din se halki khansi aur bukhar hai, kya karun?' : 'I have had a mild dry cough and slight fever for 2 days. What should I do?',
+                    },
+                    {
+                      icon: Baby,
+                      label: uiLang === 'ur' ? 'بچوں کے حفاظتی ٹیکے (EPI)' : uiLang === 'roman' ? 'Bachon ke teekay (EPI)' : 'Child vaccine schedule (EPI)',
+                      query: uiLang === 'ur' ? 'بچوں کے حفاظتی ٹیکوں کا شیڈول کیا ہے؟' : uiLang === 'roman' ? 'Bachon ke teekon ka schedule kya hai?' : 'What is the standard EPI child vaccination schedule in Pakistan?',
+                    },
+                    {
+                      icon: ShieldPlus,
+                      label: uiLang === 'ur' ? 'ابتدائی طبی امداد (جلنے پر)' : uiLang === 'roman' ? 'Ibtidai tibbi imdaad (Jalna)' : 'First aid for mild burns',
+                      query: uiLang === 'ur' ? 'ہلکا ہاتھ جلنے پر فوری ابتدائی طبی امداد کیا ہے؟' : uiLang === 'roman' ? 'Halka haath jalne par fori ibtidai tibbi imdaad kya hai?' : 'What is the immediate first aid for a mild burn?',
+                    },
+                    {
+                      icon: HeartPulse,
+                      label: uiLang === 'ur' ? 'سر درد اور تھکن' : uiLang === 'roman' ? 'Sar dard aur thakan' : 'Headache & fatigue guidance',
+                      query: uiLang === 'ur' ? 'مجھے شدید سر درد اور تھکن ہے، کیا احتیاط کروں؟' : uiLang === 'roman' ? 'Mujhe sar dard aur thakan hai, kya ehtiyat karun?' : 'I have had a persistent headache and fatigue for 2 days. What should I monitor?',
+                    },
+                    {
+                      icon: HelpCircle,
+                      label: uiLang === 'ur' ? 'ڈاکٹر کو کب دکھائیں؟' : uiLang === 'roman' ? 'Doctor ko kab dikhayein?' : 'When to see a doctor?',
+                      query: uiLang === 'ur' ? 'عام نزلہ زکام میں ڈاکٹر کے پاس کب جانا ضروری ہوتا ہے؟' : uiLang === 'roman' ? 'Aam nazla zukam mein doctor ke paas kab jana chahiye?' : 'When should someone see a doctor for respiratory symptoms?',
+                    },
+                  ].map((item, idx) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => doSend(item.query)}
+                        className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background px-3.5 py-2 text-xs font-medium text-foreground/90 shadow-2xs transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98] cursor-pointer"
+                      >
+                        <Icon className="h-3.5 w-3.5 text-[#009b78] shrink-0" />
+                        <span className={cn(uiLang === 'ur' && 'font-urdu')}>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Triage legend & Daily Tip 2-column grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                {/* 4-level triage safety legend */}
+                <div className="surface pad p-3.5 text-start space-y-2">
+                  <div className="flex items-center gap-2 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                    <TriangleAlert className="h-3.5 w-3.5 text-amber-500" aria-hidden />
+                    <span>{t(uiLang, 'chat.triageLegend')}</span>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {TRIAGE_LEGEND.map((entry) => (
+                      <li key={entry.level} className="flex items-center gap-2 text-xs text-foreground/85">
+                        <span className={cn('h-2 w-2 shrink-0 rounded-full', entry.dot)} aria-hidden />
+                        <span>{t(uiLang, entry.labelKey)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Daily health tip */}
+                <div className="surface pad p-3.5 text-start space-y-1.5 border-l-4 border-l-amber-500/60">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 uppercase tracking-wider dark:text-amber-400">
+                    <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                    <span>{t(uiLang, 'chat.dailyTip')}</span>
+                    <span className="text-muted-foreground font-normal">· {dailyTip.publisher}</span>
+                  </div>
+                  <p className={cn("text-xs font-bold text-foreground line-clamp-1", uiLang === 'ur' && 'font-urdu')}>
+                    {dailyTip.title[uiLang]}
+                  </p>
+                  <p className={cn("text-[11px] text-muted-foreground leading-relaxed line-clamp-2", uiLang === 'ur' && 'font-urdu')}>
+                    {dailyTip.text[uiLang]}
+                  </p>
                 </div>
               </div>
             </motion.div>
