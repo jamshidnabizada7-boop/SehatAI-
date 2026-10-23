@@ -23,9 +23,9 @@ export const runtime = 'nodejs';
 async function resolveUserAndProfile(): Promise<{ userId?: string; profile?: ServerHealthProfile; allowExternalAI?: boolean }> {
   try {
     const session = await getServerSession();
-    const sessionUserId = (session?.user as { id?: string } | undefined)?.id;
-    if (!sessionUserId) return {};
-    await requireUser();
+    if (!(session?.user as { id?: string } | undefined)?.id) return {};
+    const actor = await requireUser();
+    const sessionUserId = actor.id;
     const [row, user] = await Promise.all([db.patientProfile.findUnique({ where: { userId: sessionUserId } }), db.user.findUnique({ where: { id: sessionUserId }, select: { consentAt: true } })]);
     const profile = row
       ? sanitizeProfileServer({

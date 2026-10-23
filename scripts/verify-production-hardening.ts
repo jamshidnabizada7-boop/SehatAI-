@@ -102,6 +102,9 @@ try {
   await status('/api/summary', 422, tokenA, { conversationId: greeting.id });
   pass('saved summaries contain facts and reject greetings-only transcripts');
   const convPath = `/api/conversations/${conversationId}`;
+  const staleIdentityToken = await tokenFor({ ...a, email: b.email });
+  await status('/api/conversations', 401, staleIdentityToken);
+  await status(convPath, 401, staleIdentityToken);
   await status(convPath, 200, tokenA); await status(convPath, 404, tokenB); await status(convPath, 404, tokenAdmin); await status(convPath, 404, tokenDoctor);
   await status('/api/summary', 404, tokenB, { conversationId });
   await status('/api/feedback', 404, tokenB, { messageId: lastMessageId, rating: 1 });

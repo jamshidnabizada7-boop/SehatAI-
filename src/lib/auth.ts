@@ -148,7 +148,8 @@ export async function getServerSession() {
 // Helper: require an authenticated user (throws 401-shaped error if not)
 export async function requireUser(): Promise<{ id: string; email: string; role: string; accountStatus: string }> {
   const session = await getServerSession();
-  if (!session?.user?.email) {
+  const subjectId = (session?.user as { id?: string } | undefined)?.id;
+  if (!session?.user?.email || !subjectId) {
     const err = new Error('Unauthorized');
     (err as any).status = 401;
     throw err;
@@ -157,10 +158,12 @@ export async function requireUser(): Promise<{ id: string; email: string; role: 
   // Live database re-verification: guarantees immediate revocation of suspended accounts or demoted roles
   try {
     const user = await db.user.findUnique({
-      where: { email: session.user.email.toLowerCase() },
+      where: { id: subjectId },
       select: { id: true, email: true, role: true, accountStatus: true },
     });
-    if (!user) {
+    // Email can change or be reassigned. A stale token must not become the new
+    // owner of that address; both immutable subject and email must still agree.
+    if (!user || user.email.toLowerCase() !== session.user.email.toLowerCase()) {
       const err = new Error('Unauthorized');
       (err as any).status = 401;
       throw err;
