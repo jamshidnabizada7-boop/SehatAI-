@@ -9,7 +9,7 @@ Engineering fixes are prepared for controlled local integration. **Public produc
 | Check | Result / evidence |
 | --- | --- |
 | Disposable database | New WSL PostgreSQL 18 cluster, loopback port 55432, database `sehatai_codex_test`; all committed migrations including the additive approval-field correction; corpus/facility and Care seeds succeeded. |
-| Core safety + Care regression | 793 passed, 0 failed across 30 files; 6,723 assertions. `work/regression-final.log`. |
+| Core safety + Care regression | 793 passed, 0 failed across 30 files; over 6,700 assertions. `work/regression-final.log`. |
 | Authorization/security suites | 33 passed, 0 failed, 140 assertions. `work/security-final.log`. |
 | Additional finance concurrency/rollback run | 17 passed, 0 failed; subset overlaps the full suite. `work/capture-final.log`. |
 | Full commercial mock smoke | Booking → signed capture → replay → balanced ledger → doctor acceptance/completion → full refund/reversal: `SMOKE OK`. `work/care-smoke-final.log`. No real money. |

@@ -11,8 +11,9 @@ Implementation commits, in order:
 1. `bf277c3` — atomic financial capture, ledger/consultation/notification effects, webhook retries, secret configuration and additive migration.
 2. `5aa143b` — longitudinal clinical safety, explicit identity extraction, factual summary, scoped patient privacy, offline restoration and contextual chat actions.
 3. a46ded4 — dependency/security updates, safe deployment tracing, credential cleanup/scanning, CI and reproducible production runtime verifier.
+4. 98bc53c — bind current database authorization to the immutable session ID and reject stale/reassigned email identity; chat uses the verified actor.
 
-The following documentation commit adds these four reports. Use `git log --oneline d7e3525..fix/sehatai-clinical-production-hardening` to inspect the final local sequence. Nothing has been merged, pushed or deployed.
+Documentation commits add these four reports. Use `git log --oneline d7e3525..fix/sehatai-clinical-production-hardening` to inspect the final local sequence. Nothing has been merged, pushed or deployed.
 
 ## Preserve these boundaries
 
@@ -44,6 +45,7 @@ Most reusable behavior lives in hooks/services rather than styling. Review these
 - Summary API returns 422 for insufficient medical facts; ownership/current sharing is required. Local summary needs neither network nor external AI. Export is `sehatai-transcript-summary-v1` JSON, not a verified EHR document.
 - Patient history requires active verified doctor plus current `read_history` consent. SOAP requires `soap_draft`; scheduling requires pre-existing `follow_up`. A doctor cannot self-grant sharing. Admin role alone does not open patient conversations. Feedback/delete require the owner; guest reads require the matching high-entropy bearer token.
 - AI/voice/vision processing has fresh identity/consent gates. Unsupported placeholder STT/TTS/RWE endpoints return 501 rather than fabricated success.
+- Authorization resolves the immutable signed session ID, checks email consistency and reads current role/status. A changed/reassigned email requires a new session; it cannot turn an old token into the new email owner's identity.
 - Diagnostics default off with `ENABLE_INTERNAL_DIAGNOSTICS`; fresh admin + audit is required when enabled. Dashboard public aggregate read APIs remain available, including `/api/admin/dataset-stats`.
 - Financial captures and competing payment transitions take a Payment row lock. Ledger/account resolution, status events, earning/fee and notification/outbox changes share a transaction. Unprocessed authentic webhook replay can retry. API idempotency keys are scoped by actor; client raw keys remain accepted at ingress.
 - No placeholder sync acknowledgment is returned. The standalone output excludes runtime storage, scratch logs, environment files and tests; configure private runtime storage separately.
@@ -122,6 +124,7 @@ src/data/lexicon.ts
 src/hooks/use-chat.ts
 src/hooks/use-conversation-persistence.ts
 src/hooks/use-network-online.ts
+src/lib/auth.ts
 src/lib/care-actions.ts
 src/lib/doctor-summary.ts
 src/lib/emergency-localization.ts
