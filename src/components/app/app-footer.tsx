@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 
 const EMERGENCY_NUMBERS = [
   { number: '1122', label: 'Rescue' },
-  { number: '1166', label: 'Health Helpline' },
   { number: '115', label: 'Edhi' },
 ] as const;
 
@@ -32,7 +31,7 @@ export function AppFooter() {
         <nav
           className="flex flex-wrap items-center justify-center gap-1 sm:gap-2"
           dir="ltr"
-          aria-label="Emergency numbers"
+          aria-label="Pakistan emergency services — check local coverage"
         >
           {EMERGENCY_NUMBERS.map((em, i) => (
             <span key={em.number} className="flex items-center gap-1 sm:gap-2">

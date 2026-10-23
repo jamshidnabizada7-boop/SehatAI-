@@ -14,6 +14,7 @@ import { useChatStore } from '@/lib/store/chat-store';
 import { t } from '@/lib/i18n';
 import type { Facility, Lang } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import * as Dialog from '@radix-ui/react-dialog';
 
 type FacilityWithDistance = Facility & { distanceKm?: number };
 
@@ -31,7 +32,7 @@ export function EmergencyOverlay() {
   const loadFacilities = useCallback(async () => {
     setFacilitiesLoading(true);
     try {
-      // geolocation if permitted (short timeout), else Multan default
+      // Offer nearby facilities only when the user shares a location.
       const coords = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
         if (typeof navigator === 'undefined' || !navigator.geolocation) {
           resolve(null);
@@ -44,9 +45,8 @@ export function EmergencyOverlay() {
         );
       });
 
-      const params = coords
-        ? `lat=${coords.lat}&lng=${coords.lng}`
-        : 'city=Multan';
+      if (!coords) { setFacilities([]); return; }
+      const params = `lat=${coords.lat}&lng=${coords.lng}`;
       const res = await fetch(`/api/facilities?${params}`);
       if (!res.ok) throw new Error(`facilities ${res.status}`);
       const data = (await res.json()) as { facilities?: FacilityWithDistance[] };
@@ -79,17 +79,12 @@ export function EmergencyOverlay() {
 
   if (!emergency) return null;
 
-  const numbers =
-    emergency.numbers?.length > 0
-      ? emergency.numbers
-      : [
-          { label: 'Rescue 1122 (Ambulance)', number: '1122' },
-          { label: 'Alkhidmat Ambulance', number: '1023' },
-          { label: 'Pakistan Health Helpline', number: '1166' },
-          { label: 'Edhi Ambulance', number: '115' },
-        ];
+  const numbers = emergency.numbers ?? [];
 
   return (
+    <Dialog.Root open onOpenChange={() => setConfirmClose(true)}>
+    <Dialog.Portal>
+    <Dialog.Content asChild aria-describedby={undefined}>
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -147,9 +142,9 @@ export function EmergencyOverlay() {
           <span className="emergency-ring flex h-14 w-14 items-center justify-center rounded-full bg-white/15">
             <ShieldAlert className="h-8 w-8" aria-hidden />
           </span>
-          <h1 className="text-xl font-extrabold leading-snug sm:text-2xl">
+          <Dialog.Title asChild><h1 className="text-xl font-extrabold leading-snug sm:text-2xl">
             {emergency.title}
-          </h1>
+          </h1></Dialog.Title>
           {emergency.reason ? (
             <p className="max-w-xl text-sm text-white/90">{emergency.reason}</p>
           ) : null}
@@ -267,7 +262,7 @@ export function EmergencyOverlay() {
             </ul>
           ) : (
             <p className="rounded-2xl bg-white/12 px-4 py-3 text-sm text-white/85">
-              1122 · {t(lang, 'emergency.callNow')}
+              {numbers[0]?.number ? `${numbers[0].number} · ` : ''}{t(lang, 'emergency.callNow')}
             </p>
           )}
         </section>
@@ -279,5 +274,8 @@ export function EmergencyOverlay() {
         </p>
       </div>
     </motion.div>
+    </Dialog.Content>
+    </Dialog.Portal>
+    </Dialog.Root>
   );
 }

@@ -1,64 +1,26 @@
 // SehatAI — Doctor Copilot API
 // GET /api/doctor/patients → real patient conversations for the logged-in doctor
-// Doctor-only: requires role=doctor or admin. Falls back to all conversations
-// (so doctors see anyone who has chatted with SehatAI — implicit consent via usage).
-// In v2, this should be consent-gated via PatientConsentForDoctor.
+// Active verified clinicians see only patients with current explicit sharing consent.
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireDoctor } from '@/lib/auth';
+import { requireActiveDoctor } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
 export async function GET(_req: NextRequest) {
   let user;
-  try { user = await requireDoctor(); } catch (e: unknown) {
+  try { user = await requireActiveDoctor(); } catch (e: unknown) {
     return NextResponse.json({ error: 'Forbidden — doctor role required' }, { status: (e as { status?: number }).status ?? 401 });
   }
 
-  let allowedPatientIds: string[] | null = null;
-  if (user.role !== 'admin') {
-    const doctorProfile = await db.doctorProfile.findUnique({
-      where: { userId: user.id },
-      select: { id: true, pmdcVerifiedAt: true },
-    });
-    if (!doctorProfile || !doctorProfile.pmdcVerifiedAt) {
-      return NextResponse.json({ patients: [] });
-    }
-
-    // §22 Authorization Boundary: Doctor A cannot access unrelated patient.
-    // Must have explicit patient consent, scheduled appointment, or Care Connect consultation.
-    const [consents, appointments, consultations] = await Promise.all([
-      db.patientConsentForDoctor.findMany({
-        where: { doctorId: doctorProfile.id, revokedAt: null },
-        select: { patientId: true },
-      }),
-      db.appointment.findMany({
-        where: { doctorProfileId: doctorProfile.id },
-        select: { patientId: true },
-      }),
-      db.consultation.findMany({
-        where: { OR: [{ doctorProfileId: doctorProfile.id }, { doctorUserId: user.id }] },
-        select: { patientId: true },
-      }),
-    ]);
-
-    allowedPatientIds = [
-      ...new Set([
-        ...consents.map((c) => c.patientId),
-        ...appointments.map((a) => a.patientId),
-        ...consultations.map((c) => c.patientId),
-      ]),
-    ];
-
-    if (allowedPatientIds.length === 0) {
-      return NextResponse.json({ patients: [] });
-    }
-  }
+  const consents = await db.patientConsentForDoctor.findMany({ where: { doctorId: user.doctorProfile.id, scope: 'read_history', revokedAt: null }, select: { patientId: true } });
+  const allowedPatientIds = consents.map(c => c.patientId);
+  if (!allowedPatientIds.length) return NextResponse.json({ patients: [] });
 
   // Fetch conversations with userId (authenticated patients), include latest message + profile
   const conversations = await db.conversation.findMany({
     where: {
-      userId: allowedPatientIds ? { in: allowedPatientIds } : { not: null },
+      userId: { in: allowedPatientIds },
     },
     include: {
       messages: {
@@ -123,5 +85,5 @@ export async function GET(_req: NextRequest) {
     data: { userId: user.id, action: 'doctor.patients.list', resource: 'copilot', meta: JSON.stringify({ count: patients.length }) },
   });
 
-  return NextResponse.json({ patients });
+  return NextResponse.json({ patients }, { headers: { 'Cache-Control': 'private, no-store' } });
 }

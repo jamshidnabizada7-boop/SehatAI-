@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ClipboardCopy, Download, FileText, Loader2, MessageCircle, Printer, QrCode, User } from 'lucide-react';
 import {
   Dialog,
@@ -15,7 +15,8 @@ import { useAppStore } from '@/lib/store/app-store';
 import { t } from '@/lib/i18n';
 import type { DoctorSummary, Lang } from '@/lib/types';
 import { TriageBadge } from './triage-badge';
-import { ConfidenceBadge } from './confidence-badge';
+import { useChatStore } from '@/lib/store/chat-store';
+import { buildDoctorSummary, SUMMARY_INSUFFICIENT } from '@/lib/doctor-summary';
 import { DrugWarningCard } from './drug-warning-card';
 import { DifferentialCard } from './differential-card';
 import { QrCodeSvg } from './qr-code-svg';
@@ -40,36 +41,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
   const { toast } = useToast();
   const conversationId = useAppStore((s) => s.conversationId);
-  const sessionId = useAppStore((s) => s.sessionId);
-  const [summary, setSummary] = useState<DoctorSummary | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const messages = useChatStore(s => s.messages);
+  const summary = useMemo(() => open ? buildDoctorSummary(conversationId ?? 'local-current', messages, lang) : null, [open, conversationId, messages, lang]);
+  const loading = false;
+  const error = open && !summary ? SUMMARY_INSUFFICIENT[lang] : null;
   const [showQr, setShowQr] = useState(false);
-
-  const generate = useCallback(async () => {
-    if (!conversationId) {
-      setError(t(lang, 'summary.failed'));
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/summary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, language: lang, sessionId }),
-      });
-      if (!res.ok) throw new Error(`summary ${res.status}`);
-      const data = (await res.json()) as DoctorSummary | { summary: DoctorSummary };
-      // the API wraps the payload as { summary: {...} } — accept both shapes
-      const s = 'summary' in data && data.summary ? data.summary : (data as DoctorSummary);
-      setSummary(s);
-    } catch {
-      setError(t(lang, 'summary.failed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [conversationId, lang, sessionId]);
 
   const shareText = useCallback(() => {
     if (!summary) return '';
@@ -111,105 +87,17 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
     return lines.join('\n');
   }, [summary, lang]);
 
-  /** Phase 2 — FHIR-style JSON export (downloadable .json file for EHR systems). */
+  // This factual export is not represented as a validated FHIR medical document.
   const exportFhirJson = useCallback(() => {
     if (!summary) return;
-    const fhirBundle = {
-      resourceType: 'Bundle',
-      type: 'document',
-      timestamp: summary.generatedAt ?? new Date().toISOString(),
-      entry: [
-        {
-          resource: {
-            resourceType: 'Composition',
-            status: 'final',
-            type: { text: 'SehatAI Clinical Triage Summary' },
-            date: summary.generatedAt ?? new Date().toISOString(),
-            title: 'SehatAI Doctor Summary',
-            section: [
-              { title: 'Chief Complaint', text: { status: 'generated', div: `<div>${summary.chiefComplaint}</div>` } },
-              { title: 'Duration', text: { status: 'generated', div: `<div>${summary.duration}</div>` } },
-              { title: 'Symptoms', text: { status: 'generated', div: `<div>${(summary.symptoms ?? []).join(', ')}</div>` } },
-              { title: 'Red Flags Observed', text: { status: 'generated', div: `<div>${(summary.redFlagsObserved ?? []).join(', ')}</div>` } },
-              { title: 'Triage Level', text: { status: 'generated', div: `<div>${summary.triageLevel}</div>` } },
-              { title: 'Guidance Given', text: { status: 'generated', div: `<div>${(summary.guidanceGiven ?? []).join('; ')}</div>` } },
-            ],
-          },
-        },
-        ...(summary.patientProfile
-          ? [{
-              resource: {
-                resourceType: 'Patient',
-                gender: summary.patientProfile.sex === 'female' ? 'female' : summary.patientProfile.sex === 'male' ? 'male' : 'unknown',
-                extension: [
-                  ...(summary.patientProfile.ageBand && summary.patientProfile.ageBand !== 'undisclosed'
-                    ? [{ url: 'http://sehatai.pk/fhir/StructureDefinition/age-band', valueString: summary.patientProfile.ageBand }] : []),
-                  ...(summary.patientProfile.conditions?.length
-                    ? [{ url: 'http://sehatai.pk/fhir/StructureDefinition/conditions', valueString: summary.patientProfile.conditions.join(', ') }] : []),
-                  ...(summary.patientProfile.allergies?.length
-                    ? [{ url: 'http://sehatai.pk/fhir/StructureDefinition/allergies', valueString: summary.patientProfile.allergies.join(', ') }] : []),
-                  ...(summary.patientProfile.medications?.length
-                    ? [{ url: 'http://sehatai.pk/fhir/StructureDefinition/medications', valueString: summary.patientProfile.medications.join(', ') }] : []),
-                  ...(summary.patientProfile.pregnant
-                    ? [{ url: 'http://sehatai.pk/fhir/StructureDefinition/pregnant', valueBoolean: true }] : []),
-                ],
-              },
-            }]
-          : []),
-        ...(summary.differential
-          ? [{
-              resource: {
-                resourceType: 'Observation',
-                status: 'final',
-                code: { text: 'Differential Diagnosis (AI-assisted, not diagnostic)' },
-                component: [
-                  ...(summary.differential.established.length ? [{ code: { text: 'Established' }, valueString: summary.differential.established.map((e) => e.name).join(', ') }] : []),
-                  ...(summary.differential.suspected.length ? [{ code: { text: 'Suspected' }, valueString: summary.differential.suspected.map((e) => e.name).join(', ') }] : []),
-                  ...(summary.differential.cantMiss.length ? [{ code: { text: 'Cannot Miss' }, valueString: summary.differential.cantMiss.map((e) => e.name).join(', ') }] : []),
-                ],
-              },
-            }]
-          : []),
-        ...(summary.drugCheck && summary.drugCheck.severity !== 'NONE'
-          ? [{
-              resource: {
-                resourceType: 'Flag',
-                status: 'active',
-                code: { text: `Drug-interaction alert (${summary.drugCheck.severity})` },
-                detail: summary.drugCheck.recommendation,
-              },
-            }]
-          : []),
-        ...(summary.citations?.length
-          ? summary.citations.map((c) => ({
-              resource: {
-                resourceType: 'DocumentReference',
-                status: 'current',
-                type: { text: c.title },
-                author: [{ display: c.publisher }],
-                description: c.url,
-              },
-            }))
-          : []),
-      ],
-      meta: {
-        tag: [
-          { system: 'http://sehatai.pk/fhir/CodeSystem/summary-source', code: 'ai-assisted', display: 'AI-assisted summary — not a diagnosis' },
-        ],
-        lastUpdated: summary.generatedAt ?? new Date().toISOString(),
-      },
-    };
-    const blob = new Blob([JSON.stringify(fhirBundle, null, 2)], { type: 'application/fhir+json' });
+    const blob = new Blob([JSON.stringify({ format: 'sehatai-transcript-summary-v1', summary }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `sehatai-summary-${summary.conversationId}.json`;
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast({ description: 'FHIR JSON downloaded' });
-  }, [summary, toast]);
+  }, [summary]);
 
   const copy = useCallback(async () => {
     if (!summary) return;
@@ -229,20 +117,10 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
 
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText())}`;
 
-  // generate on open (Radix onOpenChange doesn't fire for controlled opens)
-  const [openedOnce, setOpenedOnce] = useState(false);
-  useEffect(() => {
-    if (open && !openedOnce) {
-      setOpenedOnce(true);
-      void generate();
-    }
-    if (!open) setOpenedOnce(false);
-  }, [open, openedOnce, generate]);
-
   const summaryText = shareText();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => { setShowQr(false); onOpenChange(next); }}>
       <DialogContent className="custom-scrollbar max-h-[85vh] overflow-y-auto sm:max-w-lg print:max-h-none print:overflow-visible">
         <DialogHeader className="no-print">
           <DialogTitle className="flex items-center gap-2">
@@ -310,9 +188,6 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
                   <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase print:text-gray-600">
                     {t(lang, 'summary.triage')}
                   </p>
-                  {summary.confidence ? (
-                    <ConfidenceBadge confidence={summary.confidence} lang={lang} />
-                  ) : null}
                 </div>
                 <TriageBadge level={summary.triageLevel} lang={lang} />
               </div>
@@ -400,7 +275,7 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
               {summary.disclaimer ?? ''}
             </p>
 
-            {/* Action buttons: Print, WhatsApp, Copy, FHIR JSON, QR */}
+            {/* Action buttons: Print, WhatsApp, Copy, Summary JSON, QR */}
             <div className="space-y-2 no-print">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <Button
@@ -430,15 +305,15 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
                   {t(lang, 'summary.copy')}
                 </Button>
               </div>
-              {/* Phase 2 — FHIR-style JSON export for EHR systems */}
+              {/* Phase 2 — Transcript JSON export for EHR systems */}
               <Button
                 onClick={() => void exportFhirJson()}
                 variant="outline"
                 className="min-h-11 w-full gap-2 rounded-xl border-emerald-500/40 font-semibold text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
-                aria-label={lang === 'ur' ? 'FHIR JSON ایکسپورٹ' : lang === 'roman' ? 'FHIR JSON export' : 'Export FHIR JSON'}
+                aria-label={lang === 'ur' ? 'Summary JSON ایکسپورٹ' : lang === 'roman' ? 'Summary JSON export' : 'Export Summary JSON'}
               >
                 <Download className="h-4 w-4" aria-hidden />
-                {lang === 'ur' ? 'FHIR JSON ایکسپورٹ (EHR کے لیے)' : lang === 'roman' ? 'FHIR JSON export (EHR ke liye)' : 'Export FHIR JSON (for EHR)'}
+                {lang === 'ur' ? 'خلاصہ JSON ایکسپورٹ کریں' : lang === 'roman' ? 'Khulasa JSON export karein' : 'Export Summary JSON'}
               </Button>
               <Button
                 onClick={() => setShowQr((v) => !v)}

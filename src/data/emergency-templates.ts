@@ -531,14 +531,14 @@ export const EMERGENCY_TEMPLATES: EmergencyTemplate[] = [
         roman: 'Abhi kisi qabil-e-bharosa shakhs se baat karein — ghar wala, dost ya parosi — aur un se kahein ke aap ke saath rahein.',
       },
       {
-        en: 'Call Pakistan Health & Polio Helpline 1166 (free, 24/7) — they can listen and guide you.',
-        ur: 'پاکستان ہیلتھ اینڈ پولیو ہیلپ لائن 1166 پر کال کریں (مفت، 24/7) — وہ آپ کی بات سنتے ہیں اور رہنمائی کرتے ہیں۔',
-        roman: 'Pakistan Health & Polio Helpline 1166 par call karein (muft, 24/7) — woh aap ki baat sunte hain aur rahnumai karte hain.',
+        en: 'Seek urgent in-person mental-health support. If you may act on these thoughts, contact local emergency medical services now.',
+        ur: 'فوری بالمشافہ ذہنی صحت کی مدد لیں۔ اگر خود کو نقصان پہنچانے کا خطرہ ہو تو مقامی ایمرجنسی سروس سے فوراً مدد لیں۔',
+        roman: 'Fori rubaru zehni sehat ki madad lein. Agar khud ko nuqsan ka khatra ho to local emergency service se abhi madad lein.',
       },
       {
-        en: 'For women in distress, call Madadgar Women Helpline 1099 (free). For a child, call Umang 1152.',
-        ur: 'پریشان خواتین کے لیے مددگار ویمن ہیلپ لائن 1099 (مفت) پر کال کریں۔ بچے کے لیے امان 1152 پر کال کریں۔',
-        roman: 'Preshan khwateen ke liye Madadgar Women Helpline 1099 (muft) par call karein. Bachay ke liye Umang 1152 par call karein.',
+        en: 'Are you in immediate danger, or thinking of acting on these thoughts right now?',
+        ur: 'کیا ابھی خود کو نقصان پہنچانے کا ارادہ یا فوری خطرہ ہے؟',
+        roman: 'Kya abhi khud ko nuqsan pohanchane ka irada ya fori khatra hai?',
       },
       {
         en: 'If you feel you may act on these thoughts right now, call 1122 or go to the nearest emergency room.',
@@ -563,7 +563,7 @@ export const EMERGENCY_TEMPLATES: EmergencyTemplate[] = [
         roman: 'In ehsasat se niptane ke liye sharaab ya deegar maaday istemal na karein.',
       },
     ],
-    sources: ['WHO — Suicide prevention', 'Umang Mental Health Helpline 1152', 'Madadgar Women Helpline 1099', 'Pakistan Health Helpline 1166'],
+    sources: ['WHO — Suicide prevention'],
   },
   {
     patternCategory: 'anaphylaxis',
@@ -1118,14 +1118,14 @@ export const EMERGENCY_TEMPLATES: EmergencyTemplate[] = [
         roman: 'Agar aap fori khatre mein hain ya zakhmi hain to fori 1122 / 15 par call karein.',
       },
       {
-        en: 'For women, call Madadgar Women Helpline 1099.',
-        ur: 'خواتین کے لیے مددگار ویمن ہیلپ لائن 1099 پر کال کریں۔',
-        roman: 'Khwateen ke liye Madadgar Women Helpline 1099 par call karein.',
+        en: 'In Pakistan, the Ministry of Human Rights 1099 provides legal advice and referrals; it is not ambulance dispatch.',
+        ur: 'پاکستان میں وزارت انسانی حقوق 1099 قانونی مشورہ اور متعلقہ اداروں کا حوالہ دیتی ہے؛ یہ ایمبولینس سروس نہیں۔',
+        roman: 'Pakistan mein Ministry of Human Rights 1099 qanooni mashwara aur referral deti hai; yeh ambulance service nahi.',
       },
       {
-        en: 'For a child in danger, call Umang 1152.',
-        ur: 'بچے کو خطرے میں دیکھیں تو امان 1152 پر کال کریں۔',
-        roman: 'Bachay ko khatre mein dekhein to Umang 1152 par call karein.',
+        en: 'For a child in danger, seek immediate help from local emergency services and a trusted safe adult.',
+        ur: 'خطرے میں بچے کے لیے مقامی ایمرجنسی سروس اور قابل اعتماد محفوظ بالغ سے فوری مدد لیں۔',
+        roman: 'Bachay ko khatra ho to local emergency service aur bharosaymand mehfooz baray se foran madad lein.',
       },
       {
         en: 'Reach a safe place first — a neighbour, a family member you trust, or a public place.',

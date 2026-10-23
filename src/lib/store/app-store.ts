@@ -48,17 +48,19 @@ interface AppState {
 
 function loadSessionId(): string {
   if (typeof window === 'undefined') return '';
+  const createId = () => {
+    // This token authorizes guest records; timestamps and Math.random are unsuitable.
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  };
   try {
     const existing = window.localStorage.getItem(SESSION_KEY);
-    if (existing) return existing;
-    const id =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    if (existing && /^(?:[a-f0-9]{64}|[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})$/i.test(existing)) return existing;
+    const id = createId();
     window.localStorage.setItem(SESSION_KEY, id);
     return id;
   } catch {
-    return `sess-${Date.now()}`;
+    return createId();
   }
 }
 

@@ -1,4 +1,5 @@
 'use client';
+import { careActionsFor } from '@/lib/care-actions';
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -29,12 +30,12 @@ import { useAppStore } from '@/lib/store/app-store';
 import { useChatStore } from '@/lib/store/chat-store';
 import { MarkdownContent } from './markdown-content';
 import { TriageBadge } from './triage-badge';
-import { ConfidenceBadge } from './confidence-badge';
+
 import { DrugWarningCard } from './drug-warning-card';
 import { DifferentialCard } from './differential-card';
 import { CitationCard, citationSummary } from './citation-card';
 import { PipelineTicker } from './pipeline-ticker';
-import { JudgeInspectorModal } from './judge-inspector-modal';
+
 import { Button } from '@/components/ui/button';
 
 /** "HH:MM" from a message timestamp (12h clock, locale-safe fallback). */
@@ -112,7 +113,13 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [showingUrdu, setShowingUrdu] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [inspectorOpen, setInspectorOpen] = useState(false);
+
+  const userText = useChatStore(state => {
+    const index = state.messages.findIndex(m => m.id === message.id);
+    for (let i = index - 1; i >= 0; i--) if (state.messages[i].role === 'user') return state.messages[i].content;
+    return '';
+  });
+  const careActions = careActionsFor(message.triage?.level, userText);
   const isUser = message.role === 'user';
   // content language of THIS message (kept regardless of UI language)
   const msgLang: Lang = message.language ?? 'en';
@@ -257,20 +264,17 @@ export function MessageBubble({
             isSpeaking && 'ring-2 ring-primary/25',
           )}
         >
-          {/* Assistant Header: Brand, Evidence chip, Triage & Confidence */}
+          {/* Assistant header: name and care urgency */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-bold text-foreground text-sm">SehatAI</span>
-              <span className="chip green py-0.5 text-[10px] font-semibold">Evidence-based guidance</span>
+
               {message.triage && message.triage.level !== 'INFORMATIONAL' ? (
                 <TriageBadge
                   level={message.triage.level}
                   lang={msgLang}
                   reason={message.triage.reason}
                 />
-              ) : null}
-              {message.confidence && message.triage?.level !== 'EMERGENCY' ? (
-                <ConfidenceBadge confidence={message.confidence} lang={msgLang} />
               ) : null}
             </div>
             <span className="text-[11px] text-muted-foreground">{timeLabel(message.createdAt)}</span>
@@ -355,46 +359,19 @@ export function MessageBubble({
             </Button>
           ) : null}
 
-          {/* Navigation CTA strip when response is ready */}
-          {!message.streaming && (
-            <div className="pt-2.5 border-t border-border/40">
-              {isEmergency ? (
-                <div className="inset inset-red border border-red-200/60 p-2.5 rounded-xl">
-                  <div className="flex items-start gap-2.5">
-                    <div className="iconbox iconbox-red h-7 w-7 rounded-lg mt-0.5 shrink-0 flex items-center justify-center">
-                      <TriangleAlert className="h-4 w-4" />
-                    </div>
-                    <div className="text-xs">
-                      <b className="text-red-700 dark:text-red-400 text-xs">Emergency Precaution</b>
-                      <p className="text-muted-foreground mt-0.5 leading-relaxed text-[11px]">
-                        Severe symptoms require urgent clinical evaluation. Call <b>1122</b> in Pakistan or proceed to the nearest emergency facility.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => setView('care')}
-                    className="h-8 gap-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90"
-                  >
-                    <Stethoscope className="h-3.5 w-3.5" />
-                    Book a doctor →
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setView('facilities')}
-                    className="h-8 gap-1.5 rounded-lg border-border text-xs font-bold hover:bg-accent"
-                  >
-                    <MapPin className="h-3.5 w-3.5 text-emerald-600" />
-                    Nearby facilities
-                  </Button>
-                </div>
-              )}
+          {!message.streaming && isLastAssistant && (careActions.bookDoctor || careActions.facilities) ? (
+            <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-border/40">
+              {careActions.bookDoctor ? <Button size="sm" onClick={() => setView('care')} className="h-8 gap-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90">
+                <Stethoscope className="h-3.5 w-3.5" aria-hidden />
+                {uiLang === 'ur' ? 'ڈاکٹر سے رابطہ' : uiLang === 'roman' ? 'Doctor se rabta' : 'Find a doctor'}
+              </Button> : null}
+              {careActions.facilities ? <Button variant="outline" size="sm" onClick={() => setView('facilities')} className="h-8 gap-1.5 rounded-lg border-border text-xs font-bold hover:bg-accent">
+                <MapPin className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
+                {uiLang === 'ur' ? 'طبی مراکز تلاش کریں' : uiLang === 'roman' ? 'Tibbi markaz talash karein' : isEmergency ? 'Find emergency care' : 'Find facilities'}
+              </Button> : null}
             </div>
-          )}
+          ) : null}
+
         </div>
 
         {/* citations */}
@@ -407,7 +384,7 @@ export function MessageBubble({
         ) : null}
 
         {/* Offline Guided Action Chips for instant follow-up without typing */}
-        {message.offline && !message.streaming && isLastAssistant ? (
+        {message.offline && !message.streaming && isLastAssistant && careActions.homeCare ? (
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             <button
               type="button"
@@ -493,12 +470,6 @@ export function MessageBubble({
                 <ThumbsUp className="h-4 w-4" aria-hidden />
               </ActionIcon>
               <ActionIcon
-                label={uiLang === 'ur' ? 'تکنیکی انسپکٹر (جج موڈ)' : 'Technical Inspector (Judge Mode)'}
-                onClick={() => setInspectorOpen(true)}
-              >
-                <Cpu className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
-              </ActionIcon>
-              <ActionIcon
                 label={t(uiLang, 'chat.notHelpful')}
                 onClick={() => onFeedback(message.id, 0)}
                 active={feedback === 0}
@@ -507,16 +478,6 @@ export function MessageBubble({
               </ActionIcon>
             </span>
           </div>
-        ) : null}
-
-        {/* Technical Inspector (Judge Mode) Modal */}
-        {!isUser ? (
-          <JudgeInspectorModal
-            open={inspectorOpen}
-            onOpenChange={setInspectorOpen}
-            message={message}
-            lang={uiLang}
-          />
         ) : null}
       </div>
     </motion.div>

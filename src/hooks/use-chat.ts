@@ -8,6 +8,7 @@ import { detectMessageLang, t } from '@/lib/i18n';
 import { runOfflineEngine } from '@/lib/engine/safety-engine';
 import { getEmergencyTemplate } from '@/data/emergency-templates';
 import { EMERGENCY_NUMBERS } from '@/data/lexicon';
+import { emergencyActionForUnknownLocation } from '@/lib/emergency-localization';
 import type {
   ChatMessage,
   Citation,
@@ -52,9 +53,9 @@ function buildEmergencyData(
     title: tpl.title[lang],
     reason,
     matchedPatternId: matchedPatternId ?? '',
-    actions: tpl.immediateActions.map((a) => a[lang]),
+    actions: tpl.immediateActions.map((a) => emergencyActionForUnknownLocation(a[lang], lang)),
     doNot: tpl.doNot.map((d) => d[lang]),
-    numbers: EMERGENCY_NUMBERS,
+    numbers: [],
     sources: tpl.sources,
   };
 }
@@ -68,6 +69,7 @@ export function useChat() {
     async (text: string, lang: Lang, assistantId: string) => {
       // small delay so the offline path feels deliberate, not a glitch
       await sleep(500);
+      if (!useChatStore.getState().messages.some(m => m.id === assistantId)) return;
       const history = useChatStore.getState().messages;
       const result = runOfflineEngine(text, lang, history);
       const triage: TriageStageData = {
@@ -98,7 +100,7 @@ export function useChat() {
           result.triage.reason,
           result.triage.matchedPatternId,
         );
-        if (em) useChatStore.getState().setEmergency(em, lang);
+        if (em) useChatStore.getState().setEmergency({ ...em, actions: [result.content] }, lang);
       }
     },
     [],
@@ -121,11 +123,15 @@ export function useChat() {
             language: app.langPref,
             sessionId: app.sessionId,
             conversationId: app.conversationId ?? undefined,
+            history: useChatStore.getState().messages.filter(m => !m.streaming).slice(0, -1).map(m => ({ id: m.id, role: m.role, content: m.content, createdAt: m.createdAt })),
           }),
           signal: controller.signal,
         });
       } catch (err) {
-        if ((err as Error)?.name === 'AbortError') return;
+        if ((err as Error)?.name === 'AbortError') {
+          if (useChatStore.getState().messages.some(m => m.id === assistantId)) useChatStore.getState().finishStream(assistantId, {});
+          return;
+        }
         // Network failure → honest offline fallback
         toast({
           description: t(uiLang(), 'chat.fallbackNotice'),
@@ -152,6 +158,8 @@ export function useChat() {
 
       const handleEvent = (evt: SSEEvent) => {
         const chat = useChatStore.getState();
+        // Late replies must not resurrect a reset chat or a different patient's session.
+        if (!chat.messages.some(m => m.id === assistantId)) return;
         const data = (evt.data ?? {}) as Record<string, unknown>;
         switch (evt.stage) {
           case 'safety':
@@ -212,12 +220,11 @@ export function useChat() {
               triage: done.triage,
               citations: done.citations,
               validation: done.validation,
-              offline: false,
-              confidence: done.confidence ?? null,
+              offline: done.offline,
+              confidence: null,
               drugCheck: done.drugCheck ?? null,
-              differential: done.differential ?? null,
+              differential: null,
               emergency: done.emergency ?? existingMsg?.emergency ?? null,
-              pipelineMeta: done.pipelineMeta ?? (done as any).meta ?? existingMsg?.pipelineMeta,
               latencyMs: done.latencyMs,
             });
             if (done.conversationId) {
@@ -284,10 +291,10 @@ export function useChat() {
         abortRef.current = null;
       }
 
-      // Stream ended without an explicit done/error event → close gracefully.
+      // A truncated stream is not a validated answer. Replace partial generation with local guidance.
       const chatState = useChatStore.getState();
       if (chatState.messages.some((m) => m.id === assistantId && m.streaming)) {
-        chatState.finishStream(assistantId, {});
+        await sendOffline(text, lang, assistantId);
       }
     },
     [sendOffline, toast],
@@ -327,19 +334,28 @@ export function useChat() {
       chat.startStream();
 
       try {
+        // Essential emergency guidance is displayed before network, auth, or database latency.
+        const immediate = runOfflineEngine(trimmed, lang, useChatStore.getState().messages);
+        if (immediate.triage.level === 'EMERGENCY') {
+          useChatStore.getState().updateMessage(assistantId, { content: immediate.content, triage: immediate.triage, offline: true });
+          if (immediate.emergencyCategory) {
+            const emergency = buildEmergencyData(immediate.emergencyCategory, lang, immediate.triage.reason);
+            if (emergency) useChatStore.getState().setEmergency({ ...emergency, actions: [immediate.content], numbers: [] }, lang);
+          }
+        }
         if (opts.offline) {
           await sendOffline(trimmed, lang, assistantId);
         } else {
           await sendOnline(trimmed, lang, assistantId);
         }
       } catch {
-        useChatStore.getState().finishStream(assistantId, {});
-        useChatStore.getState().setStreamError(assistantId, 'stream failed');
+        await sendOffline(trimmed, lang, assistantId);
         toast({
           description: t(uiLang(), 'chat.streamError'),
           variant: 'destructive',
         });
       }
+      if (useChatStore.getState().storageUnavailable) toast({ description: 'Device storage is unavailable. Keep this page open or export your conversation before reloading.', variant: 'destructive' });
     },
     [sendOffline, sendOnline, toast],
   );
@@ -388,8 +404,8 @@ export function useChat() {
         await fetch('/api/feedback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId, rating }),
-        });
+          body: JSON.stringify({ messageId, rating, sessionId: useAppStore.getState().sessionId }),
+        }).then(res => { if (!res.ok) throw new Error('Feedback not saved'); });
         toast({ description: t(lang, 'chat.thanksFeedback') });
       } catch {
         toast({

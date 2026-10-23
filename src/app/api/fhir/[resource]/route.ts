@@ -1,3 +1,4 @@
+import { canReadConversation, canReadPatient } from '@/server/conversation-access';
 // SehatAI — Phase 3: FHIR R4 API endpoint
 // GET /api/fhir/[resource]/{id} → FHIR resources
 import { NextRequest, NextResponse } from 'next/server';
@@ -5,28 +6,32 @@ import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ resource: string }> }) {
+  const { resource } = await ctx.params;
   const url = new URL(req.url);
-  const segments = url.pathname.split('/');
-  const resourceType = segments[segments.length - 2];
-  const resourceId = segments[segments.length - 1];
-
-  if (resourceType === 'Patient') {
-    return getPatient(resourceId);
-  } else if (resourceType === 'Observation') {
-    return getObservations(url.searchParams.get('patient'));
-  } else if (resourceType === 'Bundle') {
-    return getBundle(resourceId);
+  const id = url.searchParams.get('id') ?? '';
+  try {
+    if (resource === 'Patient') {
+      if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
+      if (!await canReadPatient(id)) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return await getPatient(id);
+    }
+    if (resource === 'Observation') {
+      const patient = url.searchParams.get('patient') ?? '';
+      if (!patient) return NextResponse.json({ error: 'patient is required' }, { status: 400 });
+      if (!await canReadPatient(patient)) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return await getObservations(patient);
+    }
+    if (resource === 'Bundle') {
+      const conv = id ? await db.conversation.findUnique({ where: { id } }) : null;
+      if (!conv || !await canReadConversation(conv, '')) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return await getBundle(id);
+    }
+    return NextResponse.json({ error: 'Unsupported resource' }, { status: 404 });
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    return NextResponse.json({ error: 'Resource unavailable' }, { status: status === 401 || status === 403 ? status : 503 });
   }
-
-  return NextResponse.json({
-    resourceType: 'CapabilityStatement',
-    status: 'active',
-    software: { name: 'SehatAI', version: '2.0' },
-    fhirVersion: '4.0',
-    format: ['json'],
-    rest: [{ mode: 'read', resource: ['Patient', 'Observation', 'Bundle'] }],
-  }, { headers: { 'Content-Type': 'application/fhir+json' } });
 }
 
 async function getPatient(id: string) {
@@ -43,19 +48,19 @@ async function getPatient(id: string) {
       ...(parseArr(profile.allergies).length ? [{ url: 'http://sehatai.pk/fhir/StructureDefinition/allergies', valueString: parseArr(profile.allergies).join(', ') }] : []),
       ...(profile.pregnant ? [{ url: 'http://sehatai.pk/fhir/StructureDefinition/pregnant', valueBoolean: true }] : []),
     ],
-  }, { headers: { 'Content-Type': 'application/fhir+json' } });
+  }, { headers: { 'Content-Type': 'application/fhir+json', 'Cache-Control': 'private, no-store' } });
 }
 
 async function getObservations(patientId: string | null) {
   if (!patientId) return NextResponse.json({ error: 'patient parameter required' }, { status: 400 });
   const conversations = await db.conversation.findMany({ where: { userId: patientId }, include: { messages: { where: { role: 'assistant' }, take: 10 } } });
   const observations = conversations.flatMap((conv) => conv.messages.filter((m) => m.triageLevel).map((m) => ({
-    resourceType: 'Observation', id: m.id, status: 'final',
+    resourceType: 'Observation', id: m.id, status: 'preliminary',
     code: { text: `Triage: ${m.triageLevel}` },
     effectiveDateTime: m.createdAt.toISOString(),
     valueString: m.content.slice(0, 200),
   })));
-  return NextResponse.json({ resourceType: 'Bundle', type: 'searchset', total: observations.length, entry: observations.map((obs) => ({ resource: obs })) }, { headers: { 'Content-Type': 'application/fhir+json' } });
+  return NextResponse.json({ resourceType: 'Bundle', type: 'searchset', total: observations.length, entry: observations.map((obs) => ({ resource: obs })) }, { headers: { 'Content-Type': 'application/fhir+json', 'Cache-Control': 'private, no-store' } });
 }
 
 async function getBundle(conversationId: string) {
@@ -63,7 +68,7 @@ async function getBundle(conversationId: string) {
   const conversation = await db.conversation.findUnique({ where: { id: conversationId }, include: { messages: true } });
   if (!conversation) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({
-    resourceType: 'Bundle', type: 'document', id: conversationId, timestamp: new Date().toISOString(),
+    resourceType: 'Bundle', type: 'collection', id: conversationId, timestamp: new Date().toISOString(),
     entry: conversation.messages.map((m) => ({
       resource: {
         resourceType: 'DocumentReference', id: m.id, status: 'current',
@@ -72,5 +77,5 @@ async function getBundle(conversationId: string) {
         created: m.createdAt.toISOString(),
       },
     })),
-  }, { headers: { 'Content-Type': 'application/fhir+json' } });
+  }, { headers: { 'Content-Type': 'application/fhir+json', 'Cache-Control': 'private, no-store' } });
 }

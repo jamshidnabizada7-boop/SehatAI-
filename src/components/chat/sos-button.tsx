@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, MapPin, AlertTriangle, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { Phone, MapPin, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 /**
  * Emergency SOS Button — floating red button that:
@@ -17,17 +16,19 @@ export function SosButton() {
   const [open, setOpen] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationCopied, setLocationCopied] = useState(false);
 
   const handleSos = () => {
     setOpen(true);
     setLocationError(null);
+    setLocationCopied(false);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
           // Copy location to clipboard
           const locationText = `My location: https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
-          navigator.clipboard?.writeText(locationText).catch(() => {});
+          navigator.clipboard?.writeText(locationText).then(() => setLocationCopied(true)).catch(() => {});
         },
         (err) => setLocationError(err.message),
         { enableHighAccuracy: true, timeout: 5000 },
@@ -53,33 +54,17 @@ export function SosButton() {
       </motion.button>
 
       {/* SOS dialog */}
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm rounded-2xl border border-red-500/30 bg-card p-5 shadow-2xl"
-            >
+      <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent className="sm:max-w-sm">
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/15">
                     <AlertTriangle className="h-4 w-4 text-red-600" />
                   </span>
-                  <h3 className="text-sm font-bold text-foreground">Emergency SOS</h3>
+                  <DialogTitle>Emergency SOS</DialogTitle>
                 </div>
-                <button onClick={() => setOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent">
-                  <X className="h-4 w-4" />
-                </button>
               </div>
+              <DialogDescription>Call the emergency service for your location. This app cannot dispatch help.</DialogDescription>
 
               {/* Location */}
               {location ? (
@@ -95,7 +80,7 @@ export function SosButton() {
                   >
                     {location.lat.toFixed(4)}, {location.lng.toFixed(4)} — View on Maps
                   </a>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">Location copied to clipboard ✓</p>
+                  {locationCopied ? <p className="mt-0.5 text-[10px] text-muted-foreground">Location copied to clipboard ✓</p> : null}
                 </div>
               ) : locationError ? (
                 <div className="mb-3 rounded-lg border border-amber-500/20 bg-amber-50/50 p-2 dark:bg-amber-950/10">
@@ -109,14 +94,11 @@ export function SosButton() {
 
               {/* Emergency numbers */}
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-foreground">Call emergency services now:</p>
+                <p className="text-xs font-semibold text-foreground">If you are in Pakistan (coverage varies by area):</p>
                 <a href="tel:1122" className="flex items-center justify-center gap-2 rounded-xl bg-red-600 py-3 text-sm font-bold text-white transition-colors hover:bg-red-700">
                   <Phone className="h-4 w-4" /> Call 1122 (Rescue)
                 </a>
                 <div className="grid grid-cols-2 gap-2">
-                  <a href="tel:1166" className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/5 py-2.5 text-xs font-bold text-red-700 hover:bg-red-500/10 dark:text-red-400">
-                    <Phone className="h-3 w-3" /> 1166 Health
-                  </a>
                   <a href="tel:115" className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/5 py-2.5 text-xs font-bold text-red-700 hover:bg-red-500/10 dark:text-red-400">
                     <Phone className="h-3 w-3" /> 115 Edhi
                   </a>
@@ -124,12 +106,10 @@ export function SosButton() {
               </div>
 
               <p className="mt-3 text-center text-[10px] text-muted-foreground">
-                Stay calm. Help is on the way. Share your location with the operator.
+                Call your local emergency number if you are elsewhere. Share your location with the operator; help is arranged only after contacting the service.
               </p>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+            </DialogContent>
+      </Dialog>
     </>
   );
 }

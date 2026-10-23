@@ -124,8 +124,7 @@ export function generateQrMatrix(text: string): boolean[][] {
   }
 
   if (!selectedVersion) {
-    // If text is larger than version 12, use max version
-    selectedVersion = QR_VERSIONS[QR_VERSIONS.length - 1];
+    throw new RangeError('Summary exceeds QR capacity. Copy or download the complete summary instead.');
   }
 
   const version = selectedVersion.version;

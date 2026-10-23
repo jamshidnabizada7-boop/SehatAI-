@@ -1,3 +1,4 @@
+import { canReadConversation, canManageConversation } from '@/server/conversation-access';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getServerSession } from '@/lib/auth';
@@ -42,7 +43,7 @@ interface ChatMessageDto {
  * GET /api/conversations/[id]?sessionId=X
  * Returns the conversation messages.
  * Authorized for conversation owner, guest creator (matching sessionId when userId is null),
- * admin, or active doctor with patient consent/appointment.
+ * or active verified doctor with current explicit patient consent.
  */
 export async function GET(
   req: NextRequest,
@@ -67,47 +68,7 @@ export async function GET(
       return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
     }
 
-    const session = await getServerSession();
-    const sessionUserId = session?.user && (session.user as { id?: string }).id;
-    const isOwnerUser = Boolean(sessionUserId && conv.userId === sessionUserId);
-    const isAdmin = session?.user && (session.user as { role?: string }).role === 'admin';
-    const isGuestOwner = Boolean(!conv.userId && sessionId && conv.sessionToken === sessionId);
-
-    let isAuthorizedDoctor = false;
-    if (session?.user && (session.user as { role?: string }).role === 'doctor' && sessionUserId) {
-      // 1. Check Care Connect consultation where doctor is assigned to this patient
-      if (conv.userId) {
-        const careConsult = await db.consultation.findFirst({
-          where: {
-            doctorUserId: sessionUserId,
-            patientId: conv.userId,
-          },
-        });
-        if (careConsult) {
-          isAuthorizedDoctor = true;
-        }
-      }
-
-      // 2. Check legacy consent / appointment
-      if (!isAuthorizedDoctor) {
-        const doctorProfile = await db.doctorProfile.findUnique({ where: { userId: sessionUserId } });
-        if (doctorProfile && conv.userId) {
-          const consent = await db.patientConsentForDoctor.findFirst({
-            where: { doctorId: doctorProfile.id, patientId: conv.userId, revokedAt: null },
-          });
-          const appointment = await db.appointment.findFirst({
-            where: { doctorProfileId: doctorProfile.id, patientId: conv.userId },
-          });
-          if (consent || appointment) {
-            isAuthorizedDoctor = true;
-          }
-        }
-      }
-    }
-
-    if (!isOwnerUser && !isGuestOwner && !isAdmin && !isAuthorizedDoctor) {
-      return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
-    }
+    if (!await canReadConversation(conv, sessionId)) return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
 
     const messages = conv.messages.map((m) => {
       let meta: Record<string, unknown> | null = null;
@@ -130,10 +91,10 @@ export async function GET(
 
       const triage = m.triageLevel ? {
         level: m.triageLevel,
-        engine: latestTriageEvent?.engine ?? (meta?.engine as string) ?? (m.emergency ? 'L0' : 'L1'),
+        engine: 'guidance',
         shortCircuited: Boolean(isShortCircuited),
-        reason: (meta?.templateCategory as string) ?? '',
-        signals: latestTriageEvent?.signals ? JSON.parse(latestTriageEvent.signals) : (meta?.l0 as Record<string, unknown> | undefined)?.signals ?? [],
+        reason: '',
+        signals: [],
       } : undefined;
 
       return {
@@ -144,10 +105,10 @@ export async function GET(
         triageLevel: m.triageLevel,
         emergency: m.emergency,
         triage,
-        pipelineMeta: meta,
+
         citations,
-        redFlags,
-        latencyMs: (meta?.latencies as Record<string, unknown> | undefined)?.total ?? (meta?.latencies as Record<string, unknown> | undefined)?.l0,
+        redFlags: [],
+
         createdAt: m.createdAt.getTime(),
       };
     });
@@ -161,16 +122,17 @@ export async function GET(
         updatedAt: conv.updatedAt.toISOString(),
         messages,
       },
-    });
-  } catch {
-    return NextResponse.json({ error: 'failed to load conversation' }, { status: 500 });
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    return NextResponse.json({ error: 'failed to load conversation' }, { status: status === 401 || status === 403 ? status : 503 });
   }
 }
 
 /**
  * DELETE /api/conversations/[id]?sessionId=X
  * Permanently deletes a conversation and all its messages (cascade).
- * Allowed for conversation owner, guest creator (matching sessionId when userId is null), or admin.
+ * Allowed for the conversation owner or guest creator (matching sessionId when userId is null).
  */
 export async function DELETE(
   req: NextRequest,
@@ -189,13 +151,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
     }
 
-    const session = await getServerSession();
-    const sessionUserId = session?.user && (session.user as { id?: string }).id;
-    const isOwnerUser = Boolean(sessionUserId && existing.userId === sessionUserId);
-    const isAdmin = session?.user && (session.user as { role?: string }).role === 'admin';
-    const isGuestOwner = Boolean(!existing.userId && sessionId && existing.sessionToken === sessionId);
-
-    if (!isOwnerUser && !isGuestOwner && !isAdmin) {
+    if (!await canManageConversation(existing, sessionId)) {
       return NextResponse.json({ error: 'conversation not found' }, { status: 404 });
     }
 

@@ -146,11 +146,11 @@ export const en = {
     openGlossary: 'Open glossary',
   },
   offlineBanner: {
-    title: 'Offline Mode — verified health pack, not AI chat',
+    title: "Offline mode — local guidance; online services are unavailable",
   },
   footer: {
-    disclaimer: 'SehatAI is a wellness information tool — not a doctor. In an emergency call 1122.',
-    emergency: 'Emergency: 1122 Rescue · 1166 Health Helpline · 115 Edhi',
+    disclaimer: "General health information, not a diagnosis. In an emergency contact your local emergency service. Pakistan numbers below; coverage varies.",
+    emergency: "Pakistan: Rescue 1122 · Edhi 115. Check local service coverage.",
     sources: 'Guidance sourced from WHO, UNICEF, IFRC & Pakistan MoNHSRC.',
   },
   chat: {
@@ -172,7 +172,7 @@ export const en = {
     newChat: 'New chat',
     doctorSummary: 'Doctor Summary',
     stop: 'Stop generating',
-    offlineLabel: 'Offline guidance — verified pack',
+    offlineLabel: "Offline guidance — local reference pack",
     viewUrdu: 'اردو میں دیکھیں',
     viewRoman: 'Roman mein dekhein',
     helpful: 'Helpful',
@@ -181,7 +181,7 @@ export const en = {
     feedbackFailed: 'Could not save feedback',
     errorTitle: 'Something went wrong',
     streamError: 'SehatAI could not answer right now. Please try again.',
-    fallbackNotice: 'Network unavailable — showing verified offline guidance.',
+    fallbackNotice: "Online service unavailable — showing local guidance.",
     you: 'You',
     assistant: 'SehatAI',
     emptyConversation: 'Conversation cleared',
@@ -412,11 +412,9 @@ export const en = {
     title: 'About SehatAI',
     subtitle: 'Safety-first health guidance for every Pakistani.',
     whatTitle: 'What SehatAI is',
-    whatBody:
-      'A trilingual health guidance assistant that checks every message for emergency signs before answering, cites verified sources (WHO, UNICEF, IFRC, Pakistan MoNHSRC) on every claim, and works offline with a curated health pack.',
+    whatBody: "Health information in English, Urdu and Roman Urdu, with checks for reported danger signs. Reference information is available offline. Information may be incomplete or incorrect; seek professional assessment for medical decisions.",
     whatNotTitle: 'What SehatAI is NOT',
-    whatNotBody:
-      'It does not diagnose, does not prescribe doses, and does not replace a doctor. When signs are dangerous it tells you to seek care immediately — it never guesses.',
+    whatNotBody: "SehatAI cannot establish a diagnosis, prescribe an individual dose, or confirm that you are medically stable. Severe or worsening symptoms require in-person care.",
     safetyTitle: 'Three-layer safety engine',
     safetyL0: 'L0 — Lexicon',
     safetyL0Body:
@@ -431,13 +429,11 @@ export const en = {
     bypassBody:
       'Emergency responses are NEVER LLM-generated. They come from pre-written, reviewed trilingual templates — deterministic, sub-second, never hallucinated.',
     languagesTitle: 'Three languages, one voice',
-    languagesBody:
-      'Full parity in English, اردو (Nastaliq, RTL) and Roman Urdu — with a Roman↔script toggle on answers.',
+    languagesBody: "You can write in English, Urdu or Roman Urdu. Important medical terms and translations should be checked with a clinician.",
     offlineTitle: 'Honest offline mode',
-    offlineBody:
-      'On airplane mode SehatAI switches to a verified offline pack — clearly labeled as offline guidance, never pretending to be AI chat.',
+    offlineBody: "Offline mode uses a local reference pack and deterministic guidance. It cannot contact clinicians, dispatch emergency services, or upload your conversation while disconnected.",
     sourcesTitle: 'Sources',
-    sourcesBody: 'Every medical claim links to a publisher, license and verification date.',
+    sourcesBody: "References identify the material used when available. A citation does not establish a diagnosis or independently verify every statement.",
     sourcesList: 'WHO · WHO EMRO · UNICEF · Pakistan MoNHSRC (EPI) · IFRC',
     judgeTitle: 'For the judges',
     judgePwa: 'PWA installable — no app store needed. Works on entry-level Androids over 2G.',

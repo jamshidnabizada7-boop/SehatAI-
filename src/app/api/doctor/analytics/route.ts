@@ -2,21 +2,22 @@
 // GET /api/doctor/analytics → doctor's patient trends, triage distribution, appointment stats
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireDoctor } from '@/lib/auth';
+import { requireActiveDoctor } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
   let user;
-  try { user = await requireDoctor(); } catch (e: unknown) {
+  try { user = await requireActiveDoctor(); } catch (e: unknown) {
     return NextResponse.json({ error: 'Forbidden' }, { status: (e as { status?: number }).status ?? 401 });
   }
   const profile = await db.doctorProfile.findUnique({ where: { userId: user.id } });
   if (!profile) return NextResponse.json({ error: 'Doctor profile not found' }, { status: 404 });
 
   // Patient stats
+  const sharing = await db.patientConsentForDoctor.findMany({ where: { doctorId: profile.id, scope: 'read_history', revokedAt: null }, select: { patientId: true } });
   const conversations = await db.conversation.findMany({
-    where: { userId: { not: null } },
+    where: { userId: { in: sharing.map(consent => consent.patientId) } },
     include: {
       messages: { orderBy: { createdAt: 'desc' }, take: 1 },
       user: { select: { name: true } },
@@ -91,5 +92,5 @@ export async function GET() {
         scheduledAt: a.scheduledAt.toISOString(),
         reason: a.reason,
       })),
-  });
+  }, { headers: { 'Cache-Control': 'private, no-store' } });
 }

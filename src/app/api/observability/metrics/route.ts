@@ -1,3 +1,4 @@
+import { diagnosticAccess } from '@/server/diagnostic-access';
 // SehatAI — Phase 1: Observability metrics endpoint.
 // GET  /api/observability/metrics -> aggregated, privacy-preserving pipeline metrics
 // POST /api/observability/metrics?action=reset -> reset (admin only)
@@ -81,6 +82,8 @@ function addCounts(a: Record<string, number>, b: Record<string, number>): Record
 }
 
 export async function GET() {
+  const denied = await diagnosticAccess("metrics.get");
+  if (denied) return denied;
   const mem = getMetricsSnapshot();
   let dbSnap: Awaited<ReturnType<typeof getDbSnapshot>> | null = null;
   try {
@@ -132,6 +135,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await diagnosticAccess("metrics.post");
+  if (denied) return denied;
   const url = new URL(req.url);
   const action = url.searchParams.get('action');
   if (action !== 'reset') {

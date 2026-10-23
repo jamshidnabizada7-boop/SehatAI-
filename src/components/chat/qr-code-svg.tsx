@@ -18,11 +18,11 @@ export function QrCodeSvg({ value, size = 160, className = '' }: QrCodeSvgProps)
     }
   }, [value]);
 
-  if (!matrix || matrix.length === 0) return null;
+  if (!matrix || matrix.length === 0) return <p role="status" className="text-xs">Summary exceeds QR capacity. Copy or download the complete summary instead.</p>;
 
   const matrixSize = matrix.length;
   // 2-module quiet zone padding
-  const padding = 2;
+  const padding = 4;
   const totalGrid = matrixSize + padding * 2;
 
   // Build SVG path

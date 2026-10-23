@@ -1,4 +1,5 @@
 'use client';
+import { careActionsFor } from '@/lib/care-actions';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -47,7 +48,6 @@ import { VoiceStatusIndicator } from './voice-status-indicator';
 import { SummaryModal } from './summary-modal';
 import { ConversationHistoryDrawer } from './conversation-history-drawer';
 import { OutcomeFollowupCard } from '@/components/outcomes/outcome-followup-card';
-import { ReferralRails } from './referral-rails';
 import { FirstAidCards } from './first-aid-cards';
 import { SymptomCheckerWizard } from './symptom-checker-wizard';
 import { ChatExportMenu } from './chat-export-menu';
@@ -100,6 +100,9 @@ export function ChatView() {
   const setHistoryOpen = useChatStore((s) => s.setHistoryOpen);
 
   const hasAssistantReply = messages.some((m) => m.role === 'assistant');
+  const recentAssistant = messages.findLast(m => m.role === 'assistant');
+  const recentUser = messages.findLast(m => m.role === 'user');
+  const sidebarActions = careActionsFor(recentAssistant?.triage?.level, recentUser?.content ?? '');
 
   // deterministic daily tip (rotates once a day, stable per session)
   const dailyTip = useMemo(() => getDailyTip(), []);
@@ -156,14 +159,6 @@ export function ChatView() {
     if (last.role !== 'assistant') return false;
     const level = last.triage?.level;
     return level === 'URGENT' || level === 'ROUTINE';
-  }, [messages, streaming]);
-
-  // Phase 2 — referral rails: show when last assistant message is URGENT/EMERGENCY
-  const lastTriageLevel = useMemo(() => {
-    if (messages.length === 0) return null;
-    const last = messages[messages.length - 1];
-    if (last.role !== 'assistant' || streaming) return null;
-    return last.triage?.level ?? null;
   }, [messages, streaming]);
 
   const doSend = useCallback(
@@ -422,9 +417,6 @@ export function ChatView() {
         </motion.div>
       ) : null}
 
-      {/* Phase 2 — referral rails: one-tap emergency + hospital + telemedicine deep-links */}
-      <ReferralRails triageLevel={lastTriageLevel} lang={uiLang} />
-
       {/* chat toolbar */}
       <div className="flex items-center gap-2 px-4 pt-1 sm:px-6">
         <Button
@@ -680,15 +672,10 @@ export function ChatView() {
             <div className="iconbox h-8 w-8 rounded-lg bg-emerald-500/15 text-[#009b78]">
               <ShieldCheck className="h-4 w-4" />
             </div>
-            <span>Safe. Trusted. For You.</span>
+            <span>{uiLang === 'ur' ? 'صحت رہنمائی کے بارے میں' : uiLang === 'roman' ? 'Sehat rehnumai ke bare mein' : 'About health guidance'}</span>
           </div>
           <div className="space-y-2 text-xs text-muted-foreground">
-            {[
-              'Source-supported information',
-              'Reviewed Pakistan context',
-              'Not a replacement for a doctor',
-              'Protect your private data',
-            ].map((text, idx) => (
+            {(uiLang === 'ur' ? ['عمومی صحت کی معلومات', 'جب دستیاب ہوں تو حوالہ جات دیکھیں', 'ڈاکٹر کا متبادل نہیں', 'ذاتی معلومات احتیاط سے شیئر کریں'] : uiLang === 'roman' ? ['Aam sehat ki maloomat', 'Jahan hon wahan hawalay dekhein', 'Doctor ka badal nahi', 'Zaati maloomat ehtiyat se share karein'] : ['General health information', 'Check sources when provided', 'Not a replacement for a doctor', 'Share personal information carefully']).map((text, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-[#009b78] text-[10px] font-bold shrink-0">✓</span>
                 <span className="text-foreground/85 font-medium">{text}</span>
@@ -697,6 +684,7 @@ export function ChatView() {
           </div>
         </div>
 
+        {sidebarActions.bookDoctor ? (<>
         {/* Need a doctor's opinion */}
         <div className="surface pad p-4 space-y-2.5">
           <div className="flex items-center gap-2 text-foreground font-bold text-xs uppercase tracking-wide">
@@ -717,6 +705,9 @@ export function ChatView() {
           </Button>
         </div>
 
+        </>) : null}
+
+        {sidebarActions.facilities ? (<>
         {/* Nearby Healthcare Facilities */}
         <div className="surface pad p-4 space-y-2.5">
           <div className="flex items-center gap-2 text-foreground font-bold text-xs uppercase tracking-wide">
@@ -737,6 +728,8 @@ export function ChatView() {
             Search Nearby →
           </Button>
         </div>
+
+        </>) : null}
 
         {/* Stay Informed */}
         <div className="surface pad p-4 space-y-2.5">

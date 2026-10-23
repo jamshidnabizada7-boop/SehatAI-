@@ -273,30 +273,6 @@ export function AppHeader() {
                   ) : null}
                 </div>
                 <DropdownMenuSeparator />
-                {/* Developer simulation toggle moved to account menu */}
-                <DropdownMenuItem
-                  onClick={() => {
-                    const next = !simulatedOffline;
-                    setSimulatedOffline(next);
-                    toast({
-                      description: t(uiLang, next ? 'toast.offlineOn' : 'toast.offlineOff'),
-                    });
-                  }}
-                  className="flex items-center justify-between text-xs cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    {simulatedOffline ? (
-                      <WifiOff className="h-3.5 w-3.5 text-amber-600" />
-                    ) : (
-                      <Wifi className="h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                    <span>{simulatedOffline ? 'Simulated Offline: ON' : 'Simulate Offline'}</span>
-                  </span>
-                  {simulatedOffline ? (
-                    <span className="text-[10px] font-bold text-amber-600 font-mono">ACTIVE</span>
-                  ) : null}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => void signOut({ callbackUrl: '/' })}
                   className="flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400 cursor-pointer"

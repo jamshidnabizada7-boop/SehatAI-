@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getServerSession } from '@/lib/auth';
+import { getServerSession, requireUser } from '@/lib/auth';
 import {
   shapeConversationListItem,
   sortConversationsNewestFirst,
@@ -45,7 +45,8 @@ export async function GET(req: NextRequest) {
     let whereClause: { userId: string } | { sessionToken: string; userId: null };
 
     if (session?.user && (session.user as { id?: string }).id) {
-      whereClause = { userId: (session.user as { id: string }).id };
+      const actor = await requireUser();
+      whereClause = { userId: actor.id };
     } else {
       if (!sessionId) {
         return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
@@ -67,9 +68,10 @@ export async function GET(req: NextRequest) {
 
     const items = sortConversationsNewestFirst(rows.map(shapeConversationListItem));
 
-    return NextResponse.json({ conversations: items, count: items.length });
-  } catch {
-    return NextResponse.json({ conversations: [], count: 0, error: 'failed to load conversations' }, { status: 200 });
+    return NextResponse.json({ conversations: items, count: items.length }, { headers: { 'Cache-Control': 'private, no-store' } });
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    return NextResponse.json({ error: 'failed to load conversations' }, { status: status === 401 || status === 403 ? status : 503 });
   }
 }
 

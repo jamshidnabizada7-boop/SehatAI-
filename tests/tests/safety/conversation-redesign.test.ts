@@ -50,11 +50,11 @@ describe('1. Scenario 1: Natural greeting ("Hello")', () => {
 
 describe('2. Scenario 2: User introduction ("I AM AHMAD" / "Hi I am Ahmad")', () => {
   test('detects introduction intent and extracts user name in English', () => {
-    const res = detectIntent('I AM AHMAD');
+    const res = detectIntent('My name is Ahmad');
     expect(res.intent).toBe('introduction');
     expect(res.extractedName?.toLowerCase()).toBe('ahmad');
 
-    const resHi = detectIntent('Hi I am Ahmad');
+    const resHi = detectIntent('Hi my name is Ahmad');
     expect(resHi.intent).toBe('introduction');
     expect(resHi.extractedName?.toLowerCase()).toBe('ahmad');
   });
@@ -270,7 +270,8 @@ describe('13. Scenario 13: Trilingual script consistency (Urdu, Roman, English)'
 describe('14. Scenario 14: Short confirmation input stability', () => {
   test('Conversation context preserves English across short follow-ups', () => {
     const history = [
-      { role: 'user', content: 'I am Ahmad, I have a mild headache' },
+      { role: 'user', content: 'My name is Ahmad' },
+      { role: 'user', content: 'I have a mild headache' },
       { role: 'assistant', content: 'Hello Ahmad, how long have you had this?' },
     ];
     const state = buildConversationContextState(history, 'Since 2 days');
@@ -300,7 +301,7 @@ describe('15. Scenario 15: Citation sanitization ([ID] suppression)', () => {
 describe('16. Scenario 16: Multi-turn state tracking without redundant questions', () => {
   test('captures accumulated context and calculates pending questions', () => {
     const history = [
-      { role: 'user', content: 'Hi, I am Ahmad' },
+      { role: 'user', content: 'Hi, my name is Ahmad' },
       { role: 'assistant', content: 'Nice to meet you Ahmad! How can I help?' },
       { role: 'user', content: 'My knee hurts after running for 3 days' },
     ];

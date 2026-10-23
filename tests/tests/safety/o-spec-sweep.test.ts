@@ -927,7 +927,7 @@ describe('O. §28 multilingual parity', () => {
   test('offline Urdu emergency uses Urdu template', () => {
     const off = runOfflineEngine('مجھے سینے میں بہت شدید درد ہے اور سانس لینے میں مشکل ہے۔');
     expect(off.triage.level).toBe('EMERGENCY');
-    expect(/1122/.test(off.content)).toBe(true);
+    expect(/local emergency|مقامی ایمرجنسی/i.test(off.content)).toBe(true);
     expect(/[\u0600-\u06FF]/.test(off.content)).toBe(true);
   });
 });
@@ -1067,14 +1067,14 @@ describe('O. offline engine — new categories', () => {
   test('choking works offline with first-aid actions', () => {
     const off = runOfflineEngine('Mera bacha khana phans gaya hai gala phans gaya');
     expect(off.triage.level).toBe('EMERGENCY');
-    expect(/1122/.test(off.content)).toBe(true);
+    expect(/local emergency|مقامی ایمرجنسی/i.test(off.content)).toBe(true);
     expect(/cough|khansi/i.test(off.content) || off.content.length > 50).toBe(true);
   });
 
   test('obstetric emergency works offline', () => {
     const off = runOfflineEngine('Main hamela hoon aur bachay ki harkat bohat kam hai');
     expect(off.triage.level).toBe('EMERGENCY');
-    expect(/1122/.test(off.content)).toBe(true);
+    expect(/local emergency|مقامی ایمرجنسی/i.test(off.content)).toBe(true);
   });
 
   test('hypoglycemia works offline', () => {

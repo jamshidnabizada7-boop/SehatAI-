@@ -23,6 +23,8 @@ import { MyHealthView } from '@/components/my-health/my-health-view';
 import { CareConnectView } from '@/components/care/care-connect-view';
 import { EmergencyOverlay } from '@/components/chat/emergency-overlay';
 import { GlobalSearch } from '@/components/app/global-search';
+import { useConversationPersistence } from '@/hooks/use-conversation-persistence';
+import { useChatStore } from '@/lib/store/chat-store';
 
 const PATIENT_VIEWS: View[] = ['chat', 'reminders', 'facilities', 'about', 'my-health', 'care'];
 const DOCTOR_VIEWS: View[] = ['chat', 'facilities', 'doctor-copilot', 'about', 'care'];
@@ -43,6 +45,8 @@ function HomeContent() {
   const uiLang = resolveUiLang(langPref);
   const isRtl = uiLang === 'ur';
   const { status, data: session } = useSession();
+  const conversationReady = useConversationPersistence(status, (session?.user as { id?: string } | undefined)?.id);
+  const localOwner = useChatStore(s => s.ownerKey);
   const router = useRouter();
   const searchParams = useSearchParams();
   const consumedConsultationLink = useRef(false);
@@ -148,7 +152,10 @@ function HomeContent() {
   }, [status, session, router, searchParams, view, role, accountStatus, allowedViews, setView]);
 
   // Show the landing chooser for unauthenticated users who haven't chosen guest mode
-  const showLanding = status === 'unauthenticated' && !guestMode;
+  const offlineTranscript = typeof navigator !== 'undefined' && !navigator.onLine && localOwner?.startsWith('user:');
+  const showLanding = status === 'unauthenticated' && !guestMode && !offlineTranscript;
+
+  if (!conversationReady) return <div role="status" aria-live="polite">{uiLang === 'ur' ? 'گفتگو لوڈ ہو رہی ہے…' : 'Loading conversation…'}</div>;
 
   return (
     <div

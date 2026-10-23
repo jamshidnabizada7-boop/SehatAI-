@@ -143,11 +143,11 @@ export const roman: Dict = {
     openGlossary: 'Lughat kholein',
   },
   offlineBanner: {
-    title: 'Offline Mode — tasdeeq-shuda health pack, AI chat nahin',
+    title: "Offline mode — maqami rehnumai; online khidmaat dastiyab nahi",
   },
   footer: {
-    disclaimer: 'SehatAI sehat ki maloomat ka zariya hai — doctor nahin. Emergency mein 1122 par call karein.',
-    emergency: 'Emergency: 1122 Rescue · 1166 Health Helpline · 115 Edhi',
+    disclaimer: "Aam sehat ki maloomat, tashkhees nahi. Emergency mein local emergency service se raabta karein. Neeche Pakistan ke number hain; coverage ilaqay ke mutabiq hai.",
+    emergency: "Pakistan: Rescue 1122 · Edhi 115. Maqami coverage ki tasdeeq karein.",
     sources: 'Hidayat ke zaraib: WHO, UNICEF, IFRC aur Pakistan MoNHSRC.',
   },
   chat: {
@@ -169,7 +169,7 @@ export const roman: Dict = {
     newChat: 'Nayi guftagu',
     doctorSummary: 'Doctor khulasa',
     stop: 'Jawab rokein',
-    offlineLabel: 'Offline rahnumai — tasdeeq-shuda pack',
+    offlineLabel: "Offline rehnumai — maqami maloomat",
     viewUrdu: 'اردو میں دیکھیں',
     viewRoman: 'Roman mein dekhein',
     helpful: 'Faaida mand',
@@ -178,7 +178,7 @@ export const roman: Dict = {
     feedbackFailed: 'Raay mehfooz nahin ho saki',
     errorTitle: 'Kuch ghalat ho gaya',
     streamError: 'SehatAI abhi jawab nahin de saka. Dobara koshish karein.',
-    fallbackNotice: 'Network maujood nahin — tasdeeq-shuda offline rahnumai dikhayi ja rahi hai.',
+    fallbackNotice: "Online service dastiyab nahi — maqami rehnumai dikhayi ja rahi hai.",
     you: 'Aap',
     assistant: 'SehatAI',
     emptyConversation: 'Guftagu saaf kar di gayi',
@@ -409,11 +409,9 @@ export const roman: Dict = {
     title: 'SehatAI ka taaruf',
     subtitle: 'Har Pakistani ke liye mehfooz-sehat rahnumai.',
     whatTitle: 'SehatAI kya hai',
-    whatBody:
-      'Teen zabanon mein sehat rahnumai — pehle har peghaam ki emergency alamaat ki jaanch, har daaway ke saath tasdeeq-shuda zariya (WHO, UNICEF, IFRC, Pakistan MoNHSRC), aur offline mode mein tasdeeq-shuda health pack.',
+    whatBody: "English, Urdu aur Roman Urdu mein sehat ki maloomat aur batayi gayi khatray ki alamaat ki jaanch. Maqami maloomat offline bhi dastiyab hai. Maloomat namukammal ya ghalat ho sakti hai; tibbi faislon ke liye doctor se muaina karwayein.",
     whatNotTitle: 'SehatAI kya nahin',
-    whatNotBody:
-      'Yeh tashkhees nahin karta, khoraak tayoor nahin karta, aur doctor ka mutabadil nahin. Khatre ki alamaat par yeh fori tibbi imdad ki hidayat deta hai — kabhi andaza nahin lagata.',
+    whatNotBody: "Yeh assistant tashkhees, zaati dose ya tibbi tor par stable hone ki tasdeeq nahi kar sakta. Shadeed ya barhti alamaat ke liye rubaru tibbi madad lein.",
     safetyTitle: 'Tin paraton wala hifazati engine',
     safetyL0: 'L0 — Lexicon',
     safetyL0Body:
@@ -428,11 +426,11 @@ export const roman: Dict = {
     bypassBody:
       'Emergency jawab kabhi AI se tayyar nahin hote. Pehle se likhe aur jaanche gaye sah-lisani templates — fori, bina kisi ghalti ke.',
     languagesTitle: 'Teen zabaneyn, aik aawaz',
-    languagesBody: 'English, اردو (Nastaliq, RTL) aur Roman Urdu mein mukammal masawaat — har jawab par Urdu↔Roman toggle.',
+    languagesBody: "Aap English, Urdu ya Roman Urdu mein likh sakte hain. Aham tibbi alfaaz aur tarjume ki tasdeeq doctor se karein.",
     offlineTitle: 'Dianatdar offline mode',
-    offlineBody: 'Airplane mode par SehatAI tasdeeq-shuda offline pack par chala jata hai — wazeh tor par offline rahnumai ka label, AI chat ka behroop kabhi nahin.',
+    offlineBody: "Offline mode maqami maloomat aur mutayyan rehnumai deta hai. Internet ke baghair doctor se raabta, emergency madad rawana karna ya guftagu upload karna mumkin nahi.",
     sourcesTitle: 'Zaraib',
-    sourcesBody: 'Har tibbi daaway ke saath nashr-kunanda, license aur tasdeeqi tareekh.',
+    sourcesBody: "Jahan dastiyab hon hawalay istemal shuda mawad dikhate hain. Hawala tashkhees ya har baat ki azadana tasdeeq nahi.",
     sourcesList: 'WHO · WHO EMRO · UNICEF · Pakistan MoNHSRC (EPI) · IFRC',
     judgeTitle: 'Judges ke liye',
     judgePwa: 'PWA install hoti hai — app store ki zaroorat nahin. 2G par sastay Android par chalti hai.',
