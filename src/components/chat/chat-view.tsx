@@ -21,6 +21,12 @@ import {
   TriangleAlert,
   X,
   History as HistoryIcon,
+  Check,
+  MapPin,
+  BookOpen,
+  ShieldCheck,
+  FileText,
+  Languages,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/lib/store/app-store';
@@ -65,6 +71,7 @@ const TRIAGE_LEGEND: { level: 'EMERGENCY' | 'URGENT' | 'ROUTINE' | 'SELF_CARE'; 
 
 export function ChatView() {
   const langPref = useAppStore((s) => s.langPref);
+  const setView = useAppStore((s) => s.setView);
   const uiLang = resolveUiLang(langPref);
   const { isOffline } = useOffline();
   const { send, stop, reset, submitFeedback, regenerate } = useChat();
@@ -226,116 +233,260 @@ export function ChatView() {
   }, [messages, toast, uiLang]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {/* messages */}
-      <div
-        ref={scrollRef}
-        className="custom-scrollbar flex-1 space-y-4 overflow-y-auto px-4 pt-4 pb-2 sm:px-6"
-        role="log"
-        aria-live="polite"
-        aria-label={t(uiLang, 'nav.chat')}
-      >
-        <OutcomeFollowupCard refreshKey={assistantTurns} active={outcomeCardActive} />
-        {messages.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="custom-scrollbar mx-auto flex w-full max-w-lg flex-col items-center text-center px-4 py-8 sm:px-6"
-          >
-            <span className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-2xs">
-              <HeartPulse className="h-7 w-7" aria-hidden />
-            </span>
-
-            <h2 className={cn("text-xl font-extrabold tracking-tight text-foreground sm:text-2xl", uiLang === 'ur' && 'font-urdu')}>
-              {uiLang === 'ur'
-                ? 'السلام علیکم! میں سیۃ اے آئی ہوں'
-                : uiLang === 'roman'
-                ? 'Assalam-o-Alaikum! Main SehatAI hoon'
-                : 'Assalam-o-Alaikum! I am SehatAI'}
-            </h2>
-            <p className={cn("mt-1.5 text-xs text-muted-foreground max-w-sm leading-relaxed", uiLang === 'ur' && 'font-urdu')}>
-              {t(uiLang, 'chat.welcomeDesc')}
-            </p>
-
-            {/* Quick starter suggestion pills */}
-            <div className="mt-5 flex flex-wrap justify-center gap-2 w-full">
-              <button
-                type="button"
-                onClick={() => doSend(uiLang === 'ur' ? 'مجھے دو دن سے ہلکی کھانسی اور بخار ہے' : uiLang === 'roman' ? 'Mujhe do din se bukhar aur khansi hai' : 'I have had a mild fever and dry cough for two days')}
-                className="flex items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-foreground/85 shadow-2xs transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
-              >
-                <Thermometer className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                <span className={cn(uiLang === 'ur' && 'font-urdu')}>
-                  {uiLang === 'ur' ? 'بخار اور کھانسی کی علامات' : uiLang === 'roman' ? 'Bukhar aur khansi' : 'Fever & cough guidance'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => doSend(uiLang === 'ur' ? 'بچوں کے حفاظتی ٹیکوں کا شیڈول کیا ہے؟' : uiLang === 'roman' ? 'Bachon ke EPI teekon ka schedule kya hai?' : 'What is the Pakistan EPI child immunization schedule?')}
-                className="flex items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-foreground/85 shadow-2xs transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
-              >
-                <Baby className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                <span className={cn(uiLang === 'ur' && 'font-urdu')}>
-                  {uiLang === 'ur' ? 'بچوں کے حفاظتی ٹیکے (EPI)' : uiLang === 'roman' ? 'Child EPI vaccines' : 'Child vaccine schedule'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFirstAidOpen(true)}
-                className="flex items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-foreground/85 shadow-2xs transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
-              >
-                <ShieldPlus className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                <span className={cn(uiLang === 'ur' && 'font-urdu')}>
-                  {uiLang === 'ur' ? 'فوری ابتدائی طبی امداد' : uiLang === 'roman' ? 'Emergency first aid' : 'Emergency first aid'}
-                </span>
-              </button>
-            </div>
-
-            {/* Daily health tip — subtle informative card */}
-            <div className="mt-5 w-full rounded-2xl border border-amber-500/25 bg-amber-500/5 p-3.5 text-start shadow-2xs">
-              <div className="flex items-start gap-2.5">
-                <Lightbulb className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 uppercase tracking-wider dark:text-amber-400">
-                    <span>{t(uiLang, 'chat.dailyTip')}</span>
-                    <span className="text-muted-foreground font-normal">· {dailyTip.publisher}</span>
+    <div className="flex h-full min-h-0 flex-1 overflow-hidden">
+      {/* Main conversation column */}
+      <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
+        {/* messages */}
+        <div
+          ref={scrollRef}
+          className="custom-scrollbar flex-1 space-y-4 overflow-y-auto px-4 pt-4 pb-2 sm:px-6"
+          role="log"
+          aria-live="polite"
+          aria-label={t(uiLang, 'nav.chat')}
+        >
+          <OutcomeFollowupCard refreshKey={assistantTurns} active={outcomeCardActive} />
+          {messages.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-4 py-1"
+            >
+              {/* User intake message bubble */}
+              <div className="surface pad20">
+                <div className="flex justify-end">
+                  <div className="rounded-2xl rounded-ee-md bg-[#007958] text-white p-4 max-w-[620px] shadow-sm">
+                    <p className="text-sm font-semibold leading-relaxed">
+                      {uiLang === 'ur'
+                        ? 'مجھے دو دن سے ہلکی خشک کھانسی اور ہلکا بخار ہے۔ مجھے کیا کرنا چاہیے؟'
+                        : uiLang === 'roman'
+                        ? 'Mujhe 2 din se halki khushk khansi aur halka bukhar hai. Mujhe kya karna chahiye?'
+                        : 'I have had a mild dry cough and slight fever for 2 days. What should I do?'}
+                    </p>
+                    <div className="mt-2 text-right text-[11px] text-white/80">
+                      10:42 PM · Sample intake
+                    </div>
                   </div>
-                  <p className={cn("mt-0.5 text-xs font-bold text-foreground", uiLang === 'ur' && 'font-urdu')}>
-                    {dailyTip.title[uiLang]}
-                  </p>
-                  <p className={cn("mt-0.5 text-[11px] text-muted-foreground leading-relaxed", uiLang === 'ur' && 'font-urdu')}>
-                    {dailyTip.text[uiLang]}
-                  </p>
+                </div>
+                {/* Symptom chips */}
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
+                  {[
+                    { label: 'Dry cough' },
+                    { label: 'Mild fever' },
+                    { label: '2 days' },
+                    { label: '+ Add details', isAdd: true },
+                  ].map((chipItem, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        if (chipItem.isAdd) {
+                          textareaRef.current?.focus();
+                        } else {
+                          doSend(chipItem.label);
+                        }
+                      }}
+                      className="chip green text-xs font-semibold hover:brightness-95 cursor-pointer transition-all"
+                    >
+                      {chipItem.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
-          </motion.div>
-        ) : (
-          messages.map((m, i) => (
-            <MessageBubble
-              key={m.id}
-              message={m}
-              urduVersion={urduVersions[m.id]}
-              feedback={feedbackGiven[m.id]}
-              streamError={streamErrors[m.id]}
-              isStreaming={streaming}
-              completedStages={completedStages}
-              currentStage={currentStage}
-              uiLang={uiLang}
-              speakingId={speakingId}
-              isLastAssistant={
-                m.role === 'assistant' &&
-                i === messages.length - 1
-              }
-              onFeedback={(id, rating) => void submitFeedback(id, rating)}
-              onSpeak={handleSpeak}
-              onRegenerate={handleRegenerate}
-            />
-          ))
-        )}
+
+              {/* Assistant structured response card */}
+              <div className="surface pad20 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="iconbox">
+                      <HeartPulse className="h-5 w-5 text-[#009b78]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-foreground text-sm">SehatAI</span>
+                        <span className="chip green">Evidence-based guidance</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        AI health assistant · educational sample
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">10:42 PM</span>
+                </div>
+
+                <p className="text-sm text-foreground/90 leading-relaxed">
+                  {uiLang === 'ur'
+                    ? 'السلام علیکم! آپ کی تفصیل کے مطابق (دو دن سے ہلکی خشک کھانسی اور معمولی بخار بغیر سانس لینے میں دشواری کے)، یہاں عمومی معلوماتی رہنمائی پیش ہے:'
+                    : 'Assalam-o-Alaikum! Based on your description of a mild dry cough and slight fever for 2 days without difficulty breathing, here is some general guidance:'}
+                </p>
+
+                {/* Likely Assessment strip with cough_illustration.png */}
+                <div className="inset inset-green flex flex-col sm:flex-row items-center gap-4 overflow-hidden border border-[#91d7c3]/40">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 text-[#007b61] font-bold text-sm">
+                      <FileText className="h-4 w-4" />
+                      <h4>Likely Assessment</h4>
+                    </div>
+                    <p className="text-xs text-foreground/80 mt-1.5 leading-relaxed">
+                      These symptoms can be consistent with a mild respiratory infection, such as a common cold. A clinician can assess other possible causes.
+                    </p>
+                  </div>
+                  <img
+                    src="/assets/cough_illustration.png"
+                    alt="Respiratory illustration"
+                    className="w-32 h-24 object-cover object-bottom rounded-xl shrink-0 border border-emerald-600/10 shadow-2xs"
+                  />
+                </div>
+
+                {/* 2-column Next Steps / Watch Out */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Next steps */}
+                  <div className="inset inset-blue border border-blue-200/60 space-y-2.5">
+                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold text-xs uppercase tracking-wide">
+                      <Check className="h-4 w-4" />
+                      <h4>Recommended Next Steps</h4>
+                    </div>
+                    <div className="space-y-2 text-xs text-foreground/85">
+                      <div className="flex items-start gap-2">
+                        <span className="chip blue px-1.5 py-0.5 text-[10px]">1</span>
+                        <span><b>Hydration:</b> Drink warm fluids regularly.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="chip blue px-1.5 py-0.5 text-[10px]">2</span>
+                        <span><b>Rest:</b> Get adequate sleep.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="chip blue px-1.5 py-0.5 text-[10px]">3</span>
+                        <span><b>Monitor:</b> Check symptoms and temperature.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Watch for */}
+                  <div className="inset inset-amber border border-amber-200/60 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-bold text-xs uppercase tracking-wide">
+                      <TriangleAlert className="h-4 w-4 text-amber-600" />
+                      <h4>Watch For</h4>
+                    </div>
+                    <p className="text-xs text-foreground/85 leading-relaxed">
+                      Seek medical care if symptoms worsen, fever persists beyond 3 days, or new concerning symptoms appear.
+                    </p>
+                    <p className="text-xs text-amber-900/90 dark:text-amber-300 font-medium">
+                      For severe trouble breathing or chest pain, seek emergency care immediately.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Escalate Now red box */}
+                <div className="inset inset-red border border-red-200/60">
+                  <div className="flex items-start gap-3">
+                    <div className="iconbox iconbox-red h-8 w-8 rounded-lg mt-0.5">
+                      <TriangleAlert className="h-4 w-4" />
+                    </div>
+                    <div className="text-xs">
+                      <b className="text-red-700 dark:text-red-400 text-sm">Escalate Now</b>
+                      <p className="text-muted-foreground mt-0.5 leading-relaxed">
+                        Severe breathlessness, chest pain, or confusion require urgent medical help. Call <b>1122</b> in Pakistan if appropriate.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Metadata & Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border/60 text-xs">
+                  <span className="text-[11px] text-muted-foreground">
+                    Sources must be linked to verified guidance when live.
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toast({ description: 'Viewing Urdu translation sample' })}
+                      className="h-8 gap-1.5 text-xs font-semibold rounded-lg"
+                    >
+                      <Languages className="h-3.5 w-3.5" />
+                      View Urdu translation
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void copyTranscript()}
+                      className="h-8 gap-1.5 text-xs font-semibold rounded-lg"
+                    >
+                      <ClipboardCopy className="h-3.5 w-3.5" />
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Navigation CTA row */}
+                <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                  <Button
+                    size="sm"
+                    onClick={() => setView('care')}
+                    className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90"
+                  >
+                    <Stethoscope className="h-4 w-4" />
+                    Book a doctor →
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setView('facilities')}
+                    className="h-9 gap-1.5 rounded-xl border-border font-bold hover:bg-accent"
+                  >
+                    <MapPin className="h-4 w-4 text-emerald-600" />
+                    Nearby facilities
+                  </Button>
+                </div>
+              </div>
+
+              {/* Suggested quick pills */}
+              <div className="surface pad p-3.5">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                  Suggested follow-up questions:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'Can I take paracetamol?',
+                    'How long will this last?',
+                    'When should I see a doctor?',
+                  ].map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => doSend(q)}
+                      className="rounded-full border border-border/80 bg-background px-3.5 py-1.5 text-xs font-medium text-foreground/90 shadow-2xs transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            messages.map((m, i) => (
+              <MessageBubble
+                key={m.id}
+                message={m}
+                urduVersion={urduVersions[m.id]}
+                feedback={feedbackGiven[m.id]}
+                streamError={streamErrors[m.id]}
+                isStreaming={streaming}
+                completedStages={completedStages}
+                currentStage={currentStage}
+                uiLang={uiLang}
+                speakingId={speakingId}
+                isLastAssistant={
+                  m.role === 'assistant' &&
+                  i === messages.length - 1
+                }
+                onFeedback={(id, rating) => void submitFeedback(id, rating)}
+                onSpeak={handleSpeak}
+                onRegenerate={handleRegenerate}
+              />
+            ))
+          )}
       </div>
 
       {/* grounded follow-up suggestions (deterministic, from citations) */}
@@ -623,6 +774,95 @@ export function ChatView() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+      </div>
+
+      {/* High-Fidelity Right Rail (§ references/01_AI_Health_Guide.png) */}
+      <aside className="hidden xl:flex w-72 shrink-0 flex-col gap-3.5 border-s border-border/80 bg-card/25 p-4 overflow-y-auto custom-scrollbar">
+        {/* Safe. Trusted. For You. */}
+        <div className="surface pad p-4 space-y-3">
+          <div className="flex items-center gap-2 text-foreground font-bold text-xs uppercase tracking-wide">
+            <div className="iconbox h-8 w-8 rounded-lg bg-emerald-500/15 text-[#009b78]">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+            <span>Safe. Trusted. For You.</span>
+          </div>
+          <div className="space-y-2 text-xs text-muted-foreground">
+            {[
+              'Source-supported information',
+              'Reviewed Pakistan context',
+              'Not a replacement for a doctor',
+              'Protect your private data',
+            ].map((text, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-[#009b78] text-[10px] font-bold shrink-0">✓</span>
+                <span className="text-foreground/85 font-medium">{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Need a doctor's opinion */}
+        <div className="surface pad p-4 space-y-2.5">
+          <div className="flex items-center gap-2 text-foreground font-bold text-xs uppercase tracking-wide">
+            <div className="iconbox iconbox-blue h-8 w-8 rounded-lg">
+              <Stethoscope className="h-4 w-4" />
+            </div>
+            <span>Need a doctor’s opinion?</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Compare consultation options and connect to a verified clinician when live.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => setView('care')}
+            className="w-full h-9 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 mt-1"
+          >
+            Talk to a Doctor →
+          </Button>
+        </div>
+
+        {/* Nearby Healthcare Facilities */}
+        <div className="surface pad p-4 space-y-2.5">
+          <div className="flex items-center gap-2 text-foreground font-bold text-xs uppercase tracking-wide">
+            <div className="iconbox iconbox-gold h-8 w-8 rounded-lg">
+              <MapPin className="h-4 w-4" />
+            </div>
+            <span>Nearby Healthcare Facilities</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Find clinics and emergency services near you.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setView('facilities')}
+            className="w-full h-9 rounded-xl border-border font-bold hover:bg-accent mt-1"
+          >
+            Search Nearby →
+          </Button>
+        </div>
+
+        {/* Stay Informed */}
+        <div className="surface pad p-4 space-y-2.5">
+          <div className="flex items-center gap-2 text-foreground font-bold text-xs uppercase tracking-wide">
+            <div className="iconbox iconbox-purple h-8 w-8 rounded-lg">
+              <BookOpen className="h-4 w-4" />
+            </div>
+            <span>Stay Informed</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Learn more about common cough and fever care in our medical library.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFirstAidOpen(true)}
+            className="w-full h-9 rounded-xl border-border font-bold hover:bg-accent mt-1"
+          >
+            Read Health Guide →
+          </Button>
+        </div>
+      </aside>
     </div>
   );
 }

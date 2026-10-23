@@ -106,64 +106,114 @@ export function DoctorCopilotView() {
 
   return (
     <div className="custom-scrollbar h-full overflow-y-auto px-4 py-4 sm:px-6">
-      <div className="mx-auto max-w-4xl space-y-4">
-        {/* header */}
-        <div>
-          <div className="flex items-center gap-2">
-            <Stethoscope className="h-6 w-6 text-emerald-600 dark:text-emerald-400" aria-hidden />
-            <h1 className="text-xl font-bold text-foreground sm:text-2xl">
-              {uiLang === 'ur' ? 'ڈاکٹر پورٹل' : uiLang === 'roman' ? 'Doctor Portal' : 'Doctor Portal'}
-            </h1>
-            <Badge className="bg-emerald-500/15 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">VERIFIED</Badge>
-          </div>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {uiLang === 'ur' ? 'ابتدائی جائزہ + دستاویزی امداد — تشخیص نہیں۔' : uiLang === 'roman' ? 'Ibtidai jaiza + dastaveezi imdaad — tashkhees nahin.' : 'Pre-visit intake summaries + documentation aid — not a diagnosis.'}
-          </p>
-        </div>
-
-        {/* safety framing banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-amber-500/30 bg-amber-50/60 p-3 dark:bg-amber-950/20"
-        >
-          <div className="flex items-start gap-2">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
-            <div className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
-              <p className="font-bold">Documentation aid, not SaMD</p>
-              <p className="mt-0.5">This tool assists the doctor, it does not make decisions. Every AI suggestion is overridable. All PHI access is audit-logged.</p>
+      <div className="mx-auto max-w-7xl space-y-6">
+        {/* Top Lavender Hero Banner (§ references/06_Doctor_Copilot.png) */}
+        <section className="hero-banner hero-copilot relative min-h-[175px] overflow-hidden rounded-[20px] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between shadow-xs">
+          <div className="relative z-10 flex items-start gap-5 max-w-xl">
+            <span className="iconbox purple flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-[#6554E8] shadow-sm">
+              <Stethoscope className="h-8 w-8 text-[#6554E8]" />
+            </span>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#16156f]">
+                Doctor Copilot
+              </h1>
+              <h2 className="text-base sm:text-lg font-bold text-[#20159a] mt-0.5">
+                Your AI Clinical Assistant
+              </h2>
+              <p className="mt-2 text-xs sm:text-sm text-[#4c4a85] leading-relaxed">
+                Evidence-based guidance, drug interaction checking, follow-ups and clinical support.
+              </p>
             </div>
           </div>
-        </motion.div>
 
-        {/* sub-nav tabs */}
-        <div className="flex flex-wrap gap-1.5 rounded-xl border border-border bg-card/50 p-1.5">
+          <img
+            src="/assets/doctor_copilot.png"
+            alt="Doctor Copilot illustration"
+            className="hero-art pointer-events-none absolute right-[280px] top-0 hidden h-[175px] w-[285px] object-cover xl:block"
+          />
+
+          <div className="relative z-10 mt-4 md:mt-0 flex flex-col gap-1.5 rounded-2xl border border-white/40 bg-white/70 p-4 backdrop-blur-sm text-xs font-semibold text-[#16156f] shadow-xs">
+            <div className="flex items-center gap-2">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700 font-bold">✓</span>
+              <span>Clinician-reviewed guidance</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700 font-bold">✓</span>
+              <span>Drug interaction safety</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700 font-bold">✓</span>
+              <span>WHO SMART resources</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700 font-bold">✓</span>
+              <span>Clinical documentation aid</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Patient Profile Header Strip */}
+        <div className="surface pad p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-white shadow-xs">
+          <div className="flex items-center gap-3.5">
+            <div className="h-12 w-12 rounded-full bg-[#edeaff] text-[#5538ee] font-extrabold flex items-center justify-center text-base border border-[#d8d2ff]">
+              FA
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-[#112342]">
+                  Fatima Ali (28F)
+                </h3>
+                <span className="chip chip-blue text-[10px]">Active Encounter</span>
+              </div>
+              <p className="text-xs text-[#547099] mt-0.5">
+                Female · 28 years · Lahore, Punjab · Blood Group: B+
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toast.info('Displaying synthetic clinical history for Fatima Ali (28F)')}
+              className="h-9 px-3.5 rounded-xl border-border text-xs font-semibold text-[#112342]"
+            >
+              Patient History
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => router.push('/my-health')}
+              className="h-9 px-3.5 rounded-xl bg-[#009b78] text-white text-xs font-bold gap-1.5 hover:bg-[#007f62]"
+            >
+              Open Full PHR →
+            </Button>
+          </div>
+        </div>
+
+        {/* 4 Prominent Switchable Tabs (§ references/06_Doctor_Copilot.png) */}
+        <div className="tabrow" role="tablist">
           {[
-            { id: 'patients', label: 'Patients', icon: Users },
-            { id: 'drug-checker', label: 'Drug Checker', icon: Pill },
-            { id: 'followups', label: 'Follow-ups', icon: ClipboardCheck },
-            { id: 'who-dak', label: 'WHO DAK', icon: BookOpen },
-            { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-            { id: 'audit', label: 'Audit', icon: ScrollText },
+            { id: 'patients', icon: Sparkles, num: 1, label: 'Pre-Visit Intakes (3)' },
+            { id: 'drug-checker', icon: Pill, num: 2, label: 'Drug Interaction Checker' },
+            { id: 'followups', icon: Clock, num: 3, label: 'Automated Follow-ups' },
+            { id: 'who-dak', icon: BookOpen, num: 4, label: 'WHO SMART Guidelines' },
+            { id: 'analytics', icon: BarChart3, num: 5, label: 'Practice Analytics' },
+            { id: 'audit', icon: ScrollText, num: 6, label: 'Audit Trail' },
           ].map((t) => (
             <button
               key={t.id}
-              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
               onClick={() => setTab(t.id as Tab)}
-              className={cn(
-                'inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
-                tab === t.id
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-              )}
+              className={cn('tab-custom', tab === t.id && 'active')}
             >
-              <t.icon className="h-3.5 w-3.5" /> {t.label}
+              <t.icon className="h-4 w-4" />
+              <span>{t.num}. {t.label}</span>
             </button>
           ))}
         </div>
 
         {/* tab content */}
-        {tab === 'patients' ? <PatientsTab lang={uiLang} /> : null}
+        {tab === 'patients' ? <PatientsTab lang={uiLang} onOpenWorkspace={() => router.push('/care')} /> : null}
         {tab === 'drug-checker' ? <DrugCheckerTab lang={uiLang} /> : null}
         {tab === 'followups' ? <FollowupsTab lang={uiLang} /> : null}
         {tab === 'who-dak' ? <WhoDakTab lang={uiLang} /> : null}
@@ -177,7 +227,7 @@ export function DoctorCopilotView() {
 // ============================================================
 // Tab: Patients
 // ============================================================
-function PatientsTab({ lang }: { lang: 'en' | 'ur' | 'roman' }) {
+function PatientsTab({ lang, onOpenWorkspace }: { lang: 'en' | 'ur' | 'roman'; onOpenWorkspace?: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [patients, setPatients] = useState<RealPatient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -436,69 +486,283 @@ function PatientsTab({ lang }: { lang: 'en' | 'ur' | 'roman' }) {
   }
 
   return (
-    <div className="space-y-3">
-      {loading ? (
-        <div className="space-y-2">
-          {[0,1,2].map((i) => <div key={i} className="h-20 animate-pulse rounded-xl border border-border bg-card/50" />)}
-        </div>
-      ) : error ? (
-        <Card className="border-red-500/30 bg-red-50/50 dark:bg-red-950/10">
-          <CardContent className="p-4 text-sm text-red-700 dark:text-red-400">{error}</CardContent>
-        </Card>
-      ) : patients.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center">
-          <Users className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No patients yet. When patients chat with SehatAI, they will appear here.</p>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-1.5 text-sm font-bold text-foreground">
-              <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> Patient roster
-            </h2>
-            <span className="text-xs text-muted-foreground">{patients.length} patients</span>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      {/* Main Clinical Stage (Left 8 Cols) */}
+      <div className="space-y-5 lg:col-span-8">
+        {/* High Severity Drug Interaction Alert (§ references/06_Doctor_Copilot.png) */}
+        <div className="alert-red">
+          <AlertTriangle className="h-6 w-6 shrink-0 text-[#d82233] mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <span className="chip chip-red text-[10px] font-bold">
+              HIGH SEVERITY DRUG INTERACTION · DEMO
+            </span>
+            <h3 className="mt-1.5 text-base font-bold text-[#c51d2a]">
+              Warfarin + Ciprofloxacin (Patient Zahid Mock)
+            </h3>
+            <p className="mt-1 text-xs text-[#547099] leading-relaxed">
+              Potential clinically significant interaction: ciprofloxacin may increase anticoagulation and bleeding risk.
+            </p>
+            <div className="mt-2.5 rounded-lg border border-red-200 bg-red-100/60 p-2.5 text-xs font-bold text-[#a51522]">
+              Action: Prompt clinician review, evaluate alternatives and appropriate INR monitoring. No automatic dose changes.
+            </div>
           </div>
-          <ul className="space-y-2">
-            {patients.map((p, i) => (
-              <motion.li key={p.conversationId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: i * 0.04 }}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(p.conversationId)}
-                  className="w-full rounded-xl border border-border bg-card p-3.5 text-start shadow-sm transition-all hover:border-emerald-500/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={cn(
-                      'h-3 w-3 shrink-0 rounded-full',
-                      p.triageLevel === 'URGENT' ? 'bg-orange-500' : p.triageLevel === 'ROUTINE' ? 'bg-amber-500' : p.triageLevel === 'EMERGENCY' ? 'bg-red-500' : 'bg-emerald-500',
-                    )} aria-hidden />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate text-sm font-bold text-foreground">{p.patientName}</p>
-                        <Badge className={cn('shrink-0 text-[9px] font-bold',
-                          p.triageLevel === 'URGENT' ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400' :
-                          p.triageLevel === 'ROUTINE' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' :
-                          p.triageLevel === 'EMERGENCY' ? 'bg-red-500/15 text-red-700 dark:text-red-400' :
-                          'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400')}>
-                          {p.triageLevel}
-                        </Badge>
-                        {p.profile?.conditions?.length ? (
-                          <Badge className="bg-muted text-[9px] font-bold text-muted-foreground">{p.profile.conditions.length} cond.</Badge>
-                        ) : null}
-                        {p.profile?.medications?.length ? (
-                          <Badge className="bg-amber-500/15 text-[9px] font-bold text-amber-700 dark:text-amber-400">{p.profile.medications.length} meds</Badge>
-                        ) : null}
+        </div>
+
+        {/* Patient Intake Card */}
+        <div className="doctor-intake shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="text-base font-bold text-[#112342]">
+                Patient Intake: Fatima Ali (28F)
+              </h3>
+              <p className="mt-0.5 text-xs text-[#637795]">
+                Chief complaint: Mild cough and low-grade fever for 48 hours
+              </p>
+            </div>
+            <span className="chip rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+              ROUTINE ENCOUNTER
+            </span>
+          </div>
+
+          <div className="intake-grid mt-4">
+            <div className="intake-mini">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                <Activity className="h-4 w-4" />
+              </span>
+              <div>
+                <b>Vitals</b>
+                <p>120/80 mmHg · 99.1°F</p>
+              </div>
+            </div>
+            <div className="intake-mini">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                <AlertTriangle className="h-4 w-4" />
+              </span>
+              <div>
+                <b>Allergies</b>
+                <p>None reported (NKA)</p>
+              </div>
+            </div>
+            <div className="intake-mini">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <Pill className="h-4 w-4" />
+              </span>
+              <div>
+                <b>Current Medications</b>
+                <p>Metformin 500mg, Lisinopril 10mg</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+            <span className="chip rounded-full bg-[#edeaff] text-[11px] font-bold text-[#5538ee]">
+              AI ASSISTANCE · CLINICIAN REVIEW REQUIRED
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toast.info('Loading complete electronic health record')}
+                className="h-8 rounded-lg border-border text-xs font-bold text-[#547099]"
+              >
+                Review Full PHR
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (onOpenWorkspace) onOpenWorkspace();
+                  else toast.info('Navigating to consultation workspace');
+                }}
+                className="h-8 rounded-lg bg-[#6554e8] px-3.5 text-xs font-bold text-white hover:bg-[#5241d6]"
+              >
+                Open Consultation Workspace →
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* 2-Column Trend & Medications */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Vitals Trend SVG */}
+          <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-[#112342]">Recent Vitals Trend</h4>
+              <button
+                type="button"
+                onClick={() => toast.info('Illustrative sample trend graph')}
+                className="text-xs font-bold text-[#6554e8] hover:underline"
+              >
+                View All
+              </button>
+            </div>
+            <div className="mt-3">
+              <svg viewBox="0 0 430 135" className="h-32 w-full" role="img" aria-label="Illustrative recent vitals trend">
+                <path d="M35 20H420M35 50H420M35 80H420M35 110H420" stroke="#e5edf6" />
+                <polyline points="38,63 110,66 184,62 256,56 330,60 413,56" fill="none" stroke="#2a79ee" strokeWidth="3" />
+                <polyline points="38,93 110,94 184,92 256,94 330,92 413,92" fill="none" stroke="#8a55ef" strokeWidth="3" />
+                {[38,110,184,256,330,413].map((x) => (
+                  <circle key={x} cx={x} cy="62" r="4" fill="#2a79ee" />
+                ))}
+                <text x="36" y="130" fontSize="10" fill="#7991ac">5 Nov</text>
+                <text x="201" y="130" fontSize="10" fill="#7991ac">11 Nov</text>
+                <text x="380" y="130" fontSize="10" fill="#7991ac">Today</text>
+              </svg>
+            </div>
+          </div>
+
+          {/* Recent Medications */}
+          <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
+            <h4 className="text-sm font-bold text-[#112342]">Recent Medications</h4>
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <Pill className="h-4 w-4" />
+                </span>
+                <div>
+                  <b className="text-xs font-bold text-[#112342]">Metformin 500mg</b>
+                  <p className="text-[11px] text-[#637795]">Twice daily with meals</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                  <Pill className="h-4 w-4" />
+                </span>
+                <div>
+                  <b className="text-xs font-bold text-[#112342]">Lisinopril 10mg</b>
+                  <p className="text-[11px] text-[#637795]">Once daily in morning</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Patient Roster from API */}
+        <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="flex items-center gap-2 text-sm font-bold text-[#112342]">
+              <Users className="h-4 w-4 text-[#009b78]" /> Active Patient Queue
+            </h4>
+            <span className="text-xs font-bold text-[#547099]">{patients.length} incoming encounters</span>
+          </div>
+
+          {loading ? (
+            <div className="space-y-2">
+              {[0, 1].map((i) => (
+                <div key={i} className="h-16 animate-pulse rounded-xl border border-border bg-muted/40" />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">
+              {error}
+            </div>
+          ) : patients.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-[#f8fafc] p-6 text-center text-xs text-[#637795]">
+              No active queue encounters. When patients complete an AI triage, their summary appears here.
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {patients.map((p, i) => (
+                <motion.li key={p.conversationId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: i * 0.04 }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(p.conversationId)}
+                    className="w-full rounded-xl border border-border bg-[#fbfcfe] p-3 text-start transition-all hover:border-[#6554e8] hover:bg-white focus-visible:outline-2 focus-visible:outline-ring"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={cn(
+                        'h-3 w-3 shrink-0 rounded-full',
+                        p.triageLevel === 'URGENT' ? 'bg-orange-500' : p.triageLevel === 'ROUTINE' ? 'bg-amber-500' : p.triageLevel === 'EMERGENCY' ? 'bg-red-500' : 'bg-emerald-500',
+                      )} aria-hidden />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-xs font-bold text-[#112342]">{p.patientName}</p>
+                          <Badge className={cn('shrink-0 text-[9px] font-bold',
+                            p.triageLevel === 'URGENT' ? 'bg-orange-500/15 text-orange-700' :
+                            p.triageLevel === 'ROUTINE' ? 'bg-amber-500/15 text-amber-700' :
+                            p.triageLevel === 'EMERGENCY' ? 'bg-red-500/15 text-red-700' :
+                            'bg-emerald-500/15 text-emerald-700')}>
+                            {p.triageLevel}
+                          </Badge>
+                        </div>
+                        <p className="mt-0.5 truncate text-[11px] text-[#637795]">{p.chiefComplaint}</p>
                       </div>
-                      <p className="mt-1 truncate text-xs text-muted-foreground">{p.chiefComplaint}</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground">{new Date(p.updatedAt).toLocaleString()}</p>
+                      <ArrowRight className="h-3.5 w-3.5 text-[#849bb5]" />
                     </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 self-center text-muted-foreground/40" />
-                  </div>
-                </button>
-              </motion.li>
+                  </button>
+                </motion.li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* Right Rail: AI Clinical Insights & Quick Actions (§ references/06_Doctor_Copilot.png) */}
+      <aside className="space-y-4 lg:col-span-4">
+        {/* AI Clinical Insights */}
+        <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
+          <div className="flex items-center gap-2 text-sm font-bold text-[#112342]">
+            <Sparkles className="h-4 w-4 text-[#6554e8]" />
+            AI Clinical Insights
+          </div>
+
+          <div className="mt-3 space-y-3 text-xs">
+            <div className="rounded-xl border border-blue-200 bg-[#edf5ff] p-3 text-[#1a365d]">
+              <b className="block text-xs font-bold">Differential considerations (examples)</b>
+              <p className="mt-1 text-[11px] leading-relaxed text-[#3b597c]">
+                1. Viral upper respiratory infection <br />
+                2. Acute bronchitis <br />
+                3. Allergic rhinitis
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-purple-200 bg-[#f4f1ff] p-3 text-[#2a1b63]">
+              <b className="block text-xs font-bold">Investigations (if clinically indicated)</b>
+              <p className="mt-1 text-[11px] leading-relaxed text-[#544199]">
+                CBC · CRP · Imaging only when supported by clinical findings
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-emerald-200 bg-[#ebfbf5] p-3 text-[#0a4734]">
+              <b className="block text-xs font-bold">Management support</b>
+              <p className="mt-1 text-[11px] leading-relaxed text-[#15694f]">
+                Hydration · Rest · Clinical monitoring
+              </p>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => toast.info('Guidelines viewer active in Tab 4')}
+            className="mt-3.5 w-full rounded-xl border-border text-xs font-bold text-[#547099] hover:bg-[#f5f8fc]"
+          >
+            View Guidelines
+          </Button>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
+          <h4 className="text-sm font-bold text-[#112342]">Quick Actions</h4>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[
+              'Generate Note',
+              'Check Interactions',
+              'Set Follow-up',
+              'Share Summary',
+            ].map((action) => (
+              <Button
+                key={action}
+                variant="outline"
+                size="sm"
+                onClick={() => toast.info(`Action '${action}' triggered`)}
+                className="rounded-xl border-border text-xs font-bold text-[#112342] hover:bg-[#f5f8fc]"
+              >
+                {action}
+              </Button>
             ))}
-          </ul>
-        </>
-      )}
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

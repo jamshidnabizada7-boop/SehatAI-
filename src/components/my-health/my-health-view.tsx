@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ClipboardList, Lock, Share2, Trash2 } from 'lucide-react';
+import {
+  ClipboardList, Lock, Share2, Trash2, Download, Heart, Activity,
+  Thermometer, Pill, Sparkles, Calendar, Wind, ShieldCheck, ArrowRight, Check,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
@@ -166,84 +169,249 @@ export function MyHealthView() {
       <section
         aria-label={t(uiLang, 'myHealth.title')}
         className={cn(
-          'mx-auto w-full max-w-3xl flex-1 py-2',
+          'mx-auto w-full max-w-7xl flex-1 py-2 space-y-5',
           uiLang === 'ur' && 'font-urdu',
         )}
       >
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18 }}
-        className="flex flex-col gap-6"
-      >
-        {/* Header */}
-        <header className="flex flex-col gap-2">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-              <ClipboardList className="h-5 w-5" aria-hidden />
-            </span>
-            <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-                {t(uiLang, 'myHealth.title')}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {t(uiLang, 'myHealth.subtitle')}
+        {/* High-Fidelity Personal Health Hero (§ references/04_My_Health_Record.png) */}
+        <div className="hero-banner hero-hub relative min-h-[160px] rounded-2xl p-6 sm:p-8 flex items-center justify-between overflow-hidden shadow-xs">
+          <div className="max-w-[560px] z-10">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
+              My <span className="text-[#008d6d]">Health Record</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-md leading-relaxed">
+              Your complete health information in one place. Track progress and share securely with your doctors.
+            </p>
+          </div>
+          <img
+            src="/assets/health_woman.png"
+            alt="Health hub"
+            className="hidden md:block absolute right-[260px] top-0 h-full w-auto max-w-[28%] object-cover pointer-events-none"
+          />
+          <div className="hidden sm:flex items-center gap-3.5 bg-background/90 backdrop-blur-sm p-4 rounded-2xl border border-border/80 shadow-xs z-10">
+            <div className="h-16 w-16 rounded-full border-4 border-[#009b78] border-r-emerald-200 flex items-center justify-center font-extrabold text-base text-[#009b78]">
+              85%
+            </div>
+            <div className="text-xs">
+              <b className="text-foreground block">Profile Completion</b>
+              <span className="text-[11px] text-muted-foreground">Demo value — use actual computed completion only.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Patient Profile Header Strip */}
+        <div className="surface pad p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="h-12 w-12 rounded-full bg-emerald-500/15 text-[#007b61] font-extrabold flex items-center justify-center text-base">
+              FA
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-foreground">
+                  Fatima Ali
+                </h3>
+                <span className="chip green text-[10px]">Sample Profile</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {profile?.sex === 'female' ? 'Female' : profile?.sex === 'male' ? 'Male' : 'Female'} · {profile?.ageBand ? profile.ageBand.replace('-', ' ') : '28 yrs'} · Lahore, Punjab · Blood Group: B+
               </p>
             </div>
           </div>
-          <p className="flex items-center gap-1.5 self-start rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-            <Lock className="h-3 w-3" aria-hidden />
-            {t(uiLang, 'myHealth.privacyNote')}
-          </p>
-        </header>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShareProfile}
+              className="h-9 px-3.5 rounded-xl border-border text-xs font-semibold gap-1.5"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              Share with Doctor
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => window.print()}
+              className="h-9 px-3.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold gap-1.5 hover:bg-primary/90"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export PDF
+            </Button>
+          </div>
+        </div>
 
-        {/* 4 Clean Structured Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs border-b border-border/80 custom-scrollbar" role="tablist">
-          <Button
-            size="sm"
-            variant={phrTab === 'overview' ? 'default' : 'ghost'}
-            className="h-9 rounded-xl text-xs font-bold shrink-0"
-            role="tab"
-            aria-selected={phrTab === 'overview'}
-            onClick={() => setPhrTab('overview')}
-          >
-            📊 {uiLang === 'ur' ? 'جائزہ اور وائٹلز' : '1. Overview & Vitals'}
-          </Button>
-          <Button
-            size="sm"
-            variant={phrTab === 'records' ? 'default' : 'ghost'}
-            className="h-9 rounded-xl text-xs font-bold shrink-0"
-            role="tab"
-            aria-selected={phrTab === 'records'}
-            onClick={() => setPhrTab('records')}
-          >
-            📋 {uiLang === 'ur' ? 'کلینیکل ریکارڈز اور لیبز' : '2. Clinical Records & Labs'}
-          </Button>
-          <Button
-            size="sm"
-            variant={phrTab === 'programs' ? 'default' : 'ghost'}
-            className="h-9 rounded-xl text-xs font-bold shrink-0"
-            role="tab"
-            aria-selected={phrTab === 'programs'}
-            onClick={() => setPhrTab('programs')}
-          >
-            👶 {uiLang === 'ur' ? 'ماں اور بچہ (حفاظتی ٹیکے)' : '3. Maternal & Child (EPI)'}
-          </Button>
-          <Button
-            size="sm"
-            variant={phrTab === 'privacy' ? 'default' : 'ghost'}
-            className="h-9 rounded-xl text-xs font-bold shrink-0"
-            role="tab"
-            aria-selected={phrTab === 'privacy'}
-            onClick={() => setPhrTab('privacy')}
-          >
-            🔒 {uiLang === 'ur' ? 'پرائیویسی اور رضامندی' : '4. Privacy & Consent'}
-          </Button>
+        {/* 4 Prominent Switchable Tabs (§ references/04_My_Health_Record.png) */}
+        <div className="tabrow" role="tablist">
+          {[
+            { id: 'overview', icon: Activity, num: 1, label: 'Overview & Vitals' },
+            { id: 'records', icon: ClipboardList, num: 2, label: 'Clinical Records & Labs' },
+            { id: 'programs', icon: Heart, num: 3, label: 'Maternal & Child (EPI)' },
+            { id: 'privacy', icon: Lock, num: 4, label: 'Privacy & Consent' },
+          ].map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={phrTab === t.id}
+              onClick={() => setPhrTab(t.id as any)}
+              className={cn('tab-custom', phrTab === t.id && 'active')}
+            >
+              <t.icon className="h-4 w-4" />
+              <span>{t.num}. {t.label}</span>
+            </button>
+          ))}
         </div>
 
         {/* TAB 1: OVERVIEW & VITALS */}
         {phrTab === 'overview' ? (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5">
+            {/* 4 Vital Metric Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              {[
+                { icon: Heart, color: 'text-pink-600 bg-pink-500/10', title: 'Blood Pressure', val: '120 / 80', unit: 'mmHg', desc: 'Normal · sample' },
+                { icon: Activity, color: 'text-blue-600 bg-blue-500/10', title: 'Blood Glucose', val: '96', unit: 'mg/dL', desc: 'Optimal · sample' },
+                { icon: Thermometer, color: 'text-purple-600 bg-purple-500/10', title: 'Body Temperature', val: '98.6', unit: '°F', desc: 'Normal · sample' },
+                { icon: ClipboardList, color: 'text-emerald-600 bg-emerald-500/10', title: 'Weight & BMI', val: '62 kg', unit: 'BMI 23.1', desc: 'Sample profile' },
+              ].map((v, idx) => (
+                <div key={idx} className="metric-card surface p-4 flex items-center gap-3.5">
+                  <div className={cn('h-11 w-11 rounded-2xl flex items-center justify-center shrink-0', v.color)}>
+                    <v.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{v.title}</span>
+                    <div className="text-xl font-extrabold text-foreground mt-0.5">
+                      {v.val} <span className="text-[11px] font-normal text-muted-foreground">{v.unit}</span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#008664]">{v.desc}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 2-Column: Current Medications & Recent Symptoms */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Current Medications */}
+              <div className="surface pad p-5 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-foreground">Current Medications & Reminders</h3>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-muted-foreground">See All →</Button>
+                </div>
+                <div className="space-y-2.5">
+                  {[
+                    { name: 'Metformin 500mg', desc: 'Twice daily with meals', status: 'Taken Today' },
+                    { name: 'Lisinopril 10mg', desc: 'Once daily in morning', status: 'Taken Today' },
+                    { name: 'Vitamin D3 1000 IU', desc: 'Once daily after breakfast', status: 'Due at 8 PM' },
+                  ].map((med, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 border border-border/60">
+                      <div className="flex items-center gap-2.5">
+                        <div className="iconbox h-8 w-8 rounded-lg bg-emerald-500/10 text-[#009b78]">
+                          <Pill className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <b className="text-xs text-foreground block">{med.name}</b>
+                          <span className="text-[11px] text-muted-foreground">{med.desc}</span>
+                        </div>
+                      </div>
+                      <span className={cn('chip text-[10px]', med.status === 'Taken Today' ? 'green' : 'orange')}>{med.status}</span>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" className="w-full h-9 rounded-xl border-dashed border-border text-xs font-semibold text-muted-foreground mt-1">
+                    + Add Medication
+                  </Button>
+                </div>
+              </div>
+
+              {/* Recent Symptoms & Health Notes */}
+              <div className="surface pad p-5 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-foreground">Recent Symptoms & Health Notes</h3>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-muted-foreground">See All →</Button>
+                </div>
+                <div className="space-y-2.5">
+                  {[
+                    { note: 'Dry cough & mild throat tickle', sub: 'Severity 2/5 · Today' },
+                    { note: 'Mild tension headache', sub: 'Resolved after hydration and rest' },
+                    { note: 'Mild stomach discomfort', sub: 'After food · Resolved' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-muted/30 border border-border/60">
+                      <div className="iconbox h-8 w-8 rounded-lg bg-purple-500/10 text-purple-600 mt-0.5">
+                        <Heart className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <b className="text-xs text-foreground block">{item.note}</b>
+                        <span className="text-[11px] text-muted-foreground">{item.sub}</span>
+                      </div>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" className="w-full h-9 rounded-xl border-dashed border-border text-xs font-semibold text-muted-foreground mt-1">
+                    + Log New Symptom
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom 3 Insight Modules */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Health Insights */}
+              <div className="surface pad p-5 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-foreground">Health Insights</h3>
+                  <span className="chip green text-[10px]">AI</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Illustrative health insight. Real guidance must use source-backed clinical logic.
+                </p>
+                <div className="inset inset-green p-3 rounded-xl border border-emerald-200/60 flex items-start gap-2 text-xs text-foreground/90">
+                  <Sparkles className="h-4 w-4 text-[#009b78] shrink-0 mt-0.5" />
+                  <span>Continue hydration and note symptom changes over the next 48 hours.</span>
+                </div>
+              </div>
+
+              {/* Upcoming Reminders */}
+              <div className="surface pad p-5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-foreground">Upcoming Reminders</h3>
+                  <Button variant="ghost" size="sm" className="h-6 text-[11px] text-muted-foreground">View All</Button>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { title: 'Metformin 500mg', time: 'Today, 8:00 PM' },
+                    { title: 'Doctor follow-up', time: 'Tomorrow, 11:30 AM' },
+                    { title: 'Lab Test (CBC)', time: '15 Nov 2026, 9:00 AM' },
+                  ].map((rem, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                        <div>
+                          <b className="text-foreground block">{rem.title}</b>
+                          <span className="text-[10px] text-muted-foreground">{rem.time}</span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-semibold text-primary">Manage</Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Air Quality */}
+              <div className="surface pad p-5 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-foreground">Air Quality in Lahore</h3>
+                  <Wind className="h-4 w-4 text-amber-500" />
+                </div>
+                <div className="text-xl font-extrabold text-[#be630c] flex items-center gap-2">
+                  AQI 168 <span className="chip orange text-[10px]">Example</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Sample environmental guidance. Live AQI requires a verified provider and timestamp.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-8 rounded-xl border-border text-xs font-semibold hover:bg-accent mt-1"
+                >
+                  Preventative Guidance →
+                </Button>
+              </div>
+            </div>
+
             {/* Profile section */}
             <section
               aria-labelledby="mh-profile-heading"
@@ -385,7 +553,6 @@ export function MyHealthView() {
             <AccountSection />
           </div>
         ) : null}
-      </motion.div>
 
       {/* Clear profile confirm */}
       <AlertDialog open={clearProfileOpen} onOpenChange={setClearProfileOpen}>

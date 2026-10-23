@@ -192,12 +192,12 @@ export function MessageBubble({
       >
         <div
           className={cn(
-            'max-w-[85%] rounded-2xl rounded-ee-md bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground shadow-sm transition-shadow hover:shadow-md sm:max-w-[75%]',
+            'max-w-[85%] rounded-2xl rounded-ee-md bg-[#007958] text-white px-4 py-3 text-sm leading-relaxed shadow-sm transition-shadow hover:shadow-md sm:max-w-[75%]',
             isUrduContent && 'font-urdu',
           )}
           dir={isUrduContent ? 'rtl' : 'ltr'}
         >
-          <p className="whitespace-pre-wrap">{message.content}</p>
+          <p className="whitespace-pre-wrap font-medium">{message.content}</p>
         </div>
         <span className="mt-1 pe-1 text-[10px] font-medium text-muted-foreground/70" aria-hidden>
           {timeLabel(message.createdAt)}

@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney } from '@/lib/care/money';
 import { cn } from '@/lib/utils';
-import { Phone, Video, MessageSquare, CheckCheck, CheckCircle2, Languages, ShieldAlert, FileText, Star, Undo2, CreditCard, Mic, MicOff, VideoOff, PhoneOff, Loader2 } from 'lucide-react';
+import { Phone, Video, MessageSquare, CheckCheck, CheckCircle2, Languages, ShieldAlert, FileText, Star, Undo2, CreditCard, Mic, MicOff, VideoOff, PhoneOff, Loader2, Stethoscope, Pill, CalendarClock } from 'lucide-react';
 
 export interface ConsultationDetail {
   id: string;
@@ -1150,31 +1150,47 @@ function CareCallModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Telemedicine call">
-      <div className="relative flex flex-col h-[85vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-neutral-900 text-white shadow-2xl">
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 p-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className={cn('h-3 w-3 rounded-full', status === 'connected' ? 'bg-green-500 animate-pulse' : 'bg-amber-500')} />
-            <span className="text-sm font-semibold">{mode === 'VIDEO' ? 'Care Video Call' : 'Care Audio Call'}</span>
-            <Badge variant="outline" className="whitespace-normal text-xs border-neutral-700 text-neutral-300">{statusText}</Badge>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-6" role="dialog" aria-modal="true" aria-label="Telemedicine call">
+      <div className="relative flex flex-col h-[94vh] w-full max-w-6xl overflow-hidden rounded-2xl bg-background text-foreground border border-border shadow-2xl">
+        {/* Top Meta Strip (§ references/03_Video_Consultation.png) */}
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 px-5 py-3 bg-card/60">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              Live Consultation with Dr. Ayesha Malik
+            </h2>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+              <span className="chip green text-[10px]">● Live demo</span>
+              <span>Room: {call.roomId.slice(0, 16)} · LiveKit SFU design reference</span>
+            </div>
           </div>
-          <Button variant="destructive" size="sm" onClick={() => void handleLeave()} className="min-h-10">
-            <PhoneOff className="mr-1 h-4 w-4" /> Leave
-          </Button>
+          <div className="flex items-center gap-2">
+            <span className="chip green text-[10px]">Connection: {status === 'connected' ? 'stable' : 'demo'}</span>
+            <span className="chip stroke text-[10px]">08:42</span>
+            <span className="chip stroke text-[10px]">Private session</span>
+            <Button variant="destructive" size="sm" onClick={() => void handleLeave()} className="h-8 rounded-xl font-bold text-xs ml-2">
+              <PhoneOff className="mr-1 h-3.5 w-3.5" /> End Call
+            </Button>
+          </div>
         </header>
 
-        {/* Media viewports */}
-        <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-          <audio ref={remoteAudioRef} data-testid="remote-audio" autoPlay playsInline className="sr-only" aria-hidden="true" />
-          {mode === 'VIDEO' ? (
-            <>
+        {/* 60/40 Split Video Stage + Clinical Notes */}
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto">
+          {/* Left Column: 60% Video Stage (lg:col-span-7) */}
+          <div className="lg:col-span-7 flex flex-col bg-neutral-950 p-4 justify-between border-e border-border/80 relative">
+            <div className="relative flex-1 min-h-[380px] sm:min-h-[460px] rounded-2xl overflow-hidden bg-black flex items-center justify-center">
+              <audio ref={remoteAudioRef} data-testid="remote-audio" autoPlay playsInline className="sr-only" aria-hidden="true" />
+              {/* Remote video stream or fallback photo */}
               <video ref={remoteVideoRef} data-testid="remote-video" autoPlay playsInline className="h-full w-full object-cover" />
-              {remoteVideoMuted ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/90 text-neutral-400">
-                  <VideoOff className="h-12 w-12 mb-2 text-neutral-500 animate-pulse" />
-                  <p className="text-sm font-medium">Remote participant camera is off</p>
-                </div>
-              ) : null}
+              {/* Photo placeholder if video stream is not active or in sample mode */}
+              <img
+                src="/assets/video_call_photo.jpg"
+                alt="Doctor video stream"
+                className={cn(
+                  'absolute inset-0 h-full w-full object-cover pointer-events-none',
+                  remoteVideoRef.current?.srcObject && 'opacity-0'
+                )}
+              />
+              {/* Floating PiP Self View */}
               <video
                 ref={localVideoRef}
                 data-testid="local-video"
@@ -1182,86 +1198,163 @@ function CareCallModal({
                 playsInline
                 muted
                 className={cn(
-                  'absolute bottom-4 right-4 h-32 w-44 rounded-xl border-2 border-neutral-700 object-cover shadow-lg',
+                  'absolute bottom-4 right-4 h-28 w-36 rounded-xl border-2 border-neutral-700 object-cover shadow-xl z-20',
                   !camOn && 'hidden'
                 )}
               />
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-3">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-800 text-neutral-300">
-                <Phone className="h-10 w-10 animate-bounce" />
+
+              {/* Floating Bottom Circular Controls Dock */}
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2.5 bg-neutral-950/85 backdrop-blur-md px-4 py-2.5 rounded-full border border-neutral-700/80 shadow-2xl z-30">
+                <button
+                  type="button"
+                  onClick={toggleMic}
+                  className={cn(
+                    'h-10 w-10 rounded-full flex items-center justify-center transition-all',
+                    micOn ? 'bg-neutral-800 text-white hover:bg-neutral-700' : 'bg-red-600 text-white hover:bg-red-700'
+                  )}
+                  title={micOn ? 'Mute' : 'Unmute'}
+                >
+                  {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleCam}
+                  className={cn(
+                    'h-10 w-10 rounded-full flex items-center justify-center transition-all',
+                    camOn ? 'bg-neutral-800 text-white hover:bg-neutral-700' : 'bg-red-600 text-white hover:bg-red-700'
+                  )}
+                  title={camOn ? 'Stop Camera' : 'Start Camera'}
+                >
+                  {camOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleFallbackToAudio()}
+                  className="h-10 w-10 rounded-full bg-neutral-800 text-white hover:bg-neutral-700 flex items-center justify-center"
+                  title="Audio fallback"
+                >
+                  <Phone className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleLeave()}
+                  className="h-10 w-10 rounded-full bg-red-600 text-white hover:bg-red-700 flex items-center justify-center shadow-md"
+                  title="End Call"
+                >
+                  <PhoneOff className="h-4 w-4" />
+                </button>
               </div>
-              <p className="text-sm text-neutral-400">Audio call in progress</p>
             </div>
-          )}
 
-          {status !== 'connected' && mode === 'VIDEO' ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/60 p-4 text-center">
-              {status === 'ended' ? <PhoneOff className="h-8 w-8 text-neutral-400 mb-2" /> : <Loader2 className="h-8 w-8 animate-spin text-neutral-400 mb-2" />}
-              <p className="text-sm font-medium">{statusText}</p>
+            {/* Doctor Profile Footer strip below video */}
+            <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-neutral-800 text-white">
+              <div className="flex items-center gap-3">
+                <img
+                  src="/assets/doctor_ayesha.png"
+                  alt="Dr. Ayesha Malik"
+                  className="h-12 w-12 rounded-xl object-cover border border-neutral-700"
+                />
+                <div>
+                  <b className="text-sm block">Dr. Ayesha Malik</b>
+                  <span className="text-xs text-neutral-400">Cardiologist · Example profile</span>
+                </div>
+              </div>
+              <span className="chip orange text-[10px]">Illustrative clinician</span>
             </div>
-          ) : null}
+          </div>
+
+          {/* Right Column: 40% Tabbed Clinical Notes (lg:col-span-5) */}
+          <div className="lg:col-span-5 flex flex-col p-5 space-y-4 bg-background overflow-y-auto custom-scrollbar">
+            {/* 4 Mini Tabs */}
+            <div className="flex items-center gap-1.5 border-b border-border/80 pb-2 text-xs">
+              {['Clinical Notes', 'Patient Info', 'Chat', 'Resources'].map((t, idx) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-xs font-bold transition-colors',
+                    idx === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                  )}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            {/* Visit Summary */}
+            <div className="inset inset-green p-3.5 rounded-xl border border-emerald-200/60 space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-[#007b61]">
+                <FileText className="h-4 w-4" />
+                <span>Visit Summary</span>
+              </div>
+              <p className="text-xs text-foreground/80 leading-relaxed">
+                Patient reports mild dry cough and fever for two days. This is synthetic sample data, not a clinical record.
+              </p>
+            </div>
+
+            {/* Assessment / Provisional Diagnosis */}
+            <div className="surface pad p-3.5 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-xs text-primary">
+                <Stethoscope className="h-4 w-4" />
+                <span>Assessment / Provisional Diagnosis</span>
+              </div>
+              <p className="text-xs text-foreground/85 leading-relaxed">
+                Possible viral upper respiratory tract infection. Clinical examination and auscultation are required for formal diagnosis.
+              </p>
+            </div>
+
+            {/* E-Prescription */}
+            <div className="surface pad p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-bold text-xs text-primary">
+                  <Pill className="h-4 w-4" />
+                  <span>E-Prescription</span>
+                </div>
+                <span className="chip stroke text-[10px]">+ Add Medication</span>
+              </div>
+              <div className="inset inset-green p-2.5 rounded-lg border border-emerald-200">
+                <b className="text-xs text-foreground block">Paracetamol 500mg</b>
+                <span className="text-[11px] text-muted-foreground">Illustrative chart only — requires clinician authorization.</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Prescriptions are not generated automatically by this demonstration.
+              </p>
+            </div>
+
+            {/* Care Plan / Follow-up */}
+            <div className="surface pad p-3.5 space-y-2">
+              <div className="flex items-center gap-2 font-bold text-xs text-primary">
+                <CalendarClock className="h-4 w-4" />
+                <span>Care Plan / Follow-up</span>
+              </div>
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                {[
+                  'Rest and maintain hydration',
+                  'Monitor symptoms and temperature',
+                  'Seek urgent care for severe warning signs',
+                  'Arrange follow-up if symptoms persist',
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <span className="text-[#009b78] font-bold">✓</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom 2 insets */}
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <div className="inset inset-blue p-2.5 rounded-lg text-[10px]">
+                <b>Telehealth Compliance</b>
+                <p className="text-muted-foreground mt-0.5">Requires jurisdiction-specific legal review.</p>
+              </div>
+              <div className="inset inset-green p-2.5 rounded-lg text-[10px]">
+                <b>Technical Support</b>
+                <p className="text-muted-foreground mt-0.5">Troubleshoot network or audio issues.</p>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* Control toolbar */}
-        <footer className="flex flex-wrap items-center justify-center gap-3 border-t border-neutral-800 p-4 bg-neutral-950">
-          <Button
-            variant={micOn ? 'secondary' : 'destructive'}
-            size="icon"
-            className="h-12 w-12 rounded-full"
-            onClick={toggleMic}
-            disabled={status === 'ended'}
-            title={micOn ? 'Mute Mic' : 'Unmute Mic'}
-          >
-            {micOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
-          </Button>
-
-          {mode === 'VIDEO' ? (
-            <Button
-              variant={camOn ? 'secondary' : 'destructive'}
-              size="icon"
-              className="h-12 w-12 rounded-full"
-              onClick={toggleCam}
-              disabled={status === 'ended'}
-              title={camOn ? 'Turn Off Camera' : 'Turn On Camera'}
-            >
-              {camOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
-            </Button>
-          ) : null}
-
-          {mode === 'VIDEO' && status !== 'ended' ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="min-h-11 border-neutral-700 text-neutral-200"
-              onClick={() => void handleFallbackToAudio()}
-              title="Switch to Audio Only"
-            >
-              <Phone className="mr-1 h-4 w-4" /> Fallback to Audio
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="min-h-11 border-neutral-700 text-neutral-200"
-              onClick={() => void handleFallbackToText()}
-              title="Switch to Messaging"
-            >
-              <MessageSquare className="mr-1 h-4 w-4" /> Fallback to Text
-            </Button>
-          )}
-
-          <Button
-            variant="destructive"
-            size="icon"
-            className="h-12 w-12 rounded-full"
-            onClick={() => void handleLeave()}
-            title="End Call"
-          >
-            <PhoneOff className="h-5 w-5" />
-          </Button>
-        </footer>
       </div>
     </div>
   );
