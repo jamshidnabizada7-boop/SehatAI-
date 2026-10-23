@@ -2,9 +2,9 @@ name: SehatAI Unified CI / Safety & Quality Gate
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, production-activation]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, production-activation]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,8 +14,20 @@ jobs:
   quality-and-safety-gate:
     name: Full Quality, Safety & Care Connect Gate
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: sehatai_test
+          POSTGRES_PASSWORD: ci-disposable-password
+          POSTGRES_DB: sehatai_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U sehatai_test -d sehatai_test"
+          --health-interval 10s --health-timeout 5s --health-retries 5
     env:
-      DATABASE_URL: "file:./dev.db"
+      DATABASE_URL: "postgresql://sehatai_test:ci-disposable-password@127.0.0.1:5432/sehatai_test"
+      DIRECT_URL: "postgresql://sehatai_test:ci-disposable-password@127.0.0.1:5432/sehatai_test"
       NEXTAUTH_SECRET: "ci-secret-not-for-production-use-32chars"
       CARE_ENABLED: "true"
       CARE_PAYMENTS_ENABLED: "true"
@@ -29,7 +41,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.4.0"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -44,24 +56,27 @@ jobs:
 
       - name: Setup local database
         run: |
-          bunx prisma db push
+          bunx prisma migrate deploy
           bunx tsx prisma/seed.ts
           bunx tsx prisma/seed-care.ts
 
       - name: Full Repository Typecheck
         run: bun run typecheck
 
+      - name: Scan for newly hardcoded credentials
+        run: bun run scan:secrets
+
       - name: Lint
         run: bun run lint
 
       - name: Run Core Safety Test Suite
-        run: bun test tests/tests/safety/
+        run: bun test --timeout 30000 tests/tests/safety/
 
       - name: Run Care Connect Test Suite
-        run: bun test tests/care/
+        run: bun test --timeout 30000 tests/care/care-unit.test.ts tests/care/care-integration.test.ts tests/care/financial-edge-cases.test.ts tests/care/cross-border-legal-and-financial-risk.test.ts tests/care/postgres-concurrency.test.ts tests/care/production-capture.test.ts
 
       - name: Run Authorization & Security Red-Team Test Suite
-        run: bun test tests/security/
+        run: bun test tests/security/authorization-red-team.test.ts tests/security/staging-adversarial-challenger3.test.ts
 
       - name: Run Care Connect Smoke Test
         run: bunx tsx tests/care/care-smoke.ts

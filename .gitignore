@@ -83,3 +83,6 @@ db/*.db
 .vercel
 .agents/
 
+
+# Codex scratch logs and local verification assets
+/work/

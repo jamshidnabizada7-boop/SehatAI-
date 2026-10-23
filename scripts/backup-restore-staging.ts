@@ -195,7 +195,7 @@ async function run() {
 
   // Compare seeded identities and record counts in restored database
   const localPrisma = new PrismaClient({
-    datasources: { db: { url: `postgresql://postgres:SehatAI_Staging_9b8a7c6d5e4f3210_Sec2026@127.0.0.1:5432/${DISPOSABLE_DB}` } },
+    datasources: { db: { url: `postgresql://postgres:${process.env.SEHATAI_LOCAL_PG_PASSWORD ?? ''}@127.0.0.1:5432/${DISPOSABLE_DB}` } },
   });
 
   try {

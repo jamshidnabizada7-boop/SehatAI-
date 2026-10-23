@@ -1,3 +1,15 @@
+import os
+import sys
+
+
+def _need(name):
+    # Secrets come from the environment only; never hardcode them in this file.
+    value = os.environ.get(name)
+    if not value:
+        sys.exit(f'{name} must be set in the environment')
+    return value
+
+
 with open('/etc/sehatai/staging.env', 'r') as f:
     lines = f.readlines()
 
@@ -9,10 +21,10 @@ updates = {
     'STAGING_AUTH_REQUIRED=': 'STAGING_AUTH_REQUIRED="false"\n',
     'STAGING_BLOCK_BOOKING=': 'STAGING_BLOCK_BOOKING=false\n',
     'STAGING_BLOCK_PAYMENTS=': 'STAGING_BLOCK_PAYMENTS=false\n',
-    'DATABASE_URL=': 'DATABASE_URL="postgresql://sehatai:SehatAI_Staging_9b8a7c6d5e4f3210_Sec2026@127.0.0.1:5450/sehatai_staging"\n',
-    'DATABASE_URL_POOLED=': 'DATABASE_URL_POOLED="postgresql://sehatai:SehatAI_Staging_9b8a7c6d5e4f3210_Sec2026@127.0.0.1:5450/sehatai_staging"\n',
-    'DATABASE_URL_UNPOOLED=': 'DATABASE_URL_UNPOOLED="postgresql://sehatai:SehatAI_Staging_9b8a7c6d5e4f3210_Sec2026@127.0.0.1:5450/sehatai_staging"\n',
-    'DIRECT_URL=': 'DIRECT_URL="postgresql://sehatai:SehatAI_Staging_9b8a7c6d5e4f3210_Sec2026@127.0.0.1:5450/sehatai_staging"\n',
+    'DATABASE_URL=': 'DATABASE_URL="' + _need('SEHATAI_STAGING_DATABASE_URL') + '"\n',
+    'DATABASE_URL_POOLED=': 'DATABASE_URL_POOLED="' + _need('SEHATAI_STAGING_DATABASE_URL_POOLED') + '"\n',
+    'DATABASE_URL_UNPOOLED=': 'DATABASE_URL_UNPOOLED="' + _need('SEHATAI_STAGING_DATABASE_URL_UNPOOLED') + '"\n',
+    'DIRECT_URL=': 'DIRECT_URL="' + _need('SEHATAI_STAGING_DIRECT_URL') + '"\n',
 }
 
 new_lines = []
