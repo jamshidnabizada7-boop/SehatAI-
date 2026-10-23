@@ -1,8 +1,9 @@
 // ============================================================
 // SehatAI — Conversational Intent Detection (pre-L0)
 // Detects non-medical intents (greetings, farewells, gratitude,
-// wellness checks) and conversation flow intents (follow-ups,
-// repeats) BEFORE the clinical triage pipeline runs.
+// introductions, capabilities, guidance requests, language changes,
+// wellness checks, non-medical queries) and conversation flow intents
+// (follow-ups, repeats) BEFORE the clinical triage pipeline runs.
 //
 // Pure TypeScript, zero dependencies, trilingual
 // (English / Urdu script / Roman Urdu).
@@ -15,6 +16,12 @@ export type ConversationalIntent =
   | 'farewell'
   | 'gratitude'
   | 'wellness_check'
+  | 'introduction'
+  | 'capabilities'
+  | 'guidance_request'
+  | 'language_change'
+  | 'non_medical'
+  | 'user_correction'
   | 'follow_up'
   | 'repeat'
   | 'health_query';
@@ -22,11 +29,83 @@ export type ConversationalIntent =
 export interface IntentResult {
   intent: ConversationalIntent;
   confidence: number;
+  /** For introduction: the extracted person's name */
+  extractedName?: string;
   /** For follow_up: the inferred topic from history */
   topicFromHistory?: string;
   /** For repeat: the index of the matching prior message */
   repeatIndex?: number;
+  /** For language_change: the requested language target */
+  requestedLanguage?: Lang;
+  /** For user_correction: details on corrected statement */
+  correctedDetail?: string;
 }
+
+// ── Introduction patterns (e.g. "I AM AHMAD", "Hello, my name is Sarah", "Salam, Mera naam Ali hai") ──
+
+const INTRO_EN = /^\s*(?:(?:hi|hello|hey|salam|assalam\s*o?\s*alaikum|aoa|slm|good\s+(?:morning|afternoon|evening))\s*[,!.-]?\s*)?(?:i\s*am|i'?m|my\s+name\s+is|this\s+is|it'?s|name\s+is)\s+([A-Za-z\s'-]{2,30})\s*[.!]?$/i;
+const INTRO_ROMAN = /^\s*(?:(?:hi|hello|hey|salam|assalam\s*o?\s*alaikum|aoa|slm)\s*[,!.-]?\s*)?(?:mera\s+naam|main|mera\s+nam)\s+([A-Za-z\s'-]{2,30}?)(?:\s+(?:hoon|hon|hai|ha))?\s*[.!]?$/i;
+const INTRO_URDU = /^\s*(?:(?:سلام|السلام\s*علیکم|ہیلو|ہائے)\s*[,!؟.-]?\s*)?(?:میرا\s*نام|میں)\s+([\u0600-\u06FF\s]{2,30}?)(?:\s*(?:ہوں|ہے))?\s*[!؟.]*$/;
+
+// Medical words that shouldn't be parsed as names ("I am sick", "I am pregnant", "I am bleeding")
+const NON_NAME_WORDS = new Set([
+  'sick', 'ill', 'fine', 'good', 'ok', 'okay', 'well', 'hurting', 'injured', 'bleeding',
+  'pregnant', 'diabetic', 'asthmatic', 'dying', 'in pain', 'feverish', 'choking',
+  'theek', 'beemar', 'khush', 'pareshan', 'theek hoon',
+]);
+
+// ── Capabilities patterns (e.g. "WHAT CAN YOU DO", "who are you") ──
+
+const CAPABILITIES_PATTERNS: RegExp[] = [
+  /\b(?:what\s+(?:can|do)\s+you\s+do|who\s+are\s+you|how\s+can\s+you\s+help(?:\s+me)?|what\s+are\s+your\s+(?:capabilities|features|functions)|what\s+is\s+sehatai|tell\s+me\s+about\s+yourself)\b/i,
+  /\b(?:aap\s+kya\s+kar\s+sakt[ey]\s+h[ae]i?n?|tum\s+kya\s+kar\s+sakt[ey]\s+ho|aap\s+kaun\s+h[ae]i?n?|tum\s+kaun\s+ho|aap\s+kya\s+ho|sehatai\s+kya\s+hai)\b/i,
+  /آپ\s*کیا\s*کر\s*سکتے\s*ہیں|تم\s*کیا\s*کر\s*سکتے\s*ہو|آپ\s*کون\s*ہیں|صحت\s*اے\s*آئی\s*کیا\s*ہے|آپ\s*کے\s*بارے\s*میں/,
+];
+
+// ── Guidance request patterns (e.g. "OK GUIDE ME", "guide me", "help me") ──
+
+const GUIDANCE_PATTERNS: RegExp[] = [
+  /^\s*(?:ok|okay|acha|theek\s+hai|please|plz)?\s*(?:guide\s+me|help\s+me|assist\s+me|tell\s+me|guide\s+karein|rehnumai\s+karein|guide\s+karo|madad\s+karein|madad\s+karo)\s*[!.?]*\s*$/i,
+  /^\s*(?:رہنمائی\s*کریں|مجھے\s*گائیڈ\s*کریں|مدد\s*کریں|رہنمائی\s*فرمائیں)\s*[!؟.]*$/,
+];
+
+// ── Language change patterns (e.g. "Say it in English", "Speak in English", "English please") ──
+
+const LANG_EN_PATTERNS: RegExp[] = [
+  /\b(?:say\s+it\s+in|speak\s+in|talk\s+in|write\s+in|switch\s+to|reply\s+in|respond\s+in|can\s+you\s+speak\s+in|answer\s+in)\s+english\b/i,
+  /^\s*(?:in\s+)?english(?:\s+please|\s+mein|\s+plz)?\s*[!.?]*\s*$/i,
+  /^\s*english\s+mein\s+(?:bolo|baat\s+karo|likho|rehnumai\s+karein|jawab\s+dein)\s*[!.?]*\s*$/i,
+];
+
+const LANG_ROMAN_PATTERNS: RegExp[] = [
+  /\b(?:say\s+it\s+in|speak\s+in|talk\s+in|write\s+in|switch\s+to|reply\s+in|respond\s+in|can\s+you\s+speak\s+in|answer\s+in)\s+(?:roman\s*urdu|roman)\b/i,
+  /^\s*(?:in\s+)?(?:roman\s*urdu|roman)(?:\s+please|\s+mein|\s+plz)?\s*[!.?]*\s*$/i,
+  /^\s*roman\s*(?:urdu)?\s+mein\s+(?:bolo|baat\s+karo|likho|rehnumai\s+karein|jawab\s+dein)\s*[!.?]*\s*$/i,
+];
+
+const LANG_URDU_PATTERNS: RegExp[] = [
+  /\b(?:say\s+it\s+in|speak\s+in|talk\s+in|write\s+in|switch\s+to|reply\s+in|respond\s+in|can\s+you\s+speak\s+in|answer\s+in)\s+urdu\b/i,
+  /^\s*(?:in\s+)?urdu(?:\s+please|\s+mein|\s+plz)?\s*[!.?]*\s*$/i,
+  /^\s*urdu\s+mein\s+(?:bolo|baat\s+karo|likho|rehnumai\s+karein|jawab\s+dein)\s*[!.?]*\s*$/i,
+  /^\s*(?:اردو\s*میں\s*(?:بات\s*کریں|بولیں|لکھیں|جواب\s*دیں)|اردو\s*پلیز)\s*[!؟.]*$/,
+  /\bاردو\s*میں\s*(?:بات\s*کریں|بولیں|لکھیں)/,
+];
+
+// ── User correction patterns (e.g. "Actually it is not my chest, the drawer broke") ──
+
+export const USER_CORRECTION_PATTERNS: RegExp[] = [
+  /^\s*(?:actually|correction|sorry\s+correction|no\s+i\s+meant|i\s+meant|my\s+mistake|not\s+my\s+chest|galti\s+se|mera\s+matlab|galat\s+likh\s+diya)\b/i,
+  /\b(?:it\s+is\s+not\s+(?:my\s+)?chest|it\s+was\s+not\s+(?:my\s+)?chest|the\s+chest\s+of\s+drawers\s+broke|i\s+was\s+talking\s+about\s+(?:furniture|a\s+box|a\s+drawer)|not\s+a\s+medical\s+emergency)\b/i,
+  /\b(?:asl\s+mein|mera\s+matlab\s+tha|chest\s+of\s+drawers\s+ki\s+baat\s+kar\s+raha)\b/i,
+];
+
+// ── Non-medical patterns (furniture, hardware, non-health) ──
+
+const NON_MEDICAL_PATTERNS: RegExp[] = [
+  /^\s*(?:the\s+)?chest\s+of\s+(?:my\s+)?drawers?\s+is\s+broken\s*[!.?]*\s*$/i,
+  /\b(?:chest\s+of\s+drawers?|tool\s*chest|toy\s*chest|ice\s*chest|treasure\s*chest)\b/i,
+  /\b(?:repair\s+(?:my\s+)?car|weather\s+today|cricket\s+score|stock\s+market|capital\s+of|prime\s+minister)\b/i,
+];
 
 // ── Greeting patterns (EN, Roman Urdu, Urdu) ──
 
@@ -87,30 +166,91 @@ const FOLLOW_UP_PATTERNS: RegExp[] = [
   /اس\s*کا\s*علاج|یہ\s*کیسے\s*ٹھیک|ڈاکٹر\s*کو\s*کب/,
 ];
 
-// ── Warm response templates ──
+// ── Conversational response templates ──
 
 export const GREETING_RESPONSES: Record<Lang, string> = {
-  en: "Hello! \u{1F44B} I'm SehatAI, your health guidance assistant. How can I help you with your health today?",
-  ur: '\u0627\u0644\u0633\u0644\u0627\u0645 \u0639\u0644\u06CC\u06A9\u0645! \u{1F44B} \u0645\u06CC\u06BA \u0633\u06C1\u062A \u0627\u06D2 \u0622\u0626\u06CC \u06C1\u0648\u06BA\u060C \u0622\u067E \u06A9\u0627 \u0635\u062D\u062A \u0631\u06C1\u0646\u0645\u0627 \u0645\u0639\u0627\u0648\u0646\u06D4 \u0622\u062C \u0622\u067E \u06A9\u06CC \u0635\u062D\u062A \u06A9\u06D2 \u0628\u0627\u0631\u06D2 \u0645\u06CC\u06BA \u06A9\u06CC\u0627 \u0645\u062F\u062F \u06A9\u0631 \u0633\u06A9\u062A\u0627 \u06C1\u0648\u06BA\u061F',
-  roman: 'Assalam o Alaikum! \u{1F44B} Main SehatAI hoon, aap ka sehat rehnuma. Aaj aap ki sehat ke baray mein kya madad kar sakta hoon?',
+  en: "Hello! 👋 I'm SehatAI, your health guidance assistant. How can I help you with your health today?",
+  ur: 'السلام علیکم! 👋 میں صحت اے آئی ہوں، آپ کا صحت رہنما معاون۔ آج آپ کی صحت کے بارے میں کیا مدد کر سکتا ہوں؟',
+  roman: 'Assalam o Alaikum! 👋 Main SehatAI hoon, aap ka sehat rehnuma. Aaj aap ki sehat ke baray mein kya madad kar sakta hoon?',
 };
 
 export const FAREWELL_RESPONSES: Record<Lang, string> = {
-  en: "Take care! \u{1F64F} Remember, I'm here whenever you need health guidance. Stay healthy!",
-  ur: '\u0627\u067E\u0646\u0627 \u062E\u06CC\u0627\u0644 \u0631\u06A9\u06BE\u06CC\u06BA! \u{1F64F} \u06CC\u0627\u062F \u0631\u06A9\u06BE\u06CC\u06BA\u060C \u062C\u0628 \u0628\u06BE\u06CC \u0635\u062D\u062A \u06A9\u06D2 \u0628\u0627\u0631\u06D2 \u0645\u06CC\u06BA \u0631\u06C1\u0646\u0645\u0627\u0626\u06CC \u0686\u0627\u06C1\u06CC\u06BA\u060C \u0645\u06CC\u06BA \u06CC\u06C1\u0627\u06BA \u06C1\u0648\u06BA\u06D4 \u0635\u062D\u062A\u0645\u0646\u062F \u0631\u06C1\u06CC\u06BA!',
-  roman: 'Apna khayal rakhein! \u{1F64F} Yaad rakhein, jab bhi sehat ke baray mein rehnumai chahein, main yahan hoon. Sehatmand rahein!',
+  en: "Take care! 🙏 Remember, I'm here whenever you need health guidance. Stay healthy!",
+  ur: 'اپنا خیال رکھیں! 🙏 یاد رکھیں، جب بھی صحت کے بارے میں رہنمائی چاہیں، میں یہاں ہوں۔ صحت مند رہیں!',
+  roman: 'Apna khayal rakhein! 🙏 Yaad rakhein, jab bhi sehat ke baray mein rehnumai chahein, main yahan hoon. Sehatmand rahein!',
 };
 
 export const GRATITUDE_RESPONSES: Record<Lang, string> = {
-  en: "You're welcome! \u{1F60A} I'm glad I could help. If you have any more health questions in the future, don't hesitate to ask. Take care!",
-  ur: '\u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F! \u{1F60A} \u062E\u0648\u0634\u06CC \u06C1\u0648\u0626\u06CC \u06A9\u06C1 \u0645\u062F\u062F \u06A9\u0631 \u0633\u06A9\u0627\u06D4 \u0645\u0633\u062A\u0642\u0628\u0644 \u0645\u06CC\u06BA \u06A9\u0648\u0626\u06CC \u0628\u06BE\u06CC \u0635\u062D\u062A \u06A9\u0627 \u0633\u0648\u0627\u0644 \u06C1\u0648 \u062A\u0648 \u067E\u0648\u0686\u06BE\u0646\u06D2 \u0645\u06CC\u06BA \u06C1\u0686\u06A9\u0686\u0627\u06C1\u0679 \u0646\u06C1 \u06A9\u0631\u06CC\u06BA\u06D4 \u0627\u067E\u0646\u0627 \u062E\u06CC\u0627\u0644 \u0631\u06A9\u06BE\u06CC\u06BA!',
-  roman: "Khush aamdeed! \u{1F60A} Khushi hui ke madad kar saka. Mustaqbil mein koi bhi sehat ka sawal ho to poochhne mein hichkichahat na karein. Apna khayal rakhein!",
+  en: "You're welcome! 😊 I'm glad I could help. If you have any more health questions in the future, don't hesitate to ask. Take care!",
+  ur: 'خوش آمدید! 😊 خوشی ہوئی کہ مدد کر سکا۔ مستقبل میں کوئی بھی صحت کا سوال ہو تو پوچھنے میں ہچکچاہٹ نہ کریں۔ اپنا خیال رکھیں!',
+  roman: 'Khush aamdeed! 😊 Khushi hui ke madad kar saka. Mustaqbil mein koi bhi sehat ka sawal ho to poochhne mein hichkichahat na karein. Apna khayal rakhein!',
 };
 
 export const WELLNESS_RESPONSES: Record<Lang, string> = {
-  en: "That's great to hear! \u{1F60A} Since you're feeling well, here are some simple tips to stay healthy:\n\n\u2022 Drink plenty of water throughout the day\n\u2022 Eat a balanced diet with fruits and vegetables\n\u2022 Get regular physical activity and good sleep\n\u2022 Wash your hands frequently\n\nIf anything ever changes or you feel unwell, I'm right here to help. Stay healthy! \u{1F4AA}",
-  ur: '\u06CC\u06C1 \u0633\u0646 \u06A9\u0631 \u062E\u0648\u0634\u06CC \u06C1\u0648\u0626\u06CC! \u{1F60A} \u0686\u0648\u0646\u06A9\u06C1 \u0622\u067E \u0635\u062D\u062A\u0645\u0646\u062F \u06C1\u06CC\u06BA\u060C \u0635\u062D\u062A\u0645\u0646\u062F \u0631\u06C1\u0646\u06D2 \u06A9\u06CC \u0686\u0646\u062F \u0622\u0633\u0627\u0646 \u062A\u062C\u0627\u0648\u06CC\u0632:\n\n\u2022 \u062F\u0646 \u0628\u06BE\u0631 \u0648\u0627\u0641\u0631 \u0645\u0642\u062F\u0627\u0631 \u0645\u06CC\u06BA \u067E\u0627\u0646\u06CC \u067E\u06CC\u062A\u06D2 \u0631\u06C1\u06CC\u06BA\n\u2022 \u067E\u06BE\u0644\u0648\u06BA \u0627\u0648\u0631 \u0633\u0628\u0632\u06CC\u0648\u06BA \u06A9\u06D2 \u0633\u0627\u062A\u06BE \u0645\u062A\u0648\u0627\u0632\u0646 \u063A\u0630\u0627 \u06A9\u06BE\u0627\u0626\u06CC\u06BA\n\u2022 \u0628\u0627\u0642\u0627\u0639\u062F\u06C1 \u0648\u0631\u0632\u0634 \u06A9\u0631\u06CC\u06BA \u0627\u0648\u0631 \u0627\u0686\u06BE\u06CC \u0646\u06CC\u0646\u062F \u0644\u06CC\u06BA\n\u2022 \u0628\u0627\u0631 \u0628\u0627\u0631 \u06C1\u0627\u062A\u06BE \u062F\u06BE\u0648\u0626\u06CC\u06BA\n\n\u0627\u06AF\u0631 \u06A9\u0628\u06BE\u06CC \u0637\u0628\u06CC\u0639\u062A \u0645\u06CC\u06BA \u062A\u0628\u062F\u06CC\u0644\u06CC \u0622\u0626\u06D2\u060C \u0645\u06CC\u06BA \u06CC\u06C1\u0627\u06BA \u0622\u067E \u06A9\u06CC \u0645\u062F\u062F \u06A9\u06D2 \u0644\u06CC\u06D2 \u0645\u0648\u062C\u0648\u062F \u06C1\u0648\u06BA\u06D4 \u0635\u062D\u062A\u0645\u0646\u062F \u0631\u06C1\u06CC\u06BA! \u{1F4AA}',
-  roman: "Yeh sun kar khushi hui! \u{1F60A} Choonke aap sehatmand hain, sehatmand rehne ki chand aasan tajweezein:\n\n\u2022 Din bhar wafir miqdaar mein paani peetay rahein\n\u2022 Phalon aur sabziyon ke saath mutawazin ghiza khayein\n\u2022 Baqaida warzish karein aur achhi neend lein\n\u2022 Baar baar haath dhoyein\n\nAgar kabhi tabiyat mein tabdeeli aaye, main yahan aap ki madad ke liye maujood hoon. Sehatmand rahein! \u{1F4AA}",
+  en: "That's great to hear! 😊 Since you're feeling well, here are some simple tips to stay healthy:\n\n• Drink plenty of water throughout the day\n• Eat a balanced diet with fruits and vegetables\n• Get regular physical activity and good sleep\n• Wash your hands frequently\n\nIf anything ever changes or you feel unwell, I'm right here to help. Stay healthy! 💪",
+  ur: 'یہ سن کر خوشی ہوئی! 😊 چونکہ آپ صحت مند ہیں، صحت مند رہنے کی چند آسان تجاویز:\n\n• دن بھر وافر مقدار میں پانی پیتے رہیں\n• پھلوں اور سبزیوں کے ساتھ متوازن غذا کھائیں\n• باقاعدہ ورزش کریں اور اچھی نیند لیں\n• بار بار ہاتھ دھوئیں\n\nاگر کبھی طبیعت میں تبدیلی آئے، میں یہاں آپ کی مدد کے لیے موجود ہوں۔ صحت مند رہیں! 💪',
+  roman: 'Yeh sun kar khushi hui! 😊 Choonke aap sehatmand hain, sehatmand rehne ki chand aasan tajweezein:\n\n• Din bhar wafir miqdaar mein paani peetay rahein\n• Phalon aur sabziyon ke saath mutawazin ghiza khayein\n• Baqaida warzish karein aur achhi neend lein\n• Baar baar haath dhoyein\n\nAgar kabhi tabiyat mein tabdeeli aaye, main yahan aap ki madad ke liye maujood hoon. Sehatmand rahein! 💪',
+};
+
+export function INTRODUCTION_RESPONSES(name: string): Record<Lang, string> {
+  const cleanName = name.trim().replace(/^[\s,.-]+|[\s,.-]+$/g, '');
+  const formattedName = cleanName ? cleanName.charAt(0).toUpperCase() + cleanName.slice(1) : 'there';
+  return {
+    en: `Nice to meet you, ${formattedName}! 👋 I'm SehatAI, your health guidance assistant. How can I help you today? Please feel free to share any symptoms or health questions you have.`,
+    ur: `آپ سے مل کر خوشی ہوئی، ${formattedName}! 👋 میں صحت اے آئی ہوں، آپ کا صحت رہنمائی معاون۔ آج میں آپ کی کیا مدد کر سکتا ہوں؟ اگر صحت سے متعلق کوئی سوال ہو تو ضرور بتائیں۔`,
+    roman: `Aap se mil kar khushi hui, ${formattedName}! 👋 Main SehatAI hoon, aap ka sehat rehnuma. Aaj main aap ki kya madad kar sakta hoon? Agar koi sehat ka sawal ya alamat ho to zaroor batayein.`,
+  };
+}
+
+export const CAPABILITIES_RESPONSES: Record<Lang, string> = {
+  en: `I'm SehatAI, a digital health assistant designed for Pakistan. Here is what I can help you with:
+
+• **Symptom guidance**: Describe how you are feeling, and I'll help assess the urgency.
+• **Triage advice**: Understand whether home care, a routine clinic visit, or immediate emergency care is appropriate.
+• **First aid & home care**: Practical, safe steps for common conditions.
+• **When to see a doctor**: Clear danger signs and guidance on when to seek in-person medical care.
+
+What health topic or symptoms would you like guidance on today?`,
+  ur: `میں صحت اے آئی ہوں، پاکستان کے لیے ڈیجیٹل صحت رہنمائی معاون۔ میں ان امور میں آپ کی مدد کر سکتا ہوں:
+
+• **علامات کی رہنمائی**: اپنی کیفیت بتائیں تاکہ شدت اور نوعیت کا اندازہ لگایا جا سکے۔
+• **طبی درجہ بندی**: جانیں کہ گھریلو دیکھ بھال، کلینک کا معائنہ، یا فوری ہسپتال جانا مناسب ہے۔
+• **ابتدائی طبی امداد**: عام مسائل کے لیے محفوظ اور آسان گھریلو تدابیر۔
+• **ڈاکٹر سے رجوع**: خطرے کی علامات اور ہنگامی دیکھ بھال کی نشاندہی۔
+
+آج آپ کو کس بارے میں رہنمائی چاہیے؟`,
+  roman: `Main SehatAI hoon, Pakistan ke liye digital sehat rehnuma. Main in cheezon mein aap ki madad kar sakta hoon:
+
+• **Alamaat ki rehnumai**: Apni tabiyat batayein taake shiddat ka andaza lagaya ja sake.
+• **Triage mashwara**: Janein ke gharelu dekh bhal, routine clinic visit, ya fori emergency ki zaroorat hai.
+• **First aid aur gharelu dekh bhal**: Aam masail ke liye aasan aur mehfooz tareeqay.
+• **Doctor se rabta**: Khatray ki alamaat aur hifazati rehnumai.
+
+Aaj aap ko kis baray mein rehnumai chahiye?`,
+};
+
+export const GUIDANCE_RESPONSES: Record<Lang, string> = {
+  en: "I'm ready to guide you. Please describe the symptoms you or someone else is experiencing, how long they have been present, and any other details you can share.",
+  ur: 'میں رہنمائی کے لیے تیار ہوں۔ براہ کرم بتائیں کہ آپ کو یا کسی اور کو کیا علامات محسوس ہو رہی ہیں، یہ کب سے ہیں، اور کوئی دیگر تفصیلات بتائیں۔',
+  roman: 'Main rehnumai ke liye tayar hoon. Barah-e-karam batayein ke aap ko ya kisi aur ko kya alamaat mehsoos ho rahi hain, yeh kab se hain, aur koi aur tafseel ho to batayein.',
+};
+
+export const LANGUAGE_CHANGE_RESPONSES: Record<Lang, string> = {
+  en: "Understood, I will continue in English. How can I assist you with your health today?",
+  ur: 'سمجھ گیا، اب میں اردو میں بات کروں گا۔ آج آپ کی صحت کے بارے میں کیا مدد کر سکتا ہوں؟',
+  roman: 'Samajh gaya, ab main Roman Urdu mein baat karoon ga. Aaj aap ki sehat ke baray mein kya madad kar sakta hoon?',
+};
+
+export const NON_MEDICAL_RESPONSES: Record<Lang, string> = {
+  en: "I am specialized in health guidance and medical triage. For non-medical questions or household repairs, I'm unable to assist. If you or someone else has any health concerns or symptoms, please let me know!",
+  ur: 'میں صحت اور طبی رہنمائی کے لیے مخصوص ہوں۔ غیر طبی سوالات یا گھریلو سامان کی مرمت کے لیے معذرت۔ اگر صحت سے متعلق کوئی مسئلہ یا سوال ہو تو ضرور بتائیں!',
+  roman: 'Main sehat aur tibbi rehnumai ke liye makhsoos hoon. Ghair-tibbi mamlaat ya marammat ke liye shayad madad na kar sakoon. Agar sehat ke hawale se koi masla ya sawal ho to batayein!',
+};
+
+export const USER_CORRECTION_RESPONSES: Record<Lang, string> = {
+  en: "Thank you for clarifying! I've updated my understanding. How can I help you with your health today?",
+  ur: 'وضاحت کا شکریہ! میں نے معلومات درست کر لی ہیں۔ آج آپ کی صحت کے حوالے سے کیا مدد کر سکتا ہوں؟',
+  roman: 'Wazahat ka shukriya! Main ne maloomat theek kar li hain. Aaj sehat ke hawale se aap ki kya madad kar sakta hoon?',
 };
 
 // ── Core detection functions ──
@@ -150,27 +290,75 @@ export function detectIntent(
 ): IntentResult {
   const trimmed = message.trim();
 
-  // Greeting
+  // 1. Language change requests
+  if (matchesAnyPattern(trimmed, LANG_EN_PATTERNS)) {
+    return { intent: 'language_change', confidence: 0.98, requestedLanguage: 'en' };
+  }
+  if (matchesAnyPattern(trimmed, LANG_ROMAN_PATTERNS)) {
+    return { intent: 'language_change', confidence: 0.98, requestedLanguage: 'roman' };
+  }
+  if (matchesAnyPattern(trimmed, LANG_URDU_PATTERNS)) {
+    return { intent: 'language_change', confidence: 0.98, requestedLanguage: 'ur' };
+  }
+
+  // 1.5 User corrections (e.g. "Actually it is not my chest, the drawer broke")
+  if (matchesAnyPattern(trimmed, USER_CORRECTION_PATTERNS)) {
+    return { intent: 'user_correction', confidence: 0.95 };
+  }
+
+  // 2. Non-medical queries (e.g. "The chest of my drawers is broken")
+  if (matchesAnyPattern(trimmed, NON_MEDICAL_PATTERNS)) {
+    return { intent: 'non_medical', confidence: 0.95 };
+  }
+
+  // 3. User introduction (e.g. "I AM AHMAD", "My name is Sarah")
+  const mEn = trimmed.match(INTRO_EN);
+  if (mEn && mEn[1] && !NON_NAME_WORDS.has(mEn[1].trim().toLowerCase())) {
+    return { intent: 'introduction', confidence: 0.95, extractedName: mEn[1].trim() };
+  }
+  const mRoman = trimmed.match(INTRO_ROMAN);
+  if (mRoman && mRoman[1]) {
+    const rawName = mRoman[1].replace(/\s+(?:hoon|hon|hai|ha)$/i, '').trim();
+    if (rawName && !NON_NAME_WORDS.has(rawName.toLowerCase())) {
+      return { intent: 'introduction', confidence: 0.95, extractedName: rawName };
+    }
+  }
+  const mUrdu = trimmed.match(INTRO_URDU);
+  if (mUrdu && mUrdu[1]) {
+    return { intent: 'introduction', confidence: 0.95, extractedName: mUrdu[1].trim() };
+  }
+
+  // 4. Capabilities inquiry (e.g. "WHAT CAN YOU DO", "who are you")
+  if (matchesAnyPattern(trimmed, CAPABILITIES_PATTERNS)) {
+    return { intent: 'capabilities', confidence: 0.95 };
+  }
+
+  // 5. Guidance requests (e.g. "OK GUIDE ME", "guide me", "help me")
+  if (matchesAnyPattern(trimmed, GUIDANCE_PATTERNS)) {
+    return { intent: 'guidance_request', confidence: 0.95 };
+  }
+
+  // 6. Greetings
   if (matchesAnyPattern(trimmed, GREETING_PATTERNS)) {
     return { intent: 'greeting', confidence: 0.95 };
   }
 
-  // Farewell
+  // 7. Farewells
   if (matchesAnyPattern(trimmed, FAREWELL_PATTERNS)) {
     return { intent: 'farewell', confidence: 0.95 };
   }
 
-  // Gratitude
+  // 8. Gratitude
   if (matchesAnyPattern(trimmed, GRATITUDE_PATTERNS)) {
     return { intent: 'gratitude', confidence: 0.95 };
   }
 
-  // Wellness check (user says they're fine)
+  // 9. Wellness check (user says they're fine)
   if (matchesAnyPattern(trimmed, WELLNESS_PATTERNS)) {
     return { intent: 'wellness_check', confidence: 0.90 };
   }
 
-  // Repeat detection
+  // 10. Repeat detection
   if (priorUserMessages.length > 0) {
     const normCurrent = normalizeForComparison(trimmed);
     for (let i = priorUserMessages.length - 1; i >= Math.max(0, priorUserMessages.length - 3); i--) {
@@ -182,7 +370,7 @@ export function detectIntent(
     }
   }
 
-  // Follow-up detection
+  // 11. Follow-up detection
   if (priorUserMessages.length > 0 && matchesAnyPattern(trimmed, FOLLOW_UP_PATTERNS)) {
     const topic = findTopicFromHistory(priorUserMessages, priorAssistantMessages);
     return {

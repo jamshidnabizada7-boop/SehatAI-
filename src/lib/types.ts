@@ -4,14 +4,32 @@
 // ============================================================
 
 export type Lang = 'en' | 'ur' | 'roman';
-export type TriageLevel = 'EMERGENCY' | 'URGENT' | 'ROUTINE' | 'SELF_CARE';
+export type TriageLevel = 'EMERGENCY' | 'URGENT' | 'ROUTINE' | 'SELF_CARE' | 'INFORMATIONAL';
 
 export const TRIAGE_ORDER: Record<TriageLevel, number> = {
   EMERGENCY: 4,
   URGENT: 3,
   ROUTINE: 2,
   SELF_CARE: 1,
+  INFORMATIONAL: 0,
 };
+
+export interface ConversationContextState {
+  userName?: string;
+  preferredLanguage?: Lang;
+  presentingConcern?: string;
+  symptomLocation?: string;
+  symptomOnset?: string;
+  symptomDuration?: string;
+  symptomSeverity?: string;
+  answeredQuestions: string[];
+  pendingQuestions: string[];
+  isThirdPersonOrHistorical?: boolean;
+  isCorrection?: boolean;
+  correctedSymptoms?: string[];
+  lastIntent?: string;
+  triageLevel?: TriageLevel;
+}
 
 // ---------- Trilingual text ----------
 export interface TriText {
@@ -156,6 +174,10 @@ export interface ClinicalContext {
   isQuestion: boolean;
   /** any concrete symptom asserted (fever, pain, vomiting…) */
   hasSymptoms: boolean;
+  /** whether the description describes past/historical events rather than active current acute distress */
+  isHistorical?: boolean;
+  /** whether the description is about a third party without present acute distress */
+  isThirdPerson?: boolean;
 }
 
 /** Deterministic clarification requirement derived from the context. */

@@ -48,7 +48,6 @@ export function ConfidenceBadge({ confidence, lang, className }: ConfidenceBadge
   if (!confidence) return null;
   const band = confidence.band;
   const label = t(lang, BAND_LABELS[band]);
-  const scorePct = Math.round((confidence.score ?? 0) * 100);
 
   return (
     <Popover>
@@ -70,8 +69,6 @@ export function ConfidenceBadge({ confidence, lang, className }: ConfidenceBadge
               >
                 <BandIcon band={band} />
                 <span>{label}</span>
-                <span className="opacity-80">·</span>
-                <span className="tabular-nums opacity-90">{scorePct}%</span>
               </motion.button>
             </PopoverTrigger>
           </TooltipTrigger>
@@ -89,9 +86,6 @@ export function ConfidenceBadge({ confidence, lang, className }: ConfidenceBadge
         <div className="mb-1 flex items-center gap-2">
           <BandIcon band={band} />
           <span className="text-sm font-bold text-foreground">{label}</span>
-          <span className="ms-auto tabular-nums text-muted-foreground">
-            {t(lang, 'confidence.scoreLabel')}: {scorePct}%
-          </span>
         </div>
         <p className="mb-2 leading-relaxed text-muted-foreground">{t(lang, 'confidence.tooltip')}</p>
         <div className="border-t border-border pt-2">

@@ -76,16 +76,14 @@ export function CareConnectView() {
   const role = (session?.user as { role?: string } | undefined)?.role ?? 'guest';
 
   const [tab, setTab] = useState<Tab>(role === 'doctor' ? 'consultations' : 'find');
-  const [openConsultationId, setOpenConsultationId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const url = new URL(window.location.href);
-    const cid = url.searchParams.get('consultationId');
-    if (cid && !openConsultationId) {
-      setOpenConsultationId(cid);
+  const [openConsultationId, setOpenConsultationId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return new URL(window.location.href).searchParams.get('consultationId');
+    } catch {
+      return null;
     }
-  }, [openConsultationId]);
+  });
 
   if (openConsultationId) {
     return (
@@ -259,52 +257,61 @@ function FindDoctors({ T, uiLang, isLoggedIn, onOpenConsultation }: {
         </CardContent>
       </Card>
 
-      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label={T('care.findDoctors')}>
-        <Select value={specialty} onValueChange={setSpecialty}>
-          <SelectTrigger aria-label={T('care.specialty')} className="min-h-11"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{T('care.allSpecialties')}</SelectItem>
-            {CARE_SPECIALTIES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={consultType} onValueChange={setConsultType}>
-          <SelectTrigger aria-label={T('care.consultationType')} className="min-h-11"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="TEXT">{T('care.text')}</SelectItem>
-            <SelectItem value="AUDIO">{T('care.audio')}</SelectItem>
-            <SelectItem value="VIDEO">{T('care.video')}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={gender} onValueChange={setGender}>
-          <SelectTrigger aria-label={T('care.gender')} className="min-h-11"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">{T('care.anyGender')}</SelectItem>
-            <SelectItem value="male">{T('care.male')}</SelectItem>
-            <SelectItem value="female">{T('care.female')}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger aria-label={T('care.sort')} className="min-h-11"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="relevance">{T('care.sortRelevance')}</SelectItem>
-            <SelectItem value="price_asc">{T('care.sortPriceAsc')}</SelectItem>
-            <SelectItem value="price_desc">{T('care.sortPriceDesc')}</SelectItem>
-            <SelectItem value="rating">{T('care.sortRating')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      {/* Horizontal specialty filter pills (Space-efficient, instant visibility) */}
+      <div className="mb-2.5 flex items-center gap-1.5 overflow-x-auto pb-1 text-xs custom-scrollbar">
+        <Button
+          variant={specialty === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setSpecialty('all')}
+          className="h-8 rounded-xl text-xs font-semibold shrink-0"
+        >
+          {T('care.allSpecialties')}
+        </Button>
+        {CARE_SPECIALTIES.slice(0, 6).map((s) => (
+          <Button
+            key={s}
+            variant={specialty === s ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSpecialty(s)}
+            className="h-8 rounded-xl text-xs font-semibold shrink-0"
+          >
+            {s}
+          </Button>
+        ))}
         <Button
           variant={onlineOnly ? 'default' : 'outline'}
           size="sm"
           onClick={() => setOnlineOnly((v) => !v)}
-          className="min-h-11"
+          className="h-8 rounded-xl text-xs font-semibold shrink-0"
           aria-pressed={onlineOnly}
         >
-          <span className={cn('mr-1 inline-block h-2 w-2 rounded-full', onlineOnly ? 'bg-green-500' : 'bg-muted-foreground')} aria-hidden />
+          <span className={cn('mr-1.5 inline-block h-2 w-2 rounded-full', onlineOnly ? 'bg-green-500' : 'bg-muted-foreground')} aria-hidden />
           {T('care.onlineNow')}
         </Button>
-        <span className="text-xs text-muted-foreground">{doctors.length} doctors</span>
+      </div>
+
+      {/* Secondary filter & count row */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2">
+          <Select value={consultType} onValueChange={setConsultType}>
+            <SelectTrigger aria-label={T('care.consultationType')} className="h-8 w-28 rounded-xl text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TEXT">{T('care.text')}</SelectItem>
+              <SelectItem value="AUDIO">{T('care.audio')}</SelectItem>
+              <SelectItem value="VIDEO">{T('care.video')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sort} onValueChange={setSort}>
+            <SelectTrigger aria-label={T('care.sort')} className="h-8 w-32 rounded-xl text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="relevance">{T('care.sortRelevance')}</SelectItem>
+              <SelectItem value="price_asc">{T('care.sortPriceAsc')}</SelectItem>
+              <SelectItem value="price_desc">{T('care.sortPriceDesc')}</SelectItem>
+              <SelectItem value="rating">{T('care.sortRating')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <span className="text-xs text-muted-foreground font-mono">{doctors.length} doctors available</span>
       </div>
 
       <ul className="flex flex-col gap-3">
@@ -642,16 +649,25 @@ function DoctorDetailDialog({ doctor, uiLang, T, onClose, isLoggedIn, onBooked }
         </section>
 
         {/* §83 Telemedicine consent capture */}
-        <div className="rounded-xl border p-3 text-xs text-muted-foreground bg-muted/40">
-          <label className="flex items-start gap-2 cursor-pointer">
+        <div className="rounded-xl border border-border/80 bg-muted/40 p-3.5 text-xs text-muted-foreground transition-colors hover:bg-muted/60">
+          <label className="flex items-start gap-2.5 cursor-pointer">
             <input
               type="checkbox"
               checked={telemedicineConsent}
               onChange={(e) => setTelemedicineConsent(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300"
+              className="mt-0.5 h-4 w-4 rounded border-border text-emerald-600 focus:ring-emerald-500"
             />
-            <span>
-              I agree to the <a href="/docs/legal/telemedicine-consent.md" target="_blank" rel="noopener noreferrer" className="underline font-medium text-foreground">Telemedicine Consent (2026.10-draft)</a> and acknowledge that this consultation is for non-emergency medical care.
+            <span className="leading-relaxed">
+              I agree to the{' '}
+              <a
+                href="/docs/legal/telemedicine-consent"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-emerald-700 underline underline-offset-2 transition-colors hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+              >
+                Telemedicine Consent (2026.10-draft)
+              </a>{' '}
+              and acknowledge that this consultation is for non-emergency medical care.
             </span>
           </label>
         </div>

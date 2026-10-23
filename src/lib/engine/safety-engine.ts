@@ -10,6 +10,7 @@ import {
   isDiabeticEmergency,
   isEmergencyHomeTreatmentRequest,
   CLARIFICATION_QUESTIONS,
+  NON_ANATOMICAL_CHEST,
 } from '@/lib/engine/context-extraction';
 import { fuzzyFindMedicalConcept } from '@/lib/engine/fuzzy-matcher';
 
@@ -261,18 +262,31 @@ export function detectLanguage(text: string): { language: Lang; confidence: numb
     const ratio = arabicChars / total;
     return { language: 'ur', confidence: Math.min(0.99, 0.75 + ratio * 0.2), method: 'script' };
   }
-  // Roman Urdu markers — common function words/romanizations
+  // Roman Urdu markers — common function words/romanizations (exclude ambiguous English homonyms like 'me')
   const romanMarkers = [
     'mujhe', 'mera', 'meri', 'hai', 'hain', 'nahi', 'nahin', 'kya', 'kaun', 'kaise', 'kaisay',
     'bukhar', 'bukhaar', 'dard', 'pet', 'sar', 'bacha', 'bachay', 'bachon', 'khoon', 'saans',
-    'seene', 'seenay', 'mein', 'me', 'ke', 'ki', 'ko', 'se', 'aur', 'main', 'aap', 'bohot',
+    'seene', 'seenay', 'mein', 'ke', 'ki', 'ko', 'se', 'aur', 'main', 'aap', 'bohot',
     'bohat', 'zyada', 'kam', 'din', 'hafte', 'raat', 'subah', 'abhi', 'kal', 'kabhi', 'lagta',
     'raha', 'rahi', 'rahe', 'gaya', 'gayi', 'hota', 'hoti', 'hote', 'kar', 'karna', 'karke',
+  ];
+  const englishMarkers = [
+    'the', 'is', 'are', 'was', 'were', 'am', 'i', 'you', 'my', 'your', 'guide', 'help',
+    'what', 'can', 'do', 'please', 'tell', 'about', 'chest', 'broken', 'drawers', 'having',
+    'feel', 'with', 'have', 'from', 'not', 'this', 'that', 'should', 'would', 'could', 'how',
+    'when', 'where', 'why', 'who', 'pain', 'fever', 'cough', 'cold', 'doctor', 'hospital', 'me',
   ];
   const words = text.toLowerCase().split(/[^a-z]+/).filter(Boolean);
   if (words.length === 0) return { language: 'en', confidence: 0.5, method: 'script' };
   const matches = words.filter((w) => romanMarkers.includes(w)).length;
+  const enMatches = words.filter((w) => englishMarkers.includes(w)).length;
   const ratio = matches / words.length;
+
+  // If English markers outnumber or tie Roman markers on short/ambiguous phrases, prefer English
+  if (enMatches > matches || (enMatches > 0 && matches <= 1 && words.length <= 4)) {
+    return { language: 'en', confidence: 0.9, method: 'script' };
+  }
+
   if (ratio >= 0.2 && matches >= 1) {
     return { language: 'roman', confidence: Math.min(0.98, 0.6 + ratio), method: 'script' };
   }
@@ -522,6 +536,20 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
   const clarification = assessClarification(ctx, text);
   const redFlags = matchRedFlags(text);
 
+  if (NON_ANATOMICAL_CHEST.test(text)) {
+    return {
+      level: 'INFORMATIONAL',
+      reason: triageReason('INFORMATIONAL', lang, []),
+      signals: ['non-medical:household-item'],
+      engine: 'L0',
+      shortCircuited: false,
+      context: ctx,
+      needsClarification: false,
+      clarificationReasons: [],
+      redFlagMatches: [],
+    };
+  }
+
   // ---------- deterministic EMERGENCY sources ----------
   const diabeticEmerg = isDiabeticEmergency(ctx, norm);
   const traumaEmerg = isTraumaEmergency(ctx);
@@ -557,7 +585,8 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
   const hypoglycemiaEmergency =
     ctx.glucoseReading !== null && ctx.glucoseReading.value > 0 && ctx.glucoseReading.value < 55;
 
-  if (redFlags.length > 0 || diabeticEmerg || traumaEmerg || overdoseEmerg || mentalStatusEmergency || respiratoryEmergency || anaphylaxisReaction || hypoglycemiaEmergency) {
+  const isHistoricalOnly = Boolean(ctx.isHistorical && !ctx.hasSymptoms);
+  if (!isHistoricalOnly && (redFlags.length > 0 || diabeticEmerg || traumaEmerg || overdoseEmerg || mentalStatusEmergency || respiratoryEmergency || anaphylaxisReaction || hypoglycemiaEmergency)) {
     const contextualEmerg = mentalStatusEmergency || respiratoryEmergency || anaphylaxisReaction || hypoglycemiaEmergency;
     const category = anaphylaxisReaction
       ? 'anaphylaxis'
@@ -601,7 +630,7 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
   let level: TriageLevel = 'SELF_CARE';
   const signals: string[] = [];
 
-  const informational = isInformationalQuery(text);
+  const informational = isInformationalQuery(text) || isHistoricalOnly;
   if (retrievals.length > 0 && retrievals[0].score >= 2) {
     const base = retrievals[0].item.baseLevel;
     // For informational queries:
@@ -742,7 +771,12 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
     signals.push('deep-wound-assessment');
   }
   // possible fracture / deformity → same-day assessment
-  if (/\b(broke|broken|fracture|fractured|deformed|deformity)\b|ٹوٹ گیا|ٹیڑھا/i.test(text) && !informational) {
+  const isAnatomicalFracture =
+    (/\b(fracture|fractured|deformed|deformity)\b|ٹوٹ گیا|ٹیڑھا/i.test(text) ||
+      (/\b(broke|broken)\b/i.test(text) &&
+        /\b(bone|arm|leg|ankle|wrist|hand|foot|finger|toe|rib|hip|shoulder|collarbone|clavicle|pelvis|knee|elbow|jaw|tooth|teeth|spine|neck|skull|limb|haddi|baazu|taang|paon|haath|ungli|pasli|gardan|ہڈی|بازو|ٹانگ|پاؤں|ہاتھ|انگلی|پسلی|گردن)\b/i.test(text))) &&
+    !NON_ANATOMICAL_CHEST.test(text);
+  if (isAnatomicalFracture && !informational) {
     level = maxSeverityLevel(level, 'URGENT');
     signals.push('possible-fracture');
   }
@@ -1096,6 +1130,11 @@ export function triageReason(level: TriageLevel, lang: Lang, signals: string[]):
       en: 'This can usually be managed safely at home — see guidance below.',
       ur: 'یہ عام طور پر گھر پر محفوظ طریقے سے سنبھالا جا سکتا ہے — نیچے ہدایات دیکھیں۔',
       roman: 'Yeh aam tor par ghar par mehfooz tareeqe se sambhala ja sakta hai — neeche hidayat dekhein.',
+    },
+    INFORMATIONAL: {
+      en: 'General health information or guidance.',
+      ur: 'عام صحت کی معلومات یا رہنمائی۔',
+      roman: 'Aam sehat ki maloomat ya rehnumai.',
     },
   };
   return map[level][lang];

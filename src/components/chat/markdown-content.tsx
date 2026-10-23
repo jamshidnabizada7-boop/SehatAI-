@@ -19,16 +19,17 @@ const SUPERSCRIPTS = ['¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'
  * up malformed marker artifacts (e.g. a stray "eadache]" left by the LLM).
  */
 export function formatCitationMarkers(content: string, citations?: Citation[]): string {
-  if (!citations || citations.length === 0) return content;
   let out = content;
-  citations.forEach((c, i) => {
-    const sup = SUPERSCRIPTS[i] ?? `(${i + 1})`;
-    // replace every [id] occurrence (id case-insensitive)
-    const escaped = c.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    out = out.replace(new RegExp(`\\s*\\[${escaped}\\]`, 'gi'), (m) => (m.startsWith(' ') ? ' ' : '') + sup);
-  });
-  // strip leftover well-formed latin bracket markers (unknown ids)
-  out = out.replace(/\s*\[[a-z0-9][a-z0-9 -]{1,30}\]/gi, '');
+  if (citations && citations.length > 0) {
+    citations.forEach((c, i) => {
+      const sup = SUPERSCRIPTS[i] ?? `(${i + 1})`;
+      // replace every [id] occurrence (id case-insensitive)
+      const escaped = c.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      out = out.replace(new RegExp(`\\s*\\[${escaped}\\]`, 'gi'), (m) => (m.startsWith(' ') ? ' ' : '') + sup);
+    });
+  }
+  // strip leftover bracket markers (unknown ids, literal [ID], [source], numeric [1], etc.)
+  out = out.replace(/\s*\[(?:id|source|citation|reference|ref|doc|\d+|[a-z0-9][a-z0-9 -]{0,30})\]/gi, '');
   // strip orphan artifacts: a latin word followed by "]" with no opener (e.g. "eadache]")
   out = out.replace(/(^|[\s•\-*])[a-z][a-z0-9-]{2,}\](?=[\s.,;:!?)\n]|$)/g, '$1');
   return out;

@@ -10,6 +10,7 @@ const LEVEL_STYLES: Record<TriageLevel, string> = {
   URGENT: 'bg-orange-500 text-white shadow-sm shadow-orange-500/30',
   ROUTINE: 'bg-yellow-400 text-yellow-950 shadow-sm',
   SELF_CARE: 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30',
+  INFORMATIONAL: 'bg-blue-600/15 text-blue-700 dark:text-blue-300 border border-blue-500/20 shadow-2xs',
 };
 
 function LevelIcon({ level }: { level: TriageLevel }) {
@@ -23,6 +24,8 @@ function LevelIcon({ level }: { level: TriageLevel }) {
       return <Clock className={cls} aria-hidden />;
     case 'SELF_CARE':
       return <Leaf className={cls} aria-hidden />;
+    case 'INFORMATIONAL':
+      return null;
   }
 }
 
@@ -33,8 +36,10 @@ interface TriageBadgeProps {
   className?: string;
 }
 
-/** Pill badge for the 4 triage levels + optional reason line below. */
+/** Pill badge for triage levels. Suppressed on pure INFORMATIONAL messages to prevent conversational clutter. */
 export function TriageBadge({ level, lang, reason, className }: TriageBadgeProps) {
+  if (level === 'INFORMATIONAL') return null;
+
   return (
     <div className={cn('flex flex-col items-start gap-1', className)}>
       <span
@@ -48,7 +53,7 @@ export function TriageBadge({ level, lang, reason, className }: TriageBadgeProps
         <LevelIcon level={level} />
         {t(lang, `triage.${level}`)}
       </span>
-      {reason ? (
+      {reason && (level === 'EMERGENCY' || level === 'URGENT') ? (
         <span className="text-xs leading-relaxed text-muted-foreground">{reason}</span>
       ) : null}
     </div>

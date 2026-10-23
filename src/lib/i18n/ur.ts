@@ -231,6 +231,7 @@ export const ur: Dict = {
     URGENT: 'فوری',
     ROUTINE: 'معمول',
     SELF_CARE: 'گھر پر دیکھ بھال',
+    INFORMATIONAL: 'معلوماتی',
   },
   citation: {
     sources: 'ذرائع',

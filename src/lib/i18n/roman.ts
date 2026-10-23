@@ -229,8 +229,9 @@ export const roman: Dict = {
   triage: {
     EMERGENCY: 'EMERGENCY',
     URGENT: 'FORI',
-    ROUTINE: 'MAMOOLI',
+    ROUTINE: 'AAM MUAINA',
     SELF_CARE: 'GHAR PAR DEKH BHAL',
+    INFORMATIONAL: 'MALOMATI',
   },
   citation: {
     sources: 'Zaraib',

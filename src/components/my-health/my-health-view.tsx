@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ClipboardList, Lock, Share2, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
@@ -70,6 +71,7 @@ export function MyHealthView() {
   const [loaded, setLoaded] = useState(false);
   const [clearProfileOpen, setClearProfileOpen] = useState(false);
   const [clearJournalOpen, setClearJournalOpen] = useState(false);
+  const [phrTab, setPhrTab] = useState<'overview' | 'records' | 'programs' | 'privacy'>('overview');
   // ref-guarded so the effect runs only once per mount (SSR-safe).
   const loadedOnce = useRef(false);
 
@@ -195,163 +197,194 @@ export function MyHealthView() {
           </p>
         </header>
 
-        {/* Profile section */}
-        <section
-          aria-labelledby="mh-profile-heading"
-          className="flex flex-col gap-3"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2
-              id="mh-profile-heading"
-              className="text-lg font-bold tracking-tight text-foreground"
+        {/* 4 Clean Structured Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs border-b border-border/80 custom-scrollbar" role="tablist">
+          <Button
+            size="sm"
+            variant={phrTab === 'overview' ? 'default' : 'ghost'}
+            className="h-9 rounded-xl text-xs font-bold shrink-0"
+            role="tab"
+            aria-selected={phrTab === 'overview'}
+            onClick={() => setPhrTab('overview')}
+          >
+            📊 {uiLang === 'ur' ? 'جائزہ اور وائٹلز' : '1. Overview & Vitals'}
+          </Button>
+          <Button
+            size="sm"
+            variant={phrTab === 'records' ? 'default' : 'ghost'}
+            className="h-9 rounded-xl text-xs font-bold shrink-0"
+            role="tab"
+            aria-selected={phrTab === 'records'}
+            onClick={() => setPhrTab('records')}
+          >
+            📋 {uiLang === 'ur' ? 'کلینیکل ریکارڈز اور لیبز' : '2. Clinical Records & Labs'}
+          </Button>
+          <Button
+            size="sm"
+            variant={phrTab === 'programs' ? 'default' : 'ghost'}
+            className="h-9 rounded-xl text-xs font-bold shrink-0"
+            role="tab"
+            aria-selected={phrTab === 'programs'}
+            onClick={() => setPhrTab('programs')}
+          >
+            👶 {uiLang === 'ur' ? 'ماں اور بچہ (حفاظتی ٹیکے)' : '3. Maternal & Child (EPI)'}
+          </Button>
+          <Button
+            size="sm"
+            variant={phrTab === 'privacy' ? 'default' : 'ghost'}
+            className="h-9 rounded-xl text-xs font-bold shrink-0"
+            role="tab"
+            aria-selected={phrTab === 'privacy'}
+            onClick={() => setPhrTab('privacy')}
+          >
+            🔒 {uiLang === 'ur' ? 'پرائیویسی اور رضامندی' : '4. Privacy & Consent'}
+          </Button>
+        </div>
+
+        {/* TAB 1: OVERVIEW & VITALS */}
+        {phrTab === 'overview' ? (
+          <div className="flex flex-col gap-6">
+            {/* Profile section */}
+            <section
+              aria-labelledby="mh-profile-heading"
+              className="flex flex-col gap-3"
             >
-              {t(uiLang, 'myHealth.profileSection')}
-            </h2>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {profileActive ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-                  {t(uiLang, 'myHealth.profileSet')}
-                </span>
-              ) : null}
-              {profileActive ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleShareProfile}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-xs font-semibold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
-                    aria-label={t(uiLang, 'myHealth.shareProfile')}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2
+                  id="mh-profile-heading"
+                  className="text-lg font-bold tracking-tight text-foreground"
+                >
+                  {t(uiLang, 'myHealth.profileSection')}
+                </h2>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {profileActive ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+                      {t(uiLang, 'myHealth.profileSet')}
+                    </span>
+                  ) : null}
+                  {profileActive ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleShareProfile}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-xs font-semibold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                        aria-label={t(uiLang, 'myHealth.shareProfile')}
+                      >
+                        <Share2 className="h-3.5 w-3.5" aria-hidden />
+                        {t(uiLang, 'myHealth.shareProfile')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setClearProfileOpen(true)}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/5 px-3 text-xs font-semibold text-red-700 transition-colors hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                        aria-label={t(uiLang, 'myHealth.clearProfile')}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                        {t(uiLang, 'myHealth.clearProfile')}
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+              <ProfileCard
+                lang={uiLang}
+                profile={profile}
+                onSave={handleSaveProfile}
+              />
+            </section>
+
+            {/* Health Dashboard Summary Card */}
+            <HealthSummaryCard
+              lang={uiLang}
+              conditionsCount={profile?.conditions?.length ?? 0}
+              allergiesCount={profile?.allergies?.length ?? 0}
+              medicationsCount={profile?.medications?.length ?? 0}
+            />
+
+            {/* Gamification */}
+            <GamificationCard />
+
+            {/* Wearable Sync */}
+            <WearableSync />
+
+            {/* Journal section */}
+            <section
+              aria-labelledby="mh-journal-heading"
+              className="flex flex-col gap-3"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-col gap-0.5">
+                  <h2
+                    id="mh-journal-heading"
+                    className="text-lg font-bold tracking-tight text-foreground"
                   >
-                    <Share2 className="h-3.5 w-3.5" aria-hidden />
-                    {t(uiLang, 'myHealth.shareProfile')}
-                  </button>
+                    {t(uiLang, 'myHealth.journalSection')}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {t(uiLang, 'myHealth.journalSubtitle')}
+                  </p>
+                </div>
+                {entries.length > 0 ? (
                   <button
                     type="button"
-                    onClick={() => setClearProfileOpen(true)}
+                    onClick={() => setClearJournalOpen(true)}
                     className="inline-flex h-9 items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/5 px-3 text-xs font-semibold text-red-700 transition-colors hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
-                    aria-label={t(uiLang, 'myHealth.clearProfile')}
+                    aria-label={t(uiLang, 'myHealth.clearJournal')}
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                    {t(uiLang, 'myHealth.clearProfile')}
+                    {t(uiLang, 'myHealth.clearJournal')}
                   </button>
-                </>
-              ) : null}
-            </div>
+                ) : null}
+              </div>
+              <SymptomJournal
+                lang={uiLang}
+                entries={entries}
+                onLog={handleLogEntry}
+                onDelete={handleDeleteEntry}
+              />
+            </section>
+
+            {/* Appointment Manager */}
+            <AppointmentManager />
           </div>
-          <ProfileCard
-            lang={uiLang}
-            profile={profile}
-            onSave={handleSaveProfile}
-          />
-        </section>
+        ) : null}
 
-        {/* Phase 2 — Health Dashboard Summary Card (self-contained, reads from all trackers) */}
-        <HealthSummaryCard
-          lang={uiLang}
-          conditionsCount={profile?.conditions?.length ?? 0}
-          allergiesCount={profile?.allergies?.length ?? 0}
-          medicationsCount={profile?.medications?.length ?? 0}
-        />
-
-        {/* Phase 3 — Gamification: streaks, points, badges (self-contained, fetches /api/gamification) */}
-        <GamificationCard />
-
-        {/* Wearable Sync (Apple Health / Google Health Connect via Capacitor) */}
-        <WearableSync />
-
-        {/* Journal section */}
-        <section
-          aria-labelledby="mh-journal-heading"
-          className="flex flex-col gap-3"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-col gap-0.5">
-              <h2
-                id="mh-journal-heading"
-                className="text-lg font-bold tracking-tight text-foreground"
-              >
-                {t(uiLang, 'myHealth.journalSection')}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {t(uiLang, 'myHealth.journalSubtitle')}
-              </p>
-            </div>
-            {entries.length > 0 ? (
-              <button
-                type="button"
-                onClick={() => setClearJournalOpen(true)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/5 px-3 text-xs font-semibold text-red-700 transition-colors hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
-                aria-label={t(uiLang, 'myHealth.clearJournal')}
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                {t(uiLang, 'myHealth.clearJournal')}
-              </button>
-            ) : null}
+        {/* TAB 2: CLINICAL RECORDS & LABS */}
+        {phrTab === 'records' ? (
+          <div className="flex flex-col gap-6">
+            <HealthTimeline entries={entries} lang={uiLang} />
+            <ChronicPrograms />
+            <MedicalCalculatorSuite lang={uiLang} />
+            <InsuranceClaims />
+            <LabTestBooking />
+            <MedicineDelivery />
           </div>
-          <SymptomJournal
-            lang={uiLang}
-            entries={entries}
-            onLog={handleLogEntry}
-            onDelete={handleDeleteEntry}
-          />
-        </section>
+        ) : null}
 
-        {/* Phase 2 — Health Timeline visualization (severity trend + triage distribution + recent entries) */}
-        <HealthTimeline entries={entries} lang={uiLang} />
+        {/* TAB 3: MATERNAL & CHILD HEALTH (EPI) */}
+        {phrTab === 'programs' ? (
+          <div className="flex flex-col gap-6">
+            <MaternalHealthTracker lang={uiLang} isPregnant={profile?.pregnant ?? false} />
+            <ChildVaccineTracker lang={uiLang} />
+            <ChronicDiseaseModule lang={uiLang} conditions={profile?.conditions ?? []} />
+            <MentalHealthScreening lang={uiLang} />
+            <NutritionLifestyleTracker lang={uiLang} />
+            <DietPlanner />
+            <FamilyHealthManager lang={uiLang} />
+            <AirQualityTracker lang={uiLang} />
+            <HydrationTracker lang={uiLang} />
+            <SleepTracker lang={uiLang} />
+          </div>
+        ) : null}
 
-        {/* Phase 2 — Maternal Health Tracker (WHO 8-visit ANC schedule, shown when profile.pregnant) */}
-        <MaternalHealthTracker lang={uiLang} isPregnant={profile?.pregnant ?? false} />
-
-        {/* Phase 2 — Child Vaccine Schedule Tracker (Pakistan EPI schedule) */}
-        <ChildVaccineTracker lang={uiLang} />
-
-        {/* Phase 2 — Chronic Disease Management (diabetes + BP log, shown when profile has diabetes/hypertension) */}
-        <ChronicDiseaseModule lang={uiLang} conditions={profile?.conditions ?? []} />
-
-        {/* Phase 2 — Mental Health Screening (PHQ-9 + GAD-7 validated tools) */}
-        <MentalHealthScreening lang={uiLang} />
-
-        {/* Phase 2 — Nutrition + Lifestyle tracker (BMI + water + steps) */}
-        <NutritionLifestyleTracker lang={uiLang} />
-
-        {/* Phase 2 — Family Health Management (multi-profile for children/parents/spouse) */}
-        <FamilyHealthManager lang={uiLang} />
-
-        {/* Phase 2 — Air Quality + Environmental Health (AQI, pollen, asthma triggers) */}
-        <AirQualityTracker lang={uiLang} />
-
-        {/* Phase 2 — Hydration/Dehydration Tracker (ORS + water + urine color chart) */}
-        <HydrationTracker lang={uiLang} />
-
-        {/* Phase 2 — Medical Calculator Suite (EDD + GFR + insulin factor) */}
-        <MedicalCalculatorSuite lang={uiLang} />
-
-        {/* Phase 2 — Sleep Quality Tracker (hours, quality rating, 7-day trend) */}
-        <SleepTracker lang={uiLang} />
-
-        {/* Lab test booking */}
-        <LabTestBooking />
-
-        {/* Medicine delivery */}
-        <MedicineDelivery />
-
-        {/* Chronic disease programs */}
-        <ChronicPrograms />
-
-        {/* AI diet planner */}
-        <DietPlanner />
-
-        {/* Insurance claims */}
-        <InsuranceClaims />
-
-        {/* Consent Manager */}
-        <ConsentManager />
-
-        {/* Appointment Manager */}
-        <AppointmentManager />
-
-        {/* Account & data section (auth, retention, audit log, delete-my-data) */}
-        <AccountSection />
+        {/* TAB 4: PRIVACY & CONSENT */}
+        {phrTab === 'privacy' ? (
+          <div className="flex flex-col gap-6">
+            <ConsentManager />
+            <AccountSection />
+          </div>
+        ) : null}
       </motion.div>
 
       {/* Clear profile confirm */}

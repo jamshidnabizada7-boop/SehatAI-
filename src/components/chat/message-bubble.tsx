@@ -262,7 +262,7 @@ export function MessageBubble({
           ) : null}
 
           {/* triage badge + confidence band pill (assistant metadata row) */}
-          {message.triage || message.confidence ? (
+          {message.triage?.level !== 'INFORMATIONAL' && (message.triage || message.confidence) ? (
             <div className="mb-2 flex flex-wrap items-center gap-2">
               {message.triage ? (
                 <TriageBadge
@@ -271,7 +271,9 @@ export function MessageBubble({
                   reason={message.triage.reason}
                 />
               ) : null}
-              <ConfidenceBadge confidence={message.confidence} lang={msgLang} />
+              {message.triage?.level !== 'EMERGENCY' ? (
+                <ConfidenceBadge confidence={message.confidence} lang={msgLang} />
+              ) : null}
             </div>
           ) : null}
 

@@ -24,8 +24,6 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
@@ -154,26 +152,38 @@ export function FacilitiesView() {
     );
   }, [toast, uiLang]);
 
-  const typeOptions: { value: TypeFilter; label: string }[] = [
-    { value: 'all', label: t(uiLang, 'facilities.allTypes') },
-    { value: 'hospital', label: t(uiLang, 'facilities.typeHospital') },
-    { value: 'clinic', label: t(uiLang, 'facilities.typeClinic') },
-    { value: 'bhuc', label: t(uiLang, 'facilities.typeBhuc') },
-    { value: 'maternity', label: t(uiLang, 'facilities.typeMaternity') },
-    { value: 'pharmacy', label: t(uiLang, 'facilities.typePharmacy') },
-  ];
 
   return (
     <div className="custom-scrollbar h-full overflow-y-auto px-4 py-4 sm:px-6">
       <div className="mx-auto max-w-2xl space-y-4">
         {/* header */}
-        <div>
-          <h1 className="text-xl font-bold text-foreground sm:text-2xl">
-            {t(uiLang, 'facilities.title')}
-          </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {t(uiLang, 'facilities.subtitle')}
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {t(uiLang, 'facilities.title')}
+            </h1>
+            <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+              {t(uiLang, 'facilities.subtitle')}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="tel:1122"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-red-600 px-3.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 active:scale-95"
+              aria-label="Call Rescue 1122 emergency"
+            >
+              <Phone className="h-3.5 w-3.5" aria-hidden />
+              <span>Rescue 1122</span>
+            </a>
+            <a
+              href="tel:1023"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 text-xs font-bold text-red-700 transition hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300 active:scale-95"
+              aria-label="Call Edhi 1023 ambulance"
+            >
+              <Phone className="h-3.5 w-3.5" aria-hidden />
+              <span>Edhi 1023</span>
+            </a>
+          </div>
         </div>
 
         {/* Phase 2 — referral rails: one-tap emergency + hospital + telemedicine deep-links */}
@@ -189,7 +199,7 @@ export function FacilitiesView() {
                 setCoords(null);
               }}
             >
-              <SelectTrigger className="h-11 min-w-36 rounded-xl" aria-label={t(uiLang, 'facilities.city')}>
+              <SelectTrigger className="h-9 min-w-32 rounded-xl text-xs font-semibold" aria-label={t(uiLang, 'facilities.city')}>
                 <SelectValue placeholder={t(uiLang, 'facilities.city')} />
               </SelectTrigger>
               <SelectContent>
@@ -201,49 +211,80 @@ export function FacilitiesView() {
               </SelectContent>
             </Select>
           )}
-          <Select value={type} onValueChange={(v) => setType(v as TypeFilter)}>
-            <SelectTrigger className="h-11 min-w-32 rounded-xl" aria-label={t(uiLang, 'facilities.type')}>
-              <SelectValue placeholder={t(uiLang, 'facilities.type')} />
-            </SelectTrigger>
-            <SelectContent>
-              {typeOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
           <Button
             variant={coords ? 'default' : 'outline'}
+            size="sm"
             onClick={useMyLocation}
             disabled={locating}
-            className="h-11 gap-1.5 rounded-xl font-medium"
+            className="h-9 gap-1.5 rounded-xl text-xs font-semibold"
             aria-label={t(uiLang, 'facilities.useLocation')}
           >
             {locating ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
             ) : (
-              <Crosshair className="h-4 w-4" aria-hidden />
+              <Crosshair className="h-3.5 w-3.5" aria-hidden />
             )}
             {locating ? t(uiLang, 'facilities.locating') : t(uiLang, 'facilities.useLocation')}
           </Button>
-        </div>
 
-        {/* 24h emergency toggle */}
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2.5">
-          <Label
-            htmlFor="emergency-only"
-            className="flex items-center gap-2 text-sm font-semibold text-foreground"
-          >
-            <Siren className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden />
-            {t(uiLang, 'facilities.emergencyOnly')}
-          </Label>
-          <Switch
-            id="emergency-only"
-            checked={emergencyOnly}
-            onCheckedChange={setEmergencyOnly}
-            aria-label={t(uiLang, 'facilities.emergencyOnly')}
-          />
+          {/* Quick horizontal filter chips */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setType('all');
+                setEmergencyOnly(false);
+              }}
+              className={cn(
+                'rounded-full px-3 py-1.5 text-xs font-semibold transition-all',
+                type === 'all' && !emergencyOnly
+                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500'
+                  : 'bg-muted/80 text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+            >
+              {t(uiLang, 'facilities.allTypes')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEmergencyOnly((prev) => !prev)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all',
+                emergencyOnly
+                  ? 'bg-red-600 text-white shadow-sm dark:bg-red-500'
+                  : 'bg-red-500/10 text-red-700 hover:bg-red-500/20 dark:text-red-400'
+              )}
+            >
+              <Siren className="h-3 w-3" aria-hidden />
+              <span>{t(uiLang, 'facilities.emergencyOnly')}</span>
+            </button>
+            {(['hospital', 'clinic', 'maternity', 'pharmacy'] as Facility['type'][]).map((tKey) => {
+              const labelMap: Record<string, string> = {
+                hospital: t(uiLang, 'facilities.typeHospital'),
+                clinic: t(uiLang, 'facilities.typeClinic'),
+                maternity: t(uiLang, 'facilities.typeMaternity'),
+                pharmacy: t(uiLang, 'facilities.typePharmacy'),
+              };
+              const isSelected = type === tKey;
+              return (
+                <button
+                  key={tKey}
+                  type="button"
+                  onClick={() => {
+                    setType(isSelected ? 'all' : tKey);
+                  }}
+                  className={cn(
+                    'rounded-full px-3 py-1.5 text-xs font-semibold transition-all',
+                    isSelected
+                      ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500'
+                      : 'bg-muted/80 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  {labelMap[tKey] || tKey}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* results */}

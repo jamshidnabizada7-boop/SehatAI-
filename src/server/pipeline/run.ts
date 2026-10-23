@@ -19,6 +19,7 @@ import type { RetrievalHit } from '@/lib/engine/safety-engine';
 import {
   CLARIFICATION_QUESTIONS,
   extractClinicalContext,
+  buildConversationContextState,
 } from '@/lib/engine/context-extraction';
 import {
   detectIntent,
@@ -26,6 +27,12 @@ import {
   FAREWELL_RESPONSES,
   GRATITUDE_RESPONSES,
   WELLNESS_RESPONSES,
+  INTRODUCTION_RESPONSES,
+  CAPABILITIES_RESPONSES,
+  GUIDANCE_RESPONSES,
+  LANGUAGE_CHANGE_RESPONSES,
+  NON_MEDICAL_RESPONSES,
+  USER_CORRECTION_RESPONSES,
 } from '@/lib/engine/intent-detection';
 import type { ClinicalContext } from '@/lib/types';
 import {
@@ -141,6 +148,7 @@ const LEVEL_MEANING: Record<TriageLevel, Record<Lang, string>> = {
   URGENT: { en: 'should be seen at a facility within 24 hours', ur: '24 گھنٹے کے اندر فیسلٹی جانا چاہیے', roman: '24 ghanton ke andar facility jana chahiye' },
   ROUTINE: { en: 'should be checked by a doctor within 2-3 days', ur: '2-3 دن میں ڈاکٹر کو دکھانا چاہیے', roman: '2-3 din mein doctor ko dikhana chahiye' },
   SELF_CARE: { en: 'usually manageable safely at home', ur: 'عام طور پر گھر پر محفوظ طریقے سے سنبھالا جا سکتا ہے', roman: 'aam tor par ghar par mehfooz tareeqe se sambhala ja sakta hai' },
+  INFORMATIONAL: { en: 'general information or guidance', ur: 'عام معلومات یا رہنمائی', roman: 'aam maloomat ya rehnumai' },
 };
 
 // ============================================================
@@ -666,7 +674,7 @@ export function extractCitations(text: string, allowedIds?: Set<string>): { cita
         license: item.source.license,
         verifiedAt: item.source.verifiedAt,
       });
-    } else if (item || id.length > 2) {
+    } else {
       stripped.push(id);
     }
   }
@@ -674,6 +682,9 @@ export function extractCitations(text: string, allowedIds?: Set<string>): { cita
   for (const id of stripped) {
     sanitized = sanitized.replace(new RegExp(`\\[${id.replace(/[^a-z0-9-]/gi, '')}\\]`, 'gi'), '');
   }
+  // Comprehensive cleanup: strip any residual placeholder or numeric citation leakage
+  sanitized = sanitized.replace(/\[(?:id|source|citation|reference|ref|doc|\d+)\]/gi, '');
+  sanitized = sanitized.replace(/[ \t]{2,}/g, ' ');
   return { citations: out, stripped, sanitized };
 }
 
@@ -1505,36 +1516,98 @@ export async function runPipeline(
   const priorAssistantMessages = historyStream.filter((m) => m.role === 'assistant').map((m) => m.content);
   const combinedPatientContext = patientStream.slice(-3).map((m) => m.content).join(' \n ');
 
+  // Cross-turn conversation memory and context state tracking
+  const conversationState = buildConversationContextState(historyStream, message);
+
   // ---------- Step 0.5: Conversational Intent Detection (pre-L0) ----------
   const intentResult = detectIntent(message, previousPatientTexts, priorAssistantMessages);
 
-  // Language detection for conversational responses
+  // Language detection hierarchy:
+  // 1. User's explicit language change request or preferred language from context state
+  // 2. Selected app language
+  // 3. Conversation history language (if user previously used English, don't flip)
+  // 4. Heuristic detector
   let convLang: Lang = 'en';
-  if (input.language && input.language !== 'auto') {
+  if (conversationState.preferredLanguage) {
+    convLang = conversationState.preferredLanguage;
+  } else if (intentResult.requestedLanguage) {
+    convLang = intentResult.requestedLanguage;
+  } else if (input.language && input.language !== 'auto') {
     convLang = input.language;
+  } else if (priorPatientMessages.length > 0) {
+    const lastUserMsg = priorPatientMessages[priorPatientMessages.length - 1];
+    const historyLang = lastUserMsg.language || detectLanguage(lastUserMsg.content).language;
+    const det = detectLanguage(message);
+    if (message.split(/\s+/).length <= 4 && historyLang === 'en' && det.language !== 'ur') {
+      convLang = 'en';
+    } else {
+      convLang = det.language;
+    }
   } else {
     const det = detectLanguage(message);
     convLang = det.language;
   }
 
-  // Handle non-medical intents: greeting, farewell, gratitude, wellness_check
-  if (['greeting', 'farewell', 'gratitude', 'wellness_check'].includes(intentResult.intent)) {
-    const responseMap: Record<string, Record<Lang, string>> = {
-      greeting: GREETING_RESPONSES,
-      farewell: FAREWELL_RESPONSES,
-      gratitude: GRATITUDE_RESPONSES,
-      wellness_check: WELLNESS_RESPONSES,
+  // Handle all non-medical / conversational intents
+  const CONVERSATIONAL_INTENTS = [
+    'greeting',
+    'farewell',
+    'gratitude',
+    'wellness_check',
+    'introduction',
+    'capabilities',
+    'guidance_request',
+    'language_change',
+    'non_medical',
+  ];
+
+  // Pure user correction without acute symptoms can also safely short-circuit
+  const isPureCorrection =
+    intentResult.intent === 'user_correction' && !extractClinicalContext(message).hasSymptoms;
+  if (isPureCorrection) {
+    CONVERSATIONAL_INTENTS.push('user_correction');
+  }
+
+  if (CONVERSATIONAL_INTENTS.includes(intentResult.intent)) {
+    let content = '';
+    if (intentResult.intent === 'introduction') {
+      content = INTRODUCTION_RESPONSES(intentResult.extractedName ?? 'there')[convLang];
+    } else if (intentResult.intent === 'capabilities') {
+      content = CAPABILITIES_RESPONSES[convLang];
+    } else if (intentResult.intent === 'guidance_request') {
+      content = GUIDANCE_RESPONSES[convLang];
+    } else if (intentResult.intent === 'language_change') {
+      content = LANGUAGE_CHANGE_RESPONSES[convLang];
+    } else if (intentResult.intent === 'non_medical') {
+      content = NON_MEDICAL_RESPONSES[convLang];
+    } else if (intentResult.intent === 'user_correction') {
+      content = USER_CORRECTION_RESPONSES[convLang];
+    } else {
+      const responseMap: Record<string, Record<Lang, string>> = {
+        greeting: GREETING_RESPONSES,
+        farewell: FAREWELL_RESPONSES,
+        gratitude: GRATITUDE_RESPONSES,
+        wellness_check: WELLNESS_RESPONSES,
+      };
+      content = responseMap[intentResult.intent]![convLang];
+    }
+
+    const triageReasonMap: Record<string, Record<Lang, string>> = {
+      greeting: { en: 'Welcome!', ur: 'خوش آمدید!', roman: 'Khush aamdeed!' },
+      farewell: { en: 'Goodbye!', ur: 'خدا حافظ!', roman: 'Khuda Hafiz!' },
+      gratitude: { en: 'Thank you!', ur: 'آپ کا شکریہ!', roman: 'Aap ka shukriya!' },
+      wellness_check: { en: 'No specific health issue was mentioned.', ur: 'کوئی صحت کا مسئلہ نہیں بتایا۔', roman: 'Koi sehat ka masla nahi bataya.' },
+      introduction: { en: 'Welcome to SehatAI.', ur: 'صحت اے آئی میں خوش آمدید۔', roman: 'SehatAI mein khush aamdeed.' },
+      capabilities: { en: 'SehatAI capabilities information.', ur: 'صحت اے آئی کی معلومات۔', roman: 'SehatAI ki maloomat.' },
+      guidance_request: { en: 'Health guidance request.', ur: 'صحت رہنمائی کی درخواست۔', roman: 'Sehat rehnumai ki darkhwast.' },
+      language_change: { en: 'Language preference updated.', ur: 'زبان کی ترجیح تبدیل ہو گئی۔', roman: 'Zaban tabdeel ho gayi.' },
+      non_medical: { en: 'Non-medical query.', ur: 'غیر طبی سوال۔', roman: 'Ghair-tibbi sawal.' },
+      user_correction: { en: 'Correction acknowledged.', ur: 'تصحیح تسلیم کی گئی۔', roman: 'Tasheeh tasleem ki gayi.' },
     };
-    const content = responseMap[intentResult.intent]![convLang];
+
     const triageData: TriageStageData = {
-      level: 'SELF_CARE',
-      reason: intentResult.intent === 'greeting'
-        ? (convLang === 'ur' ? 'خوش آمدید!' : convLang === 'roman' ? 'Khush aamdeed!' : 'Welcome!')
-        : intentResult.intent === 'farewell'
-          ? (convLang === 'ur' ? 'خدا حافظ!' : convLang === 'roman' ? 'Khuda Hafiz!' : 'Goodbye!')
-          : intentResult.intent === 'gratitude'
-            ? (convLang === 'ur' ? 'آپ کا شکریہ!' : convLang === 'roman' ? 'Aap ka shukriya!' : 'Thank you!')
-            : (convLang === 'ur' ? 'کوئی صحت کا مسئلہ نہیں بتایا۔' : convLang === 'roman' ? 'Koi sehat ka masla nahi bataya.' : 'No specific health issue was mentioned.'),
+      level: 'INFORMATIONAL',
+      reason: triageReasonMap[intentResult.intent]?.[convLang] ?? 'General health guidance.',
       signals: [`intent:${intentResult.intent}`],
       engine: 'intent',
       shortCircuited: true,
@@ -1549,7 +1622,7 @@ export async function runPipeline(
       lang: convLang,
       userContent: message,
       assistantContent: content,
-      level: 'SELF_CARE',
+      level: 'INFORMATIONAL',
       redFlags: [],
       citations: [],
       meta: { version: 2, path: `conversational-${intentResult.intent}`, intent: intentResult.intent },
@@ -1579,7 +1652,7 @@ export async function runPipeline(
       userId,
       persist: input.persist,
       meta: {
-        triageLevel: 'SELF_CARE',
+        triageLevel: 'INFORMATIONAL',
         confidenceBand: result.confidence!.band,
         engine: 'intent',
         latencyMs: result.latencyMs,
@@ -1612,17 +1685,17 @@ export async function runPipeline(
 
   // ---------- Step 1: L0 (sync, <5ms) — includes clinical context ----------
   const tL0 = Date.now();
-  let l0 = runL0Triage(message);
+  let l0 = runL0Triage(message, convLang);
   let redFlagMatches = l0.redFlagMatches ?? matchRedFlags(message);
   const ctx = l0.context ?? extractClinicalContext(combinedPatientContext);
 
   if (l0.level !== 'EMERGENCY' && priorPatientMessages.length > 0) {
     const priorWasEmergency = rawHistoryMessages.slice(-2).some((m) => m.emergency === true || m.triageLevel === 'EMERGENCY');
-    const combinedL0 = runL0Triage(combinedPatientContext);
-    if (combinedL0.level === 'EMERGENCY') {
+    const combinedL0 = runL0Triage(combinedPatientContext, convLang);
+    if (combinedL0.level === 'EMERGENCY' && !conversationState.isCorrection && !conversationState.isThirdPersonOrHistorical) {
       l0 = combinedL0;
       redFlagMatches = matchRedFlags(combinedPatientContext);
-    } else if (priorWasEmergency) {
+    } else if (priorWasEmergency && !conversationState.isCorrection && !conversationState.isThirdPersonOrHistorical) {
       const priorUserMsg = priorPatientMessages.find((m) => runL0Triage(m.content).level === 'EMERGENCY');
       const priorCat = priorUserMsg ? runL0Triage(priorUserMsg.content).matchedCategory : combinedL0.matchedCategory;
       l0 = {
@@ -1647,6 +1720,12 @@ export async function runPipeline(
   if (requested && requested !== 'auto') {
     lang = requested;
     confidence = 0.99;
+  } else if (conversationState.preferredLanguage) {
+    lang = conversationState.preferredLanguage;
+    confidence = 0.99;
+  } else if (convLang) {
+    lang = convLang;
+    confidence = 0.95;
   } else {
     const det = detectLanguage(message);
     lang = det.language;
@@ -2353,8 +2432,34 @@ export async function runPipeline(
     // special populations, uncertainty and injection attempts
     const safetyDirectives = buildSafetyDirectives(ctx, l1, finalLevel, needsClarification, clarificationReasons, lang);
 
-    // Conversational flow directives (follow-up, repetition, progressive deepening)
+    // Conversational flow directives (follow-up, repetition, progressive deepening, continuity)
+    const priorHistory = historyStream.slice(0, -1);
     const conversationalDirectives: string[] = [];
+    if (priorHistory.length > 0) {
+      conversationalDirectives.push(
+        '- CONVERSATION CONTINUITY: This is an ongoing conversation. Do NOT repeat identity greetings ("I am SehatAI..."), generic medical disclaimers, or 1122 emergency phone numbers if they were already stated earlier, unless new acute danger signs appear. Do NOT duplicate previous answers. Speak naturally as a continuing conversation.'
+      );
+    }
+    if (conversationState.userName) {
+      conversationalDirectives.push(
+        `- USER IDENTITY: The user's name is ${conversationState.userName}. You may address them once naturally if appropriate, but do NOT awkwardly repeat their name on every sentence or turn.`
+      );
+    }
+    if (conversationState.isCorrection) {
+      conversationalDirectives.push(
+        `- CORRECTION ACKNOWLEDGEMENT: The user corrected a previous statement or misunderstanding (clarified: ${conversationState.correctedSymptoms?.join(', ') || 'user clarified their condition'}). Warmly acknowledge this correction, do NOT treat previous false alarms as active symptoms, and address their actual clarified complaint.`
+      );
+    }
+    if (conversationState.isThirdPersonOrHistorical) {
+      conversationalDirectives.push(
+        `- HISTORICAL / THIRD-PERSON CONTEXT: The user is discussing a past medical event or someone else's situation. Do NOT treat this as an acute medical emergency happening to the user right now.`
+      );
+    }
+    if (conversationState.answeredQuestions.length > 0) {
+      conversationalDirectives.push(
+        `- ALREADY KNOWN CONTEXT: The following details were already established: ${conversationState.answeredQuestions.join(', ')}. Do NOT re-ask these details.`
+      );
+    }
     if (isRepeat) {
       conversationalDirectives.push(
         '- REPEATED INQUIRY: The user has asked about this same issue before in this conversation. Do NOT repeat your previous answer word-for-word. Instead: (a) warmly acknowledge their persistence, (b) ask what specific aspect they need more clarity on, (c) offer new practical advice or a different home-care angle, and (d) gently suggest seeing a doctor if home care is not resolving their issue.'
@@ -2411,7 +2516,6 @@ export async function runPipeline(
           `Write the answer now in ${LANG_LABEL[lang]}, following ALL hard rules.`,
         ].join('\n');
 
-    const priorHistory = historyStream.slice(0, -1);
     const historyPromptBlocks: LlmMessage[] = priorHistory.map((m) => ({
       role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
       content: m.content,

@@ -234,6 +234,7 @@ export const en = {
     URGENT: 'URGENT',
     ROUTINE: 'ROUTINE',
     SELF_CARE: 'SELF-CARE',
+    INFORMATIONAL: 'INFORMATIONAL',
   },
   citation: {
     sources: 'Sources',

@@ -302,7 +302,7 @@ export function VideoCall({ appointmentId, onClose }: VideoCallProps) {
   }, [appointmentId, roomId, createPeerConnection]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     startCall();
     return cleanup;
   }, [startCall, cleanup]);

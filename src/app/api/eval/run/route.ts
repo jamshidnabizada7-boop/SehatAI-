@@ -107,7 +107,7 @@ function computeSummary(outcomes: CaseOutcome[]): StoredSummary {
       return false;
     }
   });
-  const ORDER: Record<TriageLevel, number> = { EMERGENCY: 4, URGENT: 3, ROUTINE: 2, SELF_CARE: 1 };
+  const ORDER: Record<TriageLevel, number> = { EMERGENCY: 4, URGENT: 3, ROUTINE: 2, SELF_CARE: 1, INFORMATIONAL: 0 };
   const underTriaged = expectedHigh.filter((o) => {
     try {
       const exp = JSON.parse(o.expected) as { triage?: TriageLevel };

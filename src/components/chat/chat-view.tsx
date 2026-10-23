@@ -237,156 +237,82 @@ export function ChatView() {
       >
         <OutcomeFollowupCard refreshKey={assistantTurns} active={outcomeCardActive} />
         {messages.length === 0 ? (
-          <div className="custom-scrollbar mx-auto flex w-full max-w-lg flex-col gap-3 overflow-y-auto px-4 py-4 sm:gap-4 sm:px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
-              className="w-full overflow-hidden rounded-2xl border border-border bg-card text-center shadow-sm"
-            >
-              {/* gradient accent strip */}
-              <div className="h-1.5 w-full bg-gradient-to-r from-primary via-emerald-500 to-primary" aria-hidden />
-              <div className="p-6">
-                <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
-                  <HeartPulse className="h-8 w-8 text-primary" aria-hidden />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="custom-scrollbar mx-auto flex w-full max-w-lg flex-col items-center text-center px-4 py-8 sm:px-6"
+          >
+            <span className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-2xs">
+              <HeartPulse className="h-7 w-7" aria-hidden />
+            </span>
+
+            <h2 className={cn("text-xl font-extrabold tracking-tight text-foreground sm:text-2xl", uiLang === 'ur' && 'font-urdu')}>
+              {uiLang === 'ur'
+                ? 'السلام علیکم! میں سیۃ اے آئی ہوں'
+                : uiLang === 'roman'
+                ? 'Assalam-o-Alaikum! Main SehatAI hoon'
+                : 'Assalam-o-Alaikum! I am SehatAI'}
+            </h2>
+            <p className={cn("mt-1.5 text-xs text-muted-foreground max-w-sm leading-relaxed", uiLang === 'ur' && 'font-urdu')}>
+              {t(uiLang, 'chat.welcomeDesc')}
+            </p>
+
+            {/* Quick starter suggestion pills */}
+            <div className="mt-5 flex flex-wrap justify-center gap-2 w-full">
+              <button
+                type="button"
+                onClick={() => doSend(uiLang === 'ur' ? 'مجھے دو دن سے ہلکی کھانسی اور بخار ہے' : uiLang === 'roman' ? 'Mujhe do din se bukhar aur khansi hai' : 'I have had a mild fever and dry cough for two days')}
+                className="flex items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-foreground/85 shadow-2xs transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
+              >
+                <Thermometer className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                <span className={cn(uiLang === 'ur' && 'font-urdu')}>
+                  {uiLang === 'ur' ? 'بخار اور کھانسی کی علامات' : uiLang === 'roman' ? 'Bukhar aur khansi' : 'Fever & cough guidance'}
                 </span>
+              </button>
 
-                {/* language showcase — each greeting in its own visually separated row */}
-                <div className="space-y-1.5" dir="ltr">
-                  {WELCOME_TRILINGUAL.map((line) => (
-                    <p
-                      key={line.tag}
-                      className={cn(
-                        'flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm leading-relaxed text-foreground/90',
-                        line.lang === 'ur' ? 'bg-primary/5 font-urdu' : 'bg-muted/50',
-                      )}
-                      dir={line.lang === 'ur' ? 'rtl' : 'ltr'}
-                    >
-                      <span
-                        className="inline-flex h-6 shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/10 px-2 text-[10px] font-bold tracking-wider text-primary uppercase"
-                      >
-                        {line.tag}
-                      </span>
-                      <span className="min-w-0 flex-1 text-start">{line.text}</span>
-                    </p>
-                  ))}
-                </div>
-
-                <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                  {t(uiLang, 'chat.welcomeDesc')}
-                </p>
-              </div>
-            </motion.div>
-
-            {/* daily health tip */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.12 }}
-              className="w-full rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/8 via-card to-card p-4 shadow-sm"
-              role="note"
-              aria-label={t(uiLang, 'chat.dailyTip')}
-            >
-              <div className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 ring-1 ring-amber-500/25">
-                  <Lightbulb className="h-5 w-5 text-amber-600 dark:text-amber-400" aria-hidden />
+              <button
+                type="button"
+                onClick={() => doSend(uiLang === 'ur' ? 'بچوں کے حفاظتی ٹیکوں کا شیڈول کیا ہے؟' : uiLang === 'roman' ? 'Bachon ke EPI teekon ka schedule kya hai?' : 'What is the Pakistan EPI child immunization schedule?')}
+                className="flex items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-foreground/85 shadow-2xs transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
+              >
+                <Baby className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <span className={cn(uiLang === 'ur' && 'font-urdu')}>
+                  {uiLang === 'ur' ? 'بچوں کے حفاظتی ٹیکے (EPI)' : uiLang === 'roman' ? 'Child EPI vaccines' : 'Child vaccine schedule'}
                 </span>
-                <div className="min-w-0 flex-1 text-start">
-                  <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                    <span className="text-[11px] font-bold tracking-wider text-amber-700 uppercase dark:text-amber-400">
-                      {t(uiLang, 'chat.dailyTip')}
-                    </span>
-                    <span className="text-[10px] font-medium text-muted-foreground">· {dailyTip.publisher}</span>
-                  </p>
-                  <p
-                    className={cn(
-                      'mt-1 text-sm font-bold text-foreground',
-                      uiLang === 'ur' && 'font-urdu',
-                    )}
-                    dir={uiLang === 'ur' ? 'rtl' : 'ltr'}
-                  >
-                    {dailyTip.title[uiLang]}
-                  </p>
-                  <p
-                    className={cn(
-                      'mt-0.5 text-xs leading-relaxed text-foreground/80',
-                      uiLang === 'ur' && 'font-urdu',
-                    )}
-                    dir={uiLang === 'ur' ? 'rtl' : 'ltr'}
-                  >
-                    {dailyTip.text[uiLang]}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+              </button>
 
-            {/* 3 quick-access buttons — side by side in a row to save vertical space */}
-            <div className="grid grid-cols-3 gap-2">
-              {/* First-aid */}
               <button
                 type="button"
                 onClick={() => setFirstAidOpen(true)}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-2.5 text-center shadow-sm transition-all hover:border-orange-500/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring sm:p-3"
+                className="flex items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-foreground/85 shadow-2xs transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/15 text-orange-600 dark:text-orange-400">
-                  <ShieldPlus className="h-4.5 w-4.5" />
-                </span>
-                <span className="text-[10px] font-bold leading-tight text-foreground sm:text-[11px]">
-                  {uiLang === 'ur' ? 'ابتدائی امداد' : uiLang === 'roman' ? 'Ibtidai imdaad' : 'First aid'}
-                </span>
-              </button>
-
-              {/* Symptom checker */}
-              <button
-                type="button"
-                onClick={() => setSymptomCheckerOpen(true)}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-2.5 text-center shadow-sm transition-all hover:border-violet-500/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring sm:p-3"
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-400">
-                  <HelpCircle className="h-4.5 w-4.5" />
-                </span>
-                <span className="text-[10px] font-bold leading-tight text-foreground sm:text-[11px]">
-                  {uiLang === 'ur' ? 'علامات کی جانچ' : uiLang === 'roman' ? 'Alaamaat ki jaanch' : 'Symptoms'}
-                </span>
-              </button>
-
-              {/* Try asking */}
-              <button
-                type="button"
-                onClick={() => setTryAskingOpen(true)}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-2.5 text-center shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring sm:p-3"
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <MessageCircleQuestion className="h-4.5 w-4.5" />
-                </span>
-                <span className="text-[10px] font-bold leading-tight text-foreground sm:text-[11px]">
-                  {uiLang === 'ur' ? 'مثالیں' : uiLang === 'roman' ? 'Misaalein' : 'Examples'}
+                <ShieldPlus className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                <span className={cn(uiLang === 'ur' && 'font-urdu')}>
+                  {uiLang === 'ur' ? 'فوری ابتدائی طبی امداد' : uiLang === 'roman' ? 'Emergency first aid' : 'Emergency first aid'}
                 </span>
               </button>
             </div>
 
-            {/* triage legend — sets expectations on the 4-level safety model */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.2 }}
-              className="w-full rounded-2xl border border-border bg-card/70 p-4 shadow-sm"
-              aria-label={t(uiLang, 'chat.triageLegend')}
-            >
-              <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                <TriangleAlert className="h-3.5 w-3.5" aria-hidden />
-                {t(uiLang, 'chat.triageLegend')}
-              </p>
-              <ul className="grid gap-2 sm:grid-cols-2">
-                {TRIAGE_LEGEND.map((entry) => (
-                  <li key={entry.level} className="flex items-center gap-2 text-xs leading-relaxed text-foreground/85">
-                    <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', entry.dot)} aria-hidden />
-                    <span>{t(uiLang, entry.labelKey)}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          </div>
+            {/* Daily health tip — subtle informative card */}
+            <div className="mt-5 w-full rounded-2xl border border-amber-500/25 bg-amber-500/5 p-3.5 text-start shadow-2xs">
+              <div className="flex items-start gap-2.5">
+                <Lightbulb className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 uppercase tracking-wider dark:text-amber-400">
+                    <span>{t(uiLang, 'chat.dailyTip')}</span>
+                    <span className="text-muted-foreground font-normal">· {dailyTip.publisher}</span>
+                  </div>
+                  <p className={cn("mt-0.5 text-xs font-bold text-foreground", uiLang === 'ur' && 'font-urdu')}>
+                    {dailyTip.title[uiLang]}
+                  </p>
+                  <p className={cn("mt-0.5 text-[11px] text-muted-foreground leading-relaxed", uiLang === 'ur' && 'font-urdu')}>
+                    {dailyTip.text[uiLang]}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         ) : (
           messages.map((m, i) => (
             <MessageBubble

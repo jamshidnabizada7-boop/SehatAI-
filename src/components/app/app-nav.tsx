@@ -15,6 +15,7 @@ import {
   ClipboardList,
   Stethoscope,
   X,
+  PhoneCall,
 } from 'lucide-react';
 import { useAppStore, type View } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
@@ -47,10 +48,10 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { view: 'chat', icon: MessageCircle, labelKey: 'nav.chat' },
-  { view: 'reminders', icon: Bell, labelKey: 'nav.reminders', patientOnly: true },
-  { view: 'facilities', icon: MapPin, labelKey: 'nav.facilities' },
-  { view: 'my-health', icon: ClipboardList, labelKey: 'nav.myHealth', patientOnly: true },
   { view: 'care', icon: Stethoscope, labelKey: 'nav.careConnect' },
+  { view: 'my-health', icon: ClipboardList, labelKey: 'nav.myHealth', patientOnly: true },
+  { view: 'facilities', icon: MapPin, labelKey: 'nav.facilities' },
+  { view: 'reminders', icon: Bell, labelKey: 'nav.reminders', patientOnly: true },
   { view: 'doctor-copilot', icon: Stethoscope, labelKey: 'nav.doctorCopilot', doctorOnly: true, requireActiveDoctor: true },
   { view: 'dashboard', icon: BarChart3, labelKey: 'nav.dashboard', adminOnly: true },
   { view: 'observability', icon: Activity, labelKey: 'nav.observability', adminOnly: true },
@@ -100,14 +101,14 @@ function NavList({ onNavigate, items }: NavListProps & { items: NavItem[] }) {
               }}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring',
+                'flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring',
                 active
-                  ? 'bg-primary/12 text-primary'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  ? 'bg-primary/12 text-primary font-bold shadow-2xs border border-primary/20'
+                  : 'text-muted-foreground hover:bg-accent/80 hover:text-foreground',
               )}
             >
-              <item.icon className="h-5 w-5 shrink-0" aria-hidden />
-              {t(uiLang, item.labelKey)}
+              <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-primary' : 'text-muted-foreground/80')} aria-hidden />
+              <span className="truncate">{t(uiLang, item.labelKey)}</span>
             </button>
           </li>
         );
@@ -125,9 +126,31 @@ export function SidebarNav() {
   return (
     <nav
       aria-label={t(uiLang, 'app.name')}
-      className="hidden w-52 shrink-0 border-e border-border bg-card/50 md:block"
+      className="hidden w-56 shrink-0 flex-col justify-between border-e border-border/80 bg-card/40 md:flex"
     >
-      <NavList items={items} />
+      <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+        <NavList items={items} />
+      </div>
+
+      {/* Persistent Emergency rescue fast-action trigger */}
+      <div className="p-3 border-t border-border/60">
+        <div className="rounded-2xl border border-red-500/25 bg-red-500/8 p-3 text-start">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-red-700 dark:text-red-400">
+            <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
+            <span>{uiLang === 'ur' ? 'ہنگامی امداد' : uiLang === 'roman' ? 'Hangami imdaad' : 'Emergency Help'}</span>
+          </div>
+          <p className="mt-1 text-[11px] leading-tight text-muted-foreground">
+            {uiLang === 'ur' ? 'طبی ایمرجنسی میں فوراً رابطہ کریں' : 'Acute medical distress?'}
+          </p>
+          <a
+            href="tel:1122"
+            className="mt-2.5 flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-red-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-red-700 transition-colors"
+          >
+            <PhoneCall className="h-3.5 w-3.5" />
+            <span>Rescue 1122</span>
+          </a>
+        </div>
+      </div>
     </nav>
   );
 }
@@ -188,23 +211,34 @@ export function MobileNavDrawer() {
         )}
       >
         {/* panel header */}
-        <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <span className="flex items-center gap-1.5 text-base font-extrabold tracking-tight text-foreground">
             Sehat<span className="text-primary">AI</span>
           </span>
           <button
             type="button"
             onClick={() => setNavOpen(false)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
             aria-label={uiLang === 'ur' ? 'بند کریں' : uiLang === 'roman' ? 'Band karein' : 'Close menu'}
           >
-            <X className="h-5 w-5" aria-hidden />
+            <X className="h-4.5 w-4.5" aria-hidden />
           </button>
         </div>
 
         {/* nav items */}
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
           <NavList items={items} onNavigate={() => setNavOpen(false)} />
+        </div>
+
+        {/* Emergency Call Button on Mobile */}
+        <div className="px-3 pb-2">
+          <a
+            href="tel:1122"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-red-700 transition-colors"
+          >
+            <PhoneCall className="h-4 w-4" />
+            <span>Emergency: Call Rescue 1122</span>
+          </a>
         </div>
 
         {/* account footer — sign in / sign out */}
@@ -228,9 +262,9 @@ export function MobileNavDrawer() {
                   setNavOpen(false);
                   void signOut({ callbackUrl: '/' });
                 }}
-                className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-500/10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring dark:text-red-400"
+                className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-500/10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring dark:text-red-400"
               >
-                <LogOut className="h-5 w-5 shrink-0" aria-hidden />
+                <LogOut className="h-4 w-4 shrink-0" aria-hidden />
                 {t(uiLang, 'settings.signOutLabel')}
               </button>
             </div>
@@ -238,9 +272,9 @@ export function MobileNavDrawer() {
             <Link
               href="/auth/signin"
               onClick={() => setNavOpen(false)}
-              className="flex min-h-11 w-full items-center gap-3 rounded-xl bg-primary px-3 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring shadow-2xs"
             >
-              <LogIn className="h-5 w-5 shrink-0" aria-hidden />
+              <LogIn className="h-4 w-4 shrink-0" aria-hidden />
               {t(uiLang, 'auth.bannerCta')}
             </Link>
           )}

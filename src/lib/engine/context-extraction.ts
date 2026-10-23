@@ -22,14 +22,18 @@ import type {
   ClinicalContext,
   ConditionFinding,
   ConditionState,
+  ConversationContextState,
   InjectionFinding,
+  Lang,
   MedicationFinding,
   MedicationIntent,
   SpecialPopulationFinding,
   TraumaFinding,
+  TriageLevel,
   VagueDistressFinding,
   TriText,
 } from '@/lib/types';
+import { detectIntent, USER_CORRECTION_PATTERNS } from './intent-detection';
 
 /** normalize: lowercase, strip Urdu diacritics/tatweel, collapse whitespace */
 export function normalizeCtxText(text: string): string {
@@ -458,8 +462,24 @@ const TRAUMA_SIGNS: { key: string; terms: string[] }[] = [
   },
 ];
 
+export const NON_ANATOMICAL_CHEST =
+  /\b(?:chest\s+of\s+(?:[a-z]+\s+)?drawers?|tool\s*chest|toy\s*chest|ice\s*chest|treasure\s*chest|war\s*chest|hope\s*chest|cedar\s*chest)\b/i;
+
+export const HISTORICAL_PATTERNS =
+  /\b(?:last\s+(?:year|month|week|night|summer|winter)|years?\s+ago|months?\s+ago|weeks?\s+ago|days?\s+ago|in\s+the\s+past|previously|used\s+to\s+have|in\s+\d{4}|died\s+of|passed\s+away\s+from|had\s+(?:a\s+)?(?:stroke|heart\s+attack|fracture|surgery|accident)\s+(?:in|before|ago))\b|\b(?:pehle|pehlay|guzre\s+saal|pichle\s+saal|pichlay\s+hafte|saal\s+pehle|saal\s+pehlay|hafte\s+pehle|purani\s+baat|kabhi\s+hua\s+tha|hua\s+tha|hui\s+thi|huye\s+thay|inteqal\s+ho\s+gaya)\b|پہلے|گزشتہ|پچھلے\s*سال|ہوا\s*تھا|ہوئی\s*تھی|انتقال/i;
+
+export const PRESENT_ACUTE_PATTERNS =
+  /\b(?:now|right\s+now|currently|today|abhi|aaj|is\s+having|having\s+now|cannot\s+breathe|severe\s+pain\s+now)\b|ابھی|آج/i;
+
+export const THIRD_PERSON_PATTERNS =
+  /\b(?:my\s+(?:uncle|aunt|grandfather|grandmother|dada|dadi|nana|nani|friend|cousin|neighbor|neighbour|colleague|father|mother|brother|sister)|his\s+|her\s+|their\s+|someone\s+i\s+know|a\s+person|unhe|unhein|unka|unki|unko)\b|دادا|دادی|نانا|نانی|انکل|خالہ|پھپھو|دوست/i;
+
 export function extractTrauma(text: string): TraumaFinding | null {
   const mechanism = TRAUMA_MECHANISMS.find((m) => m.terms.some((t) => hasAny(text, [t])));
+  const matchSite = (s: { key: string; terms: string[] }) => {
+    if (s.key === 'chest' && NON_ANATOMICAL_CHEST.test(text)) return false;
+    return s.terms.some((t) => hasAny(text, [t]));
+  };
   if (!mechanism) {
     // Without a described mechanism this is only a trauma finding when
     // neuro deficits (numbness/paralysis/LOC) are present — e.g. "I cannot
@@ -469,10 +489,10 @@ export function extractTrauma(text: string): TraumaFinding | null {
       (s) => ['numbness', 'paralysis', 'loc'].includes(s.key) && s.terms.some((t) => hasAny(text, [t])),
     ).map((s) => s.key);
     if (neuroOnly.length === 0) return null;
-    const sites = TRAUMA_SITES.filter((s) => s.terms.some((t) => hasAny(text, [t]))).map((s) => s.key);
+    const sites = TRAUMA_SITES.filter(matchSite).map((s) => s.key);
     return { mechanism: 'unknown', sites, severitySigns: neuroOnly };
   }
-  const sites = TRAUMA_SITES.filter((s) => s.terms.some((t) => hasAny(text, [t]))).map((s) => s.key);
+  const sites = TRAUMA_SITES.filter(matchSite).map((s) => s.key);
   const signs = TRAUMA_SIGNS.filter((s) => s.terms.some((t) => hasAny(text, [t]))).map((s) => s.key);
   return { mechanism: mechanism.key, sites, severitySigns: signs };
 }
@@ -524,7 +544,9 @@ const VAGUE_LOW_TERMS = [
   'what do i do', 'what should i do', 'what to do', 'kya karoon', 'kya karun', 'kya karna chahiye',
   'i dont feel right', 'i do not feel right', 'something is not right', 'somethings not right',
   'help me', 'i need help', 'help', 'madad', 'mujhe madad',
-  'عجیب لگ رہا', 'کچھ ٹھیک نہیں', 'ٹھیک نہیں لگ رہا', 'مجھے بیمار', 'مدد',
+  'discomfort', 'have discomfort', 'i have discomfort', 'having discomfort', 'feel discomfort',
+  'takleef', 'takleef hai', 'bechaini', 'bechaini hai', 'uneasy', 'uneasiness',
+  'عجیب لگ رہا', 'کچھ ٹھیک نہیں', 'ٹھیک نہیں لگ رہا', 'مجھے بیمار', 'مدد', 'تکلیف', 'بےچینی',
 ];
 const INTENSIFIERS = /\b(very|really|extremely|so|seriously|bohot|bohat|zyada|bara)\b|بہت|شدید/;
 
@@ -700,6 +722,8 @@ export function extractClinicalContext(rawText: string): ClinicalContext {
     trauma !== null ||
     glucoseReading !== null ||
     (medications?.intent === 'OVERDOSE' || medications?.intent === 'MISSED_DOSE');
+  const isHistorical = HISTORICAL_PATTERNS.test(text) && !PRESENT_ACUTE_PATTERNS.test(text);
+  const isThirdPerson = THIRD_PERSON_PATTERNS.test(text);
   return {
     conditions,
     medications,
@@ -710,6 +734,8 @@ export function extractClinicalContext(rawText: string): ClinicalContext {
     glucoseReading,
     isQuestion,
     hasSymptoms,
+    isHistorical,
+    isThirdPerson,
   };
 }
 
@@ -822,3 +848,227 @@ export const CLARIFICATION_QUESTIONS: Record<string, TriText[]> = {
     },
   ],
 };
+
+// ------------------------------------------------------------
+// 12) Conversation context state builder (Cross-turn memory)
+// ------------------------------------------------------------
+
+export interface HistoryMessageLike {
+  role: string;
+  content: string;
+  language?: Lang;
+  triageLevel?: TriageLevel;
+  emergency?: boolean;
+}
+
+const BODY_LOCATION_PATTERNS: { key: string; re: RegExp }[] = [
+  { key: 'chest', re: /\b(?:chest|heart|cardiac|seena|seene)\b|سینہ|سینے|دل/i },
+  { key: 'knee', re: /\b(?:knee|knees|ghutna|ghutne)\b|گھٹنا|گھٹنے/i },
+  { key: 'head', re: /\b(?:head|headache|headaches|forehead|temple|sar|sar dard)\b|سر/i },
+  { key: 'abdomen', re: /\b(?:stomach|belly|abdomen|tummy|pet|pait)\b|پیٹ|معدہ/i },
+  { key: 'arm', re: /\b(?:arm|arms|elbow|wrist|baazu|bazu|kohni)\b|بازو|کہنی/i },
+  { key: 'leg', re: /\b(?:leg|legs|calf|thigh|shin|ankle|taang|tang)\b|ٹانگ|ٹخنہ/i },
+  { key: 'foot', re: /\b(?:foot|feet|toe|paon|panja)\b|پاؤں/i },
+  { key: 'hand', re: /\b(?:hand|hands|finger|haath|ungli)\b|ہاتھ|انگلی/i },
+  { key: 'throat', re: /\b(?:throat|gala)\b|گلا|حلق/i },
+  { key: 'back', re: /\b(?:back|spine|lower back|kamar|peeth)\b|کمر|پیٹھ/i },
+  { key: 'neck', re: /\b(?:neck|gardan)\b|گردن/i },
+  { key: 'shoulder', re: /\b(?:shoulder|shoulders|kandha|kandhe)\b|کندھا|کندھے/i },
+  { key: 'eye', re: /\b(?:eye|eyes|aankh|aankhein)\b|آنکھ|آنکھیں/i },
+  { key: 'ear', re: /\b(?:ear|ears|kaan)\b|کان/i },
+  { key: 'tooth', re: /\b(?:tooth|teeth|dant|daant)\b|دانت/i },
+];
+
+const ONSET_REGEX =
+  /\b(?:sudden|suddenly|achanak|nachak|gradual|gradually|ahista\s+ahista|after\s+(?:running|exercise|eating|falling|workout|walking|sleeping)|daurne\s+ke\s+baad|khanay\s+ke\s+baad)\b|فوری|اچانک|آہستہ\s*آہستہ/i;
+
+const DURATION_REGEX =
+  /\b(?:for|since|past|last)?\s*(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s*(hours?|days?|weeks?|months?|years?|ghante|din|hafte|mahine|saal)\b|\b(?:since\s+(?:yesterday|this\s+morning|last\s+night)|kal\s+se|aaj\s+subah\s+se|raat\s+se)\b|کل\s*سے|صبح\s*سے/i;
+
+const SEVERITY_REGEX =
+  /\b(?:mild|slight|minor|halka|halki|mamooli|moderate|medium|darmiana|severe|excruciating|unbearable|intense|terrible|extreme|shadeed|bohot\s+zyada|bohat\s+dard)\b|معمولی|ہلکا|ہلکی|درمیانہ|شدید|بہت\s*زیادہ/i;
+
+/**
+ * Builds a structured, cross-turn conversation context state by inspecting
+ * the full message history stream and current user message.
+ */
+export function buildConversationContextState(
+  history: readonly HistoryMessageLike[],
+  currentMessage: string,
+  initialState?: Partial<ConversationContextState>,
+): ConversationContextState {
+  const patientMessages = history
+    .filter((m) => m.role === 'user' || m.role === 'patient')
+    .map((m) => m.content);
+  const allPatientMessages = [...patientMessages, currentMessage];
+
+  let userName = initialState?.userName;
+  let preferredLanguage = initialState?.preferredLanguage;
+
+  // 1. Scan for user introduction / name
+  if (!userName) {
+    for (const msg of allPatientMessages) {
+      const intentRes = detectIntent(msg);
+      if (intentRes.intent === 'introduction' && intentRes.extractedName) {
+        userName = intentRes.extractedName;
+        break;
+      }
+      const introMatch = msg.match(/\b(?:my\s+name\s+is|i\s+am|i'm|mera\s+naam|main\s+hoon)\s+([a-zA-Z]{2,20})\b/i);
+      if (introMatch && !/^(sick|fine|pregnant|ill|feeling|suffering|hurting|experiencing)$/i.test(introMatch[1])) {
+        userName = introMatch[1].charAt(0).toUpperCase() + introMatch[1].slice(1).toLowerCase();
+        break;
+      }
+    }
+  }
+
+  // 2. Scan for preferred language changes
+  if (!preferredLanguage) {
+    for (const msg of allPatientMessages) {
+      const intentRes = detectIntent(msg);
+      if (intentRes.intent === 'language_change' && intentRes.requestedLanguage) {
+        preferredLanguage = intentRes.requestedLanguage;
+      }
+    }
+  }
+
+  // 3. User correction detection on the current turn
+  const currIntent = detectIntent(currentMessage);
+  const isCorrection =
+    currIntent.intent === 'user_correction' ||
+    USER_CORRECTION_PATTERNS.some((p) => p.test(currentMessage));
+
+  const correctedSymptoms: string[] = [];
+  if (isCorrection) {
+    if (NON_ANATOMICAL_CHEST.test(currentMessage) || /\b(?:drawers?|furniture|box)\b/i.test(currentMessage)) {
+      correctedSymptoms.push('chest');
+    }
+    const notMatch = currentMessage.match(
+      /\b(?:not|nahi|nahin|galat)\s+(?:my\s+)?(chest|heart|knee|head|arm|leg|stomach|back|eye|throat|seena)\b/i,
+    );
+    if (notMatch && notMatch[1]) {
+      const locKey = notMatch[1].toLowerCase() === 'seena' ? 'chest' : notMatch[1].toLowerCase();
+      if (!correctedSymptoms.includes(locKey)) correctedSymptoms.push(locKey);
+    }
+  }
+
+  // 4. Historical or third-person context
+  const isThirdPersonOrHistorical =
+    HISTORICAL_PATTERNS.test(currentMessage) ||
+    THIRD_PERSON_PATTERNS.test(currentMessage);
+
+  // 5. Symptom Location
+  let symptomLocation: string | undefined;
+  for (const item of BODY_LOCATION_PATTERNS) {
+    if (item.key === 'chest' && (NON_ANATOMICAL_CHEST.test(currentMessage) || correctedSymptoms.includes('chest'))) {
+      continue;
+    }
+    if (item.re.test(currentMessage)) {
+      symptomLocation = item.key;
+      break;
+    }
+  }
+  if (!symptomLocation && !isCorrection) {
+    for (let i = patientMessages.length - 1; i >= 0; i--) {
+      const past = patientMessages[i];
+      for (const item of BODY_LOCATION_PATTERNS) {
+        if (item.key === 'chest' && (NON_ANATOMICAL_CHEST.test(past) || correctedSymptoms.includes('chest'))) {
+          continue;
+        }
+        if (item.re.test(past)) {
+          symptomLocation = item.key;
+          break;
+        }
+      }
+      if (symptomLocation) break;
+    }
+  }
+
+  // 6. Symptom Onset
+  let symptomOnset: string | undefined;
+  const mOnset = currentMessage.match(ONSET_REGEX);
+  if (mOnset) {
+    symptomOnset = mOnset[0].trim();
+  } else if (!isCorrection) {
+    for (let i = patientMessages.length - 1; i >= 0; i--) {
+      const pastOnset = patientMessages[i].match(ONSET_REGEX);
+      if (pastOnset) {
+        symptomOnset = pastOnset[0].trim();
+        break;
+      }
+    }
+  }
+
+  // 7. Symptom Duration
+  let symptomDuration: string | undefined;
+  const mDuration = currentMessage.match(DURATION_REGEX);
+  if (mDuration) {
+    symptomDuration = mDuration[0].trim();
+  } else if (!isCorrection) {
+    for (let i = patientMessages.length - 1; i >= 0; i--) {
+      const pastDur = patientMessages[i].match(DURATION_REGEX);
+      if (pastDur) {
+        symptomDuration = pastDur[0].trim();
+        break;
+      }
+    }
+  }
+
+  // 8. Symptom Severity
+  let symptomSeverity: string | undefined;
+  const mSeverity = currentMessage.match(SEVERITY_REGEX);
+  if (mSeverity) {
+    symptomSeverity = mSeverity[0].trim();
+  } else if (!isCorrection) {
+    for (let i = patientMessages.length - 1; i >= 0; i--) {
+      const pastSev = patientMessages[i].match(SEVERITY_REGEX);
+      if (pastSev) {
+        symptomSeverity = pastSev[0].trim();
+        break;
+      }
+    }
+  }
+
+  // 9. Presenting Concern
+  let presentingConcern: string | undefined;
+  const currentCtx = extractClinicalContext(currentMessage);
+  if (currentCtx.conditions.length > 0) {
+    presentingConcern = currentCtx.conditions[0].condition;
+  } else if (currentCtx.trauma) {
+    presentingConcern = currentCtx.trauma.mechanism;
+  } else if (symptomLocation) {
+    presentingConcern = `${symptomLocation} pain or discomfort`;
+  }
+
+  // 10. Answered and Pending Questions
+  const answeredQuestions: string[] = [];
+  const pendingQuestions: string[] = [];
+
+  if (symptomLocation) answeredQuestions.push('location');
+  else pendingQuestions.push('location');
+
+  if (symptomDuration) answeredQuestions.push('duration');
+  else pendingQuestions.push('duration');
+
+  if (symptomOnset) answeredQuestions.push('onset');
+
+  if (symptomSeverity) answeredQuestions.push('severity');
+  else pendingQuestions.push('severity');
+
+  return {
+    userName,
+    preferredLanguage,
+    presentingConcern,
+    symptomLocation,
+    symptomOnset,
+    symptomDuration,
+    symptomSeverity,
+    answeredQuestions,
+    pendingQuestions,
+    isThirdPersonOrHistorical,
+    isCorrection,
+    correctedSymptoms: correctedSymptoms.length > 0 ? correctedSymptoms : undefined,
+    lastIntent: currIntent.intent,
+    triageLevel: initialState?.triageLevel,
+  };
+}
+

@@ -159,6 +159,10 @@ const GENERIC_FOLLOW_UPS: Record<TriageLevel, TriText[]> = {
     q('When should this go to a doctor?', 'یہ ڈاکٹر کو کب دکھانا چاہیے؟', 'Yeh doctor ko kab dikhana chahiye?'),
     q('How can I prevent this at home?', 'گھر پر اس سے بچاؤ کیسے کروں؟', 'Ghar par is se bachao kaise karoon?'),
   ],
+  INFORMATIONAL: [
+    q('What health services can I explore?', 'میں کون سی صحت کی خدمات دیکھ سکتا ہوں؟', 'Main kaun si sehat ki khidmaat dekh sakta hoon?'),
+    q('How can I ask about my symptoms?', 'میں اپنی علامات کے بارے میں کیسے پوچھوں؟', 'Main apni alamaat ke baray mein kaise poochhoon?'),
+  ],
 };
 
 export const MAX_FOLLOW_UPS = 3;

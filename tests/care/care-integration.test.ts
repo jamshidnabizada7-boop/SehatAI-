@@ -2,7 +2,7 @@
 // Deterministic; uses the local SQLite DB and cleans its fixtures.
 // Run: bun test tests/care/care-integration.test.ts
 import { describe, expect, test, beforeAll, afterAll } from 'bun:test';
-import { PrismaClient } from '@prisma/client';
+import { db } from '../../src/lib/db';
 import { createConsultation, ConsultationError } from '../../src/server/care/consultation-service';
 import { createCheckoutForConsultation, processWebhook, markPaymentPaid } from '../../src/server/care/payments/payment-service';
 import { requestRefund, computeRefundEligibility } from '../../src/server/care/refund-service';
@@ -20,7 +20,6 @@ import { hasCapability } from '../../src/lib/care/rbac';
 (process.env as Record<string, string | undefined>).NODE_ENV = 'development';
 process.env.CARE_PAYMENTS_ENABLED = 'true';
 
-const db = new PrismaClient();
 const stamp = `it_${Date.now()}`;
 const ids: { patient?: string; doctorUser?: string; doctor?: string; serviceText?: string; serviceVideo?: string } = {};
 
@@ -51,11 +50,18 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // cleanup (children cascade from users)
-  const users = await db.user.findMany({ where: { email: { contains: `${stamp}-` } }, select: { id: true } });
-  for (const u of users) await db.user.delete({ where: { id: u.id } }).catch(() => undefined);
-  await db.ledgerEntry.deleteMany({ where: { reference: { contains: stamp } } }).catch(() => undefined);
-  await db.paymentWebhook.deleteMany({ where: { eventId: { contains: stamp } } }).catch(() => undefined);
+  try {
+    const users = await db.user.findMany({ where: { email: { contains: `${stamp}-` } }, select: { id: true } });
+    for (const u of users) {
+      try {
+        await db.user.delete({ where: { id: u.id } });
+      } catch {
+        // FK constraints on staging postgres can be safely ignored during test teardown
+      }
+    }
+    await db.ledgerEntry.deleteMany({ where: { reference: { contains: stamp } } }).catch(() => undefined);
+    await db.paymentWebhook.deleteMany({ where: { eventId: { contains: stamp } } }).catch(() => undefined);
+  } catch {}
   await db.$disconnect();
 });
 

@@ -52,13 +52,15 @@ const TRIAGE_DOT: Record<TriageLevel, string> = {
   URGENT: 'bg-orange-500',
   ROUTINE: 'bg-amber-500',
   SELF_CARE: 'bg-emerald-600',
+  INFORMATIONAL: 'bg-blue-500',
 };
 
-const TRIAGE_LABEL: Record<TriageLevel, 'triage.EMERGENCY' | 'triage.URGENT' | 'triage.ROUTINE' | 'triage.SELF_CARE'> = {
+const TRIAGE_LABEL: Record<TriageLevel, 'triage.EMERGENCY' | 'triage.URGENT' | 'triage.ROUTINE' | 'triage.SELF_CARE' | 'triage.INFORMATIONAL'> = {
   EMERGENCY: 'triage.EMERGENCY',
   URGENT: 'triage.URGENT',
   ROUTINE: 'triage.ROUTINE',
   SELF_CARE: 'triage.SELF_CARE',
+  INFORMATIONAL: 'triage.INFORMATIONAL',
 };
 
 function formatRelative(iso: string, lang: Lang): string {
