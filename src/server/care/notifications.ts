@@ -43,9 +43,14 @@ export async function notify(opts: {
   consultationId?: string;
   channel?: 'inapp' | 'push' | 'email' | 'sms';
   data?: Record<string, unknown>;
-}): Promise<void> {
+}, client: typeof db | import("@prisma/client").Prisma.TransactionClient = db): Promise<void> {
+  if (client === db) {
+    await db.$transaction(tx => notify(opts, tx));
+    void deliverPendingPush(opts.userId).catch(() => undefined);
+    return;
+  }
   const safe = PRIVACY_SAFE_TEXT[opts.type] ?? { title: 'Care Connect', body: 'You have an update in Care Connect.' };
-  const notif = await db.notification.create({
+  const notif = await client.notification.create({
     data: {
       userId: opts.userId,
       type: opts.type,
@@ -59,7 +64,7 @@ export async function notify(opts: {
   });
 
   // §17 / §62 Durable Outbox: persist message for asynchronous/worker delivery
-  await db.notificationOutbox.create({
+  await client.notificationOutbox.create({
     data: {
       notificationId: notif.id,
       channel: opts.channel ?? 'push',
@@ -73,16 +78,15 @@ export async function notify(opts: {
       }),
       status: 'PENDING',
     },
-  }).catch(() => undefined);
+  });
 
   // Optimistic dispatch in current request lifecycle; failure will be retried by outbox worker
-  void deliverPendingPush(opts.userId).catch(() => undefined);
 }
 
 export async function notifyMany(userIds: string[], opts: {
   type: CareNotificationType;
   consultationId?: string;
   data?: Record<string, unknown>;
-}): Promise<void> {
-  await Promise.all(userIds.map((userId) => notify({ userId, ...opts })));
+}, client: typeof db | import("@prisma/client").Prisma.TransactionClient = db): Promise<void> {
+  await Promise.all(userIds.map((userId) => notify({ userId, ...opts }, client)));
 }

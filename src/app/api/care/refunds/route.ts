@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     const idemKey = req.headers.get('idempotency-key') ?? undefined;
     const { result } = await withIdempotency(
-      idemKey ? `refund.create:${idemKey}` : undefined,
+      idemKey ? `refund.create:${session.id}:${idemKey}` : undefined,
       'refund.create',
       () => requestRefund({ consultationId, actorId: session.id, actorRole: role, reason }),
     );

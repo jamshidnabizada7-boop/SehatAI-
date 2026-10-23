@@ -66,21 +66,12 @@ export async function getOrCreateAccount(opts: {
   tx?: Parameters<Parameters<typeof db.$transaction>[0]>[0];
 }) {
   const code = ACCOUNT_CODE[opts.kind](opts.currency.toUpperCase(), opts.ownerDoctorProfileId);
-  const existing = await db.ledgerAccount.findUnique({ where: { code } });
-  if (existing) return existing;
-  try {
-    return await db.ledgerAccount.create({
-      data: {
-        code,
-        kind: opts.kind,
-        currency: opts.currency.toUpperCase(),
-        ownerDoctorProfileId: opts.ownerDoctorProfileId ?? null,
-      },
-    });
-  } catch {
-    // concurrent creation — re-read from db
-    return db.ledgerAccount.findUniqueOrThrow({ where: { code } });
-  }
+  const client = opts.tx ?? db;
+  return client.ledgerAccount.upsert({
+    where: { code },
+    create: { code, kind: opts.kind, currency: opts.currency.toUpperCase(), ownerDoctorProfileId: opts.ownerDoctorProfileId ?? null },
+    update: { currency: opts.currency.toUpperCase() },
+  });
 }
 
 /**
@@ -96,7 +87,7 @@ export async function postTransaction(
   if (!input.legs.length) throw new LedgerError('EMPTY_LEGS');
   const byCurrency = new Map<string, { debit: number; credit: number }>();
   for (const leg of input.legs) {
-    if (!Number.isInteger(leg.amountMinor) || leg.amountMinor <= 0) {
+    if (!Number.isSafeInteger(leg.amountMinor) || leg.amountMinor <= 0) {
       throw new LedgerError('INVALID_LEG_AMOUNT');
     }
     const ccy = leg.currency.toUpperCase();
@@ -121,6 +112,7 @@ export async function postTransaction(
         kind: leg.accountKind,
         currency: leg.currency,
         ownerDoctorProfileId: leg.ownerDoctorProfileId ?? null,
+        tx: existingTx,
       });
       accountsByCode.set(code, account);
     }

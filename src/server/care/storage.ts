@@ -1,3 +1,4 @@
+import { careSecret } from './secrets';
 // ============================================================
 // Care Connect §37/§38 — private object storage.
 // StorageProvider abstraction. LocalPrivateProvider writes under
@@ -28,13 +29,13 @@ export interface StorageProvider {
 }
 
 const ROOT = path.join(process.cwd(), 'storage', 'care');
-const KEY_MATERIAL = createHash('sha256')
-  .update(process.env.CARE_STORAGE_KEY ?? process.env.NEXTAUTH_SECRET ?? 'dev-storage-secret-change-me')
-  .digest();
+function storageKeyMaterial() {
+  return createHash('sha256').update(careSecret('CARE_STORAGE_KEY', 'dev-storage-secret-change-me')).digest();
+}
 
 function encrypt(data: Buffer): Buffer {
   const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', KEY_MATERIAL, iv);
+  const cipher = createCipheriv('aes-256-gcm', storageKeyMaterial(), iv);
   const enc = Buffer.concat([cipher.update(data), cipher.final()]);
   const tag = cipher.getAuthTag();
   // Blob layout: [12B iv][16B auth tag][ciphertext]
@@ -46,20 +47,20 @@ function decrypt(blob: Buffer): Buffer {
   const iv = blob.subarray(0, 12);
   const tag = blob.subarray(12, 28);
   const body = blob.subarray(28);
-  const decipher = createDecipheriv('aes-256-gcm', KEY_MATERIAL, iv);
+  const decipher = createDecipheriv('aes-256-gcm', storageKeyMaterial(), iv);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(body), decipher.final()]);
 }
 
 function signReadImpl(storageKey: string, ttlSeconds: number): string {
   const expiresAtMs = Date.now() + ttlSeconds * 1000;
-  const sig = createHmac('sha256', KEY_MATERIAL).update(`${storageKey}.${expiresAtMs}`).digest('hex');
+  const sig = createHmac('sha256', storageKeyMaterial()).update(`${storageKey}.${expiresAtMs}`).digest('hex');
   return `${expiresAtMs}.${sig}`;
 }
 
 function verifySignedReadImpl(storageKey: string, signature: string, expiresAtMs: number): boolean {
   if (expiresAtMs < Date.now()) return false;
-  const expected = createHmac('sha256', KEY_MATERIAL).update(`${storageKey}.${expiresAtMs}`).digest('hex');
+  const expected = createHmac('sha256', storageKeyMaterial()).update(`${storageKey}.${expiresAtMs}`).digest('hex');
   return expected.length === signature.length && expected === signature;
 }
 

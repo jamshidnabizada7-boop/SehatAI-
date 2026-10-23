@@ -1,3 +1,4 @@
+import { careSecret } from './secrets';
 // ============================================================
 // Care Connect §26/§27/§28/§29 — audio/video consultations.
 // VideoProvider abstraction: the local provider signs short-lived
@@ -27,7 +28,7 @@ export interface RoomToken {
 }
 
 function sign(payload: string): string {
-  const secret = process.env.CARE_VIDEO_TOKEN_SECRET ?? process.env.NEXTAUTH_SECRET ?? 'dev-video-secret';
+  const secret = careSecret('CARE_VIDEO_TOKEN_SECRET', 'dev-video-secret');
   return createHmac('sha256', secret).update(payload).digest('hex');
 }
 

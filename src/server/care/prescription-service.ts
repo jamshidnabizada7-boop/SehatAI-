@@ -171,6 +171,7 @@ export async function signPrescription(opts: { prescriptionId: string; doctorUse
     throw new PrescriptionError('NOT_YOUR_PRESCRIPTION', 403);
   }
   if (prescription.status !== 'DRAFT') throw new PrescriptionError('ALREADY_SIGNED_OR_CANCELLED', 409);
+  await assertPrescribingAllowed(prescription.consultationId);
 
   // Re-run safety at signing time (patient data may have changed).
   const safety = await runPrescriptionSafetyCheck({
@@ -182,6 +183,7 @@ export async function signPrescription(opts: { prescriptionId: string; doctorUse
     })),
   });
   const highSeverity = safety.drugCheck.overallSeverity === 'HIGH';
+  if (safety.controlledItems.length) throw new PrescriptionError('CONTROLLED_DRUGS_DISABLED', 403);
   if (highSeverity && !opts.overrideReason?.trim()) {
     throw new PrescriptionError('SAFETY_OVERRIDE_REASON_REQUIRED', 409);
   }
