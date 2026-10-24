@@ -265,6 +265,12 @@
 /* Nastaliq needs more size than Latin text to stay legible. */
 .font-urdu .text-2xs, .font-urdu.text-2xs { font-size: 0.8125rem; line-height: 1.9; }
 .font-urdu .text-xs, .font-urdu.text-xs { font-size: 0.875rem; line-height: 2; }
+/* Tailwind text and leading utilities carry Latin line-heights that override the
+   root value above; Nastaliq's tall ascenders then overlap the next line and get
+   clipped inside .truncate labels. */
+.font-urdu :is(.text-sm, .text-base, .text-lg, [class*="leading-"]) { line-height: 2; }
+.font-urdu :is(h1, h2, h3, .text-xl, .text-2xl, .text-3xl, .text-4xl, .text-5xl) { line-height: 1.75; }
+.font-urdu .truncate { padding-block: 0.2em; }
 
 /* Custom slim scrollbar for long lists / chat history */
 .custom-scrollbar {

@@ -81,12 +81,17 @@ function getGeminiApiKeys(): string[] {
   return keys;
 }
 
+/** Staging blocks uploads; STAGING_ALLOW_IMAGE_ANALYSIS re-opens image analysis only (images are not stored). */
+function imageAnalysisBlocked(): boolean {
+  return process.env.STAGING_BLOCK_UPLOADS === 'true' && process.env.STAGING_ALLOW_IMAGE_ANALYSIS !== 'true';
+}
+
 export async function POST(req: NextRequest) {
   let actor;
   try { actor = await requireExternalProcessingUser(); } catch (error) {
     return NextResponse.json({ error: 'Image analysis requires an active account and data-processing consent.' }, { status: (error as { status?: number }).status ?? 503 });
   }
-  if (process.env.STAGING_BLOCK_UPLOADS === 'true') {
+  if (imageAnalysisBlocked()) {
     return NextResponse.json(
       { error: 'PHI_UPLOADS_HARD_BLOCKED_IN_STAGING', message: 'Image analysis uploads are disabled in staging.' },
       { status: 403 }
@@ -327,7 +332,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  const isBlocked = process.env.STAGING_BLOCK_UPLOADS === 'true';
+  const isBlocked = imageAnalysisBlocked();
   return NextResponse.json({
     enabled: !isBlocked,
     reason: isBlocked ? 'PHI_UPLOADS_HARD_BLOCKED_IN_STAGING' : undefined,

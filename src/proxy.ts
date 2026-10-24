@@ -98,10 +98,12 @@ export function proxy(req: NextRequest) {
   }
 
   if (process.env.STAGING_BLOCK_UPLOADS === 'true') {
+    // STAGING_ALLOW_IMAGE_ANALYSIS exempts only image analysis (sent to the
+    // vision model, never stored); document and attachment uploads stay blocked.
     const isUploadRoute =
       req.method === 'POST' &&
       (req.nextUrl.pathname === '/api/doctor/upload-doc' ||
-        req.nextUrl.pathname === '/api/vlm-analyze' ||
+        (req.nextUrl.pathname === '/api/vlm-analyze' && process.env.STAGING_ALLOW_IMAGE_ANALYSIS !== 'true') ||
         /^\/api\/care\/consultations\/[^/]+\/attachments$/.test(req.nextUrl.pathname));
 
     if (isUploadRoute) {

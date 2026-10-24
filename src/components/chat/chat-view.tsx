@@ -533,7 +533,7 @@ export function ChatView() {
                 {t(uiLang, 'ui.firstAidGuide')}
               </DialogTitle>
             </DialogHeader>
-            <FirstAidCards lang={uiLang} onSelect={(q) => { fillExample(q); setFirstAidOpen(false); }} />
+            <FirstAidCards lang={uiLang} onSelect={(q) => { setFirstAidOpen(false); doSend(q); }} />
           </DialogContent>
         </Dialog>
 

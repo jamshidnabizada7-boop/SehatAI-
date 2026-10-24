@@ -239,7 +239,7 @@ export const CAPABILITIES_RESPONSES: Record<Lang, string> = {
 
 • **Symptom guidance**: Describe how you are feeling, and I'll help assess the urgency.
 • **Triage advice**: Understand whether home care, a routine clinic visit, or immediate emergency care is appropriate.
-• **First aid & home care**: Practical, safe steps for common conditions.
+• **First aid & self-care**: Practical, safe steps for common conditions at home.
 • **When to see a doctor**: Clear danger signs and guidance on when to seek in-person medical care.
 
 What health topic or symptoms would you like guidance on today?`,
