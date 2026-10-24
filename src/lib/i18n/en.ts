@@ -642,6 +642,7 @@ export const en = {
     heap: 'Heap',
   },
   ui: {
+    elsewhereCallLocal: 'Elsewhere, call your local emergency number now.',
     findEmergencyCare: 'Find emergency care',
     close: 'Close',
     openMenu: 'Open menu',

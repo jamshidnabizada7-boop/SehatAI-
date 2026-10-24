@@ -27,6 +27,15 @@ interface SummaryModalProps {
   lang: Lang;
 }
 
+/** Display-only: guidance entries can carry the answer's markdown and inline
+ *  "•" bullets; show one plain point per item instead of one raw blob. */
+function guidancePoints(entries: string[]): string[] {
+  return entries
+    .flatMap((entry) => entry.split(/\s*•\s*|\n+/))
+    .map((point) => point.replace(/\*\*/g, '').replace(/^[-*]\s+/, '').trim())
+    .filter(Boolean);
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-card p-3 print:border-gray-300 print:bg-transparent print:p-2">
@@ -235,7 +244,7 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
 
             <Field label={t(lang, 'summary.guidance')}>
               <ul className="list-disc space-y-1 ps-4">
-                {(Array.isArray(summary.guidanceGiven) ? summary.guidanceGiven : []).map((g, i) => (
+                {guidancePoints(Array.isArray(summary.guidanceGiven) ? summary.guidanceGiven : []).map((g, i) => (
                   <li key={i}>{g}</li>
                 ))}
               </ul>

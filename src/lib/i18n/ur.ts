@@ -637,6 +637,7 @@ export const ur: Dict = {
     heap: 'ہیپ',
   },
   ui: {
+    elsewhereCallLocal: 'کسی اور جگہ ہوں تو ابھی اپنا مقامی ایمرجنسی نمبر ملائیں۔',
     findEmergencyCare: 'ایمرجنسی مدد تلاش کریں',
     close: 'بند کریں',
     openMenu: 'مینو کھولیں',

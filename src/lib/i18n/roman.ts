@@ -637,6 +637,7 @@ export const roman: Dict = {
     heap: 'Heap',
   },
   ui: {
+    elsewhereCallLocal: 'Kisi aur jagah hon to abhi apna maqami emergency number milayein.',
     findEmergencyCare: 'Emergency madad talaash karein',
     close: 'Band karein',
     openMenu: 'Menu kholein',

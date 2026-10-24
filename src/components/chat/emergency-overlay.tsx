@@ -79,7 +79,17 @@ export function EmergencyOverlay() {
 
   if (!emergency) return null;
 
-  const numbers = emergency.numbers ?? [];
+  // Location-specific numbers come from the pipeline. When the location is
+  // unknown it sends none; an emergency screen must still offer something to
+  // tap, so show the Pakistan ambulance lines explicitly labelled as such.
+  const localNumbers = emergency.numbers ?? [];
+  const usingPakistanFallback = localNumbers.length === 0;
+  const numbers = usingPakistanFallback
+    ? [
+        { number: '1122', label: t(lang, 'ui.rescue') },
+        { number: '115', label: t(lang, 'ui.edhi') },
+      ]
+    : localNumbers;
 
   return (
     <Dialog.Root open onOpenChange={() => setConfirmClose(true)}>
@@ -153,7 +163,10 @@ export function EmergencyOverlay() {
         {/* call buttons — immediately visible, before any scrolling.
             The first number is the large primary action; the rest are
             compact so all of them (and the first steps) fit on a phone. */}
-        <div className="mt-4 grid grid-cols-2 gap-2.5">
+        {usingPakistanFallback ? (
+          <p className="mt-4 text-center text-sm font-semibold text-white">{t(lang, 'ui.sosCallNow')}</p>
+        ) : null}
+        <div className={cn('grid grid-cols-2 gap-2.5', usingPakistanFallback ? 'mt-2' : 'mt-4')}>
           {numbers.map((n, i) => (
             <a
               key={n.number}
@@ -177,7 +190,7 @@ export function EmergencyOverlay() {
 
         {/* prompt to dial */}
         <p className="mt-2.5 text-center text-sm font-semibold text-white">
-          {t(lang, 'emergency.callNow')}
+          {usingPakistanFallback ? t(lang, 'ui.elsewhereCallLocal') : t(lang, 'emergency.callNow')}
         </p>
 
         {/* immediate actions */}

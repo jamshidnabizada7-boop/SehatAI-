@@ -100,7 +100,7 @@ export function useChat() {
           result.triage.reason,
           result.triage.matchedPatternId,
         );
-        if (em) useChatStore.getState().setEmergency({ ...em, actions: [result.content] }, lang);
+        if (em) useChatStore.getState().setEmergency(em, lang);
       }
     },
     [],
@@ -340,7 +340,7 @@ export function useChat() {
           useChatStore.getState().updateMessage(assistantId, { content: immediate.content, triage: immediate.triage, offline: true });
           if (immediate.emergencyCategory) {
             const emergency = buildEmergencyData(immediate.emergencyCategory, lang, immediate.triage.reason);
-            if (emergency) useChatStore.getState().setEmergency({ ...emergency, actions: [immediate.content], numbers: [] }, lang);
+            if (emergency) useChatStore.getState().setEmergency({ ...emergency, numbers: [] }, lang);
           }
         }
         if (opts.offline) {
