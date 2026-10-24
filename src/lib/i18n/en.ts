@@ -642,6 +642,7 @@ export const en = {
     heap: 'Heap',
   },
   ui: {
+    localGuidanceLabel: 'Local guidance — AI answers need sign-in and data-processing consent.',
     elsewhereCallLocal: 'Elsewhere, call your local emergency number now.',
     findEmergencyCare: 'Find emergency care',
     close: 'Close',

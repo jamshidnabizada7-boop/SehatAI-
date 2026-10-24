@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bell,
+  BookOpen,
   Check,
   ClipboardList,
   CloudOff,
@@ -27,7 +28,10 @@ import { answerPlainText } from '@/lib/speech';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store/app-store';
 import { useChatStore } from '@/lib/store/chat-store';
+import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { careActionsFor } from '@/lib/care-actions';
+import { useNetworkOnline } from '@/hooks/use-network-online';
 import { MarkdownContent } from './markdown-content';
 import { TriageBadge } from './triage-badge';
 import { DrugWarningCard } from './drug-warning-card';
@@ -118,6 +122,8 @@ export function MessageBubble({
     return '';
   });
   const careActions = careActionsFor(message.triage?.level, userText);
+  const networkOnline = useNetworkOnline();
+  const { status: sessionStatus } = useSession();
   const isUser = message.role === 'user';
   // content language of THIS message (kept regardless of UI language)
   const msgLang: Lang = message.language ?? 'en';
@@ -278,12 +284,26 @@ export function MessageBubble({
             </div>
           ) : null}
 
-          {/* offline label */}
+          {/* Local (non-AI) guidance label. While the device is online this is
+              the consent gate (AI processing needs sign-in + consent), not an
+              outage, so say so and offer sign-in to guests. */}
           {message.offline ? (
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-warning">
-              <CloudOff className="h-3.5 w-3.5" aria-hidden />
-              {t(uiLang, 'chat.offlineLabel')}
-            </div>
+            networkOnline ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-warning">
+                <BookOpen className="h-3.5 w-3.5" aria-hidden />
+                <span>{t(uiLang, 'ui.localGuidanceLabel')}</span>
+                {sessionStatus === 'unauthenticated' ? (
+                  <Link href="/auth/signin" className="font-semibold text-primary underline underline-offset-2 hover:no-underline">
+                    {t(uiLang, 'auth.bannerCta')}
+                  </Link>
+                ) : null}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-warning">
+                <CloudOff className="h-3.5 w-3.5" aria-hidden />
+                {t(uiLang, 'chat.offlineLabel')}
+              </div>
+            )
           ) : null}
 
           {/* medication safety alert — above the response text when present */}

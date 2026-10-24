@@ -1752,8 +1752,16 @@ export async function runPipeline(
   // Flags for downstream: follow-up topic injection and repeat handling
   if (input.allowExternalAI === false) {
     const local = runOfflineEngine(message, convLang, rawHistoryMessages);
-    const persisted = await saveTurn({ sessionId: input.sessionId, conversationId: input.conversationId, userId, lang: convLang, userContent: message, assistantContent: local.content, level: local.triage.level, redFlags: [], citations: local.citations, meta: { path: 'local-guidance', reason: 'external-processing-not-authorized' }, emergency: local.triage.level === 'EMERGENCY', engine: 'offline', shortCircuited: true, signals: local.triage.signals, persist: input.persist });
-    const result: PipelineResult = { ...persisted, content: local.content, language: convLang, triage: local.triage, citations: local.citations, validation: null, offline: true, latencyMs: Date.now() - t0, confidence: null, events };
+    // The device is online here; the reason for local guidance is the consent
+    // gate, so replace the engine's "go online" footer with the real reason.
+    const localNote = convLang === 'ur'
+      ? '_مقامی رہنمائی — ای آئی جوابات سائن اِن اور ڈیٹا پروسیسنگ کی اجازت کے بعد دستیاب ہیں۔_'
+      : convLang === 'roman'
+        ? '_Maqami rehnumai — AI jawabat sign in aur data processing ki ijazat ke baad dastiyab hain._'
+        : '_Local guidance — AI answers are available after you sign in and allow data processing._';
+    const localContent = local.content.replace(/_Offline guidance[^_\n]*_|_آف لائن رہنمائی[^_\n]*_/g, localNote);
+    const persisted = await saveTurn({ sessionId: input.sessionId, conversationId: input.conversationId, userId, lang: convLang, userContent: message, assistantContent: localContent, level: local.triage.level, redFlags: [], citations: local.citations, meta: { path: 'local-guidance', reason: 'external-processing-not-authorized' }, emergency: local.triage.level === 'EMERGENCY', engine: 'offline', shortCircuited: true, signals: local.triage.signals, persist: input.persist });
+    const result: PipelineResult = { ...persisted, content: localContent, language: convLang, triage: local.triage, citations: local.citations, validation: null, offline: true, latencyMs: Date.now() - t0, confidence: null, events };
     const { events: _events, ...done } = result;
     emit('triage', local.triage);
     emit('done', done);
