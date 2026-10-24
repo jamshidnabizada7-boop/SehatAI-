@@ -23,7 +23,9 @@ export const runtime = 'nodejs';
 async function resolveUserAndProfile(): Promise<{ userId?: string; profile?: ServerHealthProfile; allowExternalAI?: boolean }> {
   try {
     const session = await getServerSession();
-    if (!(session?.user as { id?: string } | undefined)?.id) return {};
+    // Guests get full AI answers (product decision 2026-10-24). Signed-in users
+    // follow their recorded data-processing consent, so a revocation is honored.
+    if (!(session?.user as { id?: string } | undefined)?.id) return { allowExternalAI: true };
     const actor = await requireUser();
     const sessionUserId = actor.id;
     const [row, user] = await Promise.all([db.patientProfile.findUnique({ where: { userId: sessionUserId } }), db.user.findUnique({ where: { id: sessionUserId }, select: { consentAt: true } })]);
@@ -97,7 +99,7 @@ export async function POST(req: NextRequest) {
       try {
         const { userId, profile, allowExternalAI = false } = await resolveUserAndProfile();
         const rl = await rateLimit(`chat:${userId ?? clientIpFrom(req)}`, RATE_LIMITS.chat.limit, RATE_LIMITS.chat.windowSeconds);
-        await runPipeline({ message, language, sessionId, conversationId, userId, profile, clientHistory, allowExternalAI: allowExternalAI && rl.allowed }, send);
+        await runPipeline({ message, language, sessionId, conversationId, userId, profile, clientHistory, allowExternalAI: allowExternalAI && rl.allowed, localGuidanceReason: rl.allowed ? 'consent' : 'rate-limit' }, send);
       } catch {
         // Absolute guard: the pipeline itself never throws, but if it somehow
         // does, still close the stream gracefully with error + done.

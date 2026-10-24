@@ -637,7 +637,7 @@ export const ur: Dict = {
     heap: 'ہیپ',
   },
   ui: {
-    localGuidanceLabel: 'مقامی رہنمائی — ای آئی جوابات کے لیے سائن اِن اور ڈیٹا پروسیسنگ کی اجازت ضروری ہے۔',
+    localGuidanceLabel: 'مقامی رہنمائی — یہ ای آئی جواب نہیں',
     elsewhereCallLocal: 'کسی اور جگہ ہوں تو ابھی اپنا مقامی ایمرجنسی نمبر ملائیں۔',
     findEmergencyCare: 'ایمرجنسی مدد تلاش کریں',
     close: 'بند کریں',

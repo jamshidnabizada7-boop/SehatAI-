@@ -123,6 +123,8 @@ export interface PipelineInput {
   jurisdiction?: string;
   /** False when the request has no recorded authorization for external AI processing. */
   allowExternalAI?: boolean;
+  /** Why external AI was withheld, so the local-guidance footer states the real reason. */
+  localGuidanceReason?: 'consent' | 'rate-limit';
 }
 
 export interface PipelineResult extends DoneStageData {
@@ -1752,13 +1754,19 @@ export async function runPipeline(
   // Flags for downstream: follow-up topic injection and repeat handling
   if (input.allowExternalAI === false) {
     const local = runOfflineEngine(message, convLang, rawHistoryMessages);
-    // The device is online here; the reason for local guidance is the consent
-    // gate, so replace the engine's "go online" footer with the real reason.
-    const localNote = convLang === 'ur'
-      ? '_مقامی رہنمائی — ای آئی جوابات سائن اِن اور ڈیٹا پروسیسنگ کی اجازت کے بعد دستیاب ہیں۔_'
-      : convLang === 'roman'
-        ? '_Maqami rehnumai — AI jawabat sign in aur data processing ki ijazat ke baad dastiyab hain._'
-        : '_Local guidance — AI answers are available after you sign in and allow data processing._';
+    // The device is online here; local guidance is due to the consent gate or
+    // the chat rate limit, so replace the engine's "go online" footer with the real reason.
+    const localNote = input.localGuidanceReason === 'rate-limit'
+      ? convLang === 'ur'
+        ? '_مقامی رہنمائی — ای آئی پیغامات کی حد پوری ہو گئی ہے، ایک منٹ بعد دوبارہ کوشش کریں۔_'
+        : convLang === 'roman'
+          ? '_Maqami rehnumai — AI paighamat ki had poori ho gayi hai, ek minute baad dobara koshish karein._'
+          : '_Local guidance — AI message limit reached; try again in a minute._'
+      : convLang === 'ur'
+        ? '_مقامی رہنمائی — ای آئی جوابات کے لیے اپنی پروفائل میں ڈیٹا پروسیسنگ کی اجازت دیں۔_'
+        : convLang === 'roman'
+          ? '_Maqami rehnumai — AI jawabat ke liye apni profile mein data processing ki ijazat dein._'
+          : '_Local guidance — allow data processing in your profile to get AI answers._';
     const localContent = local.content.replace(/_Offline guidance[^_\n]*_|_آف لائن رہنمائی[^_\n]*_/g, localNote);
     const persisted = await saveTurn({ sessionId: input.sessionId, conversationId: input.conversationId, userId, lang: convLang, userContent: message, assistantContent: localContent, level: local.triage.level, redFlags: [], citations: local.citations, meta: { path: 'local-guidance', reason: 'external-processing-not-authorized' }, emergency: local.triage.level === 'EMERGENCY', engine: 'offline', shortCircuited: true, signals: local.triage.signals, persist: input.persist });
     const result: PipelineResult = { ...persisted, content: localContent, language: convLang, triage: local.triage, citations: local.citations, validation: null, offline: true, latencyMs: Date.now() - t0, confidence: null, events };
