@@ -266,14 +266,22 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
                   <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                   <div>
                     <p className="font-bold">
-                      {lang === 'ur' ? 'سٹيجنگ رازداری کی پالیسی' : lang === 'roman' ? 'Staging Privacy Notice' : 'Staging Privacy Notice'}
+                      {disabledInStaging
+                        ? (lang === 'ur' ? 'سٹيجنگ رازداری کی پالیسی' : 'Staging Privacy Notice')
+                        : (lang === 'ur' ? 'ڈیمو ماحول' : lang === 'roman' ? 'Demo mahol' : 'Demo environment')}
                     </p>
                     <p className="text-2xs mt-0.5 leading-relaxed text-amber-900/80 dark:text-amber-300/80">
-                      {lang === 'ur'
-                        ? 'مریضوں کی ذاتی معلومات (PHI) کے تحفظ کے لیے سٹيجنگ ماحول میں تصاویر اپ لوڈ کرنا معطل ہے۔'
-                        : lang === 'roman'
-                          ? 'Mareezon ki private health information ke tahaffuz ke liye staging par image upload band hai (PHI_UPLOADS_HARD_BLOCKED_IN_STAGING).'
-                          : 'Medical image uploads are strictly disabled in private staging to protect patient health information (PHI_UPLOADS_HARD_BLOCKED_IN_STAGING). Diagnostic image analysis is enabled only in certified production environments.'}
+                      {disabledInStaging
+                        ? (lang === 'ur'
+                          ? 'مریضوں کی ذاتی معلومات (PHI) کے تحفظ کے لیے سٹيجنگ ماحول میں تصاویر اپ لوڈ کرنا معطل ہے۔'
+                          : lang === 'roman'
+                            ? 'Mareezon ki private health information ke tahaffuz ke liye staging par image upload band hai (PHI_UPLOADS_HARD_BLOCKED_IN_STAGING).'
+                            : 'Medical image uploads are strictly disabled in private staging to protect patient health information (PHI_UPLOADS_HARD_BLOCKED_IN_STAGING). Diagnostic image analysis is enabled only in certified production environments.')
+                        : (lang === 'ur'
+                          ? 'نمونے کی تصاویر استعمال کریں، اصل مریض کی تصاویر نہیں۔ تصویر تجزیے کے لیے AI کو بھیجی جاتی ہے اور محفوظ نہیں کی جاتی۔'
+                          : lang === 'roman'
+                            ? 'Sample tasaveer istemal karein, asli mareez ki tasaveer nahin. Tasveer tajziye ke liye AI ko bheji jati hai aur mehfooz nahin ki jati.'
+                            : 'Use sample photos, not real patient images. The image is sent to the AI for analysis and is not stored.')}
                     </p>
                   </div>
                 </div>
