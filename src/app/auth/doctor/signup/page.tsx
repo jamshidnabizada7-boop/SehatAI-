@@ -175,11 +175,11 @@ export default function DoctorSignUpPage() {
     <AuthShell variant="doctor">
       <AuthBrandHeading variant="doctor" />
 
-      <Card className="border-emerald-200/60 bg-card/70 shadow-sm dark:border-emerald-900/40">
+      <Card className="border-emerald-200/60 bg-card shadow-[var(--soft-shadow)] dark:border-emerald-900/40">
         <CardHeader className="gap-3 border-b border-border px-5 py-5 sm:px-6">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-extrabold tracking-tight text-foreground">Doctor Sign Up</h1>
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Doctor Sign Up</h1>
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-2xs font-bold text-amber-700 dark:text-amber-400">
               <ShieldCheck className="h-3 w-3" /> PMDC verification required
             </span>
           </div>
@@ -220,7 +220,7 @@ export default function DoctorSignUpPage() {
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="pmdc" className="text-sm font-semibold">PMDC registration number *</Label>
                 <Input id="pmdc" type="text" dir="ltr" value={pmdcNumber} onChange={(e) => setPmdcNumber(e.target.value.toUpperCase())} placeholder="PMC-12345" className="h-11 rounded-xl uppercase" />
-                <p className="text-[10px] text-muted-foreground">Format: 2-4 letters, hyphen, 4-6 digits. e.g. PMC-12345, SMC-1234</p>
+                <p className="text-2xs text-muted-foreground">Format: 2-4 letters, hyphen, 4-6 digits. e.g. PMC-12345, SMC-1234</p>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="specialty" className="text-sm font-semibold">Specialty *</Label>
@@ -336,7 +336,7 @@ export default function DoctorSignUpPage() {
             <Button
               type="submit"
               disabled={submitting || uploadingDocs}
-              className="h-auto min-h-12 gap-1.5 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+              className="h-auto min-h-12 gap-1.5 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
             >
               {submitting || uploadingDocs ? (
                 <><Loader2 className="h-4 w-4 animate-spin" /> {uploadingDocs ? 'Uploading documents…' : 'Creating account…'}</>
@@ -358,9 +358,9 @@ export default function DoctorSignUpPage() {
         </CardContent>
       </Card>
 
-      <p className="mt-3 text-center text-[11px] text-muted-foreground">
+      <p className="mt-3 text-center text-2xs text-muted-foreground">
         Not a doctor?{' '}
-        <Link href="/auth/signup" className="font-semibold text-primary hover:underline">Create a patient account →</Link>
+        <Link href="/auth/signup" className="font-semibold text-primary hover:underline">Create a patient account</Link>
       </p>
     </AuthShell>
   );

@@ -1,11 +1,19 @@
 'use client';
 
+import { useAppStore } from '@/lib/store/app-store';
+import { resolveUiLang } from '@/lib/i18n';
+import type { Lang } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 /**
- * Trilingual text helpers for pre-auth pages (sign-in / sign-up / onboarding),
- * where the user has not picked a UI language yet. Urdu is rendered RTL in the
- * Nastaliq font (`.font-urdu`), matching the app-wide pattern.
+ * Trilingual text helpers for pre-auth pages (sign-in / sign-up / onboarding).
+ *
+ * These pages used to print every label, button and paragraph three times.
+ * Now they follow the language preference: once the visitor picks English,
+ * اردو or Roman Urdu (header menu or <AuthLanguageSwitch/>), only that
+ * language shows. On "Auto" (first visit) the page title still shows all
+ * three, so a reader of any of them can find their way, and everything else
+ * uses the resolved language. Urdu renders RTL in Nastaliq (`.font-urdu`).
  */
 
 export interface TriStrings {
@@ -14,93 +22,94 @@ export interface TriStrings {
   roman: string;
 }
 
-/** One compact inline line: "EN · اردو · Roman" */
-export function TriInline({ strings, className }: { strings: TriStrings; className?: string }) {
-  return (
-    <span className={cn('inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5', className)}>
-      <span>{strings.en}</span>
-      <span aria-hidden className="text-muted-foreground/60">
-        ·
-      </span>
-      <span dir="rtl" className="font-urdu">
-        {strings.ur}
-      </span>
-      <span aria-hidden className="text-muted-foreground/60">
-        ·
-      </span>
-      <span>{strings.roman}</span>
-    </span>
-  );
+/** The language pre-auth copy should render in, and whether it was chosen. */
+export function useAuthLang(): { lang: Lang; chosen: boolean } {
+  const langPref = useAppStore((s) => s.langPref);
+  return { lang: resolveUiLang(langPref), chosen: langPref !== 'auto' };
 }
 
-/** Three stacked lines with language tags, mirroring the chat welcome card. */
+/** One string in the active language (RTL + Nastaliq for Urdu). */
+export function Tri({ strings, className }: { strings: TriStrings; className?: string }) {
+  const { lang } = useAuthLang();
+  if (lang === 'ur') {
+    return (
+      <span dir="rtl" className={cn('font-urdu', className)}>
+        {strings.ur}
+      </span>
+    );
+  }
+  return <span className={className}>{strings[lang]}</span>;
+}
+
+/** Plain string in the active language, for attributes like aria-label/placeholder. */
+export function useTri() {
+  const { lang } = useAuthLang();
+  return (strings: TriStrings) => strings[lang];
+}
+
+/** Labels and buttons: the active language only. */
+export function TriInline({ strings, className }: { strings: TriStrings; className?: string }) {
+  return <Tri strings={strings} className={className} />;
+}
+
+/**
+ * Titles: the active language large; on "Auto" the other two languages follow
+ * on one quiet line instead of three boxed rows.
+ */
 export function TriStack({
   strings,
   className,
-  size = 'base',
 }: {
   strings: TriStrings;
   className?: string;
   size?: 'base' | 'sm';
 }) {
-  const textCls = size === 'sm' ? 'text-xs leading-relaxed' : 'text-sm leading-relaxed';
-  const tagCls =
-    size === 'sm'
-      ? 'h-5 px-1.5 text-[9px]'
-      : 'h-6 px-2 text-[10px]';
+  const { lang, chosen } = useAuthLang();
+  const others = (['en', 'ur', 'roman'] as const).filter((l) => l !== lang);
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
-      <p
-        className={cn(
-          'flex items-center gap-2.5 rounded-xl bg-muted/50 px-3 py-2 text-foreground/90',
-          textCls,
-        )}
-        dir="ltr"
-      >
-        <span
-          className={cn(
-            'inline-flex shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/10 font-bold tracking-wider text-primary uppercase',
-            tagCls,
-          )}
-        >
-          EN
+    <span className={cn('flex flex-col gap-1', className)}>
+      <Tri strings={strings} />
+      {!chosen ? (
+        <span className="flex flex-wrap items-center gap-x-2 text-sm font-normal text-muted-foreground">
+          {others.map((l, i) => (
+            <span key={l} className="inline-flex items-center gap-2">
+              {i > 0 ? <span aria-hidden>·</span> : null}
+              <span dir={l === 'ur' ? 'rtl' : 'ltr'} className={cn(l === 'ur' && 'font-urdu')} lang={l === 'ur' ? 'ur' : undefined}>
+                {strings[l]}
+              </span>
+            </span>
+          ))}
         </span>
-        <span className="min-w-0 flex-1">{strings.en}</span>
-      </p>
-      <p
-        className={cn(
-          'flex items-center gap-2.5 rounded-xl bg-primary/5 px-3 py-2 text-foreground/90',
-          textCls,
-        )}
-        dir="rtl"
-      >
-        <span
-          className={cn(
-            'inline-flex shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/10 font-bold tracking-wider text-primary uppercase',
-            tagCls,
-          )}
+      ) : null}
+    </span>
+  );
+}
+
+/** Segmented English / اردو / Roman switch shown at the top of auth pages. */
+export function AuthLanguageSwitch({ className }: { className?: string }) {
+  const langPref = useAppStore((s) => s.langPref);
+  const setLangPref = useAppStore((s) => s.setLangPref);
+  const active = resolveUiLang(langPref);
+  const options: { value: Lang; label: string }[] = [
+    { value: 'en', label: 'English' },
+    { value: 'ur', label: 'اردو' },
+    { value: 'roman', label: 'Roman Urdu' },
+  ];
+  return (
+    <div className={cn('tabrow mx-auto w-fit', className)} role="radiogroup" aria-label="Language / زبان / Zuban">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={langPref !== 'auto' && active === o.value}
+          data-active={langPref !== 'auto' && active === o.value}
+          onClick={() => setLangPref(o.value)}
+          className={cn('tab-custom min-h-9 px-3 text-xs', o.value === 'ur' && 'font-urdu')}
         >
-          اردو
-        </span>
-        <span className="min-w-0 flex-1 font-urdu">{strings.ur}</span>
-      </p>
-      <p
-        className={cn(
-          'flex items-center gap-2.5 rounded-xl bg-muted/50 px-3 py-2 text-foreground/90',
-          textCls,
-        )}
-        dir="ltr"
-      >
-        <span
-          className={cn(
-            'inline-flex shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/10 font-bold tracking-wider text-primary uppercase',
-            tagCls,
-          )}
-        >
-          ROMAN
-        </span>
-        <span className="min-w-0 flex-1">{strings.roman}</span>
-      </p>
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 }

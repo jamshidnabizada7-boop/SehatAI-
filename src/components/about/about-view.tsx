@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import {
+  ArrowRight,
   BookOpenCheck,
   CloudOff,
   Cpu,
@@ -108,7 +109,7 @@ export function AboutView() {
               <HeartPulse className="h-8 w-8 text-primary" aria-hidden />
             </span>
             <div>
-              <h1 className="text-2xl font-extrabold text-foreground">
+              <h1 className="text-2xl font-semibold text-foreground">
                 {t(uiLang, 'about.title')}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -160,20 +161,19 @@ export function AboutView() {
             ].map((s, i) => (
               <div
                 key={s.layer}
-                className="relative rounded-xl border border-border bg-background/60 p-4"
+                className="relative rounded-xl bg-muted/60 p-4"
               >
-                <span className="absolute end-3 top-3 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                <span className="chip stroke absolute end-3 top-3">
                   {s.time}
                 </span>
-                <span className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                  <s.icon className="h-4 w-4 text-primary" aria-hidden />
+                <span className="iconbox mb-2 h-8 w-8 rounded-lg">
+                  <s.icon className="h-4 w-4" aria-hidden />
                 </span>
-                <p className="text-sm font-bold text-foreground">{s.layer}</p>
+                <p className="text-sm font-semibold text-foreground">{s.layer}</p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{s.body}</p>
+                {/* pipeline order: L0 -> L1 -> L2 */}
                 {i < 2 ? (
-                  <span className="absolute -end-[13px] top-1/2 z-10 hidden -translate-y-1/2 text-muted-foreground sm:block" aria-hidden>
-                    →
-                  </span>
+                  <ArrowRight className="absolute -end-[14px] top-1/2 z-10 hidden h-4 w-4 -translate-y-1/2 text-muted-foreground sm:block" aria-hidden />
                 ) : null}
               </div>
             ))}
@@ -208,7 +208,7 @@ export function AboutView() {
                   )}
                 >
                   <span className="text-foreground/90">{ex.text}</span>
-                  <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                  <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-2xs font-bold text-muted-foreground">
                     {ex.tag}
                   </span>
                 </div>
@@ -278,7 +278,7 @@ export function AboutView() {
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-foreground">{s.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{s.kind}</p>
+                  <p className="text-2xs text-muted-foreground">{s.kind}</p>
                 </div>
               </li>
             ))}

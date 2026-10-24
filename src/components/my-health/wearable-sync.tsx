@@ -107,10 +107,10 @@ export function WearableSync() {
 
         {/* Platform indicator */}
         <div className="mt-2 flex items-center gap-2">
-          <Badge className={cn('text-[9px]', isNative ? 'bg-emerald-500/15 text-emerald-700' : 'bg-muted text-muted-foreground')}>
+          <Badge className={cn('text-2xs', isNative ? 'bg-emerald-500/15 text-emerald-700' : 'bg-muted text-muted-foreground')}>
             {isNative ? `${data?.platform.toUpperCase()} Native` : 'Web Mode'}
           </Badge>
-          {data?.lastSync && <span className="text-[10px] text-muted-foreground">Last sync: {new Date(data.lastSync).toLocaleDateString()}</span>}
+          {data?.lastSync && <span className="text-2xs text-muted-foreground">Last sync: {new Date(data.lastSync).toLocaleDateString()}</span>}
         </div>
 
         {/* Sync types */}
@@ -139,13 +139,13 @@ export function WearableSync() {
                   <span className={cn('flex h-8 w-8 items-center justify-center rounded-lg', t.available ? 'bg-blue-500/10 text-blue-600' : 'bg-muted text-muted-foreground')}>
                     {synced ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Icon className="h-4 w-4" />}
                   </span>
-                  <p className="text-[10px] font-semibold text-foreground">{t.label}</p>
+                  <p className="text-2xs font-semibold text-foreground">{t.label}</p>
                   {t.available ? (
-                    <button onClick={() => syncType(t.type)} disabled={syncing} className="text-[9px] font-bold text-primary hover:underline">
-                      {synced ? 'Synced ✓' : 'Sync'}
+                    <button onClick={() => syncType(t.type)} disabled={syncing} className="text-2xs font-bold text-primary hover:underline">
+                      {synced ? 'Synced' : 'Sync'}
                     </button>
                   ) : (
-                    <p className="text-[9px] text-muted-foreground">Not available</p>
+                    <p className="text-2xs text-muted-foreground">Not available</p>
                   )}
                 </motion.div>
               );
@@ -154,7 +154,7 @@ export function WearableSync() {
         )}
 
         {/* Info note */}
-        <p className="mt-3 rounded-lg bg-blue-500/5 p-2 text-[10px] leading-relaxed text-blue-700 dark:text-blue-400">
+        <p className="mt-3 rounded-lg bg-blue-500/5 p-2 text-2xs leading-relaxed text-blue-700 dark:text-blue-400">
           {isNative
             ? `Connected via ${data?.platform === 'ios' ? 'Apple Health' : 'Google Health Connect'}. Tap "Sync" to pull data from your device.`
             : 'On web, you can manually sync data types. Install the native app for automatic sync with Apple Health (iOS) or Google Health Connect (Android).'}

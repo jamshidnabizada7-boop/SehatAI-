@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Globe2,
   HeartPulse,
@@ -18,7 +19,7 @@ import {
   ShieldAlert,
   ChevronDown,
   LogOut,
-  User,
+  LogIn,
   Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,51 +37,56 @@ import type { LangPref } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { LanguageSettings } from '@/components/settings/language-settings';
-import { Badge } from '@/components/ui/badge';
+import { SosButton } from '@/components/chat/sos-button';
 
-/** Role badge — clean pill showing the user's role + verification state. */
+/** Role badge — quiet pill showing the user's role + verification state. */
 function RoleBadge() {
   const { data: session, status } = useSession();
   if (status !== 'authenticated' || !session?.user) return null;
   const role = (session.user as { role?: string }).role ?? 'user';
   const accountStatus = (session.user as { accountStatus?: string }).accountStatus ?? 'active';
 
+  const base = 'hidden items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-semibold lg:inline-flex';
+
   if (role === 'doctor') {
     if (accountStatus === 'pending_verification') {
       return (
-        <Badge className="hidden items-center gap-1 bg-amber-500/15 text-[10px] font-bold text-amber-700 sm:inline-flex dark:text-amber-400">
-          <Clock className="h-3 w-3" /> DOCTOR · PENDING
-        </Badge>
+        <span className={cn(base, 'bg-warning-soft text-warning')}>
+          <Clock className="h-3 w-3" aria-hidden /> Doctor · pending
+        </span>
       );
     }
     if (accountStatus === 'suspended' || accountStatus === 'deleted') {
       return (
-        <Badge className="hidden items-center gap-1 bg-red-500/15 text-[10px] font-bold text-red-700 sm:inline-flex dark:text-red-400">
-          <ShieldAlert className="h-3 w-3" /> DOCTOR · SUSPENDED
-        </Badge>
+        <span className={cn(base, 'bg-danger-soft text-danger')}>
+          <ShieldAlert className="h-3 w-3" aria-hidden /> Doctor · suspended
+        </span>
       );
     }
     return (
-      <Badge className="hidden items-center gap-1 bg-emerald-500/15 text-[10px] font-bold text-emerald-700 sm:inline-flex dark:text-emerald-400">
-        <ShieldCheck className="h-3 w-3" /> DOCTOR
-      </Badge>
+      <span className={cn(base, 'bg-success-soft text-success')}>
+        <ShieldCheck className="h-3 w-3" aria-hidden /> Doctor
+      </span>
     );
   }
   if (role === 'admin') {
     return (
-      <Badge className="hidden items-center gap-1 bg-slate-500/15 text-[10px] font-bold text-slate-700 sm:inline-flex dark:text-slate-300">
-        <ShieldCheck className="h-3 w-3" /> ADMIN
-      </Badge>
-    );
-  }
-  if (role === 'user') {
-    return (
-      <Badge className="hidden items-center gap-1 bg-primary/15 text-[10px] font-bold text-primary sm:inline-flex">
-        <HeartPulse className="h-3 w-3" /> PATIENT
-      </Badge>
+      <span className={cn(base, 'bg-muted text-muted-foreground')}>
+        <ShieldCheck className="h-3 w-3" aria-hidden /> Admin
+      </span>
     );
   }
   return null;
+}
+
+/** ⌘K on Apple devices, Ctrl K elsewhere (the handler accepts both). */
+const noopSubscribe = () => () => {};
+function useShortcutLabel() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => (/Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K'),
+    () => 'Ctrl K',
+  );
 }
 
 export function AppHeader() {
@@ -94,6 +100,9 @@ export function AppHeader() {
   const uiLang = resolveUiLang(langPref);
   const { toast } = useToast();
   const { data: session, status } = useSession();
+  const shortcut = useShortcutLabel();
+  // On /auth/* the page itself is the sign-in form; a second button is noise.
+  const onAuthPage = (usePathname() ?? '').startsWith('/auth');
 
   const { theme, setTheme, resolvedTheme } = useTheme();
 
@@ -104,40 +113,50 @@ export function AppHeader() {
     setTheme(isDarkNow ? 'light' : 'dark');
   };
 
-  const langLabels: Record<LangPref, { short: string; full: string }> = {
-    auto: { short: 'Auto', full: t(uiLang, 'header.languageAuto') },
-    en: { short: 'EN', full: t(uiLang, 'header.english') },
-    ur: { short: 'اردو', full: t(uiLang, 'header.urdu') },
-    roman: { short: 'Roman', full: t(uiLang, 'header.romanUrdu') },
+  const langLabels: Record<LangPref, string> = {
+    auto: t(uiLang, 'header.languageAuto'),
+    en: 'EN',
+    ur: 'اردو',
+    roman: 'Roman',
   };
 
   const userName = (session?.user as { name?: string | null })?.name ?? null;
   const userEmail = (session?.user as { email?: string | null })?.email ?? null;
 
+  const langOptions: { value: LangPref; label: string; urdu?: boolean }[] = [
+    { value: 'auto', label: t(uiLang, 'header.languageAuto') },
+    { value: 'en', label: 'English' },
+    { value: 'ur', label: 'اردو', urdu: true },
+    { value: 'roman', label: 'Roman Urdu' },
+  ];
+
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="flex h-14 items-center justify-between gap-3 px-3 sm:px-5">
-        {/* Left cluster: Mobile drawer trigger + Logo */}
-        <div className="flex items-center gap-2.5">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+      <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-4">
+        {/* Start cluster: mobile drawer trigger + logo */}
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setNavOpen(true)}
-            className="h-9 w-9 shrink-0 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
-            aria-label={uiLang === 'ur' ? 'مینو کھولیں' : uiLang === 'roman' ? 'Menu kholein' : 'Open menu'}
+            className="h-10 w-10 shrink-0 rounded-xl text-muted-foreground hover:text-foreground md:hidden"
+            aria-label={t(uiLang, 'ui.openMenu')}
           >
             <Menu className="h-5 w-5" aria-hidden />
           </Button>
 
-          <Link href="/" className="flex items-center gap-2 group">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-2xs transition-transform group-hover:scale-105">
+          <Link
+            href="/"
+            className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <HeartPulse className="h-4.5 w-4.5" aria-hidden />
             </span>
-            <span className="flex flex-col leading-none">
-              <span className="flex items-center gap-1 text-base font-extrabold tracking-tight text-foreground">
+            <span className="flex min-w-0 flex-col leading-none">
+              <span className="text-[15px] font-bold tracking-tight text-foreground">
                 Sehat<span className="text-primary">AI</span>
               </span>
-              <span className="hidden text-[10px] font-medium text-muted-foreground sm:block">
+              <span className="mt-0.5 hidden truncate text-2xs text-muted-foreground xl:block">
                 {t(uiLang, 'app.tagline')}
               </span>
             </span>
@@ -146,134 +165,117 @@ export function AppHeader() {
           <RoleBadge />
         </div>
 
-        {/* Center: Global Quick Search Pill (Desktop) */}
-        <div className="hidden md:flex flex-1 justify-center max-w-md mx-2">
+        {/* Centre: search (desktop) */}
+        <div className="mx-auto hidden max-w-md flex-1 md:flex">
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-border/80 bg-muted/40 px-3.5 py-1.5 text-xs text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all focus-visible:outline-2 focus-visible:outline-ring"
-            aria-label={t(uiLang, 'header.search')}
+            className="flex h-9 w-full items-center gap-2.5 rounded-xl border border-border bg-card px-3 text-start text-xs text-muted-foreground transition-colors hover:border-input hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
-            <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-            <span className="truncate">{t(uiLang, 'header.search')} topics, first aid, medicines...</span>
-            <kbd className="ms-auto rounded bg-background px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground/80 shadow-2xs border border-border">
-              ⌘K
+            <Search className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{t(uiLang, 'search.placeholder')}</span>
+            <kbd className="ms-auto rounded-md border border-border bg-muted px-1.5 py-0.5 font-sans text-2xs text-muted-foreground" dir="ltr">
+              {shortcut}
             </kbd>
           </button>
         </div>
 
-        {/* Right cluster: Mobile search icon + Unified Language Dropdown + Theme + User Menu */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Mobile search trigger */}
+        {/* End cluster */}
+        <div className="ms-auto flex shrink-0 items-center gap-1 sm:gap-1.5 md:ms-0">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSearchOpen(true)}
-            className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+            className="h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground md:hidden"
             aria-label={t(uiLang, 'header.search')}
           >
             <Search className="h-4.5 w-4.5" aria-hidden />
           </Button>
 
-          {/* Unified Language Dropdown */}
+          {/* Language */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 gap-1.5 rounded-xl border border-border/70 px-2.5 text-xs font-semibold hover:bg-accent"
-                aria-label={t(uiLang, 'header.language')}
+                className="h-9 gap-1 rounded-xl px-2 text-xs font-semibold text-muted-foreground hover:text-foreground sm:px-2.5"
+                aria-label={`${t(uiLang, 'header.language')}: ${langLabels[langPref] ?? ''}`}
               >
-                <Globe2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className={cn(uiLang === 'ur' && 'font-urdu font-bold')}>
-                  {langLabels[langPref]?.short ?? 'Auto'}
+                <Globe2 className="h-4 w-4 shrink-0" aria-hidden />
+                <span className={cn('hidden sm:inline', uiLang === 'ur' && 'font-urdu')}>
+                  {langLabels[langPref] ?? langLabels.auto}
                 </span>
-                <ChevronDown className="h-3 w-3 text-muted-foreground/70" />
+                <ChevronDown className="hidden h-3 w-3 sm:block" aria-hidden />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52 rounded-xl">
-              <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
                 {t(uiLang, 'header.language')}
               </DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => setLangPref('auto')}
-                className="flex items-center justify-between text-xs cursor-pointer"
-              >
-                <span>{t(uiLang, 'header.languageAuto')}</span>
-                {langPref === 'auto' ? <Check className="h-3.5 w-3.5 text-primary" /> : null}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setLangPref('en')}
-                className="flex items-center justify-between text-xs cursor-pointer"
-              >
-                <span>English</span>
-                {langPref === 'en' ? <Check className="h-3.5 w-3.5 text-primary" /> : null}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setLangPref('ur')}
-                className="flex items-center justify-between text-xs cursor-pointer font-urdu"
-              >
-                <span>اردو (Urdu)</span>
-                {langPref === 'ur' ? <Check className="h-3.5 w-3.5 text-primary" /> : null}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setLangPref('roman')}
-                className="flex items-center justify-between text-xs cursor-pointer"
-              >
-                <span>Roman Urdu</span>
-                {langPref === 'roman' ? <Check className="h-3.5 w-3.5 text-primary" /> : null}
-              </DropdownMenuItem>
+              {langOptions.map((o) => (
+                <DropdownMenuItem
+                  key={o.value}
+                  onClick={() => setLangPref(o.value)}
+                  className={cn('flex cursor-pointer items-center justify-between text-sm', o.urdu && 'font-urdu')}
+                >
+                  <span>{o.label}</span>
+                  {langPref === o.value ? <Check className="h-4 w-4 text-primary" aria-hidden /> : null}
+                </DropdownMenuItem>
+              ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => setLangSettingsOpen(true)}
-                className="flex items-center gap-2 text-xs font-medium text-primary cursor-pointer"
+                className="flex cursor-pointer items-center gap-2 text-sm"
               >
-                <Globe2 className="h-3.5 w-3.5" />
-                <span>{uiLang === 'ur' ? 'تمام پاکستانی زبانیں...' : 'All regional languages...'}</span>
+                <Globe2 className="h-4 w-4" aria-hidden />
+                <span>{uiLang === 'ur' ? 'تمام پاکستانی زبانیں…' : uiLang === 'roman' ? 'Tamam Pakistani zubanein…' : 'All regional languages…'}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <LanguageSettings open={langSettingsOpen} onOpenChange={setLangSettingsOpen} />
 
-          {/* Theme Toggle Button */}
+          {/* Theme (desktop; mobile has it in the drawer) */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="hidden h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground md:inline-flex"
             aria-label={t(uiLang, 'header.toggleTheme')}
           >
             <Sun className="hidden h-4 w-4 dark:block" aria-hidden />
             <Moon className="block h-4 w-4 dark:hidden" aria-hidden />
           </Button>
 
-          {/* User Account Avatar / Menu */}
+          {/* Emergency SOS — same place on every screen */}
+          <SosButton />
+
+          {/* Account */}
           {status === 'authenticated' && session?.user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-9 gap-2 rounded-xl px-1.5 hover:bg-accent"
-                  aria-label="User account menu"
+                  className="h-10 gap-2 rounded-xl px-1.5 sm:h-9"
+                  aria-label={t(uiLang, 'ui.account')}
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary ring-1 ring-primary/25">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
                     {(userName ?? userEmail ?? 'U').slice(0, 1).toUpperCase()}
                   </span>
-                  <span className="hidden lg:block text-xs font-semibold text-foreground max-w-[90px] truncate text-start">
+                  <span className="hidden max-w-[110px] truncate text-start text-xs font-semibold text-foreground xl:block">
                     {userName ?? 'User'}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-xl">
-                <div className="p-2">
-                  <p className="text-xs font-bold text-foreground truncate">{userName ?? 'User'}</p>
+              <DropdownMenuContent align="end" className="w-60 rounded-xl">
+                <div className="px-2 py-1.5">
+                  <p className="truncate text-sm font-semibold text-foreground">{userName ?? 'User'}</p>
                   {userEmail ? (
-                    <p className="text-[11px] text-muted-foreground truncate">{userEmail}</p>
+                    <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
                   ) : null}
                 </div>
                 <DropdownMenuSeparator />
-                {/* Developer simulation toggle moved to account menu */}
+                {/* Offline simulation (demo tool) */}
                 <DropdownMenuItem
                   onClick={() => {
                     const next = !simulatedOffline;
@@ -282,39 +284,38 @@ export function AppHeader() {
                       description: t(uiLang, next ? 'toast.offlineOn' : 'toast.offlineOff'),
                     });
                   }}
-                  className="flex items-center justify-between text-xs cursor-pointer"
+                  className="flex cursor-pointer items-center justify-between text-sm"
                 >
                   <span className="flex items-center gap-2">
                     {simulatedOffline ? (
-                      <WifiOff className="h-3.5 w-3.5 text-amber-600" />
+                      <WifiOff className="h-4 w-4 text-warning" aria-hidden />
                     ) : (
-                      <Wifi className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Wifi className="h-4 w-4" aria-hidden />
                     )}
-                    <span>{simulatedOffline ? 'Simulated Offline: ON' : 'Simulate Offline'}</span>
+                    <span>{t(uiLang, 'header.simulateOffline')}</span>
                   </span>
-                  {simulatedOffline ? (
-                    <span className="text-[10px] font-bold text-amber-600 font-mono">ACTIVE</span>
-                  ) : null}
+                  {simulatedOffline ? <Check className="h-4 w-4 text-warning" aria-hidden /> : null}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => void signOut({ callbackUrl: '/' })}
-                  className="flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400 cursor-pointer"
+                  className="flex cursor-pointer items-center gap-2 text-sm text-danger focus:text-danger"
                 >
-                  <LogOut className="h-3.5 w-3.5" />
+                  <LogOut className="h-4 w-4" aria-hidden />
                   <span>{t(uiLang, 'settings.signOutLabel')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
+          ) : status === 'unauthenticated' && !onAuthPage ? (
             <Link
               href="/auth/signin"
-              className="inline-flex h-9 items-center justify-center rounded-xl bg-primary px-3 text-xs font-bold text-primary-foreground shadow-2xs hover:bg-primary/90 transition-colors"
+              aria-label={t(uiLang, 'auth.bannerCta')}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-xs font-semibold text-foreground transition-colors hover:border-input sm:h-9 sm:w-auto sm:gap-1.5 sm:px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              <User className="h-3.5 w-3.5 me-1.5" />
-              <span>{t(uiLang, 'auth.bannerCta')}</span>
+              <LogIn className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">{t(uiLang, 'auth.bannerCta')}</span>
             </Link>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

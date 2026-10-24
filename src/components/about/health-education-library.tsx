@@ -108,7 +108,7 @@ export function HealthEducationLibrary({ lang, className }: HealthEducationLibra
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'صحت تعلیم لائبریری' : lang === 'roman' ? 'Sehat taleem library' : 'Health education library'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {CORPUS.length} {lang === 'ur' ? 'مضامین' : lang === 'roman' ? 'mazaameen' : 'articles'} · WHO/UNICEF/IFRC
           </p>
         </div>
@@ -122,7 +122,7 @@ export function HealthEducationLibrary({ lang, className }: HealthEducationLibra
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={lang === 'ur' ? 'تلاش کریں...' : lang === 'roman' ? 'Talaash karein...' : 'Search...'}
-          className="h-10 rounded-lg pl-9"
+          className="h-10 rounded-lg ps-9"
           aria-label={lang === 'ur' ? 'تلاش' : lang === 'roman' ? 'Talaash' : 'Search'}
         />
       </div>
@@ -138,7 +138,7 @@ export function HealthEducationLibrary({ lang, className }: HealthEducationLibra
               type="button"
               onClick={() => setAudience(a.value)}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-2xs font-semibold transition-colors',
                 isActive
                   ? 'border-primary/50 bg-primary/10 text-primary'
                   : 'border-border bg-card text-muted-foreground hover:bg-accent/40',
@@ -153,7 +153,7 @@ export function HealthEducationLibrary({ lang, className }: HealthEducationLibra
       </div>
 
       {/* results count */}
-      <p className="mb-2 text-[11px] text-muted-foreground">
+      <p className="mb-2 text-2xs text-muted-foreground">
         {filtered.length} {lang === 'ur' ? 'نتائج' : lang === 'roman' ? 'nataij' : 'results'}
       </p>
 
@@ -166,7 +166,7 @@ export function HealthEducationLibrary({ lang, className }: HealthEducationLibra
         <div className="max-h-96 space-y-3 overflow-y-auto pe-1">
           {grouped.map(([letter, items]) => (
             <div key={letter}>
-              <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">{letter}</p>
+              <p className="mb-1 text-2xs font-bold tracking-wider text-muted-foreground uppercase">{letter}</p>
               <ul className="space-y-1">
                 {items.map((item) => (
                   <li key={item.id}>
@@ -184,11 +184,11 @@ export function HealthEducationLibrary({ lang, className }: HealthEducationLibra
                         </span>
                         <span className="mt-0.5 flex items-center gap-1.5">
                           {item.audience !== 'general' ? (
-                            <Badge variant="secondary" className={cn('text-[9px] font-bold', AUDIENCES.find((a) => a.value === item.audience)?.color)}>
+                            <Badge variant="secondary" className={cn('text-2xs font-bold', AUDIENCES.find((a) => a.value === item.audience)?.color)}>
                               {AUDIENCES.find((a) => a.value === item.audience)?.label[lang]}
                             </Badge>
                           ) : null}
-                          <span className="text-[10px] text-muted-foreground">{item.source.publisher}</span>
+                          <span className="text-2xs text-muted-foreground">{item.source.publisher}</span>
                         </span>
                       </span>
                       <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" aria-hidden />
@@ -238,11 +238,11 @@ function ArticleReader({ item, lang, onClose }: { item: CorpusItem; lang: Lang; 
           <div className="flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-1.5">
               {item.audience !== 'general' ? (
-                <Badge variant="secondary" className={cn('text-[9px] font-bold', AUDIENCES.find((a) => a.value === item.audience)?.color)}>
+                <Badge variant="secondary" className={cn('text-2xs font-bold', AUDIENCES.find((a) => a.value === item.audience)?.color)}>
                   {AUDIENCES.find((a) => a.value === item.audience)?.label[lang]}
                 </Badge>
               ) : null}
-              <Badge variant="secondary" className="text-[9px] font-bold uppercase">
+              <Badge variant="secondary" className="text-2xs font-bold uppercase">
                 {item.baseLevel}
               </Badge>
             </div>
@@ -273,7 +273,7 @@ function ArticleReader({ item, lang, onClose }: { item: CorpusItem; lang: Lang; 
         {item.tags && item.tags.length > 0 ? (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {item.tags.slice(0, 8).map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
+              <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-2xs font-medium text-secondary-foreground">
                 <Tag className="h-2.5 w-2.5" aria-hidden />
                 {tag}
               </span>
@@ -283,20 +283,20 @@ function ArticleReader({ item, lang, onClose }: { item: CorpusItem; lang: Lang; 
 
         {/* source */}
         <div className="mt-3 rounded-lg border border-border bg-card p-2.5">
-          <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          <p className="mb-1 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
             {lang === 'ur' ? 'مآخذ' : lang === 'roman' ? 'Masadir' : 'Source'}
           </p>
           <div className="flex items-start gap-2">
             <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-foreground">{item.source.title}</p>
-              <p className="text-[10px] text-muted-foreground">{item.source.publisher} · {item.source.license}</p>
+              <p className="text-2xs text-muted-foreground">{item.source.publisher} · {item.source.license}</p>
               {item.source.url ? (
                 <a
                   href={item.source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
+                  className="mt-0.5 inline-flex items-center gap-1 text-2xs text-primary hover:underline"
                 >
                   <ExternalLink className="h-2.5 w-2.5" aria-hidden />
                   {lang === 'ur' ? 'مزید پڑھیں' : lang === 'roman' ? 'Mazid parhein' : 'Read more'}

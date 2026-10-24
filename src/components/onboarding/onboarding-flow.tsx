@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AuthShell } from '@/components/auth/auth-shell';
-import { TriInline, TriStack, type TriStrings } from '@/components/auth/trilingual';
+import { Tri, TriInline, TriStack, useTri, type TriStrings } from '@/components/auth/trilingual';
 import { useChatStore } from '@/lib/store/chat-store';
 import { cn } from '@/lib/utils';
 import {
@@ -64,7 +64,7 @@ const AGE_LABELS: Record<AgeBand, TriStrings> = {
 const SEX_ORDER: Sex[] = ['undisclosed', 'female', 'male'];
 const SEX_LABELS: Record<Sex, TriStrings> = {
   undisclosed: { en: 'Prefer not to say', ur: 'بتانے سے معذرت', roman: 'Naheen batana' },
-  female: { en: 'Female', ur: 'خواتین', roman: 'Aurat' },
+  female: { en: 'Female', ur: 'عورت', roman: 'Aurat' },
   male: { en: 'Male', ur: 'مرد', roman: 'Mard' },
 };
 
@@ -188,6 +188,7 @@ export function OnboardingFlow() {
   const setPendingChatDraft = useChatStore((s) => s.setPendingChatDraft);
 
   const [checking, setChecking] = useState(true);
+  const tri = useTri();
   const [step, setStep] = useState(0); // 0-based; consent skipped when already recorded
   const [consent, setConsent] = useState(false);
   const [retention, setRetention] = useState('365');
@@ -272,7 +273,7 @@ export function OnboardingFlow() {
   // ---------- Step 1: consent ----------
   const submitConsent = useCallback(async () => {
     if (!consent) {
-      setConsentError(T.consentRequired.en);
+      setConsentError(tri(T.consentRequired));
       return;
     }
     setConsentError('');
@@ -306,7 +307,7 @@ export function OnboardingFlow() {
     // validate ICE phones
     const errors: Record<string, string> = {};
     for (const c of next.iceContacts) {
-      if (c.phone && !isValidPhone(c.phone)) errors[c.id] = T.iceBadPhone.en;
+      if (c.phone && !isValidPhone(c.phone)) errors[c.id] = tri(T.iceBadPhone);
     }
     setIceErrors(errors);
     if (Object.keys(errors).length > 0) return false;
@@ -385,18 +386,14 @@ export function OnboardingFlow() {
               </li>
             ))}
           </ol>
-          <p className="mt-2 text-center text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-            {T.stepOf.en} {step + 1} / {STEPS} · <span dir="rtl" className="font-urdu">{T.stepOf.ur}</span> ·{' '}
-            <span className="normal-case italic">{T.stepOf.roman}</span>
+          <p className="mt-2 text-center text-xs font-medium text-muted-foreground">
+            <Tri strings={T.stepOf} /> <span dir="ltr">{step + 1} / {STEPS}</span>
           </p>
         </nav>
 
-        <Card className="border-border bg-card/70 shadow-sm">
+        <Card className="border-border bg-card shadow-[var(--soft-shadow)]">
           <CardHeader className="gap-2 border-b border-border px-5 py-4 sm:px-6">
-            <p className="text-[11px] font-bold tracking-wider text-primary uppercase">
-              {T.welcome.en}
-            </p>
-            <h1 className="text-lg font-extrabold tracking-tight text-foreground">
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
               <TriInline strings={stepTitles[step]} />
             </h1>
           </CardHeader>
@@ -406,15 +403,11 @@ export function OnboardingFlow() {
             {step === 0 ? (
               <div className="flex flex-col gap-4">
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  {T.s1Body.en}
-                  <span dir="rtl" className="mt-1 block font-urdu">
-                    {T.s1Body.ur}
-                  </span>
-                  <span className="mt-1 block italic">{T.s1Body.roman}</span>
+                  <Tri strings={T.s1Body} />
                 </p>
 
-                <fieldset className="flex flex-col gap-2.5 rounded-2xl border border-primary/25 bg-primary/5 p-4">
-                  <legend className="px-1 text-sm font-bold text-foreground">
+                <fieldset className="flex flex-col gap-2.5 rounded-2xl bg-accent/60 p-4">
+                  <legend className="px-1 text-sm font-semibold text-foreground">
                     <TriInline strings={T.s1Title} />
                   </legend>
                   <p dir="rtl" className="font-urdu text-sm leading-loose text-foreground">
@@ -460,7 +453,7 @@ export function OnboardingFlow() {
                       <SelectContent>
                         {RETENTION_OPTIONS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
-                            {opt.en} · <span dir="rtl" className="font-urdu">{opt.ur}</span>
+                            <Tri strings={{ en: opt.en, ur: opt.ur, roman: opt.en }} />
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -472,12 +465,9 @@ export function OnboardingFlow() {
                   type="button"
                   onClick={() => void submitConsent()}
                   disabled={saving || checking}
-                  className="h-12 rounded-xl text-sm font-bold"
+                  className="h-12 rounded-xl text-sm font-semibold"
                 >
-                  {saving ? T.saving.en : T.next.en} ·{' '}
-                  <span dir="rtl" className="font-urdu">
-                    {saving ? T.saving.ur : T.next.ur}
-                  </span>
+                  <Tri strings={saving ? T.saving : T.next} />
                 </Button>
               </div>
             ) : null}
@@ -486,10 +476,7 @@ export function OnboardingFlow() {
             {step === 1 ? (
               <div className="flex flex-col gap-5">
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  {T.s2Body.en}
-                  <span dir="rtl" className="mt-1 block font-urdu">
-                    {T.s2Body.ur}
-                  </span>
+                  <Tri strings={T.s2Body} />
                 </p>
 
                 {/* age band */}
@@ -511,7 +498,7 @@ export function OnboardingFlow() {
                             : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground',
                         )}
                       >
-                        {AGE_LABELS[band].en}
+                        <Tri strings={AGE_LABELS[band]} />
                       </button>
                     ))}
                   </div>
@@ -542,7 +529,7 @@ export function OnboardingFlow() {
                             : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground',
                         )}
                       >
-                        {SEX_LABELS[s].en}
+                        <Tri strings={SEX_LABELS[s]} />
                       </button>
                     ))}
                   </div>
@@ -567,7 +554,7 @@ export function OnboardingFlow() {
                   <legend className="text-xs font-semibold text-foreground">
                     <TriInline strings={T.conditions} />
                   </legend>
-                  <p className="text-[11px] text-muted-foreground">{T.conditionsHint.en}</p>
+                  <p className="text-2xs text-muted-foreground"><Tri strings={T.conditionsHint} /></p>
                   <div className="flex flex-wrap gap-1.5">
                     {CHRONIC_CONDITIONS.map((def) => {
                       const active = profile.conditions.includes(def.id);
@@ -591,7 +578,7 @@ export function OnboardingFlow() {
                               : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground',
                           )}
                         >
-                          {def.label.en}
+                          <Tri strings={def.label} />
                         </button>
                       );
                     })}
@@ -653,14 +640,14 @@ export function OnboardingFlow() {
                                 iceContacts: p.iceContacts.filter((x) => x.id !== c.id),
                               }))
                             }
-                            className="inline-flex h-8 items-center rounded-full border border-red-500/25 bg-red-500/5 px-2.5 text-[11px] font-semibold text-red-700 hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                            className="inline-flex h-8 items-center rounded-full border border-red-500/25 bg-red-500/5 px-2.5 text-2xs font-semibold text-red-700 hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                           >
-                            {T.iceRemove.en}
+                            <Tri strings={T.iceRemove} />
                           </button>
                         </div>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                           <Input
-                            aria-label={T.iceName.en}
+                            aria-label={tri(T.iceName)}
                             value={c.name}
                             onChange={(e) =>
                               setProfile((p) => ({
@@ -676,7 +663,7 @@ export function OnboardingFlow() {
                           />
                           <div className="flex flex-col gap-1">
                             <Input
-                              aria-label={T.icePhone.en}
+                              aria-label={tri(T.icePhone)}
                               value={c.phone}
                               onChange={(e) => {
                                 setProfile((p) => ({
@@ -704,14 +691,14 @@ export function OnboardingFlow() {
                               )}
                             />
                             {iceErrors[c.id] ? (
-                              <p role="alert" className="text-[11px] font-medium text-red-700 dark:text-red-400">
+                              <p role="alert" className="text-2xs font-medium text-red-700 dark:text-red-400">
                                 {iceErrors[c.id]}
                               </p>
                             ) : null}
                           </div>
                         </div>
                         <Input
-                          aria-label={T.iceRelation.en}
+                          aria-label={tri(T.iceRelation)}
                           value={c.relation ?? ''}
                           onChange={(e) =>
                             setProfile((p) => ({
@@ -722,7 +709,7 @@ export function OnboardingFlow() {
                             }))
                           }
                           dir="auto"
-                          placeholder={T.iceRelation.en}
+                          placeholder={tri(T.iceRelation)}
                           maxLength={40}
                           className="h-10 text-sm"
                         />
@@ -740,7 +727,7 @@ export function OnboardingFlow() {
                         className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/5 px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/12 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                       >
                         <Plus className="h-3.5 w-3.5" aria-hidden />
-                        {T.iceAdd.en} · <span dir="rtl" className="font-urdu">{T.iceAdd.ur}</span>
+                        <Tri strings={T.iceAdd} />
                       </button>
                     ) : null}
                   </div>
@@ -753,18 +740,15 @@ export function OnboardingFlow() {
                     onClick={() => setStep(2)}
                     className="min-h-11 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground"
                   >
-                    {T.skip.en} · <span dir="rtl" className="font-urdu">{T.skip.ur}</span>
+                    <Tri strings={T.skip} />
                   </Button>
                   <Button
                     type="button"
                     onClick={() => void nextFromProfile()}
                     disabled={saving}
-                    className="min-h-11 flex-1 rounded-xl text-sm font-bold"
+                    className="min-h-11 flex-1 rounded-xl text-sm font-semibold"
                   >
-                    {saving ? T.saving.en : T.next.en} ·{' '}
-                    <span dir="rtl" className="font-urdu">
-                      {saving ? T.saving.ur : T.next.ur}
-                    </span>
+                    <Tri strings={saving ? T.saving : T.next} />
                   </Button>
                 </div>
               </div>
@@ -774,10 +758,7 @@ export function OnboardingFlow() {
             {step === 2 ? (
               <div className="flex flex-col gap-4">
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  {T.s3Body.en}
-                  <span dir="rtl" className="mt-1 block font-urdu">
-                    {T.s3Body.ur}
-                  </span>
+                  <Tri strings={T.s3Body} />
                 </p>
 
                 <div className="flex flex-col gap-2">
@@ -803,22 +784,19 @@ export function OnboardingFlow() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 rounded-2xl border border-red-500/25 bg-red-500/5 p-4">
-                  <p className="text-sm font-bold text-foreground">
+                <div className="flex flex-col gap-2 rounded-2xl border border-danger/25 bg-danger-soft p-4">
+                  <p className="text-sm font-semibold text-foreground">
                     <TriInline strings={T.emergencyTitle} />
                   </p>
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    {T.emergencyBody.en}
-                    <span dir="rtl" className="mt-1 block font-urdu">
-                      {T.emergencyBody.ur}
-                    </span>
+                    <Tri strings={T.emergencyBody} />
                   </p>
                   <a
                     href="tel:1122"
-                    className="inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-xl bg-red-600 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-red-600"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-xl bg-red-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
                   >
                     <Phone className="h-4 w-4" aria-hidden />
-                    1122 · <span dir="rtl" className="font-urdu">{T.call1122.ur}</span>
+                    <Tri strings={T.call1122} />
                   </a>
                 </div>
 
@@ -830,14 +808,14 @@ export function OnboardingFlow() {
                     className="min-h-11 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground"
                   >
                     <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
-                    {T.back.en}
+                    <Tri strings={T.back} />
                   </Button>
                   <Button
                     type="button"
                     onClick={() => setStep(3)}
-                    className="min-h-11 flex-1 rounded-xl text-sm font-bold"
+                    className="min-h-11 flex-1 rounded-xl text-sm font-semibold"
                   >
-                    {T.next.en} · <span dir="rtl" className="font-urdu">{T.next.ur}</span>
+                    <Tri strings={T.next} />
                     <ArrowRight className="ms-1 h-4 w-4" aria-hidden />
                   </Button>
                 </div>
@@ -847,19 +825,16 @@ export function OnboardingFlow() {
             {/* ---------------- STEP 4: offline pack ---------------- */}
             {step === 3 ? (
               <div className="flex flex-col gap-4">
-                <div className="flex items-start gap-3 rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                <div className="flex items-start gap-3 rounded-2xl border border-success/25 bg-success-soft p-4">
+                  <span className="iconbox">
                     <WifiOff className="h-5 w-5" aria-hidden />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-foreground">
+                    <p className="text-sm font-semibold text-foreground">
                       <TriInline strings={T.s4Title} />
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      {T.s4Body.en}
-                      <span dir="rtl" className="mt-1 block font-urdu">
-                        {T.s4Body.ur}
-                      </span>
+                      <Tri strings={T.s4Body} />
                     </p>
                   </div>
                 </div>
@@ -867,7 +842,7 @@ export function OnboardingFlow() {
                 <div className="flex items-start gap-3 rounded-2xl border border-border bg-muted/30 p-4">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    {T.welcome.en} — {T.saved.en}
+                    <Tri strings={T.welcome} /> — <Tri strings={T.saved} />
                   </p>
                 </div>
 
@@ -879,14 +854,14 @@ export function OnboardingFlow() {
                     className="min-h-11 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground"
                   >
                     <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
-                    {T.back.en}
+                    <Tri strings={T.back} />
                   </Button>
                   <Button
                     type="button"
                     onClick={() => finish(demoDraft)}
-                    className="min-h-11 flex-1 rounded-xl text-sm font-bold"
+                    className="min-h-11 flex-1 rounded-xl text-sm font-semibold"
                   >
-                    {T.finish.en} · <span dir="rtl" className="font-urdu">{T.finish.ur}</span>
+                    <Tri strings={T.finish} />
                     <ArrowRight className="ms-1 h-4 w-4" aria-hidden />
                   </Button>
                 </div>

@@ -176,7 +176,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-left text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-start text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
               aria-expanded={openState.demographics}
             >
               <span>{t(lang, 'myHealth.demographicsTitle')}</span>
@@ -257,7 +257,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
                     aria-label={t(lang, 'myHealth.pregnant')}
                   />
                 </div>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-2xs text-muted-foreground">
                   {t(lang, 'myHealth.pregnantHint')}
                 </p>
               </div>
@@ -270,7 +270,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-left text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-start text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
               aria-expanded={openState.conditions}
             >
               <span>{t(lang, 'myHealth.conditionsTitle')}</span>
@@ -281,7 +281,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-3 pt-3">
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               {t(lang, 'myHealth.conditionsHint')}
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -306,7 +306,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
               })}
             </div>
             {draft.conditions.length > 0 ? (
-              <div className="rounded-lg bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+              <div className="rounded-lg bg-muted/40 px-3 py-2 text-2xs text-muted-foreground">
                 {draft.conditions.map((c) => conditionLabel(c, lang)).join(' · ')}
               </div>
             ) : null}
@@ -318,7 +318,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-left text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-start text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
               aria-expanded={openState.allergies}
             >
               <span>{t(lang, 'myHealth.allergiesTitle')}</span>
@@ -329,7 +329,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-2 pt-3">
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               {t(lang, 'myHealth.allergiesHint')}
             </p>
             <Textarea
@@ -348,7 +348,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-left text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-start text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
               aria-expanded={openState.meds}
             >
               <span>{t(lang, 'myHealth.medsTitle')}</span>
@@ -359,7 +359,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-2 pt-3">
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               {t(lang, 'myHealth.medsHint')}
             </p>
             <Textarea
@@ -378,7 +378,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-left text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-start text-sm font-bold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
               aria-expanded={openState.ice}
             >
               <span>{t(lang, 'myHealth.iceTitle')}</span>
@@ -389,7 +389,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-3 pt-3">
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               {t(lang, 'myHealth.iceHint')}
             </p>
             <div className="flex flex-col gap-3">
@@ -405,7 +405,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
                     <button
                       type="button"
                       onClick={() => removeIce(c.id)}
-                      className="inline-flex h-7 items-center gap-1 rounded-full border border-red-500/25 bg-red-500/5 px-2 text-[11px] font-semibold text-red-700 hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                      className="inline-flex h-7 items-center gap-1 rounded-full border border-red-500/25 bg-red-500/5 px-2 text-2xs font-semibold text-red-700 hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                       aria-label={t(lang, 'myHealth.iceRemove')}
                     >
                       {t(lang, 'myHealth.iceRemove')}
@@ -413,7 +413,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <div className="flex flex-col gap-1">
-                      <Label htmlFor={`ice-name-${c.id}`} className="text-[11px] font-medium text-muted-foreground">
+                      <Label htmlFor={`ice-name-${c.id}`} className="text-2xs font-medium text-muted-foreground">
                         {t(lang, 'myHealth.iceName')}
                       </Label>
                       <Input
@@ -425,7 +425,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label htmlFor={`ice-phone-${c.id}`} className="text-[11px] font-medium text-muted-foreground">
+                      <Label htmlFor={`ice-phone-${c.id}`} className="text-2xs font-medium text-muted-foreground">
                         {t(lang, 'myHealth.icePhone')}
                       </Label>
                       <Input
@@ -453,14 +453,14 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
                         maxLength={24}
                       />
                       {iceErrors[c.id] ? (
-                        <p id={`ice-err-${c.id}`} className="text-[11px] font-medium text-red-700 dark:text-red-400">
+                        <p id={`ice-err-${c.id}`} className="text-2xs font-medium text-red-700 dark:text-red-400">
                           {iceErrors[c.id]}
                         </p>
                       ) : null}
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label htmlFor={`ice-relation-${c.id}`} className="text-[11px] font-medium text-muted-foreground">
+                    <Label htmlFor={`ice-relation-${c.id}`} className="text-2xs font-medium text-muted-foreground">
                       {t(lang, 'myHealth.iceRelation')}
                     </Label>
                     <Input
@@ -484,7 +484,7 @@ export function ProfileCard({ lang, profile, onSave }: ProfileCardProps) {
                   {t(lang, 'myHealth.iceAdd')}
                 </button>
               ) : (
-                <p className="text-center text-[11px] text-muted-foreground">
+                <p className="text-center text-2xs text-muted-foreground">
                   {t(lang, 'toast.iceLimit')}
                 </p>
               )}

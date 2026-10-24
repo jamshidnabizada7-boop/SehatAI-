@@ -74,6 +74,9 @@ function HomeContent() {
   // reset the store view. This prevents URL-based view injection attacks.
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    // Wait for the session: while it loads every visitor looks like a guest,
+    // which used to strip valid role-only deep links (?view=observability).
+    if (status === 'loading') return;
     const url = new URL(window.location.href);
     const queryView = url.searchParams.get('view') as View | null;
     if (!queryView) return;
@@ -91,7 +94,7 @@ function HomeContent() {
       url.searchParams.delete('view');
       window.history.replaceState({}, '', url.toString());
     }
-  }, [role, view, allowedViews, setView]);
+  }, [status, role, view, allowedViews, setView]);
 
   // propagate language/dir to <html>
   useEffect(() => {
@@ -164,7 +167,9 @@ function HomeContent() {
 
       <div className="flex min-h-0 flex-1">
         {!showLanding ? <SidebarNav /> : null}
-        <main id="main" className="flex min-h-0 flex-1 flex-col">
+        {/* min-w-0: without it a wide child pushed the whole view past the
+            viewport and the overflow was silently clipped. */}
+        <main id="main" className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div key={safeView} className="h-full min-h-0 flex-1">
             {showLanding ? (
               <LandingChooser />

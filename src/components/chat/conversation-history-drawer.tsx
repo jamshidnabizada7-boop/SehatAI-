@@ -211,7 +211,7 @@ export function ConversationHistoryDrawer() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md" aria-label={t(uiLang, 'chat.historyTitle')}>
-        <SheetHeader className="border-b border-border px-4 py-3 text-left">
+        <SheetHeader className="border-b border-border px-4 py-3 text-start">
           <SheetTitle className="flex items-center gap-2 text-base font-bold">
             <History className="h-4 w-4" aria-hidden />
             {t(uiLang, 'chat.historyTitle')}
@@ -271,18 +271,18 @@ export function ConversationHistoryDrawer() {
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             {triageLevel ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase text-secondary-foreground">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-2xs font-bold tracking-wide uppercase text-secondary-foreground">
                                 <span className={cn('h-1.5 w-1.5 rounded-full', TRIAGE_DOT[triageLevel])} aria-hidden />
                                 {t(uiLang, TRIAGE_LABEL[triageLevel])}
                               </span>
                             ) : null}
                             {c.emergency ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-red-600/10 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-red-600/10 px-2 py-0.5 text-2xs font-bold text-red-700 dark:text-red-400">
                                 <Phone className="h-3 w-3" aria-hidden />
                                 1122
                               </span>
                             ) : null}
-                            <span className="text-[10px] font-medium text-muted-foreground">
+                            <span className="text-2xs font-medium text-muted-foreground">
                               {formatRelative(c.updatedAt, uiLang)}
                             </span>
                           </div>
@@ -292,7 +292,7 @@ export function ConversationHistoryDrawer() {
                           >
                             {c.preview || (uiLang === 'ur' ? 'خالی گفتگو' : 'Empty conversation')}
                           </p>
-                          <p className="mt-1 text-[10px] text-muted-foreground">
+                          <p className="mt-1 text-2xs text-muted-foreground">
                             {c.messageCount} {t(uiLang, 'chat.historyMessages')}
                           </p>
                         </div>

@@ -65,7 +65,7 @@ export function LabTestBooking() {
                 <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="flex-1 truncate font-semibold text-foreground">{t.testName}</span>
                 <span className="text-muted-foreground">{t.labName}</span>
-                <Badge className={cn('text-[9px]', t.status === 'completed' ? 'bg-emerald-500/15 text-emerald-700' : t.status === 'requested' ? 'bg-amber-500/15 text-amber-700' : 'bg-muted text-muted-foreground')}>{t.status}</Badge>
+                <Badge className={cn('text-2xs', t.status === 'completed' ? 'bg-emerald-500/15 text-emerald-700' : t.status === 'requested' ? 'bg-amber-500/15 text-amber-700' : 'bg-muted text-muted-foreground')}>{t.status}</Badge>
               </li>
             ))}
           </ul>

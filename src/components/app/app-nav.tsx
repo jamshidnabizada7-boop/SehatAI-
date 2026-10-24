@@ -1,22 +1,27 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   Activity,
   BarChart3,
   Bell,
+  HeartPulse,
   Info,
   LogIn,
   LogOut,
   MapPin,
   MessageCircle,
   ClipboardList,
+  Moon,
   Stethoscope,
-  X,
+  Sun,
   PhoneCall,
+  BriefcaseMedical,
 } from 'lucide-react';
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useAppStore, type View } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -46,13 +51,15 @@ interface NavItem {
   requireActiveDoctor?: boolean;
 }
 
+// Care Connect and Doctor Copilot used the same stethoscope icon; Copilot
+// now has its own so the two can be told apart at a glance.
 const NAV_ITEMS: NavItem[] = [
   { view: 'chat', icon: MessageCircle, labelKey: 'nav.chat' },
   { view: 'care', icon: Stethoscope, labelKey: 'nav.careConnect' },
   { view: 'my-health', icon: ClipboardList, labelKey: 'nav.myHealth', patientOnly: true },
   { view: 'facilities', icon: MapPin, labelKey: 'nav.facilities' },
   { view: 'reminders', icon: Bell, labelKey: 'nav.reminders', patientOnly: true },
-  { view: 'doctor-copilot', icon: Stethoscope, labelKey: 'nav.doctorCopilot', doctorOnly: true, requireActiveDoctor: true },
+  { view: 'doctor-copilot', icon: BriefcaseMedical, labelKey: 'nav.doctorCopilot', doctorOnly: true, requireActiveDoctor: true },
   { view: 'dashboard', icon: BarChart3, labelKey: 'nav.dashboard', adminOnly: true },
   { view: 'observability', icon: Activity, labelKey: 'nav.observability', adminOnly: true },
   { view: 'about', icon: Info, labelKey: 'nav.about' },
@@ -88,7 +95,7 @@ function NavList({ onNavigate, items }: NavListProps & { items: NavItem[] }) {
   const uiLang = resolveUiLang(langPref);
 
   return (
-    <ul className="flex flex-col gap-1 p-3">
+    <ul className="flex flex-col gap-0.5 p-3">
       {items.map((item) => {
         const active = view === item.view;
         return (
@@ -101,13 +108,13 @@ function NavList({ onNavigate, items }: NavListProps & { items: NavItem[] }) {
               }}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring',
+                'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring md:min-h-10',
                 active
-                  ? 'bg-primary/12 text-primary font-bold shadow-2xs border border-primary/20'
-                  : 'text-muted-foreground hover:bg-accent/80 hover:text-foreground',
+                  ? 'bg-accent font-semibold text-accent-foreground'
+                  : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
-              <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-primary' : 'text-muted-foreground/80')} aria-hidden />
+              <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-primary' : 'text-muted-foreground')} aria-hidden />
               <span className="truncate">{t(uiLang, item.labelKey)}</span>
             </button>
           </li>
@@ -117,7 +124,7 @@ function NavList({ onNavigate, items }: NavListProps & { items: NavItem[] }) {
   );
 }
 
-/** Left sidebar rail (desktop). */
+/** Left sidebar rail (desktop). Emergency access lives in the header SOS. */
 export function SidebarNav() {
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
@@ -126,39 +133,29 @@ export function SidebarNav() {
   return (
     <nav
       aria-label={t(uiLang, 'app.name')}
-      className="hidden w-56 shrink-0 flex-col justify-between border-e border-border/80 bg-card/40 md:flex"
+      className="hidden w-56 shrink-0 flex-col border-e border-border bg-sidebar md:flex"
     >
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
         <NavList items={items} />
       </div>
-
-      {/* Persistent Emergency rescue fast-action trigger */}
-      <div className="p-3 border-t border-border/60">
-        <div className="rounded-2xl border border-red-500/25 bg-red-500/8 p-3 text-start">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-red-700 dark:text-red-400">
-            <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
-            <span>{uiLang === 'ur' ? 'ہنگامی امداد' : uiLang === 'roman' ? 'Hangami imdaad' : 'Emergency Help'}</span>
-          </div>
-          <p className="mt-1 text-[11px] leading-tight text-muted-foreground">
-            {uiLang === 'ur' ? 'طبی ایمرجنسی میں فوراً رابطہ کریں' : 'Acute medical distress?'}
-          </p>
-          <a
-            href="tel:1122"
-            className="mt-2.5 flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-red-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-red-700 transition-colors"
-          >
-            <PhoneCall className="h-3.5 w-3.5" />
-            <span>Rescue 1122</span>
-          </a>
-        </div>
-      </div>
+      <a
+        href="tel:1122"
+        className="m-3 flex items-center gap-2.5 rounded-xl border border-danger/20 bg-danger-soft px-3 py-2.5 text-start transition-colors hover:border-danger/40 focus-visible:outline-2 focus-visible:outline-danger"
+      >
+        <PhoneCall className="h-4 w-4 shrink-0 text-danger" aria-hidden />
+        <span className="min-w-0">
+          <span className="block text-xs font-bold text-danger">{t(uiLang, 'ui.callRescue')}</span>
+          <span className="block text-2xs text-muted-foreground">{t(uiLang, 'ui.emergencyHint')}</span>
+        </span>
+      </a>
     </nav>
   );
 }
 
 /**
- * Mobile side navigation drawer (ChatGPT-style).
- * Slides in from the start edge over an overlay; holds the same nav items
- * as the desktop rail plus sign-in / sign-out at the bottom.
+ * Mobile navigation drawer. Built on the Sheet primitive so it gets a focus
+ * trap, Escape-to-close, scroll lock and focus return for free. Opens from
+ * the reading start edge (left in LTR, right in Urdu).
  */
 export function MobileNavDrawer() {
   const navOpen = useAppStore((s) => s.navOpen);
@@ -167,92 +164,63 @@ export function MobileNavDrawer() {
   const uiLang = resolveUiLang(langPref);
   const items = useVisibleNavItems();
   const { data: session, status } = useSession();
+  const { resolvedTheme, setTheme } = useTheme();
   const isRtl = uiLang === 'ur';
-
-  // close on Escape
-  useEffect(() => {
-    if (!navOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setNavOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [navOpen, setNavOpen]);
-
-  // lock body scroll while open
-  useEffect(() => {
-    if (!navOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [navOpen]);
-
-  if (!navOpen) return null;
+  const isDark = resolvedTheme === 'dark';
 
   const userName = (session?.user as { name?: string | null } | undefined)?.name ?? null;
   const userEmail = (session?.user as { email?: string | null } | undefined)?.email ?? null;
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label={t(uiLang, 'app.name')}>
-      {/* overlay */}
-      <button
-        type="button"
-        aria-label={uiLang === 'ur' ? 'بند کریں' : uiLang === 'roman' ? 'Band karein' : 'Close menu'}
-        onClick={() => setNavOpen(false)}
-        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-      />
-      {/* panel */}
-      <div
-        className={cn(
-          'absolute bottom-0 top-0 flex w-72 max-w-[82vw] flex-col border-e border-border bg-background shadow-xl',
-          isRtl ? 'right-0' : 'left-0',
-        )}
+    <Sheet open={navOpen} onOpenChange={setNavOpen}>
+      <SheetContent
+        side={isRtl ? 'right' : 'left'}
+        closeLabel={t(uiLang, 'ui.close')}
+        className={cn('w-[19rem] max-w-[85vw] gap-0 p-0 md:hidden', isRtl && 'font-urdu')}
+        dir={isRtl ? 'rtl' : 'ltr'}
       >
-        {/* panel header */}
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <span className="flex items-center gap-1.5 text-base font-extrabold tracking-tight text-foreground">
-            Sehat<span className="text-primary">AI</span>
+        <div className="flex h-14 items-center gap-2 border-b border-border px-4">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <HeartPulse className="h-4.5 w-4.5" aria-hidden />
           </span>
-          <button
-            type="button"
-            onClick={() => setNavOpen(false)}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label={uiLang === 'ur' ? 'بند کریں' : uiLang === 'roman' ? 'Band karein' : 'Close menu'}
-          >
-            <X className="h-4.5 w-4.5" aria-hidden />
-          </button>
+          <SheetTitle className="text-[15px] font-bold tracking-tight">
+            Sehat<span className="text-primary">AI</span>
+          </SheetTitle>
+          <SheetDescription className="sr-only">{t(uiLang, 'app.tagline')}</SheetDescription>
         </div>
 
-        {/* nav items */}
         <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
           <NavList items={items} onNavigate={() => setNavOpen(false)} />
         </div>
 
-        {/* Emergency Call Button on Mobile */}
-        <div className="px-3 pb-2">
+        <div className="space-y-2 border-t border-border p-3">
           <a
             href="tel:1122"
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-red-700 transition-colors"
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-red-700 px-3 text-sm font-bold text-white transition-colors hover:bg-red-800"
           >
-            <PhoneCall className="h-4 w-4" />
-            <span>Emergency: Call Rescue 1122</span>
+            <PhoneCall className="h-4 w-4" aria-hidden />
+            {t(uiLang, 'ui.callRescue')}
           </a>
-        </div>
 
-        {/* account footer — sign in / sign out */}
-        <div className="border-t border-border p-3">
+          <button
+            type="button"
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {isDark ? <Sun className="h-4 w-4" aria-hidden /> : <Moon className="h-4 w-4" aria-hidden />}
+            {t(uiLang, 'ui.theme')}: {isDark ? t(uiLang, 'ui.darkMode') : t(uiLang, 'ui.lightMode')}
+          </button>
+
           {status === 'authenticated' ? (
-            <div className="flex flex-col gap-2">
-              <div className="flex min-w-0 items-center gap-2.5 rounded-xl bg-muted/40 px-3 py-2">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+            <>
+              <div className="flex min-w-0 items-center gap-2.5 rounded-xl bg-muted/60 px-3 py-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
                   {(userName ?? userEmail ?? 'U').slice(0, 1).toUpperCase()}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-bold text-foreground">{userName ?? 'User'}</span>
+                  <span className="block truncate text-sm font-semibold text-foreground">{userName ?? 'User'}</span>
                   {userEmail ? (
-                    <span className="block truncate text-[11px] text-muted-foreground">{userEmail}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{userEmail}</span>
                   ) : null}
                 </span>
               </div>
@@ -262,24 +230,24 @@ export function MobileNavDrawer() {
                   setNavOpen(false);
                   void signOut({ callbackUrl: '/' });
                 }}
-                className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-500/10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring dark:text-red-400"
+                className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-danger transition-colors hover:bg-danger-soft"
               >
                 <LogOut className="h-4 w-4 shrink-0" aria-hidden />
                 {t(uiLang, 'settings.signOutLabel')}
               </button>
-            </div>
+            </>
           ) : (
             <Link
               href="/auth/signin"
               onClick={() => setNavOpen(false)}
-              className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring shadow-2xs"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <LogIn className="h-4 w-4 shrink-0" aria-hidden />
               {t(uiLang, 'auth.bannerCta')}
             </Link>
           )}
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

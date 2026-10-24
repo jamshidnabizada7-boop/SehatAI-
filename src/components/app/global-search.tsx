@@ -141,7 +141,7 @@ export function GlobalSearch() {
                   <span className="block truncate text-sm font-semibold text-foreground">
                     {r.title[uiLang]}
                   </span>
-                  <span className="block text-[11px] text-muted-foreground" dir="ltr">
+                  <span className="block text-2xs text-muted-foreground" dir="ltr">
                     {t(uiLang, 'search.openFirstAid')}
                   </span>
                 </span>
@@ -166,7 +166,7 @@ export function GlobalSearch() {
                   <span className="block truncate text-sm font-semibold text-foreground">
                     {r.title.en}
                   </span>
-                  <span className="block truncate text-[11px] text-muted-foreground">
+                  <span className="block truncate text-2xs text-muted-foreground">
                     <span className="font-urdu">{r.title.ur}</span>
                     {' · '}
                     {r.title.roman}
@@ -193,7 +193,7 @@ export function GlobalSearch() {
                   <span className="block truncate text-sm font-semibold text-foreground">
                     {r.title[uiLang]}
                   </span>
-                  <span className="block text-[11px] text-muted-foreground" dir="ltr">
+                  <span className="block text-2xs text-muted-foreground" dir="ltr">
                     {r.subtitle} · {t(uiLang, 'search.askTopic')}
                   </span>
                 </span>

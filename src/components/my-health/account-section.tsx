@@ -232,7 +232,7 @@ export function AccountSection() {
           {t(uiLang, 'settings.title')}
         </h2>
         {me ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-2xs font-bold text-emerald-700 dark:text-emerald-400">
             <BadgeCheck className="h-3 w-3" aria-hidden />
             {t(uiLang, 'settings.signedInAs')} {me.email}
           </span>
@@ -245,7 +245,7 @@ export function AccountSection() {
             {t(uiLang, 'settings.subtitle')}
           </CardTitle>
           {me ? (
-            <CardDescription className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <CardDescription className="flex items-center gap-1 text-2xs text-muted-foreground">
               <ShieldCheck className="h-3 w-3" aria-hidden />
               {me.consented
                 ? t(uiLang, 'settings.consentGiven')
@@ -326,14 +326,14 @@ export function AccountSection() {
                     )}
                   >
                     <span className="min-w-0">
-                      <span dir="ltr" className="font-mono text-[11px] font-semibold text-foreground">
+                      <span dir="ltr" className="font-mono text-2xs font-semibold text-foreground">
                         {e.action}
                       </span>
                       {e.resource ? (
                         <span className="ms-1.5 text-muted-foreground">({e.resource})</span>
                       ) : null}
                     </span>
-                    <span className="shrink-0 text-[10px] text-muted-foreground" dir="ltr">
+                    <span className="shrink-0 text-2xs text-muted-foreground" dir="ltr">
                       {formatWhen(e.createdAt)}
                     </span>
                   </li>

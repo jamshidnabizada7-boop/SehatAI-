@@ -138,7 +138,7 @@ export function FirstAidCards({ lang, onSelect, className }: FirstAidCardsProps)
           variant="ghost"
           size="sm"
           onClick={() => setGuideOpen(true)}
-          className="h-7 gap-1 px-2 text-[11px] font-semibold text-primary hover:bg-primary/10"
+          className="h-7 gap-1 px-2 text-2xs font-semibold text-primary hover:bg-primary/10"
         >
           <BookOpen className="h-3.5 w-3.5" aria-hidden />
           {lang === 'ur' ? 'بصری گائیڈ' : lang === 'roman' ? 'Basri guide' : 'Visual guide'}
@@ -183,7 +183,7 @@ export function FirstAidCards({ lang, onSelect, className }: FirstAidCardsProps)
                 </span>
                 <span
                   className={cn(
-                    'mt-0.5 block text-[11px] leading-tight text-muted-foreground',
+                    'mt-0.5 block text-2xs leading-tight text-muted-foreground',
                     lang === 'ur' && 'font-urdu',
                   )}
                   dir={lang === 'ur' ? 'rtl' : 'ltr'}

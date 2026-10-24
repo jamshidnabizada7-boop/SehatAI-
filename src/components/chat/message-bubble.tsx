@@ -5,10 +5,10 @@ import { motion } from 'framer-motion';
 import {
   Bell,
   Check,
+  ClipboardList,
   CloudOff,
   Copy,
   Cpu,
-  FileText,
   HeartPulse,
   Languages,
   MapPin,
@@ -86,8 +86,8 @@ function ActionIcon({
       title={label}
       disabled={disabled}
       className={cn(
-        'flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-40',
-        active ? 'text-primary' : 'text-muted-foreground/60 hover:text-foreground',
+        'flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-40',
+        active ? 'bg-accent text-primary' : 'text-muted-foreground hover:text-foreground',
       )}
     >
       {children}
@@ -128,7 +128,7 @@ export function MessageBubble({
     const text = (message.content || '').trim();
     if (!text) return;
     const firstBlock = text.split(/\n+/).find((line) => line.trim().length > 0) ?? text;
-    const title = firstBlock.replace(/^[-•*]\s*/, '').slice(0, 100) || (uiLang === 'ur' ? 'سیۃ اے آئی رہنمائی' : 'SehatAI guidance');
+    const title = firstBlock.replace(/^[-•*]\s*/, '').slice(0, 100) || (uiLang === 'ur' ? 'صحت اے آئی رہنمائی' : 'SehatAI guidance');
     setPendingReminderDraft({ title, notes: text.slice(0, 280) });
     setView('reminders');
   };
@@ -196,14 +196,14 @@ export function MessageBubble({
       >
         <div
           className={cn(
-            'max-w-[85%] rounded-2xl rounded-ee-md bg-[#007958] text-white px-4 py-3 text-sm leading-relaxed shadow-sm transition-shadow hover:shadow-md sm:max-w-[75%]',
+            'max-w-[85%] rounded-2xl rounded-ee-md bg-primary px-4 py-2.5 text-[15px] leading-relaxed text-primary-foreground sm:max-w-[75%] sm:text-sm',
             isUrduContent && 'font-urdu',
           )}
           dir={isUrduContent ? 'rtl' : 'ltr'}
         >
           <p className="whitespace-pre-wrap font-medium">{message.content}</p>
         </div>
-        <span className="mt-1 pe-1 text-[10px] font-medium text-muted-foreground/70" aria-hidden>
+        <span className="mt-1 pe-1 text-2xs text-muted-foreground" aria-hidden suppressHydrationWarning>
           {timeLabel(message.createdAt)}
         </span>
       </motion.div>
@@ -215,6 +215,9 @@ export function MessageBubble({
     showingUrdu && urduVersion ? urduVersion : message.content;
   const displayIsUrdu = showingUrdu && urduVersion ? true : isUrduContent;
   const isEmergency = message.triage?.level === 'EMERGENCY';
+  const isUrgent = message.triage?.level === 'URGENT';
+  const showTriage = Boolean(message.triage && message.triage.level !== 'INFORMATIONAL');
+  const showConfidence = Boolean(message.confidence && message.triage?.level !== 'EMERGENCY');
 
   return (
     <motion.div
@@ -227,7 +230,7 @@ export function MessageBubble({
        *  read like a conversation, not a document */}
       <span
         className={cn(
-          'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20 transition-shadow',
+          'mt-0.5 hidden h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent ring-1 ring-primary/20 transition-shadow sm:flex',
           isSpeaking && 'ring-2 ring-primary/40',
         )}
         aria-hidden
@@ -235,7 +238,7 @@ export function MessageBubble({
         <HeartPulse className={cn('h-4 w-4 text-primary', isSpeaking && 'animate-pulse')} />
       </span>
 
-      <div className="min-w-0 w-full max-w-[92%] sm:max-w-[85%]">
+      <div className="w-full min-w-0 sm:max-w-[88%]">
         {/* pipeline ticker while this reply streams */}
         {message.streaming && isStreaming ? (
           <div className="mb-2 rounded-xl border border-border bg-card px-3 py-2">
@@ -249,36 +252,35 @@ export function MessageBubble({
 
         <div
           className={cn(
-            'rounded-2xl rounded-es-md border px-4 py-3.5 shadow-sm space-y-3',
+            'space-y-3 rounded-2xl rounded-es-md border px-4 py-3.5 shadow-[var(--soft-shadow)]',
             message.offline
-              ? 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/40'
-              : 'bg-card',
-            isEmergency && !message.offline && 'border-red-600/40',
+              ? 'border-warning/30 bg-warning-soft'
+              : 'border-border bg-card',
+            isEmergency && !message.offline && 'border-red-700/45',
             isSpeaking && 'ring-2 ring-primary/25',
           )}
         >
-          {/* Assistant Header: Brand, Evidence chip, Triage & Confidence */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-foreground text-sm">SehatAI</span>
-              <span className="chip green py-0.5 text-[10px] font-semibold">Evidence-based guidance</span>
-              {message.triage && message.triage.level !== 'INFORMATIONAL' ? (
+          {/* Triage level + confidence band, only when the pipeline sent them.
+              (The old always-on "Evidence-based guidance" chip was removed: it
+              also appeared on abstentions that had no sources.) */}
+          {showTriage || showConfidence ? (
+            <div className="flex flex-wrap items-start gap-2">
+              {showTriage && message.triage ? (
                 <TriageBadge
                   level={message.triage.level}
                   lang={msgLang}
                   reason={message.triage.reason}
                 />
               ) : null}
-              {message.confidence && message.triage?.level !== 'EMERGENCY' ? (
+              {showConfidence ? (
                 <ConfidenceBadge confidence={message.confidence} lang={msgLang} />
               ) : null}
             </div>
-            <span className="text-[11px] text-muted-foreground">{timeLabel(message.createdAt)}</span>
-          </div>
+          ) : null}
 
           {/* offline label */}
           {message.offline ? (
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-warning">
               <CloudOff className="h-3.5 w-3.5" aria-hidden />
               {t(uiLang, 'chat.offlineLabel')}
             </div>
@@ -312,16 +314,16 @@ export function MessageBubble({
             </div>
           ) : message.streaming && isStreaming ? (
             <div className="flex gap-1 py-1" aria-hidden>
-              <span className="h-2 w-2 animate-bounce rounded-full bg-primary/60 [animation-delay:0ms]" />
-              <span className="h-2 w-2 animate-bounce rounded-full bg-primary/60 [animation-delay:120ms]" />
-              <span className="h-2 w-2 animate-bounce rounded-full bg-primary/60 [animation-delay:240ms]" />
+              <span className="stage-dot-pulse h-2 w-2 rounded-full bg-primary/70 [animation-delay:0ms]" />
+              <span className="stage-dot-pulse h-2 w-2 rounded-full bg-primary/70 [animation-delay:180ms]" />
+              <span className="stage-dot-pulse h-2 w-2 rounded-full bg-primary/70 [animation-delay:360ms]" />
             </div>
           ) : null}
 
           {/* read-aloud live indicator */}
           {isSpeaking ? (
             <div
-              className="mt-2 flex items-center gap-2 text-[11px] font-semibold text-primary"
+              className="mt-2 flex items-center gap-2 text-2xs font-semibold text-primary"
               role="status"
             >
               <span className="flex h-3.5 items-end gap-[3px]" aria-hidden>
@@ -335,7 +337,7 @@ export function MessageBubble({
 
           {/* stream error note */}
           {streamError ? (
-            <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs text-red-700 dark:bg-red-950/50 dark:text-red-300">
+            <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-danger-soft px-2.5 py-1.5 text-xs text-danger" role="alert">
               <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden />
               {t(uiLang, 'chat.errorTitle')} — {streamError}
             </div>
@@ -347,7 +349,7 @@ export function MessageBubble({
               variant="ghost"
               size="sm"
               onClick={() => setShowingUrdu((v) => !v)}
-              className="mt-2 h-8 gap-1.5 px-2.5 text-xs font-medium text-emerald-700 hover:bg-emerald-600/10 dark:text-emerald-400"
+              className="h-9 gap-1.5 px-2.5 text-xs font-medium text-primary hover:bg-accent hover:text-primary"
               aria-label={showingUrdu ? t(uiLang, 'chat.viewRoman') : t(uiLang, 'chat.viewUrdu')}
             >
               <Languages className="h-3.5 w-3.5" aria-hidden />
@@ -355,41 +357,36 @@ export function MessageBubble({
             </Button>
           ) : null}
 
-          {/* Navigation CTA strip when response is ready */}
+          {/* Next steps once the answer is complete */}
           {!message.streaming && (
-            <div className="pt-2.5 border-t border-border/40">
+            <div className="border-t border-border pt-3">
               {isEmergency ? (
-                <div className="inset inset-red border border-red-200/60 p-2.5 rounded-xl">
-                  <div className="flex items-start gap-2.5">
-                    <div className="iconbox iconbox-red h-7 w-7 rounded-lg mt-0.5 shrink-0 flex items-center justify-center">
-                      <TriangleAlert className="h-4 w-4" />
-                    </div>
-                    <div className="text-xs">
-                      <b className="text-red-700 dark:text-red-400 text-xs">Emergency Precaution</b>
-                      <p className="text-muted-foreground mt-0.5 leading-relaxed text-[11px]">
-                        Severe symptoms require urgent clinical evaluation. Call <b>1122</b> in Pakistan or proceed to the nearest emergency facility.
-                      </p>
-                    </div>
+                <div className="flex items-start gap-2.5 rounded-xl bg-danger-soft p-3" role="note">
+                  <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden />
+                  <div className="text-xs leading-relaxed">
+                    <p className="font-semibold text-danger">{t(uiLang, 'ui.emergencyPrecautionTitle')}</p>
+                    <p className="mt-0.5 text-foreground">{t(uiLang, 'ui.emergencyPrecautionBody')}</p>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
                     size="sm"
+                    variant={isUrgent ? 'default' : 'outline'}
                     onClick={() => setView('care')}
-                    className="h-8 gap-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90"
+                    className="h-9 gap-1.5 rounded-lg text-xs font-semibold"
                   >
-                    <Stethoscope className="h-3.5 w-3.5" />
-                    Book a doctor →
+                    <Stethoscope className={cn('h-3.5 w-3.5', !isUrgent && 'text-primary')} aria-hidden />
+                    {t(uiLang, 'ui.talkToDoctor')}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setView('facilities')}
-                    className="h-8 gap-1.5 rounded-lg border-border text-xs font-bold hover:bg-accent"
+                    className="h-9 gap-1.5 rounded-lg text-xs font-semibold"
                   >
-                    <MapPin className="h-3.5 w-3.5 text-emerald-600" />
-                    Nearby facilities
+                    <MapPin className="h-3.5 w-3.5 text-primary" aria-hidden />
+                    {t(uiLang, 'ui.nearbyFacilities')}
                   </Button>
                 </div>
               )}
@@ -401,54 +398,44 @@ export function MessageBubble({
         {message.citations && message.citations.length > 0 && !message.streaming ? (
           <div className="mt-2 space-y-1.5">
             {message.citations.map((citation, i) => (
-              <CitationCard key={`${citation.id}-${i}`} citation={citation} index={i} lang={uiLang} />
+              <CitationCard key={citation.id + '-' + i} citation={citation} index={i} lang={uiLang} />
             ))}
           </div>
         ) : null}
 
-        {/* Offline Guided Action Chips for instant follow-up without typing */}
+        {/* Offline: one-tap follow-ups so nobody has to type without a connection */}
         {message.offline && !message.streaming && isLastAssistant ? (
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => useChatStore.getState().setPendingChatDraft(uiLang === 'ur' ? 'گھر پر دیکھ بھال اور علاج کے طریقے بتائیں' : uiLang === 'roman' ? 'Ghar par dekh bhaal aur bachao ke tareeqay batayein' : 'How can I treat and prevent this at home?')}
-              className="inline-flex items-center gap-1 rounded-full border border-emerald-600/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-800 transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
-            >
-              📋 {uiLang === 'ur' ? 'گھریلو دیکھ بھال' : uiLang === 'roman' ? 'Home Care Steps' : 'Home Care Steps'}
-            </button>
-            <button
-              type="button"
-              onClick={() => useChatStore.getState().setPendingChatDraft(uiLang === 'ur' ? 'ڈاکٹر کو کب دکھانا چاہیے؟' : uiLang === 'roman' ? 'Doctor ko kab dikhana chahiye?' : 'When should I see a doctor for this?')}
-              className="inline-flex items-center gap-1 rounded-full border border-amber-600/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-800 transition-colors hover:bg-amber-500/20 dark:text-amber-300"
-            >
-              ⚠️ {uiLang === 'ur' ? 'ڈاکٹر کے پاس کب جائیں' : uiLang === 'roman' ? 'When to See Doctor' : 'When to See Doctor'}
-            </button>
-            <button
-              type="button"
-              onClick={() => useChatStore.getState().setPendingChatDraft(uiLang === 'ur' ? 'خطرناک علامات کون سی ہیں؟' : uiLang === 'roman' ? 'Khatray ki alamaat kaun si hain?' : 'What are the danger signs to watch for?')}
-              className="inline-flex items-center gap-1 rounded-full border border-red-600/30 bg-red-500/10 px-2.5 py-1 text-[11px] font-medium text-red-800 transition-colors hover:bg-red-500/20 dark:text-red-300"
-            >
-              🚨 {uiLang === 'ur' ? 'خطرناک علامات' : uiLang === 'roman' ? 'Danger Signs' : 'Danger Signs'}
-            </button>
+          <div className={cn('mt-2.5 flex flex-wrap gap-1.5', uiLang === 'ur' && 'font-urdu')}>
+            {([
+              { label: 'ui.homeCare', query: 'ui.homeCareQuery', icon: ClipboardList, cls: 'border-success/30 bg-success-soft text-success' },
+              { label: 'ui.whenToSeeDoctor', query: 'ui.whenToSeeDoctorQuery', icon: Stethoscope, cls: 'border-warning/30 bg-warning-soft text-warning' },
+              { label: 'ui.dangerSigns', query: 'ui.dangerSignsQuery', icon: TriangleAlert, cls: 'border-danger/30 bg-danger-soft text-danger' },
+            ] as const).map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                onClick={() => useChatStore.getState().setPendingChatDraft(t(uiLang, chip.query))}
+                className={cn('inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors hover:brightness-95', chip.cls)}
+              >
+                <chip.icon className="h-3.5 w-3.5" aria-hidden />
+                {t(uiLang, chip.label)}
+              </button>
+            ))}
           </div>
         ) : null}
 
-        {/* message footer: sources summary + actions */}
+        {/* message footer: time, sources summary, actions */}
         {!message.streaming ? (
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <span
-              className="text-[10px] font-medium text-muted-foreground/70"
-              aria-hidden
-              suppressHydrationWarning
-            >
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="text-2xs text-muted-foreground" aria-hidden suppressHydrationWarning>
               {timeLabel(message.createdAt)}
             </span>
             {message.citations && message.citations.length > 0 ? (
-              <span className="text-[11px] text-muted-foreground">
+              <span className="min-w-0 truncate text-2xs text-muted-foreground">
                 {t(uiLang, 'citation.sources')}: {citationSummary(message.citations)}
               </span>
             ) : null}
-            <span className="ms-auto flex items-center gap-0.5">
+            <span className="-mx-1 flex w-full flex-wrap items-center gap-0.5 sm:ms-auto sm:w-auto">
               {/* read aloud — accessibility for low-literacy users */}
               <ActionIcon
                 label={isSpeaking ? t(uiLang, 'chat.stopReading') : t(uiLang, 'chat.readAloud')}
@@ -463,7 +450,7 @@ export function MessageBubble({
                 onClick={() => void copyAnswer()}
                 active={copied}
               >
-                <Copy className="h-4 w-4" aria-hidden />
+                {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
               </ActionIcon>
               {/* share — native sheet, else WhatsApp */}
               <ActionIcon
@@ -471,6 +458,9 @@ export function MessageBubble({
                 onClick={() => void shareAnswer()}
               >
                 <Share2 className="h-4 w-4" aria-hidden />
+              </ActionIcon>
+              <ActionIcon label={t(uiLang, 'chat.saveAsReminder')} onClick={saveAsReminder}>
+                <Bell className="h-4 w-4" aria-hidden />
               </ActionIcon>
               {/* regenerate — only on the latest assistant answer */}
               {isLastAssistant ? (
@@ -482,9 +472,7 @@ export function MessageBubble({
                   <RefreshCw className="h-4 w-4" aria-hidden />
                 </ActionIcon>
               ) : null}
-              <ActionIcon label={t(uiLang, 'chat.saveAsReminder')} onClick={saveAsReminder}>
-                <Bell className="h-4 w-4" aria-hidden />
-              </ActionIcon>
+              <span className="mx-1 h-4 w-px bg-border" aria-hidden />
               <ActionIcon
                 label={t(uiLang, 'chat.helpful')}
                 onClick={() => onFeedback(message.id, 1)}
@@ -493,18 +481,23 @@ export function MessageBubble({
                 <ThumbsUp className="h-4 w-4" aria-hidden />
               </ActionIcon>
               <ActionIcon
-                label={uiLang === 'ur' ? 'تکنیکی انسپکٹر (جج موڈ)' : 'Technical Inspector (Judge Mode)'}
-                onClick={() => setInspectorOpen(true)}
-              >
-                <Cpu className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
-              </ActionIcon>
-              <ActionIcon
                 label={t(uiLang, 'chat.notHelpful')}
                 onClick={() => onFeedback(message.id, 0)}
                 active={feedback === 0}
               >
                 <ThumbsDown className="h-4 w-4" aria-hidden />
               </ActionIcon>
+              <span className="mx-1 h-4 w-px bg-border" aria-hidden />
+              {/* Judge Inspector: shows the pipeline checks behind this answer */}
+              <button
+                type="button"
+                onClick={() => setInspectorOpen(true)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                aria-label={t(uiLang, 'ui.inspectAnswer')}
+              >
+                <Cpu className="h-4 w-4 text-primary" aria-hidden />
+                <span className="hidden sm:inline">{t(uiLang, 'ui.inspectAnswer')}</span>
+              </button>
             </span>
           </div>
         ) : null}

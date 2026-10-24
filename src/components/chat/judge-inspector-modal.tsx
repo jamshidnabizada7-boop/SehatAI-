@@ -46,9 +46,10 @@ export function JudgeInspectorModal({
     metaObj?.path === 'emergency-short-circuit' ||
     (metaObj?.l0 as Record<string, unknown> | undefined)?.shortCircuited
   );
-  const confidenceScore = Math.round((message.confidence?.score ?? (isEmergency ? 1.0 : 0.85)) * 100);
+  // Shown only when the pipeline reported it (the old fallbacks invented 85% / 1240 ms / ROUTINE).
+  const confidenceScore = typeof message.confidence?.score === 'number' ? Math.round(message.confidence.score * 100) : null;
   const actualTotalLatency = (metaObj?.latencies as Record<string, unknown> | undefined)?.total ?? message.latencyMs;
-  const latency = actualTotalLatency != null ? String(actualTotalLatency) : (message.offline ? '4' : (isShortCircuited ? '< 5' : '1240'));
+  const latency = actualTotalLatency != null ? `${actualTotalLatency} ms total` : 'Total latency not reported';
 
   const l0Lat = (metaObj?.latencies as Record<string, unknown> | undefined)?.l0;
   const l1Lat = (metaObj?.latencies as Record<string, unknown> | undefined)?.l1;
@@ -92,12 +93,12 @@ export function JudgeInspectorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto border-emerald-500/30 bg-card p-6 shadow-2xl">
+      <DialogContent className="max-w-2xl p-5 sm:p-6">
         <DialogHeader className="border-b border-border/60 pb-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Cpu className="h-5 w-5" />
+              <span className="iconbox h-9 w-9 rounded-lg">
+                <Cpu className="h-5 w-5" aria-hidden />
               </span>
               <div>
                 <DialogTitle className="text-base font-bold text-foreground">
@@ -106,14 +107,14 @@ export function JudgeInspectorModal({
                 <DialogDescription className="text-xs text-muted-foreground">
                   {lang === 'ur'
                     ? 'سیفٹی گیٹس، لایٹنسی، اور ویلیڈیٹرز کا لائیو معائنہ'
-                    : 'Real-time DashScope cascade, deterministic safety gates & constellation verdicts'}
+                    : 'Provider cascade, deterministic safety gates and constellation verdicts for this answer'}
                 </DialogDescription>
               </div>
             </div>
             <Badge
               variant="outline"
               className={cn(
-                'px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase',
+                'px-2 py-0.5 text-2xs font-bold tracking-wider uppercase',
                 isEmergency
                   ? 'border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400'
                   : isUrgent
@@ -121,104 +122,104 @@ export function JudgeInspectorModal({
                     : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
               )}
             >
-              {message.triage?.level || 'ROUTINE'}
+              {message.triage?.level || (isEmergency ? 'EMERGENCY' : 'Not triaged')}
             </Badge>
           </div>
         </DialogHeader>
 
         <div className="space-y-4 pt-2 text-xs">
           {/* Section 1: Execution Cascade & Latencies */}
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-2">
+          <div className="space-y-2 rounded-xl bg-muted/50 p-3.5">
             <div className="flex items-center justify-between text-muted-foreground font-semibold">
               <span className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-primary" />
                 {lang === 'ur' ? 'ماڈل جھرنا اور لایٹنسی' : 'AI Cascade & Execution Latency'}
               </span>
-              <span className="font-mono text-foreground font-bold">{latency} ms total</span>
+              <span className="font-semibold text-foreground tabular">{latency}</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
-              <div className="rounded-lg border border-border/50 bg-background/80 p-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-2xs">
+              <div className="rounded-lg border border-border bg-card p-2">
                 <p className="text-muted-foreground font-medium">L0 Deterministic</p>
-                <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  {isShortCircuited ? '< 1 ms (Active)' : (message.offline ? '4 ms (Local)' : '< 1 ms')}
+                <p className="font-semibold tabular text-emerald-600 dark:text-emerald-400">
+                  {l0Lat != null ? `${l0Lat} ms` : isShortCircuited ? 'Matched (short-circuit)' : 'Ran · latency not reported'}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Lexicon + Context</p>
+                <p className="text-2xs text-muted-foreground mt-0.5">Lexicon + Context</p>
               </div>
-              <div className="rounded-lg border border-border/50 bg-background/80 p-2">
-                <p className="text-muted-foreground font-medium">L1 Qwen Triage</p>
-                <p className="font-mono font-bold text-foreground">
-                  {isShortCircuited ? 'Bypassed' : (l1Lat != null ? `${l1Lat} ms` : (message.offline ? 'Bypassed' : 'Bypassed'))}
+              <div className="rounded-lg border border-border bg-card p-2">
+                <p className="text-muted-foreground font-medium">L1 LLM triage</p>
+                <p className="font-semibold tabular text-foreground">
+                  {l1Lat != null ? `${l1Lat} ms` : isShortCircuited || message.offline ? 'Bypassed' : 'Not reported'}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Structured JSON</p>
+                <p className="text-2xs text-muted-foreground mt-0.5">Structured JSON</p>
               </div>
-              <div className="rounded-lg border border-border/50 bg-background/80 p-2">
+              <div className="rounded-lg border border-border bg-card p-2">
                 <p className="text-muted-foreground font-medium">Generation</p>
-                <p className="font-mono font-bold text-foreground">
-                  {isShortCircuited ? 'Deterministic Template' : (genLat != null ? `${genLat} ms` : (message.offline ? 'Corpus fallback' : 'Safe Template'))}
+                <p className="font-semibold tabular text-foreground">
+                  {genLat != null ? `${genLat} ms` : isShortCircuited ? 'Deterministic template' : message.offline ? 'Corpus fallback' : 'Not reported'}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{isShortCircuited ? 'Safe Rule Template' : 'Qwen 2.5 72B Stream'}</p>
+                <p className="text-2xs text-muted-foreground mt-0.5">{isShortCircuited ? 'Safe rule template' : message.offline ? 'Offline verified pack' : 'LLM provider cascade'}</p>
               </div>
-              <div className="rounded-lg border border-border/50 bg-background/80 p-2">
+              <div className="rounded-lg border border-border bg-card p-2">
                 <p className="text-muted-foreground font-medium">L2 Judge / Veto</p>
-                <p className="font-mono font-bold text-foreground">
-                  {isShortCircuited ? 'Bypassed' : (l2Lat != null ? `${l2Lat} ms` : (message.offline ? 'Offline Rules' : 'Bypassed'))}
+                <p className="font-semibold tabular text-foreground">
+                  {l2Lat != null ? `${l2Lat} ms` : isShortCircuited ? 'Bypassed' : message.offline ? 'Offline rules' : 'Not reported'}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{isShortCircuited ? 'Zero Drift Risk' : '4-Way Constellation'}</p>
+                <p className="text-2xs text-muted-foreground mt-0.5">{isShortCircuited ? 'Zero Drift Risk' : '4-Way Constellation'}</p>
               </div>
             </div>
           </div>
 
           {/* Section 1.5: Extracted Clinical Symptoms */}
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-2">
+          <div className="space-y-2 rounded-xl bg-muted/50 p-3.5">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
                 <Activity className="h-3.5 w-3.5 text-primary" />
                 {lang === 'ur' ? 'شناخت شدہ علامات' : 'Extracted Clinical Symptoms'}
               </span>
-              <Badge variant="secondary" className="text-[10px] font-mono">
+              <Badge variant="secondary" className="text-2xs font-mono">
                 {extractedSymptoms && extractedSymptoms.length > 0 ? `${extractedSymptoms.length} detected` : 'None extracted'}
               </Badge>
             </div>
             {extractedSymptoms && extractedSymptoms.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {extractedSymptoms.map((sym, i) => (
-                  <Badge key={i} variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium">
+                  <Badge key={i} variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-2xs font-medium">
                     {sym}
                   </Badge>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-[10px]">No discrete clinical symptoms identified in input.</p>
+              <p className="text-muted-foreground text-2xs">No discrete clinical symptoms identified in input.</p>
             )}
           </div>
 
           {/* Section 2: Deterministic Safety Guards */}
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-2">
+          <div className="space-y-2 rounded-xl bg-muted/50 p-3.5">
             <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
               <ShieldAlert className="h-3.5 w-3.5 text-primary" />
               {lang === 'ur' ? 'حفاظتی رکاوٹیں اور ڈیٹرمینسٹک گیٹس' : 'Deterministic Safety Gates'}
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-              <div className="flex items-start gap-2 rounded-lg border border-border/50 bg-background/80 p-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-2xs">
+              <div className="flex items-start gap-2 rounded-lg border border-border bg-card p-2.5">
                 <Lock className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
                 <div>
                   <p className="font-semibold text-foreground">
                     {lang === 'ur' ? 'ایل صفر شارٹ سرکٹ' : 'L0 Short-Circuit Protection'}
                   </p>
-                  <p className="text-muted-foreground text-[10px] mt-0.5">
+                  <p className="text-muted-foreground text-2xs mt-0.5">
                     {isShortCircuited
                       ? 'ACTIVATED: Severe red flag detected. Deterministic emergency response returned without LLM drift risk.'
                       : 'NORMAL: Message passed clinical thresholding without emergency triggers.'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-2 rounded-lg border border-border/50 bg-background/80 p-2.5">
+              <div className="flex items-start gap-2 rounded-lg border border-border bg-card p-2.5">
                 <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
                 <div>
                   <p className="font-semibold text-foreground">
                     {lang === 'ur' ? 'پرامپٹ انجیکشن شیلڈ' : 'Prompt Injection Firewall'}
                   </p>
-                  <p className="text-muted-foreground text-[10px] mt-0.5">
+                  <p className="text-muted-foreground text-2xs mt-0.5">
                     Zero system prompt leak. Anti-override regex and structural role isolation enforced.
                   </p>
                 </div>
@@ -227,23 +228,23 @@ export function JudgeInspectorModal({
           </div>
 
           {/* Section 3: Parallel Constellation Validator Verdicts */}
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-2.5">
+          <div className="space-y-2 rounded-xl bg-muted/50 p-3.5.5">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
                 <Layers className="h-3.5 w-3.5 text-primary" />
                 {lang === 'ur' ? 'ویلیڈیٹر کنسٹلیشن فیصلے' : 'Parallel Veto Constellation (Validator Verdicts)'}
               </span>
-              <Badge variant="secondary" className="text-[10px] font-mono">
+              <Badge variant="secondary" className="text-2xs font-mono">
                 {isShortCircuited ? 'Bypassed by Design' : checks.length > 0 ? `${checks.filter((c) => c.passed).length}/${checks.length} Passed` : 'N/A'}
               </Badge>
             </div>
             {isShortCircuited ? (
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-[11px] text-emerald-800 dark:text-emerald-300">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-2xs text-emerald-800 dark:text-emerald-300">
                 <p className="font-semibold flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                   Deterministic Rule Execution (L0 Emergency)
                 </p>
-                <p className="mt-0.5 text-[10px] leading-relaxed text-emerald-900/80 dark:text-emerald-200/80">
+                <p className="mt-0.5 text-2xs leading-relaxed text-emerald-900/80 dark:text-emerald-200/80">
                   LLM validation constellation was intentionally bypassed by design. Obvious cardiac and acute life-threatening emergencies trigger verified deterministic protocols directly at L0 to eliminate model drift, latency, and hallucination risk.
                 </p>
               </div>
@@ -256,13 +257,13 @@ export function JudgeInspectorModal({
                   >
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-[11px] font-medium text-foreground">
+                      <span className="text-2xs font-medium text-foreground">
                         {checkLabels[c.name]?.[lang === 'ur' ? 'ur' : 'en'] || c.name}
                       </span>
                     </div>
                     <Badge
                       variant="outline"
-                      className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-600 dark:text-emerald-400"
+                      className="border-emerald-500/30 bg-emerald-500/10 text-2xs text-emerald-600 dark:text-emerald-400"
                     >
                       {c.passed ? 'PASSED' : 'FLAGGED'}
                     </Badge>
@@ -270,20 +271,20 @@ export function JudgeInspectorModal({
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-[10px]">No constellation checks recorded for this turn.</p>
+              <p className="text-muted-foreground text-2xs">No constellation checks recorded for this turn.</p>
             )}
           </div>
 
           {/* Section 4: Calibrated Confidence Formula */}
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-2">
+          <div className="space-y-2 rounded-xl bg-muted/50 p-3.5">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
                 <Activity className="h-3.5 w-3.5 text-primary" />
                 {lang === 'ur' ? 'اعتماد کا اسکور' : 'Confidence Band Calibration'}
               </span>
-              <span className="font-mono font-bold text-foreground">{confidenceScore}% ({message.confidence?.band || 'HIGH'})</span>
+              <span className="font-semibold tabular text-foreground">{confidenceScore != null ? `${confidenceScore}% (${message.confidence?.band})` : message.confidence?.band ?? 'Not reported'}</span>
             </div>
-            <p className="text-[10px] text-muted-foreground leading-relaxed">
+            <p className="text-2xs text-muted-foreground leading-relaxed">
               Formula: Bounded [0.1, 1.0] anchored by verified corpus retrieval score, L1-L2 consensus agreement, and clinical safety constraints.
               {message.confidence?.reasons && message.confidence.reasons.length > 0
                 ? ` Factors: ${message.confidence.reasons.join(', ')}.`
@@ -293,7 +294,7 @@ export function JudgeInspectorModal({
 
           {/* Section 5: Grounded Citations */}
           {message.citations && message.citations.length > 0 ? (
-            <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-2">
+            <div className="space-y-2 rounded-xl bg-muted/50 p-3.5">
               <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
                 <FileCheck2 className="h-3.5 w-3.5 text-primary" />
                 {lang === 'ur' ? 'مستند ذرائع' : 'Grounded Corpus Citations'}
@@ -302,10 +303,10 @@ export function JudgeInspectorModal({
                 {message.citations.map((c, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between text-[11px] rounded bg-background/60 px-2 py-1 border border-border/30"
+                    className="flex items-center justify-between text-2xs rounded bg-background/60 px-2 py-1 border border-border/30"
                   >
                     <span className="font-medium text-foreground truncate max-w-[320px]">{c.title}</span>
-                    <span className="text-[10px] text-muted-foreground font-mono">[{c.id}] · {c.publisher}</span>
+                    <span className="text-2xs text-muted-foreground font-mono">[{c.id}] · {c.publisher}</span>
                   </div>
                 ))}
               </div>

@@ -131,13 +131,13 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'پانی کی سطح' : lang === 'roman' ? 'Paani ki satah' : 'Hydration tracker'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {lang === 'ur' ? 'ORS + پانی + پیشاب کا رنگ' : lang === 'roman' ? 'ORS + paani + peshab ka rang' : 'Water + ORS + urine color'}
           </p>
         </div>
         {isGoalMet ? (
-          <Badge variant="secondary" className="bg-emerald-500/15 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-            <CheckCircle2 className="mr-1 h-2.5 w-2.5" aria-hidden />
+          <Badge variant="secondary" className="bg-emerald-500/15 text-2xs font-bold text-emerald-700 dark:text-emerald-400">
+            <CheckCircle2 className="me-1 h-2.5 w-2.5" aria-hidden />
             {lang === 'ur' ? 'ہدف مکمل' : lang === 'roman' ? 'Hadaf mukammal' : 'Goal met'}
           </Badge>
         ) : null}
@@ -164,19 +164,19 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-lg font-bold text-foreground">{totalMl}</span>
-            <span className="text-[9px] text-muted-foreground">ml</span>
+            <span className="text-2xs text-muted-foreground">ml</span>
           </div>
         </div>
         <div className="flex-1">
           <p className="text-xs text-muted-foreground">
             {lang === 'ur' ? 'روزانہ کا ہدف' : lang === 'roman' ? 'Rozana ka hadaf' : 'Daily goal'}: <span className="font-bold text-foreground">{DAILY_GOAL_ML} ml</span>
           </p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {pct.toFixed(0)}% · {lang === 'ur' ? 'باقی' : lang === 'roman' ? 'Baaki' : 'remaining'}: {Math.max(0, DAILY_GOAL_ML - totalMl)} ml
           </p>
           {isGoalMet ? (
-            <p className="mt-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-              ✓ {lang === 'ur' ? 'آج کا ہدف مکمل!' : lang === 'roman' ? 'Aaj ka hadaf mukammal!' : 'Daily goal reached!'}
+            <p className="mt-1 text-2xs font-semibold text-emerald-600 dark:text-emerald-400">
+              {lang === 'ur' ? 'آج کا ہدف مکمل!' : lang === 'roman' ? 'Aaj ka hadaf mukammal!' : 'Daily goal reached!'}
             </p>
           ) : null}
         </div>
@@ -185,7 +185,7 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
       {/* water glasses */}
       <div className="mb-3 rounded-lg border border-border bg-card p-2.5">
         <div className="mb-1.5 flex items-center justify-between">
-          <p className="text-[11px] font-bold text-foreground">
+          <p className="text-2xs font-bold text-foreground">
             {lang === 'ur' ? 'پانی (گلاس)' : lang === 'roman' ? 'Paani (glass)' : 'Water (glasses)'}
           </p>
           <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{data.waterGlasses} × {GLASS_ML}ml</span>
@@ -219,7 +219,7 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
       {/* ORS packets */}
       <div className="mb-3 rounded-lg border border-orange-500/20 bg-orange-50/30 p-2.5 dark:bg-orange-950/10">
         <div className="mb-1.5 flex items-center justify-between">
-          <p className="text-[11px] font-bold text-foreground">
+          <p className="text-2xs font-bold text-foreground">
             {lang === 'ur' ? 'ORS پیکیٹ' : lang === 'roman' ? 'ORS packet' : 'ORS packets'}
           </p>
           <span className="text-xs font-bold text-orange-600 dark:text-orange-400">{data.orsPackets} × {ORS_PACKET_ML}ml</span>
@@ -228,7 +228,7 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
           <Button variant="outline" size="sm" onClick={() => updateOrs(-1)} disabled={data.orsPackets === 0} className="h-8 w-8 p-0 border-orange-500/30">
             <Minus className="h-3.5 w-3.5" aria-hidden />
           </Button>
-          <p className="flex-1 text-[10px] text-muted-foreground">
+          <p className="flex-1 text-2xs text-muted-foreground">
             {lang === 'ur'
               ? 'ORS پیچش یا الٹی کے بعد ضروری ہے۔ ایک پیکیٹ ایک لیٹر پانی میں ملا کر استعمال کریں۔'
               : lang === 'roman'
@@ -243,7 +243,7 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
 
       {/* urine color chart */}
       <div className="rounded-lg border border-border bg-card p-2.5">
-        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-foreground">
+        <p className="mb-2 flex items-center gap-1.5 text-2xs font-bold text-foreground">
           <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" aria-hidden />
           {lang === 'ur' ? 'پیشاب کا رنگ (خود جائزہ)' : lang === 'roman' ? 'Peshab ka rang (khud jaiza)' : 'Urine color (self-check)'}
         </p>
@@ -266,7 +266,7 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
         </div>
         {urineStatus ? (
           <div className={cn(
-            'mt-2 rounded-md p-2 text-[10px] leading-relaxed',
+            'mt-2 rounded-md p-2 text-2xs leading-relaxed',
             urineStatus.severity === 'good' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' :
             urineStatus.severity === 'ok' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400' :
             'bg-red-500/10 text-red-700 dark:text-red-400',
@@ -274,7 +274,7 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
             <span className="font-bold">{urineStatus.label[lang]}</span> — {urineStatus.status[lang]}
           </div>
         ) : (
-          <p className="mt-2 text-center text-[9px] text-muted-foreground">
+          <p className="mt-2 text-center text-2xs text-muted-foreground">
             {lang === 'ur' ? 'اپنے پیشاب کا رنگ منتخب کریں' : lang === 'roman' ? 'Apne peshab ka rang muntakhib karein' : 'Select your urine color for hydration check'}
           </p>
         )}
@@ -285,10 +285,10 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
         <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-50/40 p-2.5 dark:bg-red-950/20">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
           <div>
-            <p className="text-[10px] font-bold text-red-700 dark:text-red-400">
+            <p className="text-2xs font-bold text-red-700 dark:text-red-400">
               {lang === 'ur' ? 'پانی کی شدید کمی' : lang === 'roman' ? 'Paani ki shadeed kami' : 'Severe dehydration'}
             </p>
-            <p className="text-[10px] leading-relaxed text-red-700 dark:text-red-400">
+            <p className="text-2xs leading-relaxed text-red-700 dark:text-red-400">
               {lang === 'ur'
                 ? 'فوراً زیادہ پانی یا ORS لیں۔ اگر سانس لینے میں مشکل، الجھن، یا پیشاب نہ آنا ہو تو 1122 پر کال کریں۔'
                 : lang === 'roman'
@@ -299,7 +299,7 @@ export function HydrationTracker({ lang, className }: HydrationTrackerProps) {
         </div>
       ) : null}
 
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
+      <p className="mt-2 text-center text-2xs text-muted-foreground">
         {lang === 'ur' ? 'گرم موسم میں 3+ لیٹر پانی ضروری ہے' : lang === 'roman' ? 'Garm mausam mein 3+ litre paani zaroori hai' : 'In hot weather, 3+ liters daily is essential'}
       </p>
     </motion.section>

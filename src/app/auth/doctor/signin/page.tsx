@@ -100,10 +100,10 @@ export default function DoctorSignInPage() {
     <AuthShell variant="doctor">
       <AuthBrandHeading variant="doctor" />
 
-      <Card className="border-emerald-200/60 bg-card/70 shadow-sm dark:border-emerald-900/40">
+      <Card className="border-emerald-200/60 bg-card shadow-[var(--soft-shadow)] dark:border-emerald-900/40">
         <CardHeader className="gap-3 border-b border-border px-5 py-5 sm:px-6">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-extrabold tracking-tight text-foreground">{T.title}</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">{T.title}</h1>
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">{T.subtitle}</p>
         </CardHeader>
@@ -152,7 +152,7 @@ export default function DoctorSignInPage() {
             <Button
               type="submit"
               disabled={submitting}
-              className="h-auto min-h-12 gap-1.5 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+              className="h-auto min-h-12 gap-1.5 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
             >
               <LogIn className="h-4 w-4" />
               {submitting ? T.submitting : T.submit}
@@ -172,9 +172,9 @@ export default function DoctorSignInPage() {
         </CardContent>
       </Card>
 
-      <p className="mt-3 text-center text-[11px] text-muted-foreground">
+      <p className="mt-3 text-center text-xs text-muted-foreground">
         Not a doctor?{' '}
-        <Link href="/auth/signin" className="font-semibold text-primary hover:underline">Patient sign in →</Link>
+        <Link href="/auth/signin" className="font-semibold text-primary hover:underline">Patient sign in</Link>
       </p>
     </AuthShell>
   );

@@ -268,7 +268,7 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
                     <p className="font-bold">
                       {lang === 'ur' ? 'سٹيجنگ رازداری کی پالیسی' : lang === 'roman' ? 'Staging Privacy Notice' : 'Staging Privacy Notice'}
                     </p>
-                    <p className="text-[11px] mt-0.5 leading-relaxed text-amber-900/80 dark:text-amber-300/80">
+                    <p className="text-2xs mt-0.5 leading-relaxed text-amber-900/80 dark:text-amber-300/80">
                       {lang === 'ur'
                         ? 'مریضوں کی ذاتی معلومات (PHI) کے تحفظ کے لیے سٹيجنگ ماحول میں تصاویر اپ لوڈ کرنا معطل ہے۔'
                         : lang === 'roman'
@@ -280,7 +280,7 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
               </div>
 
               {/* Image upload zone */}
-              <p className="mb-2 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <p className="mb-2 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                 {labels.imageLabel}
               </p>
               <input
@@ -307,7 +307,7 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
                     type="button"
                     disabled={disabledInStaging}
                     onClick={() => !disabledInStaging && fileInputRef.current?.click()}
-                    className="absolute right-2 top-2 rounded-lg bg-background/90 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
+                    className="absolute right-2 top-2 rounded-lg bg-background/90 px-2.5 py-1 text-2xs font-semibold text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
                   >
                     {labels.changeImage}
                   </button>
@@ -334,14 +334,14 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
                   <span className={cn("text-sm font-bold", disabledInStaging ? "text-muted-foreground" : "text-emerald-700 dark:text-emerald-400")}>
                     {disabledInStaging ? 'Image upload disabled in staging' : labels.pickImage}
                   </span>
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-2xs text-muted-foreground">
                     {disabledInStaging ? 'Disabled to protect patient health information (PHI)' : labels.imageHint}
                   </span>
                 </button>
               )}
 
               {/* Question input */}
-              <p className="mb-2 mt-5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <p className="mb-2 mt-5 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                 {labels.questionLabel}
               </p>
               <textarea
@@ -364,7 +364,7 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
                       type="button"
                       onClick={() => setQuestion(text)}
                       className={cn(
-                        'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors',
+                        'rounded-full border px-2.5 py-1 text-2xs font-medium transition-colors',
                         isActive
                           ? 'border-violet-500 bg-violet-500 text-white'
                           : 'border-border bg-card text-foreground/80 hover:border-violet-500/40 hover:bg-violet-50 dark:hover:bg-violet-950/20',
@@ -387,7 +387,7 @@ export function ImageAnalysisModal({ open, onOpenChange, lang }: ImageAnalysisMo
               {/* Result */}
               {result ? (
                 <div className="mt-4 space-y-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden />
                     {labels.result}
                   </div>

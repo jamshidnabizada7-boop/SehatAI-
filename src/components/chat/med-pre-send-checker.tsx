@@ -138,10 +138,10 @@ export function MedPreSendChecker({ text, lang, className }: MedPreSendCheckerPr
             <p className={cn('font-bold', hasAllergyHit ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400')}>
               {hasAllergyHit
                 ? (lang === 'ur'
-                    ? `⚠️ الرجی الرٹ: ${drugNames}`
+                    ? `الرجی الرٹ: ${drugNames}`
                     : lang === 'roman'
-                      ? `⚠️ Allergy alert: ${drugNames}`
-                      : `⚠️ Allergy alert: ${drugNames}`)
+                      ? `Allergy alert: ${drugNames}`
+                      : `Allergy alert: ${drugNames}`)
                 : (lang === 'ur'
                     ? `دوا کا پتہ چلا: ${drugNames}`
                     : lang === 'roman'
@@ -149,15 +149,15 @@ export function MedPreSendChecker({ text, lang, className }: MedPreSendCheckerPr
                       : `Drug detected: ${drugNames}`)}
             </p>
             {hasAllergyHit ? (
-              <p className="mt-0.5 text-[10px] leading-relaxed text-red-600 dark:text-red-400">
+              <p className="mt-0.5 text-2xs leading-relaxed text-red-600 dark:text-red-400">
                 {lang === 'ur'
-                  ? 'آپ کی الرجی اس دوا سے میل کھاتی ہے۔ بھیجنے پر سی ایچ اے آئی پوری چیک کرے گا۔'
+                  ? 'آپ کی الرجی اس دوا سے میل کھاتی ہے۔ بھیجنے پر صحت اے آئی پوری چیک کرے گا۔'
                   : lang === 'roman'
                     ? 'Aap ki allergy is dawa se milkhati hai. Bhejne par SehatAI poori check karega.'
                     : 'Your recorded allergy matches this drug. SehatAI will run a full check when you send.'}
               </p>
             ) : currentMeds.length > 0 ? (
-              <p className="mt-0.5 text-[10px] leading-relaxed text-amber-700 dark:text-amber-400">
+              <p className="mt-0.5 text-2xs leading-relaxed text-amber-700 dark:text-amber-400">
                 {lang === 'ur'
                   ? `آپ کی موجودہ ادویات (${currentMeds.join(', ')}) کے ساتھ تعامل چیک کیا جائے گا۔`
                   : lang === 'roman'
@@ -165,9 +165,9 @@ export function MedPreSendChecker({ text, lang, className }: MedPreSendCheckerPr
                     : `Will check against your current medications (${currentMeds.join(', ')}).`}
               </p>
             ) : (
-              <p className="mt-0.5 text-[10px] leading-relaxed text-amber-700 dark:text-amber-400">
+              <p className="mt-0.5 text-2xs leading-relaxed text-amber-700 dark:text-amber-400">
                 {lang === 'ur'
-                  ? 'بھیجنے پر سی ایچ اے آئی تعامل کی جانچ کرے گا۔'
+                  ? 'بھیجنے پر صحت اے آئی تعامل کی جانچ کرے گا۔'
                   : lang === 'roman'
                     ? 'Bhejne par SehatAI taamul ki jaanch karega.'
                     : 'SehatAI will check for interactions when you send.'}

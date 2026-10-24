@@ -174,12 +174,12 @@ export function SymptomCheckerWizard({ lang, onSend, className }: SymptomWizardP
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'علامات چیکر' : lang === 'roman' ? 'Alamaat checker' : 'Symptom checker'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {lang === 'ur' ? 'مرحلہ وار مدد' : lang === 'roman' ? 'Marhala war madad' : 'Step-by-step guidance'}
           </p>
         </div>
         {step > 0 ? (
-          <Button variant="ghost" size="sm" onClick={reset} className="h-7 gap-1 px-2 text-[11px] text-muted-foreground">
+          <Button variant="ghost" size="sm" onClick={reset} className="h-7 gap-1 px-2 text-2xs text-muted-foreground">
             <X className="h-3 w-3" aria-hidden />
             {lang === 'ur' ? 'منسوخ' : lang === 'roman' ? 'Mansookh' : 'Cancel'}
           </Button>
@@ -216,7 +216,7 @@ export function SymptomCheckerWizard({ lang, onSend, className }: SymptomWizardP
                   )}
                 >
                   <span className="text-2xl" aria-hidden>{area.icon}</span>
-                  <span className={cn('text-[10px] font-semibold text-center', lang === 'ur' && 'font-urdu')} dir={lang === 'ur' ? 'rtl' : 'ltr'}>
+                  <span className={cn('text-2xs font-semibold text-center', lang === 'ur' && 'font-urdu')} dir={lang === 'ur' ? 'rtl' : 'ltr'}>
                     {area.label[lang]}
                   </span>
                 </button>
@@ -246,11 +246,11 @@ export function SymptomCheckerWizard({ lang, onSend, className }: SymptomWizardP
                       );
                     }}
                     className={cn(
-                      'rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors',
+                      'rounded-lg border px-2.5 py-1.5 text-2xs font-semibold transition-colors',
                       isSelected ? 'border-violet-500/50 bg-violet-500/10 text-violet-700 dark:text-violet-400' : 'border-border text-muted-foreground hover:bg-accent/30',
                     )}
                   >
-                    {isSelected ? <Check className="mr-1 inline h-3 w-3" aria-hidden /> : null}
+                    {isSelected ? <Check className="me-1 inline h-3 w-3" aria-hidden /> : null}
                     {symptom.label[lang]}
                   </button>
                 );
@@ -305,7 +305,7 @@ export function SymptomCheckerWizard({ lang, onSend, className }: SymptomWizardP
                 >
                   {severity === s.value ? <Check className="h-4 w-4 text-violet-600 dark:text-violet-400" aria-hidden /> : <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" aria-hidden />}
                   <span className={cn('text-xs font-semibold', lang === 'ur' && 'font-urdu')} dir={lang === 'ur' ? 'rtl' : 'ltr'}>{s.label[lang]}</span>
-                  {severity === s.value ? <Badge variant="secondary" className={cn('ml-auto text-[9px] font-bold', s.color)}>{s.label[lang]}</Badge> : null}
+                  {severity === s.value ? <Badge variant="secondary" className={cn('ms-auto text-2xs font-bold', s.color)}>{s.label[lang]}</Badge> : null}
                 </button>
               ))}
             </div>
@@ -321,8 +321,8 @@ export function SymptomCheckerWizard({ lang, onSend, className }: SymptomWizardP
             <div className="rounded-lg border border-border bg-card p-3">
               <p className="text-xs leading-relaxed text-foreground/90">{buildQuery()}</p>
             </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">
-              {lang === 'ur' ? 'یہ پیغام چیٹ بھیجا جائے گا اور سی ایچ اے آئی آپ کو محفوظ رہنمائی دے گا۔' : lang === 'roman' ? 'Yeh pegaham chat bheja jayega aur SehatAI aap ko mehfooz rahnumai dega.' : 'This will be sent to the chat and SehatAI will give you safe guidance.'}
+            <p className="mt-2 text-2xs text-muted-foreground">
+              {lang === 'ur' ? 'یہ پیغام چیٹ بھیجا جائے گا اور صحت اے آئی آپ کو محفوظ رہنمائی دے گا۔' : lang === 'roman' ? 'Yeh pegaham chat bheja jayega aur SehatAI aap ko mehfooz rahnumai dega.' : 'This will be sent to the chat and SehatAI will give you safe guidance.'}
             </p>
             <Button onClick={handleSend} className="mt-2 w-full gap-1.5 bg-violet-600 hover:bg-violet-700">
               <Send className="h-3.5 w-3.5" aria-hidden />
@@ -358,7 +358,7 @@ export function SymptomCheckerWizard({ lang, onSend, className }: SymptomWizardP
       ) : null}
 
       {/* step counter */}
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
+      <p className="mt-2 text-center text-2xs text-muted-foreground">
         {step + 1} / {totalSteps}
       </p>
     </motion.div>

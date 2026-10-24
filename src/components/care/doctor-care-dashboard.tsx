@@ -172,11 +172,11 @@ export function DoctorCareDashboard({ T, onOpenConsultation }: { T: TFn; onOpenC
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-bold">{T('care.availability')}</h2>
             <Button size="sm" variant={onlineNow ? 'default' : 'outline'} className="min-h-11" onClick={() => void toggleOnline()}>
-              <CircleDot className={onlineNow ? 'mr-1 h-4 w-4 text-green-400' : 'mr-1 h-4 w-4'} />
+              <CircleDot className={onlineNow ? 'me-1 h-4 w-4 text-green-400' : 'me-1 h-4 w-4'} />
               {onlineNow ? T('care.goOffline') : T('care.goOnline')}
             </Button>
           </div>
-          <ul className="mb-2 flex flex-wrap gap-1 text-[11px]">
+          <ul className="mb-2 flex flex-wrap gap-1 text-2xs">
             {schedule.map((w) => (
               <li key={w.id} className="rounded bg-muted/50 px-2 py-1">
                 {DAYS[w.weekday]} {String(Math.floor(w.startMinute / 60)).padStart(2, '0')}:{String(w.startMinute % 60).padStart(2, '0')}–
@@ -195,7 +195,7 @@ export function DoctorCareDashboard({ T, onOpenConsultation }: { T: TFn; onOpenC
             <Input type="time" value={newWindow.start} onChange={(e) => setNewWindow((w) => ({ ...w, start: e.target.value }))} className="min-h-11 w-28 text-xs" aria-label="start" />
             <Input type="time" value={newWindow.end} onChange={(e) => setNewWindow((w) => ({ ...w, end: e.target.value }))} className="min-h-11 w-28 text-xs" aria-label="end" />
             <Button size="sm" variant="outline" className="min-h-11" onClick={() => void addWindow()}>+</Button>
-            <Badge variant="outline" className="text-[10px]">UTC · rendered in local tz</Badge>
+            <Badge variant="outline" className="text-2xs">UTC · rendered in local tz</Badge>
           </div>
         </CardContent>
       </Card>
@@ -227,7 +227,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
       <CardContent className="flex items-center gap-2 p-3">
         <span className="text-primary">{icon}</span>
         <div className="min-w-0">
-          <div className="truncate text-[10px] text-muted-foreground">{label}</div>
+          <div className="truncate text-2xs text-muted-foreground">{label}</div>
           <div className="truncate text-sm font-bold">{value}</div>
         </div>
       </CardContent>

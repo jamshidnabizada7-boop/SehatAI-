@@ -71,7 +71,7 @@ export function MedicineDelivery() {
                 <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="flex-1 truncate font-semibold text-foreground">{o.items.length} item(s)</span>
                 <span className="text-muted-foreground">{o.pharmacyName}</span>
-                <Badge className={cn('text-[9px]', o.status === 'delivered' ? 'bg-emerald-500/15 text-emerald-700' : o.status === 'placed' ? 'bg-amber-500/15 text-amber-700' : 'bg-muted text-muted-foreground')}>{o.status}</Badge>
+                <Badge className={cn('text-2xs', o.status === 'delivered' ? 'bg-emerald-500/15 text-emerald-700' : o.status === 'placed' ? 'bg-amber-500/15 text-amber-700' : 'bg-muted text-muted-foreground')}>{o.status}</Badge>
               </li>
             ))}
           </ul>

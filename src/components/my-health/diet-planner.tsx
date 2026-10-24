@@ -50,19 +50,19 @@ export function DietPlanner() {
         {loading ? <div className="mt-3 h-32 animate-pulse rounded-xl bg-muted/30" /> : plan && (
           <div className="mt-3 space-y-2">
             <div className="flex items-center gap-2">
-              <Badge className="bg-amber-500/15 text-[9px] text-amber-700">{plan.dietName}</Badge>
-              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground"><Flame className="h-3 w-3" /> ~{plan.estimatedCalories} cal · Target: {plan.dailyCalories}</span>
+              <Badge className="bg-amber-500/15 text-2xs text-amber-700">{plan.dietName}</Badge>
+              <span className="flex items-center gap-0.5 text-2xs text-muted-foreground"><Flame className="h-3 w-3" /> ~{plan.estimatedCalories} cal · Target: {plan.dailyCalories}</span>
             </div>
             {Object.entries(plan.meals).filter(([k]) => k !== 'dietName' && k !== 'estimatedCalories').map(([mealType, foods]) => (
               <div key={mealType}>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{mealType}</p>
+                <p className="text-2xs font-bold uppercase tracking-wider text-muted-foreground">{mealType}</p>
                 <div className="flex flex-wrap gap-1">
-                  {foods.map(f => <span key={f.name} className="inline-flex items-center gap-0.5 rounded-md bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-foreground">{f.name} <span className="text-muted-foreground">· {f.calories}cal</span></span>)}
+                  {foods.map(f => <span key={f.name} className="inline-flex items-center gap-0.5 rounded-md bg-muted/40 px-2 py-0.5 text-2xs font-medium text-foreground">{f.name} <span className="text-muted-foreground">· {f.calories}cal</span></span>)}
                 </div>
               </div>
             ))}
-            {plan.avoid.length > 0 && <p className="text-[10px] text-red-600 dark:text-red-400"><span className="font-bold">Avoid:</span> {plan.avoid.join(', ')}</p>}
-            {plan.prefer.length > 0 && <p className="text-[10px] text-emerald-600 dark:text-emerald-400"><span className="font-bold">Prefer:</span> {plan.prefer.join(', ')}</p>}
+            {plan.avoid.length > 0 && <p className="text-2xs text-red-600 dark:text-red-400"><span className="font-bold">Avoid:</span> {plan.avoid.join(', ')}</p>}
+            {plan.prefer.length > 0 && <p className="text-2xs text-emerald-600 dark:text-emerald-400"><span className="font-bold">Prefer:</span> {plan.prefer.join(', ')}</p>}
           </div>
         )}
       </CardContent>

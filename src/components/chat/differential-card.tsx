@@ -141,13 +141,13 @@ export function DifferentialCard({ differential, lang, className }: Differential
               : lang === 'roman'
                 ? 'Mumkina wajohaat ka jaiza'
                 : 'Possible causes review'}
-            <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-bold', summaryConfig.badge)}>
+            <span className={cn('rounded-full px-1.5 py-0.5 text-2xs font-bold', summaryConfig.badge)}>
               {totalEntries}
             </span>
           </span>
-          <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
+          <span className="mt-0.5 block text-2xs leading-tight text-muted-foreground">
             {lang === 'ur'
-              ? 'سی ایچ اے آئی تشخیص نہیں دیتا — ڈاکٹر تصدیق کرے گا۔'
+              ? 'صحت اے آئی تشخیص نہیں دیتا — ڈاکٹر تصدیق کرے گا۔'
               : lang === 'roman'
                 ? 'SehatAI tashkhees nahi deta — doctor tasdeeq karega.'
                 : 'SehatAI does not diagnose — a doctor must confirm.'}
@@ -202,10 +202,10 @@ function TierBlock({
         <span className={cn('flex h-5 w-5 items-center justify-center rounded', cfg.iconTile)}>
           <Icon className="h-3 w-3" aria-hidden />
         </span>
-        <span className={cn('text-[11px] font-bold tracking-wide uppercase', cfg.heading)}>
+        <span className={cn('text-2xs font-bold tracking-wide uppercase', cfg.heading)}>
           {cfg.label[lang]}
         </span>
-        <span className={cn('ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold', cfg.badge)}>
+        <span className={cn('ms-auto rounded-full px-1.5 py-0.5 text-2xs font-bold', cfg.badge)}>
           {entries.length}
         </span>
       </div>
@@ -216,7 +216,7 @@ function TierBlock({
             <span className="min-w-0 flex-1">
               <span className="font-semibold text-foreground">{entry.name}</span>
               {entry.reason ? (
-                <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
+                <span className="mt-0.5 block text-2xs leading-tight text-muted-foreground">
                   {entry.reason}
                 </span>
               ) : null}

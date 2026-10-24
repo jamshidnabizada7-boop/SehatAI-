@@ -149,7 +149,7 @@ export function NutritionLifestyleTracker({ lang, className }: NutritionLifestyl
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'غذائیت اور طرز زندگی' : lang === 'roman' ? 'Ghazaiyat aur tarz-e-zindagi' : 'Nutrition + lifestyle'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {lang === 'ur' ? 'BMI + پانی + سرگرمی' : lang === 'roman' ? 'BMI + paani + sargarmi' : 'BMI + water + activity'}
           </p>
         </div>
@@ -163,7 +163,7 @@ export function NutritionLifestyleTracker({ lang, className }: NutritionLifestyl
             {lang === 'ur' ? 'بی ایم آئی کیلکولیٹر' : lang === 'roman' ? 'BMI calculator' : 'BMI calculator'}
           </p>
           {bmi && bmiCat ? (
-            <span className={cn('ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold', bmiCat.color, 'bg-muted')}>
+            <span className={cn('ms-auto rounded-full px-2 py-0.5 text-2xs font-bold', bmiCat.color, 'bg-muted')}>
               {bmi.toFixed(1)} · {bmiCat.label}
             </span>
           ) : null}
@@ -171,13 +171,13 @@ export function NutritionLifestyleTracker({ lang, className }: NutritionLifestyl
 
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex-1">
-            <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'قد (cm)' : lang === 'roman' ? 'Qad (cm)' : 'Height (cm)'}
             </Label>
             <Input type="number" value={heightInput} onChange={(e) => setHeightInput(e.target.value)} placeholder="170" className="h-9" />
           </div>
           <div className="flex-1">
-            <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'وزن (kg)' : lang === 'roman' ? 'Wazan (kg)' : 'Weight (kg)'}
             </Label>
             <Input type="number" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder="70" className="h-9" />
@@ -198,7 +198,7 @@ export function NutritionLifestyleTracker({ lang, className }: NutritionLifestyl
                 aria-hidden
               />
             </div>
-            <div className="mt-1 flex justify-between text-[9px] text-muted-foreground">
+            <div className="mt-1 flex justify-between text-2xs text-muted-foreground">
               <span>15</span>
               <span>18.5</span>
               <span>25</span>
@@ -206,7 +206,7 @@ export function NutritionLifestyleTracker({ lang, className }: NutritionLifestyl
               <span>40</span>
             </div>
             {bmiCat ? (
-              <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground">{bmiCat.advice}</p>
+              <p className="mt-1.5 text-2xs leading-relaxed text-muted-foreground">{bmiCat.advice}</p>
             ) : null}
           </div>
         ) : null}
@@ -242,7 +242,7 @@ export function NutritionLifestyleTracker({ lang, className }: NutritionLifestyl
             <div
               key={i}
               className={cn(
-                'flex h-7 w-5 items-center justify-center rounded-md border text-[10px]',
+                'flex h-7 w-5 items-center justify-center rounded-md border text-2xs',
                 i < todayWater
                   ? 'border-cyan-500/40 bg-cyan-500/20 text-cyan-700 dark:text-cyan-400'
                   : 'border-border bg-muted/30 text-muted-foreground/30',
@@ -266,7 +266,7 @@ export function NutritionLifestyleTracker({ lang, className }: NutritionLifestyl
           </Button>
         </div>
         {todayWater >= waterGoalGlasses ? (
-          <p className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+          <p className="mt-1.5 flex items-center gap-1 text-2xs font-semibold text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-3 w-3" aria-hidden />
             {lang === 'ur' ? 'آج کا ہدف مکمل!' : lang === 'roman' ? 'Aaj ka hadaf mukammal!' : 'Daily goal reached!'}
           </p>
@@ -319,21 +319,21 @@ export function NutritionLifestyleTracker({ lang, className }: NutritionLifestyl
               className="h-9"
               aria-label={lang === 'ur' ? 'آج کے قدم' : lang === 'roman' ? 'Aaj ke qadam' : 'Today\'s steps'}
             />
-            <p className="mt-1 text-[10px] text-muted-foreground">
+            <p className="mt-1 text-2xs text-muted-foreground">
               {stepPct.toFixed(0)}% {lang === 'ur' ? 'ہدف مکمل' : lang === 'roman' ? 'hadaf mukammal' : 'of goal'}
             </p>
           </div>
         </div>
 
         {todaySteps >= STEP_GOAL ? (
-          <p className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+          <p className="flex items-center gap-1 text-2xs font-semibold text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-3 w-3" aria-hidden />
             {lang === 'ur' ? 'بہت خوب! آج 10,000 قدم مکمل ہوئے۔' : lang === 'roman' ? 'Bohat khoob! Aaj 10,000 qadam mukammal huey.' : 'Great! 10,000 steps completed today.'}
           </p>
         ) : null}
       </div>
 
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
+      <p className="mt-2 text-center text-2xs text-muted-foreground">
         {lang === 'ur' ? 'ڈیٹا صرف اس ڈیوائس پر محفوظ ہے۔' : lang === 'roman' ? 'Data sirf is device par mehfooz hai.' : 'Data stored only on this device.'}
       </p>
     </motion.section>

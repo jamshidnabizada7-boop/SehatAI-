@@ -212,7 +212,7 @@ export function LanguageSettings({ open, onOpenChange }: LanguageSettingsProps) 
                     <span className="text-xs text-muted-foreground">{opt.englishName}</span>
                   </span>
                   {opt.speakerPct ? (
-                    <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                    <span className="mt-0.5 block text-2xs text-muted-foreground">
                       {uiLang === 'ur' ? `اسپیکرز: ${opt.speakerPct}` : uiLang === 'roman' ? `Speakers: ${opt.speakerPct}` : `Speakers: ${opt.speakerPct}`}
                     </span>
                   ) : null}
@@ -220,12 +220,12 @@ export function LanguageSettings({ open, onOpenChange }: LanguageSettingsProps) 
 
                 {/* status badge */}
                 {isComing ? (
-                  <Badge variant="secondary" className="shrink-0 gap-1 bg-amber-500/15 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                  <Badge variant="secondary" className="shrink-0 gap-1 bg-amber-500/15 text-2xs font-bold text-amber-700 dark:text-amber-400">
                     <Lock className="h-2.5 w-2.5" aria-hidden />
                     {uiLang === 'ur' ? 'جلد' : uiLang === 'roman' ? 'Jald' : 'Soon'}
                   </Badge>
                 ) : isSelected ? (
-                  <Badge variant="secondary" className="shrink-0 gap-1 bg-emerald-500/15 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                  <Badge variant="secondary" className="shrink-0 gap-1 bg-emerald-500/15 text-2xs font-bold text-emerald-700 dark:text-emerald-400">
                     <Sparkles className="h-2.5 w-2.5" aria-hidden />
                     {uiLang === 'ur' ? 'فعال' : uiLang === 'roman' ? 'Faal' : 'Active'}
                   </Badge>
@@ -254,7 +254,7 @@ export function LanguageSettings({ open, onOpenChange }: LanguageSettingsProps) 
           ) : null}
         </AnimatePresence>
 
-        <p className="text-center text-[11px] text-muted-foreground">
+        <p className="text-center text-2xs text-muted-foreground">
           {uiLang === 'ur'
             ? 'پاکستان کی 6+ زبانوں کے لیے پہلا صحت اے آئی'
             : uiLang === 'roman'

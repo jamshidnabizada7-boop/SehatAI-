@@ -162,20 +162,20 @@ export function HealthSummaryCard({ lang, conditionsCount, allergiesCount, medic
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><HeartPulse className="h-5 w-5" aria-hidden /></span>
-          <div><h3 className="text-sm font-bold text-foreground">{lang === 'ur' ? 'صحت کا خلاصہ' : 'Health summary'}</h3><p className="text-[11px] text-muted-foreground">{lang === 'ur' ? 'آج کا جائزہ' : "Today's overview"}</p></div>
+          <div><h3 className="text-sm font-bold text-foreground">{lang === 'ur' ? 'صحت کا خلاصہ' : 'Health summary'}</h3><p className="text-2xs text-muted-foreground">{lang === 'ur' ? 'آج کا جائزہ' : "Today's overview"}</p></div>
         </div>
-        <div className="text-right"><p className={cn('text-2xl font-bold', scoreColor)}>{score}</p><p className={cn('text-[10px] font-bold', scoreColor)}>{scoreLabel}</p></div>
+        <div className="text-end"><p className={cn('text-2xl font-bold', scoreColor)}>{score}</p><p className={cn('text-2xs font-bold', scoreColor)}>{scoreLabel}</p></div>
       </div>
       {alerts.length > 0 ? (
         <div className="mb-3 flex flex-wrap gap-1.5">
-          {alerts.map((alert, i) => { const Icon = alert.icon; return <span key={i} className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold', alert.color)}><Icon className="h-2.5 w-2.5" aria-hidden />{alert.label}</span>; })}
+          {alerts.map((alert, i) => { const Icon = alert.icon; return <span key={i} className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-bold', alert.color)}><Icon className="h-2.5 w-2.5" aria-hidden />{alert.label}</span>; })}
         </div>
       ) : (
-        <div className="mb-3 flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-2 py-1"><ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden /><span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">{lang === 'ur' ? 'کوئی الرٹ نہیں' : 'No active alerts'}</span></div>
+        <div className="mb-3 flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-2 py-1"><ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden /><span className="text-2xs font-semibold text-emerald-700 dark:text-emerald-400">{lang === 'ur' ? 'کوئی الرٹ نہیں' : 'No active alerts'}</span></div>
       )}
       {metrics.length > 0 ? (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {metrics.map((metric, i) => { const Icon = metric.icon; return <div key={i} className="rounded-lg border border-border/60 bg-card/50 p-2 text-center"><Icon className={cn('mx-auto h-3.5 w-3.5', metric.color)} aria-hidden /><p className={cn('mt-0.5 text-sm font-bold', metric.color)}>{metric.value}</p><p className="text-[9px] font-medium text-muted-foreground">{metric.label}</p></div>; })}
+          {metrics.map((metric, i) => { const Icon = metric.icon; return <div key={i} className="rounded-lg border border-border/60 bg-card/50 p-2 text-center"><Icon className={cn('mx-auto h-3.5 w-3.5', metric.color)} aria-hidden /><p className={cn('mt-0.5 text-sm font-bold', metric.color)}>{metric.value}</p><p className="text-2xs font-medium text-muted-foreground">{metric.label}</p></div>; })}
         </div>
       ) : (
         <p className="py-2 text-center text-xs text-muted-foreground">{lang === 'ur' ? 'ڈیٹا ٹریک کرنے کے لیے نیچے دیکھیں' : 'Use the trackers below to see your metrics here'}</p>

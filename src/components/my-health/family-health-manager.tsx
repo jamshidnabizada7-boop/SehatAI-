@@ -122,11 +122,11 @@ export function FamilyHealthManager({ lang, className }: FamilyHealthManagerProp
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'خاندان کی صحت' : lang === 'roman' ? 'Khandan ki sehat' : 'Family health'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {members.length} {lang === 'ur' ? 'ارکان' : lang === 'roman' ? 'arkaan' : 'members'}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={startAdd} className="h-7 gap-1 px-2 text-[11px] font-semibold text-primary">
+        <Button variant="ghost" size="sm" onClick={startAdd} className="h-7 gap-1 px-2 text-2xs font-semibold text-primary">
           <Plus className="h-3 w-3" aria-hidden />
           {lang === 'ur' ? 'شامل کریں' : lang === 'roman' ? 'Shamil karein' : 'Add'}
         </Button>
@@ -164,12 +164,12 @@ export function FamilyHealthManager({ lang, className }: FamilyHealthManagerProp
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline gap-1.5">
                       <span className="truncate text-sm font-bold text-foreground">{m.name || 'Unnamed'}</span>
-                      <Badge variant="secondary" className={cn('text-[9px] font-bold', meta.color)}>{meta.label[lang]}</Badge>
+                      <Badge variant="secondary" className={cn('text-2xs font-bold', meta.color)}>{meta.label[lang]}</Badge>
                     </span>
-                    <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-2xs text-muted-foreground">
                       {m.ageBand !== 'undisclosed' ? <span>{AGE_LABELS[m.ageBand]?.[lang]}</span> : null}
                       {m.sex !== 'undisclosed' ? <span>· {SEX_LABELS[m.sex]?.[lang]}</span> : null}
-                      {m.conditions.length > 0 ? <span>· 💊 {m.conditions.length}</span> : null}
+                      {m.conditions.length > 0 ? <span>· {m.conditions.length} conditions</span> : null}
                       {m.allergies.length > 0 ? <span>· ⚠ {m.allergies.length}</span> : null}
                     </span>
                   </span>
@@ -182,7 +182,7 @@ export function FamilyHealthManager({ lang, className }: FamilyHealthManagerProp
       )}
 
       {/* privacy note */}
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
+      <p className="mt-2 text-center text-2xs text-muted-foreground">
         {lang === 'ur' ? 'خاندان کا ڈیٹا صرف اس ڈیوائس پر محفوظ ہے۔' : lang === 'roman' ? 'Khandan ka data sirf is device par mehfooz hai.' : 'Family data stored only on this device.'}
       </p>
 
@@ -264,7 +264,7 @@ function FamilyMemberEditor({
         <div className="space-y-3">
           {/* name */}
           <div>
-            <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'نام' : lang === 'roman' ? 'Naam' : 'Name'}
             </Label>
             <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Ayesha" className="h-10" />
@@ -272,7 +272,7 @@ function FamilyMemberEditor({
 
           {/* relation */}
           <div>
-            <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'رشتہ' : lang === 'roman' ? 'Rishta' : 'Relation'}
             </Label>
             <div className="flex flex-wrap gap-1.5">
@@ -286,7 +286,7 @@ function FamilyMemberEditor({
                     type="button"
                     onClick={() => setDraft({ ...draft, relation: r })}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors',
+                      'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-2xs font-semibold transition-colors',
                       isActive ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-accent/30',
                     )}
                   >
@@ -301,7 +301,7 @@ function FamilyMemberEditor({
           {/* age band + sex */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
+              <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
                 {lang === 'ur' ? 'عمر' : lang === 'roman' ? 'Umar' : 'Age band'}
               </Label>
               <div className="flex flex-wrap gap-1">
@@ -311,7 +311,7 @@ function FamilyMemberEditor({
                     type="button"
                     onClick={() => setDraft({ ...draft, ageBand: a })}
                     className={cn(
-                      'rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors',
+                      'rounded-md border px-2 py-1 text-2xs font-semibold transition-colors',
                       draft.ageBand === a ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border text-muted-foreground',
                     )}
                   >
@@ -321,7 +321,7 @@ function FamilyMemberEditor({
               </div>
             </div>
             <div>
-              <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
+              <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
                 {lang === 'ur' ? 'جنس' : lang === 'roman' ? 'Jins' : 'Sex'}
               </Label>
               <div className="flex gap-1">
@@ -331,7 +331,7 @@ function FamilyMemberEditor({
                     type="button"
                     onClick={() => setDraft({ ...draft, sex: s })}
                     className={cn(
-                      'rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors',
+                      'rounded-md border px-2 py-1 text-2xs font-semibold transition-colors',
                       draft.sex === s ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border text-muted-foreground',
                     )}
                   >
@@ -344,7 +344,7 @@ function FamilyMemberEditor({
 
           {/* conditions */}
           <div>
-            <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'بیماریاں (فی سطر ایک)' : lang === 'roman' ? 'Bimariyan (fi satar ek)' : 'Conditions (one per line)'}
             </Label>
             <textarea
@@ -359,7 +359,7 @@ function FamilyMemberEditor({
 
           {/* allergies */}
           <div>
-            <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'الرجیز (فی سطر ایک)' : lang === 'roman' ? 'Allergies (fi satar ek)' : 'Allergies (one per line)'}
             </Label>
             <textarea
@@ -374,7 +374,7 @@ function FamilyMemberEditor({
 
           {/* medications */}
           <div>
-            <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'ادویات (فی سطر ایک)' : lang === 'roman' ? 'Adwayaat (fi satar ek)' : 'Medications (one per line)'}
             </Label>
             <textarea
@@ -389,7 +389,7 @@ function FamilyMemberEditor({
 
           {/* notes */}
           <div>
-            <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'نوٹس' : lang === 'roman' ? 'Notes' : 'Notes'}
             </Label>
             <Input value={draft.notes ?? ''} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Blood group: O+" className="h-10" />

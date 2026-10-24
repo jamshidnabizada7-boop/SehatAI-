@@ -296,7 +296,7 @@ export function RemindersView() {
               {t(uiLang, 'reminders.emptyDesc')}
             </p>
             {/* quick examples — what kinds of reminders work */}
-            <ul className="mt-1 flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+            <ul className="mt-1 flex flex-wrap items-center justify-center gap-1.5 text-2xs font-medium text-muted-foreground">
               {[
                 t(uiLang, 'reminders.typeMed'),
                 t(uiLang, 'reminders.typeVax'),
@@ -359,7 +359,7 @@ export function RemindersView() {
                           </p>
                           <span
                             className={cn(
-                              'rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase',
+                              'rounded-full px-2 py-0.5 text-2xs font-bold tracking-wide uppercase',
                               reminder.status === 'active'
                                 ? 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-400'
                                 : 'bg-secondary text-muted-foreground',
@@ -379,7 +379,7 @@ export function RemindersView() {
                           </span>
                           <span className="flex gap-1">
                             {reminder.days.length === 0 ? (
-                              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium">
+                              <span className="rounded-full bg-secondary px-2 py-0.5 text-2xs font-medium">
                                 {t(uiLang, 'reminders.everyday')}
                               </span>
                             ) : (
@@ -389,7 +389,7 @@ export function RemindersView() {
                                 .map((d) => (
                                   <span
                                     key={d}
-                                    className="flex h-5 w-5 items-center justify-center rounded-md bg-secondary text-[10px] font-bold"
+                                    className="flex h-5 w-5 items-center justify-center rounded-md bg-secondary text-2xs font-bold"
                                   >
                                     {DAY_LETTERS[d]}
                                   </span>

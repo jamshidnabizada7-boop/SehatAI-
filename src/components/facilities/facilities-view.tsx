@@ -66,7 +66,7 @@ interface FeaturedHospital {
 const FEATURED_LAHORE_HOSPITALS: FeaturedHospital[] = [
   {
     name: 'Services Hospital Lahore',
-    status: '24/7 ER ACTIVE',
+    status: '24/7 ER',
     address: 'Jail Road, Shadman, Lahore',
     distance: '2.4 km',
     details: 'Trauma ICU, cardiac resuscitation, burn unit, blood bank.',
@@ -86,7 +86,7 @@ const FEATURED_LAHORE_HOSPITALS: FeaturedHospital[] = [
   },
   {
     name: 'Mayo Hospital Lahore',
-    status: '24/7 ER ACTIVE',
+    status: '24/7 ER',
     address: 'King Edward Medical University, Lahore',
     distance: '4.7 km',
     details: 'General surgery, medicine, pediatrics, trauma, burn unit.',
@@ -215,72 +215,48 @@ export function FacilitiesView() {
     <div className="custom-scrollbar h-full overflow-y-auto px-4 py-4 sm:px-6">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Top Hero Banner - Matches references/05_Facilities_Emergency.png */}
-        <section className="hero-banner hero-facility relative overflow-hidden rounded-[20px] p-6 sm:p-8">
-          <div className="relative z-10 max-w-xl">
-            <h1 className="text-2xl font-black tracking-tight text-[#112342] sm:text-3xl lg:text-4xl">
-              Emergency &amp; Healthcare <br />
-              <em className="italic text-[#007e5e]">Facilities Directory</em>
+        <section className="hero-banner hero-facility flex flex-col gap-5 lg:flex-row lg:items-center">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-[1.7rem]">
+              Emergency and healthcare <span className="text-primary">facilities</span>
             </h1>
-            <p className="mt-2 text-sm text-[#4c6382] sm:text-base">
+            <p className="mt-2 max-w-xl text-sm text-muted-foreground">
               Find hospitals, emergency rooms, BHUs and trauma centers across Pakistan.
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-bold text-[#1a365d]">
-              <div className="flex items-center gap-1.5">
-                <span className="iconbox inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/80 text-emerald-600 shadow-sm">
-                  <ShieldCheck className="h-4 w-4" />
-                </span>
-                <span>Verified Facilities</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="iconbox inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/80 text-amber-500 shadow-sm">
-                  <Clock className="h-4 w-4" />
-                </span>
-                <span>24/7 Emergency</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="iconbox inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/80 text-blue-500 shadow-sm">
-                  <MapPin className="h-4 w-4" />
-                </span>
-                <span>Distance Based</span>
-              </div>
-            </div>
+            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-foreground">
+              <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-primary" aria-hidden />Verified facilities</li>
+              <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" aria-hidden />24/7 emergency</li>
+              <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" aria-hidden />Distance based</li>
+            </ul>
           </div>
 
           <img
             src="/assets/hospital_hero.png"
-            alt="Facilities directory illustration"
-            className="hero-art pointer-events-none absolute bottom-0 right-[250px] hidden h-full w-[480px] object-cover xl:block"
+            alt=""
+            className="pointer-events-none hidden h-36 w-72 shrink-0 rounded-xl object-cover 2xl:block"
           />
 
-          {/* Emergency Call Rail on Right */}
-          <div className="callrail">
+          {/* Emergency call rail */}
+          <div className="grid shrink-0 gap-2 sm:grid-cols-2 lg:w-60 lg:grid-cols-1">
             <a
               href="tel:1122"
-              className="surface flex items-center gap-3 rounded-xl border border-red-200 bg-[#fff3f3] p-3 text-[#d82233] shadow-sm transition-transform hover:scale-[1.02] active:scale-95"
-              aria-label="Call Rescue 1122"
+              className="flex min-h-14 items-center gap-3 rounded-xl bg-red-700 p-3 text-white transition-colors hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm">
-                <Phone className="h-5 w-5" />
+              <Phone className="h-5 w-5 shrink-0" aria-hidden />
+              <span>
+                <b className="block text-sm font-bold">Rescue 1122</b>
+                <span className="block text-xs text-white/85">For serious emergencies</span>
               </span>
-              <div>
-                <b className="text-xs font-bold leading-tight sm:text-sm">
-                  Emergency <br /> Rescue 1122
-                </b>
-                <p className="text-[10px] text-red-700/80">For serious emergencies</p>
-              </div>
             </a>
             <a
               href="tel:1023"
-              className="surface dark flex items-center gap-3 rounded-xl bg-[#081d3d] p-3 text-white shadow-sm transition-transform hover:scale-[1.02] active:scale-95"
-              aria-label="Call Edhi 1023"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-border bg-card p-3 text-foreground transition-colors hover:border-input focus-visible:outline-2 focus-visible:outline-ring"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
-                <Phone className="h-5 w-5" />
+              <Phone className="h-5 w-5 shrink-0 text-danger" aria-hidden />
+              <span>
+                <b className="block text-sm font-bold">Alkhidmat 1023</b>
+                <span className="block text-xs text-muted-foreground">Ambulance service</span>
               </span>
-              <div>
-                <b className="text-xs font-bold leading-tight sm:text-sm">Edhi 1023</b>
-                <p className="text-[10px] text-gray-300">Emergency assistance</p>
-              </div>
             </a>
           </div>
         </section>
@@ -295,7 +271,7 @@ export function FacilitiesView() {
                 setCoords(null);
               }}
             >
-              <SelectTrigger className="h-9 min-w-36 rounded-xl border-border bg-white text-xs font-bold text-[#112342] shadow-sm">
+              <SelectTrigger className="h-9 min-w-36 rounded-xl border-border bg-card text-xs font-bold text-foreground shadow-sm">
                 <SelectValue placeholder="City" />
               </SelectTrigger>
               <SelectContent>
@@ -323,11 +299,12 @@ export function FacilitiesView() {
                   key={cat.id}
                   type="button"
                   onClick={() => setCategoryFilter(cat.id as CategoryFilter)}
+                  aria-pressed={active}
                   className={cn(
-                    'rounded-full px-3.5 py-1.5 text-xs font-bold transition-all',
+                    'min-h-9 rounded-full px-3.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                     active
-                      ? 'bg-[#009b78] text-white shadow-sm'
-                      : 'border border-border bg-white text-[#547099] hover:bg-[#f5f8fc] hover:text-[#112342]',
+                      ? 'bg-primary text-primary-foreground'
+                      : 'border border-border bg-card text-muted-foreground hover:text-foreground',
                   )}
                 >
                   {cat.label}
@@ -340,13 +317,14 @@ export function FacilitiesView() {
         {/* Search Bar & Location Controls */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, service or area"
-              className="h-10 w-full rounded-xl border border-border bg-white pl-10 pr-4 text-xs font-medium text-[#112342] placeholder:text-[#849bb5] focus:border-[#009b78] focus:outline-none"
+              aria-label="Search facilities"
+              className="h-10 w-full rounded-xl border border-input bg-card ps-10 pe-4 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/15"
             />
           </div>
 
@@ -355,23 +333,16 @@ export function FacilitiesView() {
             size="sm"
             onClick={useMyLocation}
             disabled={locating}
-            className="h-10 gap-1.5 rounded-xl border-border bg-white px-4 text-xs font-bold text-[#112342] shadow-sm hover:bg-[#f5f8fc]"
+            className="h-10 gap-1.5 rounded-xl border-border bg-card px-4 text-xs font-bold text-foreground shadow-sm hover:bg-muted/60"
           >
             {locating ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Crosshair className="h-3.5 w-3.5 text-[#009b78]" />
+              <Crosshair className="h-3.5 w-3.5 text-primary" />
             )}
             {locating ? 'Locating...' : 'Use My Exact Location'}
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 rounded-xl border-border bg-white px-4 text-xs font-bold text-[#112342] shadow-sm hover:bg-[#f5f8fc]"
-          >
-            Sort: Nearest First ⌄
-          </Button>
         </div>
 
         {/* 2-Column Main Stage: Left Hospital Rows + Right Map Rail */}
@@ -379,17 +350,10 @@ export function FacilitiesView() {
           {/* Main Column */}
           <div className="space-y-4 lg:col-span-7 xl:col-span-8">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-[#112342]">
+              <h3 className="text-base font-bold text-foreground">
                 Healthcare Facilities in {city}
               </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5 rounded-lg border-border bg-white text-xs font-bold text-[#547099]"
-              >
-                <MapIcon className="h-3.5 w-3.5 text-[#009b78]" />
-                View on Map
-              </Button>
+
             </div>
 
             {/* Featured approved hospital items (from Screen 5 high-fidelity mock) */}
@@ -397,22 +361,22 @@ export function FacilitiesView() {
               <div key={h.name} className="hospital-row">
                 <img src={h.image} alt={h.name} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-bold text-[#112342] sm:text-base">{h.name}</h3>
+                  <h3 className="text-sm font-bold text-foreground sm:text-base">{h.name}</h3>
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <span className="chip chip-red text-[10px] font-bold">{h.status}</span>
-                    <span className="chip chip-blue text-[10px] font-bold">
+                    <span className="chip chip-red text-2xs font-bold">{h.status}</span>
+                    <span className="chip chip-blue text-2xs font-bold">
                       Facility info unverified
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-[#547099]">
-                    {h.address} · {h.distance} <b className="text-[#112342]">(sample)</b>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {h.address} · {h.distance} <b className="text-foreground">(sample)</b>
                   </p>
-                  <p className="mt-1 text-xs text-[#637795]">{h.details}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{h.details}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {h.chips.map((c) => (
                       <span
                         key={c}
-                        className="rounded-full border border-border bg-[#f8fafc] px-2.5 py-0.5 text-[10px] font-semibold text-[#547099]"
+                        className="rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-2xs font-semibold text-muted-foreground"
                       >
                         {c}
                       </span>
@@ -421,23 +385,23 @@ export function FacilitiesView() {
                 </div>
 
                 <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
-                  <span className="text-[11px] font-bold text-[#028b63]">Hours not verified</span>
+                  <span className="text-2xs font-bold text-primary">Hours not verified</span>
                   <div className="flex flex-col gap-1.5">
                     <a
                       href={`tel:${h.phone}`}
-                      className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border bg-white px-3 text-xs font-bold text-[#112342] shadow-sm transition-colors hover:border-emerald-500 hover:text-emerald-700"
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition-colors hover:border-primary/50"
                     >
-                      <Phone className="h-3 w-3 text-emerald-600" />
+                      <Phone className="h-3 w-3 text-primary" aria-hidden />
                       Call ER Desk
                     </a>
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name + ' ' + h.address)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[#009b78] px-3 text-xs font-bold text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                       <Navigation className="h-3 w-3" />
-                      Navigate →
+                      Navigate
                     </a>
                   </div>
                 </div>
@@ -466,24 +430,24 @@ export function FacilitiesView() {
             ) : (
               filtered.map((f, idx) => (
                 <div key={f.id} className="hospital-row">
-                  <div className="flex h-[90px] w-[110px] shrink-0 items-center justify-center rounded-xl bg-[#eaf4fc] text-[#2463eb]">
+                  <div className="flex h-[90px] w-[110px] shrink-0 items-center justify-center rounded-xl bg-info-soft text-info">
                     <Building2 className="h-8 w-8" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-bold text-[#112342] sm:text-base">{f.name}</h3>
+                    <h3 className="text-sm font-bold text-foreground sm:text-base">{f.name}</h3>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       {f.emergency24h ? (
-                        <span className="chip chip-red text-[10px] font-bold">24/7 ER ACTIVE</span>
+                        <span className="chip chip-red text-2xs font-bold">24/7 ER</span>
                       ) : (
-                        <span className="chip text-[10px] font-bold">Primary Care</span>
+                        <span className="chip text-2xs font-bold">Primary Care</span>
                       )}
                       {f.verified ? (
-                        <span className="chip chip-green text-[10px] font-bold">Verified</span>
+                        <span className="chip chip-green text-2xs font-bold">Verified</span>
                       ) : (
-                        <span className="chip chip-blue text-[10px] font-bold">Unverified</span>
+                        <span className="chip chip-blue text-2xs font-bold">Unverified</span>
                       )}
                     </div>
-                    <p className="mt-1 text-xs text-[#547099]">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {f.district}
                       {typeof f.distanceKm === 'number'
                         ? ` · ${f.distanceKm.toFixed(1)} km away`
@@ -493,7 +457,7 @@ export function FacilitiesView() {
                       {f.services.slice(0, 3).map((s) => (
                         <span
                           key={s}
-                          className="rounded-full border border-border bg-[#f8fafc] px-2.5 py-0.5 text-[10px] font-semibold text-[#547099]"
+                          className="rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-2xs font-semibold text-muted-foreground"
                         >
                           {s}
                         </span>
@@ -502,14 +466,14 @@ export function FacilitiesView() {
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
-                    <span className="text-[11px] font-bold text-[#547099]">SehatAI Directory</span>
+                    <span className="text-2xs font-bold text-muted-foreground">SehatAI Directory</span>
                     <div className="flex flex-col gap-1.5">
                       {f.phone ? (
                         <a
                           href={`tel:${f.phone}`}
-                          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border bg-white px-3 text-xs font-bold text-[#112342] shadow-sm transition-colors hover:border-emerald-500 hover:text-emerald-700"
+                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition-colors hover:border-primary/50"
                         >
-                          <Phone className="h-3 w-3 text-emerald-600" />
+                          <Phone className="h-3 w-3 text-primary" aria-hidden />
                           Call Desk
                         </a>
                       ) : null}
@@ -517,10 +481,10 @@ export function FacilitiesView() {
                         href={`https://www.google.com/maps/search/?api=1&query=${f.lat},${f.lng}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[#009b78] px-3 text-xs font-bold text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                       >
                         <Navigation className="h-3 w-3" />
-                        Navigate →
+                        Navigate
                       </a>
                     </div>
                   </div>
@@ -531,19 +495,13 @@ export function FacilitiesView() {
 
           {/* Right Rail: Illustrative Map Artwork & Tags */}
           <aside className="space-y-4 lg:col-span-5 xl:col-span-4">
-            <div className="rounded-[16px] border border-border bg-white p-5 shadow-sm">
+            <div className="surface p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <b className="text-sm font-bold text-[#112342]">Facilities Near You</b>
-                  <p className="text-[11px] text-[#637795]">Illustrative map — not verified GPS</p>
+                  <b className="text-sm font-bold text-foreground">Facilities Near You</b>
+                  <p className="text-2xs text-muted-foreground">Illustrative map — not verified GPS</p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 rounded-lg border-border text-xs font-bold text-[#547099]"
-                >
-                  Show Map
-                </Button>
+
               </div>
 
               <div className="map mt-3">
@@ -558,7 +516,7 @@ export function FacilitiesView() {
                 {['Hospital', 'Emergency', 'Trauma', 'Maternity', 'BHU'].map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full border border-border bg-[#f8fafc] px-3 py-1 text-xs font-semibold text-[#547099]"
+                    className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-semibold text-muted-foreground"
                   >
                     {tag}
                   </span>
@@ -567,26 +525,26 @@ export function FacilitiesView() {
             </div>
 
             {/* Emergency Hotline Guidelines Box */}
-            <div className="rounded-[16px] border border-border bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-bold text-[#112342]">
-                <ShieldCheck className="h-4 w-4 text-[#009b78]" />
+            <div className="surface p-5">
+              <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                <ShieldCheck className="h-4 w-4 text-primary" />
                 Emergency Hotline Notice
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-[#637795]">
-                Rescue 1122 and Edhi 1023 connect directly via your cellular network. They do not
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                Rescue 1122 and Alkhidmat 1023 connect directly via your cellular network. They do not
                 depend on mobile data, GPS availability, or SehatAI servers. For acute
                 life-threatening emergencies, call immediately.
               </p>
               <div className="mt-3 flex gap-2">
                 <a
                   href="tel:1122"
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-red-600 py-2 text-xs font-bold text-white shadow-sm hover:bg-red-700"
+                  className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-red-700 text-xs font-bold text-white hover:bg-red-800"
                 >
                   <Phone className="h-3.5 w-3.5" /> Call 1122
                 </a>
                 <a
                   href="tel:1023"
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-white py-2 text-xs font-bold text-[#112342] shadow-sm hover:bg-gray-50"
+                  className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-xs font-bold text-foreground hover:bg-muted"
                 >
                   <Phone className="h-3.5 w-3.5" /> Call 1023
                 </a>

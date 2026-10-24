@@ -9,10 +9,10 @@ import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const SEVERITY_BORDER: Record<DrugSeverity, string> = {
-  HIGH: 'border-l-red-600',
-  MODERATE: 'border-l-amber-500',
-  LOW: 'border-l-yellow-400',
-  NONE: 'border-l-muted',
+  HIGH: 'border-red-600/45',
+  MODERATE: 'border-amber-500/50',
+  LOW: 'border-yellow-500/50',
+  NONE: 'border-border',
 };
 
 const SEVERITY_BG: Record<DrugSeverity, string> = {
@@ -74,10 +74,10 @@ export function DrugWarningCard({ drugCheck, lang, className }: DrugWarningCardP
       transition={{ duration: 0.22, ease: 'easeOut' }}
       role="alert"
       className={cn(
-        'rounded-xl border border-l-4 border-border bg-card shadow-sm',
+        'rounded-xl border bg-card',
         SEVERITY_BORDER[severity],
         SEVERITY_BG[severity],
-        lang === 'ur' && 'font-urdu text-right',
+        lang === 'ur' && 'font-urdu text-start',
         className,
       )}
       dir={lang === 'ur' ? 'rtl' : 'ltr'}
@@ -122,7 +122,7 @@ export function DrugWarningCard({ drugCheck, lang, className }: DrugWarningCardP
         >
           {hasHits ? (
             <div>
-              <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <p className="mb-1 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                 {t(lang, 'drugWarning.interactions')}
               </p>
               <ul className="space-y-1.5">
@@ -137,11 +137,11 @@ export function DrugWarningCard({ drugCheck, lang, className }: DrugWarningCardP
                       </span>
                       <span
                         className={cn(
-                          'rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase',
+                          'rounded-full px-1.5 py-0.5 text-2xs font-bold uppercase',
                           hit.severity === 'HIGH'
                             ? 'bg-red-600 text-white'
                             : hit.severity === 'MODERATE'
-                              ? 'bg-amber-500 text-white'
+                              ? 'bg-amber-200 text-amber-950'
                               : 'bg-yellow-400 text-yellow-950',
                         )}
                       >
@@ -168,7 +168,7 @@ export function DrugWarningCard({ drugCheck, lang, className }: DrugWarningCardP
 
           {hasAllergies ? (
             <div>
-              <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <p className="mb-1 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                 {t(lang, 'drugWarning.allergies')}
               </p>
               <ul className="space-y-1">
@@ -191,7 +191,7 @@ export function DrugWarningCard({ drugCheck, lang, className }: DrugWarningCardP
 
           {hasFlags ? (
             <div>
-              <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <p className="mb-1 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                 {t(lang, 'drugWarning.flags')}
               </p>
               <ul className="space-y-1">

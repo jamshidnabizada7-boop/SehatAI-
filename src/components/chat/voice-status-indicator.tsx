@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Volume2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store/app-store';
@@ -21,6 +21,8 @@ import { cn } from '@/lib/utils';
 // ============================================================
 
 type VoiceSupport = 'full' | 'stt-only' | 'tts-only' | 'none';
+
+const noopSubscribe = () => () => {};
 
 function detectVoiceSupport(): VoiceSupport {
   const win = window as unknown as Record<string, unknown>;
@@ -45,7 +47,8 @@ function detectUrduVoice(): boolean {
 export function VoiceStatusIndicator() {
   const langPref = useAppStore((s) => s.langPref);
   const uiLang = resolveUiLang(langPref);
-  const [support] = useState<VoiceSupport>(() => detectVoiceSupport());
+  // Read on the client only: touching `window` during the server render crashed SSR.
+  const support = useSyncExternalStore<VoiceSupport>(noopSubscribe, detectVoiceSupport, () => 'none');
   const [hasUrduVoice, setHasUrduVoice] = useState(false);
   const [micPermission, setMicPermission] = useState<'granted' | 'prompt' | 'denied' | 'unknown'>('unknown');
   const [expanded, setExpanded] = useState(false);
@@ -84,7 +87,7 @@ export function VoiceStatusIndicator() {
     if (typeof window === 'undefined' || typeof window.speechSynthesis === 'undefined') return;
     const utter = new SpeechSynthesisUtterance(
       uiLang === 'ur'
-        ? 'السلام علیکم! میں سی ایچ اے آئی ہوں۔'
+        ? 'السلام علیکم! میں صحت اے آئی ہوں۔'
         : uiLang === 'roman'
           ? 'Assalam-o-Alaikum! Main SehatAI hoon.'
           : 'Hello, this is a voice test from SehatAI.',
@@ -149,7 +152,7 @@ export function VoiceStatusIndicator() {
         type="button"
         onClick={() => setExpanded((e) => !e)}
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold transition-colors hover:bg-foreground/[0.03] focus-visible:outline-2 focus-visible:outline-ring',
+          'inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-2xs font-semibold transition-colors hover:bg-foreground/[0.03] focus-visible:outline-2 focus-visible:outline-ring',
           config.color,
         )}
         aria-label={config.label[uiLang]}
@@ -177,7 +180,7 @@ export function VoiceStatusIndicator() {
               </p>
 
               {/* STT support */}
-              <div className="flex items-center gap-2 text-[11px]">
+              <div className="flex items-center gap-2 text-2xs">
                 {(support === 'full' || support === 'stt-only') ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden />
                 ) : (
@@ -186,7 +189,7 @@ export function VoiceStatusIndicator() {
                 <span className="text-muted-foreground">
                   {uiLang === 'ur' ? 'آواز سے ٹیکسٹ' : uiLang === 'roman' ? 'Aawaz se text' : 'Speech-to-text'}
                 </span>
-                <span className="ml-auto font-semibold text-foreground">
+                <span className="ms-auto font-semibold text-foreground">
                   {(support === 'full' || support === 'stt-only')
                     ? (uiLang === 'ur' ? 'دستیاب' : uiLang === 'roman' ? 'Dastiyab' : 'Available')
                     : (uiLang === 'ur' ? 'نہیں' : uiLang === 'roman' ? 'Nahin' : 'Not available')}
@@ -194,7 +197,7 @@ export function VoiceStatusIndicator() {
               </div>
 
               {/* TTS support */}
-              <div className="flex items-center gap-2 text-[11px]">
+              <div className="flex items-center gap-2 text-2xs">
                 {(support === 'full' || support === 'tts-only') ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden />
                 ) : (
@@ -203,7 +206,7 @@ export function VoiceStatusIndicator() {
                 <span className="text-muted-foreground">
                   {uiLang === 'ur' ? 'ٹیکسٹ سے آواز' : uiLang === 'roman' ? 'Text se aawaz' : 'Text-to-speech'}
                 </span>
-                <span className="ml-auto font-semibold text-foreground">
+                <span className="ms-auto font-semibold text-foreground">
                   {(support === 'full' || support === 'tts-only')
                     ? (uiLang === 'ur' ? 'دستیاب' : uiLang === 'roman' ? 'Dastiyab' : 'Available')
                     : (uiLang === 'ur' ? 'نہیں' : uiLang === 'roman' ? 'Nahin' : 'Not available')}
@@ -212,7 +215,7 @@ export function VoiceStatusIndicator() {
 
               {/* Urdu voice specifically */}
               {(support === 'full' || support === 'tts-only') ? (
-                <div className="flex items-center gap-2 text-[11px]">
+                <div className="flex items-center gap-2 text-2xs">
                   {hasUrduVoice ? (
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden />
                   ) : (
@@ -221,7 +224,7 @@ export function VoiceStatusIndicator() {
                   <span className="text-muted-foreground">
                     {uiLang === 'ur' ? 'اردو آواز' : uiLang === 'roman' ? 'Urdu aawaz' : 'Urdu voice'}
                   </span>
-                  <span className="ml-auto font-semibold text-foreground">
+                  <span className="ms-auto font-semibold text-foreground">
                     {hasUrduVoice
                       ? (uiLang === 'ur' ? 'دستیاب' : uiLang === 'roman' ? 'Dastiyab' : 'Available')
                       : (uiLang === 'ur' ? 'غیر موجود' : uiLang === 'roman' ? 'Ghair maujood' : 'Missing')}
@@ -234,7 +237,7 @@ export function VoiceStatusIndicator() {
                 <button
                   type="button"
                   onClick={testTts}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 py-1.5 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/10"
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 py-1.5 text-2xs font-semibold text-primary transition-colors hover:bg-primary/10"
                 >
                   <Volume2 className="h-3 w-3" aria-hidden />
                   {uiLang === 'ur' ? 'آواز ٹیسٹ کریں' : uiLang === 'roman' ? 'Aawaz test karein' : 'Test voice'}
@@ -242,7 +245,7 @@ export function VoiceStatusIndicator() {
               ) : null}
 
               {/* Honest note for low-end devices */}
-              <p className="border-t border-border pt-2 text-[10px] leading-relaxed text-muted-foreground">
+              <p className="border-t border-border pt-2 text-2xs leading-relaxed text-muted-foreground">
                 {uiLang === 'ur'
                   ? 'کم قیمت فونز پر اردو آواز اکثر غائب ہوتی ہے۔ بہترین تجربے کے لیے Chrome استعمال کریں۔'
                   : uiLang === 'roman'

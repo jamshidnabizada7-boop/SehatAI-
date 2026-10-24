@@ -207,7 +207,7 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'نیند کا معیار' : lang === 'roman' ? 'Neend ka mayar' : 'Sleep tracker'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {lang === 'ur' ? '7 دن کا رجحان' : lang === 'roman' ? '7 din ka rujhan' : '7-day sleep log'}
           </p>
         </div>
@@ -216,14 +216,14 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
             const cfg = trendConfig[trend as keyof typeof trendConfig];
             const Icon = cfg.icon;
             return (
-              <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold', cfg.cls)}>
+              <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-bold', cfg.cls)}>
                 <Icon className="h-2.5 w-2.5" aria-hidden />
                 {cfg.label[lang]}
               </span>
             );
           })()
         ) : null}
-        <Button variant="ghost" size="sm" onClick={() => setShowForm((v) => !v)} className="h-7 gap-1 px-2 text-[11px] font-semibold text-primary">
+        <Button variant="ghost" size="sm" onClick={() => setShowForm((v) => !v)} className="h-7 gap-1 px-2 text-2xs font-semibold text-primary">
           <Plus className="h-3 w-3" aria-hidden />
           {lang === 'ur' ? 'لاگ' : lang === 'roman' ? 'Log' : 'Log'}
         </Button>
@@ -234,13 +234,13 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
         <div className="mb-3 rounded-lg border border-border bg-card p-3">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+              <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
                 {lang === 'ur' ? 'نیند کے گھنٹے' : lang === 'roman' ? 'Neend ke ghante' : 'Hours slept'}
               </Label>
               <Input type="number" step="0.5" value={hours} onChange={(e) => setHours(e.target.value)} placeholder="7.5" className="h-9" />
             </div>
             <div>
-              <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+              <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
                 {lang === 'ur' ? 'جاگنے کی تعداد' : lang === 'roman' ? 'Jaagne ki tadaad' : 'Times woke up'}
               </Label>
               <Input type="number" value={wokeUp} onChange={(e) => setWokeUp(e.target.value)} placeholder="0" className="h-9" />
@@ -249,7 +249,7 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
 
           {/* quality stars */}
           <div className="mt-2">
-            <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'معیار' : lang === 'roman' ? 'Mayar' : 'Quality'}
             </Label>
             <div className="flex gap-1">
@@ -267,7 +267,7 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
                   <Star className={cn('h-4 w-4', quality >= star ? 'fill-indigo-500 text-indigo-500' : 'text-muted-foreground/30')} aria-hidden />
                 </button>
               ))}
-              <span className={cn('ml-1 self-center text-[11px] font-bold', QUALITY_LABELS[quality]?.color)}>
+              <span className={cn('ms-1 self-center text-2xs font-bold', QUALITY_LABELS[quality]?.color)}>
                 {QUALITY_LABELS[quality]?.[lang]}
               </span>
             </div>
@@ -275,7 +275,7 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
 
           {/* notes */}
           <div className="mt-2">
-            <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+            <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
               {lang === 'ur' ? 'نوٹس' : lang === 'roman' ? 'Notes' : 'Notes'}
             </Label>
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={lang === 'ur' ? 'خواب، پریشانی...' : lang === 'roman' ? 'Khuab, pareshani...' : 'Dreams, anxiety...'} className="h-9" />
@@ -291,13 +291,13 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
       {todayEntry ? (
         <div className="mb-3 grid grid-cols-3 gap-2">
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'آج' : lang === 'roman' ? 'Aaj' : 'Today'}
             </p>
             <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{todayEntry.hours}h</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'معیار' : lang === 'roman' ? 'Mayar' : 'Quality'}
             </p>
             <p className={cn('text-lg font-bold', QUALITY_LABELS[todayEntry.quality]?.color)}>
@@ -305,7 +305,7 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
             </p>
           </div>
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'جاگنا' : lang === 'roman' ? 'Jaagna' : 'Woke up'}
             </p>
             <p className="text-lg font-bold text-foreground">{todayEntry.wokeUp}x</p>
@@ -317,16 +317,16 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
       {entries.length >= 2 ? (
         <div className="mb-3 grid grid-cols-2 gap-2">
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'اوسط نیند' : lang === 'roman' ? 'Osat neend' : 'Avg sleep'}
             </p>
             <p className={cn('text-lg font-bold', avgHours >= SLEEP_GOAL_HOURS ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
               {avgHours.toFixed(1)}h
             </p>
-            <p className="text-[9px] text-muted-foreground">{lang === 'ur' ? `ہدف: ${SLEEP_GOAL_HOURS}h` : lang === 'roman' ? `Hadaf: ${SLEEP_GOAL_HOURS}h` : `Goal: ${SLEEP_GOAL_HOURS}h`}</p>
+            <p className="text-2xs text-muted-foreground">{lang === 'ur' ? `ہدف: ${SLEEP_GOAL_HOURS}h` : lang === 'roman' ? `Hadaf: ${SLEEP_GOAL_HOURS}h` : `Goal: ${SLEEP_GOAL_HOURS}h`}</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'اوسط معیار' : lang === 'roman' ? 'Osat mayar' : 'Avg quality'}
             </p>
             <p className={cn('text-lg font-bold', avgQuality >= 3.5 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
@@ -359,7 +359,7 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="py-3 text-center text-[11px] text-muted-foreground">
+        <p className="py-3 text-center text-2xs text-muted-foreground">
           {lang === 'ur' ? 'رجحان دیکھنے کے لیے کم از کم 2 اندراج درکار ہیں' : lang === 'roman' ? 'Rujhan dekhne ke liye kam az kam 2 andaaraj darkaar hain' : 'Log at least 2 nights to see a trend'}
         </p>
       )}
@@ -372,19 +372,19 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
             return (
               <li key={idx} className="flex items-center gap-2 rounded-md border border-border/60 bg-background/40 p-1.5">
                 <Moon className="h-3 w-3 shrink-0 text-indigo-500" aria-hidden />
-                <span className="text-[11px] font-bold text-foreground">{e.hours}h</span>
-                <span className="text-[10px] text-muted-foreground">{dayLabel(e.date, lang)} {dayNum(e.date, lang)}</span>
-                <span className={cn('text-[10px] font-bold', QUALITY_LABELS[e.quality]?.color)}>
+                <span className="text-2xs font-bold text-foreground">{e.hours}h</span>
+                <span className="text-2xs text-muted-foreground">{dayLabel(e.date, lang)} {dayNum(e.date, lang)}</span>
+                <span className={cn('text-2xs font-bold', QUALITY_LABELS[e.quality]?.color)}>
                   {Array.from({ length: e.quality }).map((_, i) => '★').join('')}
                 </span>
-                {e.wokeUp > 0 ? <span className="text-[9px] text-muted-foreground">↑{e.wokeUp}x</span> : null}
-                {e.notes ? <span className="ml-auto truncate text-[9px] italic text-muted-foreground">"{e.notes}"</span> : null}
+                {e.wokeUp > 0 ? <span className="text-2xs text-muted-foreground">↑{e.wokeUp}x</span> : null}
+                {e.notes ? <span className="ms-auto truncate text-2xs italic text-muted-foreground">"{e.notes}"</span> : null}
               </li>
             );
           })}
         </ul>
       ) : (
-        <p className="py-3 text-center text-[11px] text-muted-foreground">
+        <p className="py-3 text-center text-2xs text-muted-foreground">
           {lang === 'ur'
             ? 'اپنی نیند لاگ کریں تاکہ رجحان دیکھ سکیں۔ نیند ذہنی صحت سے جڑی ہے۔'
             : lang === 'roman'
@@ -398,10 +398,10 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
         <div className="mt-2 flex items-start gap-2 rounded-lg border border-violet-500/30 bg-violet-50/40 p-2.5 dark:bg-violet-950/20">
           <Activity className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-600 dark:text-violet-400" aria-hidden />
           <div>
-            <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400">
+            <p className="text-2xs font-bold text-violet-700 dark:text-violet-400">
               {lang === 'ur' ? 'نیند اور ذہنی صحت کا تعلق' : lang === 'roman' ? 'Neend aur zehni sehat ka taluq' : 'Sleep ↔ Mental health'}
             </p>
-            <p className="text-[10px] leading-relaxed text-violet-700 dark:text-violet-400">
+            <p className="text-2xs leading-relaxed text-violet-700 dark:text-violet-400">
               {lang === 'ur'
                 ? 'آپ کی نیند کم اور معیار برا ہے — یہ ڈپریشن یا گھبراہٹ کی علامات سے جڑا ہو سکتا ہے۔ PHQ-9 اسکریننگ کرنے پر غور کریں۔'
                 : lang === 'roman'
@@ -412,7 +412,7 @@ export function SleepTracker({ lang, className }: SleepTrackerProps) {
         </div>
       ) : null}
 
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
+      <p className="mt-2 text-center text-2xs text-muted-foreground">
         {lang === 'ur' ? 'ڈیٹا صرف اس ڈیوائس پر محفوظ ہے۔' : lang === 'roman' ? 'Data sirf is device par mehfooz hai.' : 'Data stored only on this device.'}
       </p>
     </motion.section>

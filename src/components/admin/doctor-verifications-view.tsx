@@ -180,7 +180,7 @@ export function DoctorVerificationsView() {
                       <div className="flex flex-wrap items-baseline gap-x-2">
                         <h3 className="text-sm font-bold text-foreground">Dr. {d.name ?? 'Unknown'}</h3>
                         <span className="text-xs text-muted-foreground">{d.email}</span>
-                        <Badge className={cn('text-[10px] font-bold',
+                        <Badge className={cn('text-2xs font-bold',
                           d.accountStatus === 'pending_verification' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' :
                           d.accountStatus === 'active' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' :
                           d.accountStatus === 'suspended' ? 'bg-red-500/15 text-red-700 dark:text-red-400' : 'bg-muted text-muted-foreground')}>
@@ -205,7 +205,7 @@ export function DoctorVerificationsView() {
                         ) : null}
                       </div>
                       {d.bio ? <p className="mt-1 text-xs italic text-muted-foreground">{d.bio}</p> : null}
-                      <p className="mt-1 text-[10px] text-muted-foreground">Registered {new Date(d.createdAt).toLocaleString()}</p>
+                      <p className="mt-1 text-2xs text-muted-foreground">Registered {new Date(d.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
 
@@ -234,15 +234,15 @@ export function DoctorVerificationsView() {
                             <div key={doc.id} className="rounded-lg border border-border bg-background p-2">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-foreground">{DOC_TYPE_LABELS[doc.docType] ?? doc.docType}</span>
-                                <Badge className={cn('text-[9px] font-bold',
+                                <Badge className={cn('text-2xs font-bold',
                                   doc.status === 'approved' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' :
                                   doc.status === 'rejected' ? 'bg-red-500/15 text-red-700 dark:text-red-400' :
                                   'bg-amber-500/15 text-amber-700 dark:text-amber-400')}>
                                   {doc.status}
                                 </Badge>
                               </div>
-                              <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{doc.fileName}</p>
-                              <a href={`/api/admin/doctor-doc?id=${doc.id}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline">
+                              <p className="mt-0.5 truncate text-2xs text-muted-foreground">{doc.fileName}</p>
+                              <a href={`/api/admin/doctor-doc?id=${doc.id}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-2xs font-semibold text-primary hover:underline">
                                 <FileText className="h-3 w-3" /> View document
                               </a>
                             </div>
@@ -270,7 +270,7 @@ export function DoctorVerificationsView() {
                               size="sm"
                               disabled={acting === d.id}
                               onClick={() => verify(d, 'approve')}
-                              className="min-h-9 flex-1 gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+                              className="min-h-9 flex-1 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
                             >
                               {acting === d.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                               Approve
@@ -287,7 +287,7 @@ export function DoctorVerificationsView() {
                               Reject
                             </Button>
                           </div>
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-2xs text-muted-foreground">
                             Approving will sign the doctor out and require them to log in again with their new active status.
                           </p>
                         </div>

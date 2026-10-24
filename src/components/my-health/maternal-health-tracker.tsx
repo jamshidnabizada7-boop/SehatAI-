@@ -130,12 +130,12 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'حمل کا ٹریکر' : lang === 'roman' ? 'Hamal ka tracker' : 'Maternal health tracker'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {lang === 'ur' ? 'عالمی ادارہ صحت 8 ملاقاتیں' : lang === 'roman' ? 'WHO 8 mulaqatein' : 'WHO 8-visit antenatal schedule'}
           </p>
         </div>
         {ga ? (
-          <Badge variant="secondary" className="bg-pink-500/15 text-[10px] font-bold text-pink-700 dark:text-pink-400">
+          <Badge variant="secondary" className="bg-pink-500/15 text-2xs font-bold text-pink-700 dark:text-pink-400">
             {lang === 'ur' ? `ہفتہ ${ga.weeks}` : lang === 'roman' ? `Hafta ${ga.weeks}` : `Week ${ga.weeks}`}
           </Badge>
         ) : null}
@@ -155,7 +155,7 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
           max={new Date().toISOString().slice(0, 10)}
         />
         {data.lmp ? (
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
+          <p className="mt-1.5 text-2xs text-muted-foreground">
             {edd ? (
               <>
                 {lang === 'ur' ? 'توقع کی تاریخ:' : lang === 'roman' ? 'Tawaqa ki tareekh:' : 'Due date:'}{' '}
@@ -164,7 +164,7 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
             ) : null}
           </p>
         ) : (
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
+          <p className="mt-1.5 text-2xs text-muted-foreground">
             {lang === 'ur'
               ? 'اپنی آخری ماہواری کی تاریخ درج کریں تاکہ حمل کی مدت کا اندازہ ہو سکے۔'
               : lang === 'roman'
@@ -178,19 +178,19 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
       {ga && tri ? (
         <div className="mb-3 grid grid-cols-3 gap-2">
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'ہفتہ' : lang === 'roman' ? 'Hafta' : 'Week'}
             </p>
             <p className="text-lg font-bold text-pink-600 dark:text-pink-400">{ga.weeks}<span className="text-xs">+{ga.days}</span></p>
           </div>
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'ٹرائمسٹر' : lang === 'roman' ? 'Trimester' : 'Trimester'}
             </p>
             <p className="text-lg font-bold text-foreground">{tri === 1 ? '1st' : tri === 2 ? '2nd' : '3rd'}</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'باقی' : lang === 'roman' ? 'Baaki' : 'Remaining'}
             </p>
             <p className="text-lg font-bold text-foreground">{Math.max(0, 40 - ga.weeks)}<span className="text-xs">w</span></p>
@@ -207,7 +207,7 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
               {lang === 'ur' ? `اگلی ملاقات: ہفتہ ${nextContact.week}` : lang === 'roman' ? `Agli mulaqat: hafta ${nextContact.week}` : `Next contact: week ${nextContact.week}`}
             </p>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">{nextContact.title[lang]}</p>
+          <p className="mt-1 text-2xs text-muted-foreground">{nextContact.title[lang]}</p>
         </div>
       ) : ga && ga.weeks >= 40 ? (
         <div className="mb-3 rounded-lg border border-red-500/30 bg-red-50/40 p-3 dark:bg-red-950/20">
@@ -222,7 +222,7 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
 
       {/* ANC schedule checklist */}
       <div className="mb-3">
-        <p className="mb-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+        <p className="mb-1.5 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
           {lang === 'ur' ? '8 ملاقاتیں' : lang === 'roman' ? '8 mulaqatein' : '8-visit schedule'}
         </p>
         <ul className="space-y-1.5">
@@ -250,14 +250,14 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline gap-1.5">
-                      <span className="text-[10px] font-bold text-muted-foreground">{c.contact}.</span>
+                      <span className="text-2xs font-bold text-muted-foreground">{c.contact}.</span>
                       <span className="text-xs font-semibold text-foreground">{c.title[lang]}</span>
-                      <Badge variant="secondary" className={cn('ml-auto text-[9px] font-bold', isDue ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground')}>
+                      <Badge variant="secondary" className={cn('ms-auto text-2xs font-bold', isDue ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground')}>
                         {lang === 'ur' ? `ہفتہ ${c.week}` : lang === 'roman' ? `Hafta ${c.week}` : `Week ${c.week}`}
                       </Badge>
                     </span>
                     {isDue ? (
-                      <span className="mt-0.5 block text-[10px] text-primary">
+                      <span className="mt-0.5 block text-2xs text-primary">
                         {lang === 'ur' ? 'ابھی واجب الادا' : lang === 'roman' ? 'Abhi wajib-ul-ada' : 'Due now'}
                       </span>
                     ) : null}
@@ -278,7 +278,7 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
       >
         <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
         {lang === 'ur' ? 'خطرے کی علامات' : lang === 'roman' ? 'Khatre ki alamaat' : 'Maternal danger signs'}
-        <ChevronRight className={cn('ml-auto h-3 w-3 transition-transform', showDangerSigns && 'rotate-90')} aria-hidden />
+        <ChevronRight className={cn('ms-auto h-3 w-3 transition-transform', showDangerSigns && 'rotate-90')} aria-hidden />
       </Button>
 
       <AnimatePresence>
@@ -292,7 +292,7 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
             <div className="mb-2 rounded-lg border border-red-500/30 bg-red-50/30 p-2 dark:bg-red-950/15">
               <ul className="space-y-1">
                 {MATERNAL_DANGER_SIGNS.map((d, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[11px] leading-relaxed">
+                  <li key={i} className="flex items-start gap-2 text-2xs leading-relaxed">
                     <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" aria-hidden />
                     <span className="flex-1">
                       <span className="font-semibold text-red-700 dark:text-red-400">{d.symptom[lang]}</span>
@@ -303,7 +303,7 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
               </ul>
               <a
                 href="tel:1122"
-                className="mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-red-600 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                className="mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-red-600 py-1.5 text-2xs font-bold text-white transition-colors hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
               >
                 <Phone className="h-3 w-3" aria-hidden />
                 1122
@@ -322,7 +322,7 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
       >
         <Heart className="h-3.5 w-3.5" aria-hidden />
         {lang === 'ur' ? 'پیدائش کے بعد کی دیکھ بھال' : lang === 'roman' ? 'Paidaish ke baad ki dekh bhaal' : 'Postnatal care milestones'}
-        <ChevronRight className={cn('ml-auto h-3 w-3 transition-transform', showPostnatal && 'rotate-90')} aria-hidden />
+        <ChevronRight className={cn('ms-auto h-3 w-3 transition-transform', showPostnatal && 'rotate-90')} aria-hidden />
       </Button>
 
       <AnimatePresence>
@@ -338,13 +338,13 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
                 <div key={i} className="rounded-md border border-border/60 bg-background/40 p-2">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="h-3 w-3 text-pink-600 dark:text-pink-400" aria-hidden />
-                    <p className="text-[11px] font-bold text-foreground">
+                    <p className="text-2xs font-bold text-foreground">
                       {m.day === 42 ? '6 weeks' : m.day === 1 ? '24h' : `Day ${m.day}`} — {m.title[lang]}
                     </p>
                   </div>
                   <ul className="mt-1 space-y-0.5">
                     {m.checks.map((c, j) => (
-                      <li key={j} className="flex items-start gap-1 text-[10px] leading-relaxed text-muted-foreground">
+                      <li key={j} className="flex items-start gap-1 text-2xs leading-relaxed text-muted-foreground">
                         <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" aria-hidden />
                         {c[lang]}
                       </li>
@@ -357,7 +357,7 @@ export function MaternalHealthTracker({ lang, isPregnant, className }: MaternalH
         ) : null}
       </AnimatePresence>
 
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
+      <p className="mt-2 text-center text-2xs text-muted-foreground">
         {lang === 'ur' ? 'معلومات عالمی ادارہ صحت (WHO) سے' : lang === 'roman' ? 'Maloomat WHO se' : 'Information from WHO (2016 ANC guidelines)'}
       </p>
     </motion.section>

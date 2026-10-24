@@ -54,30 +54,30 @@ export function GamificationCard() {
         <div className="mt-3 grid grid-cols-3 gap-2">
           <div className="rounded-xl border border-border bg-muted/30 p-2 text-center">
             <Flame className="mx-auto h-5 w-5 text-orange-500" />
-            <p className="mt-1 text-lg font-black text-foreground">{data.currentStreak}</p>
-            <p className="text-[9px] font-semibold text-muted-foreground">Day Streak</p>
+            <p className="mt-1 text-lg font-semibold text-foreground">{data.currentStreak}</p>
+            <p className="text-2xs font-semibold text-muted-foreground">Day Streak</p>
           </div>
           <div className="rounded-xl border border-border bg-muted/30 p-2 text-center">
             <Trophy className="mx-auto h-5 w-5 text-amber-500" />
-            <p className="mt-1 text-lg font-black text-foreground">{data.longestStreak}</p>
-            <p className="text-[9px] font-semibold text-muted-foreground">Best Streak</p>
+            <p className="mt-1 text-lg font-semibold text-foreground">{data.longestStreak}</p>
+            <p className="text-2xs font-semibold text-muted-foreground">Best Streak</p>
           </div>
           <div className="rounded-xl border border-border bg-muted/30 p-2 text-center">
             <Star className="mx-auto h-5 w-5 text-primary" />
-            <p className="mt-1 text-lg font-black text-foreground">{data.totalPoints}</p>
-            <p className="text-[9px] font-semibold text-muted-foreground">Points</p>
+            <p className="mt-1 text-lg font-semibold text-foreground">{data.totalPoints}</p>
+            <p className="text-2xs font-semibold text-muted-foreground">Points</p>
           </div>
         </div>
 
         {/* Badges */}
         <div className="mt-3">
-          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Badges</p>
+          <p className="mb-1.5 text-2xs font-bold uppercase tracking-wider text-muted-foreground">Badges</p>
           <div className="flex flex-wrap gap-1.5">
             {data.badges.map((badge) => (
               <div
                 key={badge.id}
                 className={cn(
-                  'flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-semibold transition-all',
+                  'flex items-center gap-1 rounded-lg border px-2 py-1 text-2xs font-semibold transition-all',
                   badge.earned
                     ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400'
                     : 'border-border bg-muted/20 text-muted-foreground/50',

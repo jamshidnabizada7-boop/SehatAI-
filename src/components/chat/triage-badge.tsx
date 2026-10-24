@@ -5,12 +5,13 @@ import type { Lang, TriageLevel } from '@/lib/types';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
+// Solid fills keep the 4-level colour meaning; each pair is ≥4.5:1.
 const LEVEL_STYLES: Record<TriageLevel, string> = {
-  EMERGENCY: 'bg-red-600 text-white shadow-sm shadow-red-600/30',
-  URGENT: 'bg-orange-500 text-white shadow-sm shadow-orange-500/30',
-  ROUTINE: 'bg-yellow-400 text-yellow-950 shadow-sm',
-  SELF_CARE: 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30',
-  INFORMATIONAL: 'bg-blue-600/15 text-blue-700 dark:text-blue-300 border border-blue-500/20 shadow-2xs',
+  EMERGENCY: 'bg-red-700 text-white',
+  URGENT: 'bg-orange-700 text-white',
+  ROUTINE: 'bg-yellow-300 text-yellow-950',
+  SELF_CARE: 'bg-emerald-700 text-white',
+  INFORMATIONAL: 'bg-info-soft text-info border border-info/20',
 };
 
 function LevelIcon({ level }: { level: TriageLevel }) {
@@ -44,7 +45,7 @@ export function TriageBadge({ level, lang, reason, className }: TriageBadgeProps
     <div className={cn('flex flex-col items-start gap-1', className)}>
       <span
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide uppercase',
+          'inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-2xs font-bold tracking-wide uppercase',
           LEVEL_STYLES[level],
         )}
         role="status"

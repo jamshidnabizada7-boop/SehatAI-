@@ -29,7 +29,7 @@ interface SummaryModalProps {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-card p-3 print:border-gray-300 print:bg-transparent print:p-2">
-      <p className="mb-1 text-[11px] font-bold tracking-wider text-muted-foreground uppercase print:text-gray-600">
+      <p className="mb-1 text-2xs font-bold tracking-wider text-muted-foreground uppercase print:text-gray-600">
         {label}
       </p>
       <div className="text-sm leading-relaxed text-foreground print:text-black">{children}</div>
@@ -307,7 +307,7 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
             {summary.triageLevel ? (
               <div className="rounded-xl border border-border bg-card p-3 print:border-gray-300 print:bg-transparent print:p-2">
                 <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase print:text-gray-600">
+                  <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase print:text-gray-600">
                     {t(lang, 'summary.triage')}
                   </p>
                   {summary.confidence ? (
@@ -321,7 +321,7 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
             {/* Phase 2 — patient profile snapshot */}
             {summary.patientProfile ? (
               <div className="rounded-xl border border-border bg-card p-3 print:border-gray-300 print:bg-transparent print:p-2">
-                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase print:text-gray-600">
+                <p className="mb-1.5 flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted-foreground uppercase print:text-gray-600">
                   <User className="h-3 w-3" aria-hidden />
                   {lang === 'ur' ? 'مریض کی پروفائل' : lang === 'roman' ? 'Mareez ka profile' : 'Patient profile'}
                 </p>
@@ -342,7 +342,7 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
                     <span key={`alg-${a}`} className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">⚠ {a}</span>
                   ))}
                   {summary.patientProfile.medications?.map((m) => (
-                    <span key={`med-${m}`} className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">💊 {m}</span>
+                    <span key={`med-${m}`} className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">{m}</span>
                   ))}
                 </div>
               </div>
@@ -369,7 +369,7 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
             {/* Phase 2 — citations / evidence sources */}
             {summary.citations && summary.citations.length > 0 ? (
               <div className="rounded-xl border border-border bg-card p-3 print:border-gray-300 print:bg-transparent print:p-2">
-                <p className="mb-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase print:text-gray-600">
+                <p className="mb-1.5 text-2xs font-bold tracking-wider text-muted-foreground uppercase print:text-gray-600">
                   {lang === 'ur' ? 'حوالہ جات' : lang === 'roman' ? 'Hawalat' : 'Evidence sources'}
                 </p>
                 <ul className="space-y-1">
@@ -392,7 +392,7 @@ export function SummaryModal({ open, onOpenChange, lang }: SummaryModalProps) {
               <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-muted/30 p-4 text-center no-print">
                 <p className="text-xs font-bold text-foreground">{t(lang, 'summary.qrTitle')}</p>
                 <QrCodeSvg value={summaryText} size={160} />
-                <p className="text-[11px] text-muted-foreground">{t(lang, 'summary.qrDesc')}</p>
+                <p className="text-2xs text-muted-foreground">{t(lang, 'summary.qrDesc')}</p>
               </div>
             ) : null}
 

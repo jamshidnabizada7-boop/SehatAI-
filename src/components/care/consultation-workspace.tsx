@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney } from '@/lib/care/money';
 import { cn } from '@/lib/utils';
-import { Phone, Video, MessageSquare, CheckCheck, CheckCircle2, Languages, ShieldAlert, FileText, Star, Undo2, CreditCard, Mic, MicOff, VideoOff, PhoneOff, Loader2, Stethoscope, Pill, CalendarClock } from 'lucide-react';
+import { Phone, Video, MessageSquare, CheckCheck, CheckCircle2, Languages, ShieldAlert, FileText, Star, Undo2, CreditCard, Mic, MicOff, VideoOff, PhoneOff, Loader2, Stethoscope, Pill, CalendarClock, Check } from 'lucide-react';
 
 export interface ConsultationDetail {
   id: string;
@@ -300,16 +300,16 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
             {detail.payment ? ` · payment: ${detail.payment.status}` : ''}
           </div>
         </div>
-        <Badge className={cn('text-[11px]', statusColors[detail.status])}>{detail.status}</Badge>
+        <Badge className={cn('text-2xs', statusColors[detail.status])}>{detail.status}</Badge>
         {isPatient && detail.status === 'PAYMENT_PENDING' && (!detail.payment || detail.payment.status !== 'PAID') ? (
           <Button size="sm" className="min-h-11 font-semibold" disabled={busy} onClick={() => void handlePay()}>
-            <CreditCard className="mr-1 h-4 w-4" />
+            <CreditCard className="me-1 h-4 w-4" />
             {T('care.payAndBook')}
           </Button>
         ) : null}
         {detail.type !== 'TEXT' && detail.status !== 'PAYMENT_PENDING' ? (
           <Button size="sm" className="min-h-11" onClick={() => void joinCall()}>
-            {detail.type === 'VIDEO' ? <Video className="mr-1 h-4 w-4" /> : <Phone className="mr-1 h-4 w-4" />}
+            {detail.type === 'VIDEO' ? <Video className="me-1 h-4 w-4" /> : <Phone className="me-1 h-4 w-4" />}
             {T('care.joinCall')}
           </Button>
         ) : null}
@@ -328,7 +328,7 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
               </p>
             </div>
             <Button disabled={busy} onClick={() => void handlePay()} className="min-h-11 font-semibold">
-              <CreditCard className="mr-1 h-4 w-4" />
+              <CreditCard className="me-1 h-4 w-4" />
               {T('care.payAndBook')}
             </Button>
           </CardContent>
@@ -346,7 +346,7 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
               <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                 <FileText className="h-4 w-4 text-primary" /> {T('care.prescription')}
               </div>
-              <Badge variant="outline" className="text-[10px] font-semibold border-emerald-600/40 text-emerald-700 dark:text-emerald-400 gap-1">
+              <Badge variant="outline" className="text-2xs font-semibold border-emerald-600/40 text-emerald-700 dark:text-emerald-400 gap-1">
                 <CheckCircle2 className="h-3 w-3" /> PM&amp;DC Verified
               </Badge>
             </div>
@@ -354,11 +354,11 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
               <div key={p.id} className="text-xs">
                 {p.items.map((item, i) => (
                   <div key={i} className="text-muted-foreground">
-                    💊 {item.medicine} {item.strength ?? ''} {item.frequency ?? ''} {item.durationDays ? `· ${item.durationDays}d` : ''}
+                    {item.medicine} {item.strength ?? ''} {item.frequency ?? ''} {item.durationDays ? `· ${item.durationDays}d` : ''}
                   </div>
                 ))}
                 <div className="mt-1 flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px]">{p.status}</Badge>
+                  <Badge variant="outline" className="text-2xs">{p.status}</Badge>
                 </div>
               </div>
             ))}
@@ -377,7 +377,7 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
                   {m.kind === 'correction' ? '✏️ ' : ''}{m.body}
                 </div>
                 {m.senderRole !== 'SYSTEM' ? (
-                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <div className="mt-0.5 flex items-center gap-2 text-2xs text-muted-foreground">
                     <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     {m.correctedById ? <span className="italic">corrected</span> : null}
                     <button
@@ -418,7 +418,7 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
             disabled={busy}
           />
           <Button onClick={() => void send()} disabled={busy || !draft.trim()} className="min-h-11">
-            <MessageSquare className="mr-1 h-4 w-4" />{T('care.sendMessage')}
+            <MessageSquare className="me-1 h-4 w-4" />{T('care.sendMessage')}
           </Button>
         </footer>
       ) : (
@@ -438,7 +438,7 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
         ) : null}
         {isPatient && detail.status === 'PAYMENT_PENDING' && (!detail.payment || detail.payment.status !== 'PAID') ? (
           <Button size="sm" className="min-h-11 font-semibold" disabled={busy} onClick={() => void handlePay()}>
-            <CreditCard className="mr-1 h-4 w-4" />
+            <CreditCard className="me-1 h-4 w-4" />
             {T('care.payAndBook')}
           </Button>
         ) : null}
@@ -456,7 +456,7 @@ export function ConsultationWorkspace({ consultationId, onBack }: { consultation
           </div>
         ) : null}
         {isPatient && detail.review ? (
-          <Badge variant="secondary"><CheckCheck className="mr-1 h-3 w-3" />{detail.review.overall}★</Badge>
+          <Badge variant="secondary"><CheckCheck className="me-1 h-3 w-3" />{detail.review.overall}★</Badge>
         ) : null}
         {isPatient && ['PAYMENT_PENDING', 'PAID', 'REQUESTED', 'SCHEDULED', 'WAITING', 'COMPLETED'].includes(detail.status) ? (
           <Button size="sm" variant="ghost" className="min-h-11" disabled={busy} onClick={() => void requestRefund()}>{T('care.requestRefund')}</Button>
@@ -567,14 +567,14 @@ function DoctorTools({ consultationId, detail, T, onChanged }: {
       <div className="flex gap-1">
         <Button size="sm" variant={tab === 'handoff' ? 'default' : 'outline'} className="min-h-11" onClick={() => setTab(tab === 'handoff' ? null : 'handoff')}>🤖 {T('care.aiHandoff')}</Button>
         <Button size="sm" variant={tab === 'note' ? 'default' : 'outline'} className="min-h-11" onClick={() => setTab(tab === 'note' ? null : 'note')}>📝 {T('care.clinicalNote')}</Button>
-        <Button size="sm" variant={tab === 'rx' ? 'default' : 'outline'} className="min-h-11" onClick={() => setTab(tab === 'rx' ? null : 'rx')}>💊 {T('care.prescription')}</Button>
+        <Button size="sm" variant={tab === 'rx' ? 'default' : 'outline'} className="min-h-11" onClick={() => setTab(tab === 'rx' ? null : 'rx')}><Pill className="h-4 w-4" aria-hidden />{T('care.prescription')}</Button>
       </div>
 
       {tab === 'handoff' && handoff ? (
         <Card className="mt-2">
           <CardContent className="p-3 text-xs">
             <Badge variant="outline" className="mb-2 border-amber-500 text-amber-600">{handoff.label}</Badge>
-            <pre className="whitespace-pre-wrap rounded bg-muted/50 p-2 text-[11px]">{JSON.stringify(handoff.content, null, 2)}</pre>
+            <pre className="whitespace-pre-wrap rounded bg-muted/50 p-2 text-2xs">{JSON.stringify(handoff.content, null, 2)}</pre>
             <div className="mt-2 flex gap-1">
               <Button size="sm" className="min-h-11" disabled={busy} onClick={() => void handoffAction('ACCEPT')}>{T('care.acceptHandoff')}</Button>
               <Button size="sm" variant="outline" className="min-h-11" disabled={busy} onClick={() => void handoffAction('EDIT')}>{T('care.editHandoff')}</Button>
@@ -601,7 +601,7 @@ function DoctorTools({ consultationId, detail, T, onChanged }: {
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="text-xs" placeholder="S / O / A / P…" />
             <Button size="sm" className="mt-2 min-h-11" disabled={busy || !note.trim()} onClick={() => void saveNote()}>Save {T('care.summary')}</Button>
             {detail.notes.length > 0 ? (
-              <ul className="mt-2 flex flex-col gap-1 text-[11px] text-muted-foreground">
+              <ul className="mt-2 flex flex-col gap-1 text-2xs text-muted-foreground">
                 {detail.notes.map((n) => (
                   <li key={n.id} className="rounded bg-muted/50 p-1">
                     <b>{n.visibility === 'PRIVATE_NOTE' ? '🔒' : '👁'} {n.type}</b>: {n.content.slice(0, 160)}
@@ -629,7 +629,7 @@ function DoctorTools({ consultationId, detail, T, onChanged }: {
               <Button size="sm" className="min-h-11" disabled={busy} onClick={() => void draftRx()}>{T('care.safetyCheck')}</Button>
             </div>
             {safety ? (
-              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-muted/50 p-2 text-[10px]">{JSON.stringify(safety, null, 2)}</pre>
+              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-muted/50 p-2 text-2xs">{JSON.stringify(safety, null, 2)}</pre>
             ) : null}
             {detail.prescriptions.filter((p) => p.status === 'DRAFT').map((p) => (
               <Button key={p.id} size="sm" className="mt-2 min-h-11" disabled={busy} onClick={() => void signRx(p.id, JSON.stringify(safety ?? {}).includes('"HIGH"'))}>
@@ -1159,16 +1159,16 @@ function CareCallModal({
               Live Consultation with Dr. Ayesha Malik
             </h2>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-              <span className="chip green text-[10px]">● Live demo</span>
+              <span className="chip green text-2xs">● Live demo</span>
               <span>Room: {call.roomId.slice(0, 16)} · LiveKit SFU design reference</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="chip green text-[10px]">Connection: {status === 'connected' ? 'stable' : 'demo'}</span>
-            <span className="chip stroke text-[10px]">08:42</span>
-            <span className="chip stroke text-[10px]">Private session</span>
-            <Button variant="destructive" size="sm" onClick={() => void handleLeave()} className="h-8 rounded-xl font-bold text-xs ml-2">
-              <PhoneOff className="mr-1 h-3.5 w-3.5" /> End Call
+            <span className="chip green text-2xs">Connection: {status === 'connected' ? 'stable' : 'demo'}</span>
+            <span className="chip stroke text-2xs">08:42</span>
+            <span className="chip stroke text-2xs">Private session</span>
+            <Button variant="destructive" size="sm" onClick={() => void handleLeave()} className="h-8 rounded-xl font-bold text-xs ms-2">
+              <PhoneOff className="me-1 h-3.5 w-3.5" /> End Call
             </Button>
           </div>
         </header>
@@ -1259,7 +1259,7 @@ function CareCallModal({
                   <span className="text-xs text-neutral-400">Cardiologist · Example profile</span>
                 </div>
               </div>
-              <span className="chip orange text-[10px]">Illustrative clinician</span>
+              <span className="chip orange text-2xs">Illustrative clinician</span>
             </div>
           </div>
 
@@ -1283,7 +1283,7 @@ function CareCallModal({
 
             {/* Visit Summary */}
             <div className="inset inset-green p-3.5 rounded-xl border border-emerald-200/60 space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-xs text-[#007b61]">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-primary">
                 <FileText className="h-4 w-4" />
                 <span>Visit Summary</span>
               </div>
@@ -1310,13 +1310,13 @@ function CareCallModal({
                   <Pill className="h-4 w-4" />
                   <span>E-Prescription</span>
                 </div>
-                <span className="chip stroke text-[10px]">+ Add Medication</span>
+                <span className="chip stroke text-2xs">+ Add Medication</span>
               </div>
               <div className="inset inset-green p-2.5 rounded-lg border border-emerald-200">
                 <b className="text-xs text-foreground block">Paracetamol 500mg</b>
-                <span className="text-[11px] text-muted-foreground">Illustrative chart only — requires clinician authorization.</span>
+                <span className="text-2xs text-muted-foreground">Illustrative chart only — requires clinician authorization.</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-2xs text-muted-foreground">
                 Prescriptions are not generated automatically by this demonstration.
               </p>
             </div>
@@ -1335,7 +1335,7 @@ function CareCallModal({
                   'Arrange follow-up if symptoms persist',
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center gap-1.5">
-                    <span className="text-[#009b78] font-bold">✓</span>
+                    <Check className="mt-px h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
                     <span>{item}</span>
                   </div>
                 ))}
@@ -1344,11 +1344,11 @@ function CareCallModal({
 
             {/* Bottom 2 insets */}
             <div className="grid grid-cols-2 gap-2 pt-2">
-              <div className="inset inset-blue p-2.5 rounded-lg text-[10px]">
+              <div className="inset inset-blue p-2.5 rounded-lg text-2xs">
                 <b>Telehealth Compliance</b>
                 <p className="text-muted-foreground mt-0.5">Requires jurisdiction-specific legal review.</p>
               </div>
-              <div className="inset inset-green p-2.5 rounded-lg text-[10px]">
+              <div className="inset inset-green p-2.5 rounded-lg text-2xs">
                 <b>Technical Support</b>
                 <p className="text-muted-foreground mt-0.5">Troubleshoot network or audio issues.</p>
               </div>

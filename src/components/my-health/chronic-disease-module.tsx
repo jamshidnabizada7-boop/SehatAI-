@@ -244,7 +244,7 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'دماغی بیماری کا انتظام' : lang === 'roman' ? 'Damaghi bimari ka intezam' : 'Chronic disease management'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {lang === 'ur' ? 'شوگر + بلڈ پریشر لاگ' : lang === 'roman' ? 'Sugar + BP log' : 'Blood glucose + BP log'}
           </p>
         </div>
@@ -264,7 +264,7 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
                   const cfg = trendConfig[glucoseTrend as keyof typeof trendConfig];
                   const Icon = cfg.icon;
                   return (
-                    <span className={cn('inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold', cfg.cls)}>
+                    <span className={cn('inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-2xs font-bold', cfg.cls)}>
                       <Icon className="h-2.5 w-2.5" aria-hidden />
                       {cfg.label[lang]}
                     </span>
@@ -272,7 +272,7 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
                 })()
               ) : null}
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setShowGlucoseForm((v) => !v)} className="h-7 gap-1 px-2 text-[11px] font-semibold text-primary">
+            <Button variant="ghost" size="sm" onClick={() => setShowGlucoseForm((v) => !v)} className="h-7 gap-1 px-2 text-2xs font-semibold text-primary">
               <Plus className="h-3 w-3" aria-hidden />
               {lang === 'ur' ? 'شامل کریں' : lang === 'roman' ? 'Shamil karein' : 'Add'}
             </Button>
@@ -285,27 +285,27 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
                 <div className="mb-2 rounded-lg border border-border bg-muted/30 p-2.5">
                   <div className="flex flex-wrap items-end gap-2">
                     <div className="flex-1">
-                      <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+                      <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
                         {lang === 'ur' ? 'شوگر (mg/dL)' : lang === 'roman' ? 'Sugar (mg/dL)' : 'Glucose (mg/dL)'}
                       </Label>
                       <Input type="number" value={glucoseValue} onChange={(e) => setGlucoseValue(e.target.value)} placeholder="120" className="h-9" />
                     </div>
                     <div>
-                      <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+                      <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
                         {lang === 'ur' ? 'قسم' : lang === 'roman' ? 'Qisam' : 'Type'}
                       </Label>
                       <div className="flex gap-1">
                         <button
                           type="button"
                           onClick={() => setGlucoseType('fasting')}
-                          className={cn('rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition-colors', glucoseType === 'fasting' ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border text-muted-foreground')}
+                          className={cn('rounded-lg border px-2 py-1.5 text-2xs font-semibold transition-colors', glucoseType === 'fasting' ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border text-muted-foreground')}
                         >
                           {lang === 'ur' ? 'فاسٹنگ' : lang === 'roman' ? 'Fasting' : 'Fasting'}
                         </button>
                         <button
                           type="button"
                           onClick={() => setGlucoseType('random')}
-                          className={cn('rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition-colors', glucoseType === 'random' ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border text-muted-foreground')}
+                          className={cn('rounded-lg border px-2 py-1.5 text-2xs font-semibold transition-colors', glucoseType === 'random' ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border text-muted-foreground')}
                         >
                           {lang === 'ur' ? 'رینڈم' : lang === 'roman' ? 'Random' : 'Random'}
                         </button>
@@ -342,7 +342,7 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <p className="py-3 text-center text-[11px] text-muted-foreground">
+            <p className="py-3 text-center text-2xs text-muted-foreground">
               {lang === 'ur' ? 'رجحان دیکھنے کے لیے کم از کم 2 ریڈنگز درکار ہیں' : lang === 'roman' ? 'Rujhan dekhne ke liye kam az kam 2 readings darkaar hain' : 'Add at least 2 readings to see a trend'}
             </p>
           )}
@@ -356,10 +356,10 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
                 return (
                   <li key={idx} className="flex items-center gap-2 rounded-md border border-border/60 bg-background/40 p-1.5">
                     <span className={cn('text-xs font-bold', status.color)}>{e.value}</span>
-                    <span className="text-[10px] text-muted-foreground">mg/dL</span>
+                    <span className="text-2xs text-muted-foreground">mg/dL</span>
                     <Badge2 label={e.type} />
                     <Badge2 label={status.label} className={status.color} />
-                    <span className="ml-auto text-[10px] text-muted-foreground">{formatDateTime(e.at, lang)}</span>
+                    <span className="ms-auto text-2xs text-muted-foreground">{formatDateTime(e.at, lang)}</span>
                     <button type="button" onClick={() => deleteGlucose(idx)} className="text-muted-foreground/40 hover:text-red-600" aria-label="Delete">
                       <Trash2 className="h-3 w-3" aria-hidden />
                     </button>
@@ -385,7 +385,7 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
                   const cfg = trendConfig[bpTrend as keyof typeof trendConfig];
                   const Icon = cfg.icon;
                   return (
-                    <span className={cn('inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold', cfg.cls)}>
+                    <span className={cn('inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-2xs font-bold', cfg.cls)}>
                       <Icon className="h-2.5 w-2.5" aria-hidden />
                       {cfg.label[lang]}
                     </span>
@@ -393,7 +393,7 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
                 })()
               ) : null}
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setShowBpForm((v) => !v)} className="h-7 gap-1 px-2 text-[11px] font-semibold text-primary">
+            <Button variant="ghost" size="sm" onClick={() => setShowBpForm((v) => !v)} className="h-7 gap-1 px-2 text-2xs font-semibold text-primary">
               <Plus className="h-3 w-3" aria-hidden />
               {lang === 'ur' ? 'شامل کریں' : lang === 'roman' ? 'Shamil karein' : 'Add'}
             </Button>
@@ -406,19 +406,19 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
                 <div className="mb-2 rounded-lg border border-border bg-muted/30 p-2.5">
                   <div className="flex flex-wrap items-end gap-2">
                     <div className="flex-1">
-                      <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+                      <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
                         {lang === 'ur' ? 'سسٹولک' : lang === 'roman' ? 'Systolic' : 'Systolic'}
                       </Label>
                       <Input type="number" value={bpSys} onChange={(e) => setBpSys(e.target.value)} placeholder="120" className="h-9" />
                     </div>
                     <div className="flex-1">
-                      <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+                      <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
                         {lang === 'ur' ? 'ڈایاسٹولک' : lang === 'roman' ? 'Diastolic' : 'Diastolic'}
                       </Label>
                       <Input type="number" value={bpDia} onChange={(e) => setBpDia(e.target.value)} placeholder="80" className="h-9" />
                     </div>
                     <div className="flex-1">
-                      <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
+                      <Label className="mb-1 block text-2xs font-bold text-muted-foreground">
                         {lang === 'ur' ? 'نبض' : lang === 'roman' ? 'Nabz' : 'Pulse'}
                       </Label>
                       <Input type="number" value={bpPulse} onChange={(e) => setBpPulse(e.target.value)} placeholder="72" className="h-9" />
@@ -455,7 +455,7 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <p className="py-3 text-center text-[11px] text-muted-foreground">
+            <p className="py-3 text-center text-2xs text-muted-foreground">
               {lang === 'ur' ? 'رجحان دیکھنے کے لیے کم از کم 2 ریڈنگز درکار ہیں' : lang === 'roman' ? 'Rujhan dekhne ke liye kam az kam 2 readings darkaar hain' : 'Add at least 2 readings to see a trend'}
             </p>
           )}
@@ -469,15 +469,15 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
                 return (
                   <li key={idx} className="flex items-center gap-2 rounded-md border border-border/60 bg-background/40 p-1.5">
                     <span className={cn('text-xs font-bold', status.color)}>{e.systolic}/{e.diastolic}</span>
-                    <span className="text-[10px] text-muted-foreground">mmHg</span>
+                    <span className="text-2xs text-muted-foreground">mmHg</span>
                     {e.pulse ? (
                       <>
-                        <span className="text-[10px] text-muted-foreground">·</span>
-                        <span className="text-[10px] text-muted-foreground">{lang === 'ur' ? 'نبض' : lang === 'roman' ? 'Nabz' : 'Pulse'}: {e.pulse}</span>
+                        <span className="text-2xs text-muted-foreground">·</span>
+                        <span className="text-2xs text-muted-foreground">{lang === 'ur' ? 'نبض' : lang === 'roman' ? 'Nabz' : 'Pulse'}: {e.pulse}</span>
                       </>
                     ) : null}
                     <Badge2 label={status.label} className={status.color} />
-                    <span className="ml-auto text-[10px] text-muted-foreground">{formatDateTime(e.at, lang)}</span>
+                    <span className="ms-auto text-2xs text-muted-foreground">{formatDateTime(e.at, lang)}</span>
                     <button type="button" onClick={() => deleteBp(idx)} className="text-muted-foreground/40 hover:text-red-600" aria-label="Delete">
                       <Trash2 className="h-3 w-3" aria-hidden />
                     </button>
@@ -496,7 +496,7 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
                 return (
                   <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-500/30 bg-red-50/40 p-2 dark:bg-red-950/20">
                     <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
-                    <span className="text-[10px] leading-relaxed text-red-700 dark:text-red-400">
+                    <span className="text-2xs leading-relaxed text-red-700 dark:text-red-400">
                       {lang === 'ur'
                         ? 'آپ کی بلڈ پریشر بہت زیادہ ہے۔ اپنے ڈاکٹر سے رابطہ کریں۔ اگر سینے میں درد، سانس کی تکلیف، یا الجھن ہو تو 1122 پر کال کریں۔'
                         : lang === 'roman'
@@ -512,7 +512,7 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
         </div>
       ) : null}
 
-      <p className="text-center text-[10px] text-muted-foreground">
+      <p className="text-center text-2xs text-muted-foreground">
         {lang === 'ur' ? 'ڈیٹا صرف اس ڈیوائس پر محفوظ ہے۔' : lang === 'roman' ? 'Data sirf is device par mehfooz hai.' : 'Data stored only on this device.'}
       </p>
     </motion.section>
@@ -521,6 +521,6 @@ export function ChronicDiseaseModule({ lang, conditions, className }: ChronicDis
 
 function Badge2({ label, className }: { label: string; className?: string }) {
   return (
-    <span className={cn('rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-bold capitalize', className)}>{label}</span>
+    <span className={cn('rounded-full bg-secondary px-1.5 py-0.5 text-2xs font-bold capitalize', className)}>{label}</span>
   );
 }

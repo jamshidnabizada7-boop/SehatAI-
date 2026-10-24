@@ -117,7 +117,7 @@ export function OutcomeFollowupCard({ refreshKey, active }: { refreshKey: number
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-foreground">{t(uiLang, 'outcome.heading')}</p>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
+          <p className="text-2xs leading-relaxed text-muted-foreground">
             {t(uiLang, 'outcome.subheading')}
           </p>
           <div className="mt-2.5 flex flex-wrap gap-1.5">

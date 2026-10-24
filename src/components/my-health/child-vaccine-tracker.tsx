@@ -127,12 +127,12 @@ export function ChildVaccineTracker({ lang, className }: ChildVaccineTrackerProp
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'بچوں کی ویکسینیشن' : lang === 'roman' ? 'Bachon ki vaccination' : 'Child vaccine schedule'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {lang === 'ur' ? 'پاکستان EPI شیڈول' : lang === 'roman' ? 'Pakistan EPI schedule' : 'Pakistan EPI (Expanded Programme on Immunization)'}
           </p>
         </div>
         {data.dob ? (
-          <Badge variant="secondary" className="bg-orange-500/15 text-[10px] font-bold text-orange-700 dark:text-orange-400">
+          <Badge variant="secondary" className="bg-orange-500/15 text-2xs font-bold text-orange-700 dark:text-orange-400">
             {ageMonths < 1
               ? (lang === 'ur' ? 'نومولود' : lang === 'roman' ? 'Nou-moloud' : 'Newborn')
               : `${ageMonths}m`}
@@ -159,19 +159,19 @@ export function ChildVaccineTracker({ lang, className }: ChildVaccineTrackerProp
       {data.dob ? (
         <div className="mb-3 grid grid-cols-3 gap-2">
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'مکمل' : lang === 'roman' ? 'Mukammal' : 'Done'}
             </p>
             <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{completedCount}<span className="text-xs">/{totalDoses}</span></p>
           </div>
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'واجب الادا' : lang === 'roman' ? 'Wajib-ul-ada' : 'Due'}
             </p>
             <p className={cn('text-lg font-bold', dueCount > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground')}>{dueCount}</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-2 text-center">
-            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'فیصد' : lang === 'roman' ? 'Feelsad' : 'Progress'}
             </p>
             <p className="text-lg font-bold text-foreground">{completionPct}%</p>
@@ -192,11 +192,11 @@ export function ChildVaccineTracker({ lang, className }: ChildVaccineTrackerProp
                 <Calendar className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" aria-hidden />
                 <p className="text-xs font-bold text-foreground">{ageGroup}</p>
                 {allDone ? (
-                  <Badge variant="secondary" className="ml-auto bg-emerald-500/15 text-[9px] font-bold text-emerald-700 dark:text-emerald-400">
+                  <Badge variant="secondary" className="ms-auto bg-emerald-500/15 text-2xs font-bold text-emerald-700 dark:text-emerald-400">
                     {lang === 'ur' ? 'مکمل' : lang === 'roman' ? 'Mukammal' : 'Done'}
                   </Badge>
                 ) : isDue ? (
-                  <Badge variant="secondary" className="ml-auto bg-orange-500/15 text-[9px] font-bold text-orange-700 dark:text-orange-400">
+                  <Badge variant="secondary" className="ms-auto bg-orange-500/15 text-2xs font-bold text-orange-700 dark:text-orange-400">
                     {lang === 'ur' ? 'واجب الادا' : lang === 'roman' ? 'Wajib-ul-ada' : 'Due'}
                   </Badge>
                 ) : null
@@ -218,8 +218,8 @@ export function ChildVaccineTracker({ lang, className }: ChildVaccineTrackerProp
                           <Circle className="h-4 w-4 shrink-0 text-muted-foreground/40" aria-hidden />
                         )}
                         <span className="min-w-0 flex-1">
-                          <span className="block text-[11px] font-bold text-foreground">{dose.name[lang]}</span>
-                          <span className="block text-[10px] text-muted-foreground">{dose.disease[lang]}</span>
+                          <span className="block text-2xs font-bold text-foreground">{dose.name[lang]}</span>
+                          <span className="block text-2xs text-muted-foreground">{dose.disease[lang]}</span>
                         </span>
                         <Shield className="h-3 w-3 shrink-0 text-muted-foreground/30" aria-hidden />
                       </button>
@@ -232,7 +232,7 @@ export function ChildVaccineTracker({ lang, className }: ChildVaccineTrackerProp
         })}
       </div>
 
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
+      <p className="mt-2 text-center text-2xs text-muted-foreground">
         {lang === 'ur' ? 'معلومات پاکستان EPI سے' : lang === 'roman' ? 'Maloomat Pakistan EPI se' : 'Information from Pakistan EPI (Expanded Programme on Immunization)'}
       </p>
     </motion.section>

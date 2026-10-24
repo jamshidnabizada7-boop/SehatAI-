@@ -95,7 +95,7 @@ export function EmergencyOverlay() {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      className="fixed inset-0 z-50 overflow-y-auto bg-red-600 text-white"
+      className="fixed inset-0 z-50 overflow-y-auto bg-red-700 text-white"
       role="alertdialog"
       aria-modal="true"
       aria-label={emergency.title}
@@ -155,30 +155,34 @@ export function EmergencyOverlay() {
           ) : null}
         </div>
 
-        {/* call buttons — immediately visible, before any scrolling */}
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {/* call buttons — immediately visible, before any scrolling.
+            The first number is the large primary action; the rest are
+            compact so all of them (and the first steps) fit on a phone. */}
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
           {numbers.map((n, i) => (
             <a
               key={n.number}
               href={`tel:${n.number}`}
               className={cn(
-                'group relative flex flex-col items-center gap-1 overflow-hidden rounded-2xl bg-white px-4 py-4 text-center text-red-600 shadow-lg transition-transform hover:scale-[1.03] active:scale-95 focus-visible:outline-3 focus-visible:-outline-offset-2 focus-visible:outline-white',
-                i === 0 && 'emergency-call-ring',
+                'group relative flex items-center gap-3 overflow-hidden rounded-2xl bg-white text-start text-red-700 shadow-lg transition-transform active:scale-[0.98] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white',
+                i === 0 ? 'emergency-call-ring col-span-2 justify-center px-4 py-4' : 'min-h-16 px-3 py-2.5',
               )}
-              aria-label={`${t(lang, 'emergency.callNow')} ${n.number}`}
+              aria-label={`${t(lang, 'emergency.callNow')} ${n.number} — ${n.label}`}
             >
-              <Phone className="h-7 w-7 animate-pulse" aria-hidden />
-              <span className="text-3xl font-extrabold tracking-tight">{n.number}</span>
-              <span className="text-xs font-semibold leading-tight text-red-600/80">
-                {n.label}
+              <Phone className={cn('shrink-0', i === 0 ? 'h-7 w-7' : 'h-5 w-5')} aria-hidden />
+              <span className="min-w-0">
+                <span className={cn('block font-extrabold tracking-tight', i === 0 ? 'text-4xl' : 'text-2xl')} dir="ltr">
+                  {n.number}
+                </span>
+                <span className="block text-xs font-semibold leading-tight text-red-900/80">{n.label}</span>
               </span>
             </a>
           ))}
         </div>
 
         {/* prompt to dial */}
-        <p className="mt-2.5 text-center text-sm font-semibold text-white/95">
-          {t(lang, 'emergency.callNow')} →
+        <p className="mt-2.5 text-center text-sm font-semibold text-white">
+          {t(lang, 'emergency.callNow')}
         </p>
 
         {/* immediate actions */}
@@ -236,7 +240,7 @@ export function EmergencyOverlay() {
                   <span className="text-sm font-bold">{f.name}</span>
                   {f.nameUr ? <span className="text-xs text-white/75">{f.nameUr}</span> : null}
                   {typeof f.distanceKm === 'number' ? (
-                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold">
+                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-2xs font-semibold">
                       {f.distanceKm.toFixed(1)} {t(lang, 'facilities.away')}
                     </span>
                   ) : null}

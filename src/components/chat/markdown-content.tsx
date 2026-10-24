@@ -75,7 +75,7 @@ export function MarkdownContent({ content, className, citations }: MarkdownConte
             }
             if (/likely assessment|assessment|possible causes/i.test(text)) {
               return (
-                <span className="inline-flex items-center gap-1 font-bold text-[#007b61] bg-[#eaf9f4] px-1.5 py-0.5 rounded text-xs uppercase tracking-wide">
+                <span className="inline-flex items-center gap-1 font-bold text-primary bg-accent px-1.5 py-0.5 rounded text-xs uppercase tracking-wide">
                   {children}
                 </span>
               );

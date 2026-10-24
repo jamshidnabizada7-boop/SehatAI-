@@ -1,18 +1,20 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback } from 'react';
 import {
   Share2,
   Printer,
   MessageCircle,
   ClipboardCopy,
-  X,
-  FileText,
-  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { resolveUiLang, t } from '@/lib/i18n';
 import type { ChatMessage, Lang, TriageLevel } from '@/lib/types';
@@ -37,7 +39,6 @@ interface ChatExportMenuProps {
 
 export function ChatExportMenu({ messages, lang, className }: ChatExportMenuProps) {
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
 
   const buildTranscript = useCallback(() => {
     const lines = messages.map((m) => {
@@ -47,7 +48,7 @@ export function ChatExportMenu({ messages, lang, className }: ChatExportMenuProp
       return `${who}${triage}${confidence}: ${m.content}`;
     });
     const disclaimer = lang === 'ur'
-      ? '⚠️ سی ایچ اے آئی تشخیص نہیں دیتا — ڈاکٹر سے مشورہ کریں۔'
+      ? '⚠️ صحت اے آئی تشخیص نہیں دیتا — ڈاکٹر سے مشورہ کریں۔'
       : lang === 'roman'
         ? '⚠️ SehatAI tashkhees nahi deta — doctor se mashwara karein.'
         : '⚠️ SehatAI does not diagnose — consult a doctor.';
@@ -89,7 +90,7 @@ export function ChatExportMenu({ messages, lang, className }: ChatExportMenuProp
       return `<div class="msg ${m.role}"><span class="who">${who}${triage}${conf}</span><p>${escapeHtml(m.content)}</p></div>`;
     }).join('');
     const disclaimer = lang === 'ur'
-      ? 'سی ایچ اے آئی تشخیص نہیں دیتا — ڈاکٹر سے مشورہ کریں'
+      ? 'صحت اے آئی تشخیص نہیں دیتا — ڈاکٹر سے مشورہ کریں'
       : lang === 'roman'
         ? 'SehatAI tashkhees nahi deta — doctor se mashwara karein'
         : 'SehatAI does not diagnose — consult a doctor';
@@ -142,82 +143,45 @@ export function ChatExportMenu({ messages, lang, className }: ChatExportMenuProp
 
   if (messages.length === 0) return null;
 
+  const label = lang === 'ur' ? 'ایکسپورٹ' : 'Export';
+  const itemCls = 'flex cursor-pointer items-center gap-2.5 text-sm';
+
   return (
-    <div className={cn('relative', className)}>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setOpen((v) => !v)}
-        className="h-8 gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-        aria-label="Export conversation"
-      >
-        <Share2 className="h-3.5 w-3.5" aria-hidden />
-        <span className="hidden sm:inline">{lang === 'ur' ? 'ایکسپورٹ' : lang === 'roman' ? 'Export' : 'Export'}</span>
-      </Button>
-
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute bottom-full right-0 z-30 mb-2 w-56 rounded-xl border border-border bg-card p-2 shadow-lg"
-            role="menu"
-            aria-label="Export options"
-          >
-            <div className="mb-1 flex items-center justify-between px-1">
-              <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                {lang === 'ur' ? 'ایکسپورٹ' : lang === 'roman' ? 'Export' : 'Export'}
-              </p>
-              <button type="button" onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="h-3 w-3" aria-hidden />
-              </button>
-            </div>
-
-            {/* Copy */}
-            <button
-              type="button"
-              onClick={() => { void copyToClipboard(); setOpen(false); }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-accent/40"
-            >
-              <ClipboardCopy className="h-4 w-4 text-primary" aria-hidden />
-              <span className="text-xs font-medium text-foreground">{lang === 'ur' ? 'کاپی' : lang === 'roman' ? 'Copy' : 'Copy'}</span>
-            </button>
-
-            {/* WhatsApp */}
-            <button
-              type="button"
-              onClick={() => { shareWhatsApp(); setOpen(false); }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-accent/40"
-            >
-              <MessageCircle className="h-4 w-4 text-emerald-600" aria-hidden />
-              <span className="text-xs font-medium text-foreground">{lang === 'ur' ? 'واٹس ایپ' : lang === 'roman' ? 'WhatsApp' : 'WhatsApp'}</span>
-            </button>
-
-            {/* Print / PDF */}
-            <button
-              type="button"
-              onClick={() => { printTranscript(); setOpen(false); }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-accent/40"
-            >
-              <Printer className="h-4 w-4 text-slate-600" aria-hidden />
-              <span className="text-xs font-medium text-foreground">{lang === 'ur' ? 'پرنٹ / PDF' : lang === 'roman' ? 'Print / PDF' : 'Print / PDF'}</span>
-            </button>
-
-            <div className="mt-1 border-t border-border/60 pt-1">
-              <p className="px-1 text-[9px] leading-relaxed text-muted-foreground">
-                {lang === 'ur'
-                  ? 'ایکسپورٹ میں ڈس کلیمر شامل ہے — سی ایچ اے آئی تشخیص نہیں دیتا۔'
-                  : lang === 'roman'
-                    ? 'Export mein disclaimer shamil hai — SehatAI tashkhees nahi deta.'
-                    : 'Exports include the SehatAI disclaimer — not a diagnosis.'}
-              </p>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn('h-9 gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground', className)}
+          aria-label={label}
+        >
+          <Share2 className="h-3.5 w-3.5" aria-hidden />
+          <span className="hidden sm:inline">{label}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" side="top" className={cn('w-60 rounded-xl', lang === 'ur' && 'font-urdu')}>
+        <DropdownMenuItem onClick={() => void copyToClipboard()} className={itemCls}>
+          <ClipboardCopy className="h-4 w-4" aria-hidden />
+          {t(lang, 'chat.copyTranscript')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={shareWhatsApp} className={itemCls}>
+          <MessageCircle className="h-4 w-4" aria-hidden />
+          WhatsApp
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={printTranscript} className={itemCls}>
+          <Printer className="h-4 w-4" aria-hidden />
+          {lang === 'ur' ? 'پرنٹ / PDF' : 'Print / PDF'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <p className="px-2 py-1 text-2xs leading-relaxed text-muted-foreground">
+          {lang === 'ur'
+            ? 'ایکسپورٹ میں ڈس کلیمر شامل ہے — صحت اے آئی تشخیص نہیں دیتا۔'
+            : lang === 'roman'
+              ? 'Export mein disclaimer shamil hai — SehatAI tashkhees nahi deta.'
+              : 'Exports include the SehatAI disclaimer — not a diagnosis.'}
+        </p>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

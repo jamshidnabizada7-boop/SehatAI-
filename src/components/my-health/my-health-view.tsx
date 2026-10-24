@@ -4,10 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ClipboardList, Lock, Share2, Trash2, Download, Heart, Activity,
-  Thermometer, Pill, Sparkles, Calendar, Wind, ShieldCheck, ArrowRight, Check,
+  Thermometer, Pill, Sparkles, Calendar, Wind, ShieldCheck, ArrowRight, Check, Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/lib/store/app-store';
+import { useChatStore } from '@/lib/store/chat-store';
 import { resolveUiLang, t } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -60,6 +61,10 @@ import { cn } from '@/lib/utils';
 
 export function MyHealthView() {
   const langPref = useAppStore((s) => s.langPref);
+  const setView = useAppStore((s) => s.setView);
+  const setPendingChatDraft = useChatStore((s) => s.setPendingChatDraft);
+  const scrollToJournal = () =>
+    document.getElementById('mh-journal-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const uiLang = resolveUiLang(langPref);
   const { toast } = useToast();
 
@@ -174,43 +179,34 @@ export function MyHealthView() {
         )}
       >
         {/* High-Fidelity Personal Health Hero (§ references/04_My_Health_Record.png) */}
-        <div className="hero-banner hero-hub relative min-h-[160px] rounded-2xl p-6 sm:p-8 flex items-center justify-between overflow-hidden shadow-xs">
-          <div className="max-w-[560px] z-10">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
-              My <span className="text-[#008d6d]">Health Record</span>
+        <div className="hero-banner hero-hub relative flex items-center overflow-hidden">
+          <div className="z-10 max-w-xl md:max-w-[60%]">
+            <h1 className="text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-[1.7rem]">
+              My <span className="text-primary">health record</span>
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-md leading-relaxed">
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
               Your complete health information in one place. Track progress and share securely with your doctors.
             </p>
           </div>
           <img
             src="/assets/health_woman.png"
-            alt="Health hub"
-            className="hidden md:block absolute right-[260px] top-0 h-full w-auto max-w-[28%] object-cover pointer-events-none"
+            alt=""
+            className="pointer-events-none absolute end-0 top-0 hidden h-full w-auto max-w-[32%] object-cover md:block"
           />
-          <div className="hidden sm:flex items-center gap-3.5 bg-background/90 backdrop-blur-sm p-4 rounded-2xl border border-border/80 shadow-xs z-10">
-            <div className="h-16 w-16 rounded-full border-4 border-[#009b78] border-r-emerald-200 flex items-center justify-center font-extrabold text-base text-[#009b78]">
-              85%
-            </div>
-            <div className="text-xs">
-              <b className="text-foreground block">Profile Completion</b>
-              <span className="text-[11px] text-muted-foreground">Demo value — use actual computed completion only.</span>
-            </div>
-          </div>
         </div>
 
         {/* Patient Profile Header Strip */}
         <div className="surface pad p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="h-12 w-12 rounded-full bg-emerald-500/15 text-[#007b61] font-extrabold flex items-center justify-center text-base">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-base font-semibold text-accent-foreground">
               FA
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-foreground">
+                <h2 className="text-base font-semibold text-foreground">
                   Fatima Ali
-                </h3>
-                <span className="chip green text-[10px]">Sample Profile</span>
+                </h2>
+                <span className="chip orange">Sample profile</span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {profile?.sex === 'female' ? 'Female' : profile?.sex === 'male' ? 'Male' : 'Female'} · {profile?.ageBand ? profile.ageBand.replace('-', ' ') : '28 yrs'} · Lahore, Punjab · Blood Group: B+
@@ -222,7 +218,7 @@ export function MyHealthView() {
               variant="outline"
               size="sm"
               onClick={handleShareProfile}
-              className="h-9 px-3.5 rounded-xl border-border text-xs font-semibold gap-1.5"
+              className="h-9 gap-1.5 rounded-lg px-3.5 text-xs font-semibold"
             >
               <Share2 className="h-3.5 w-3.5" />
               Share with Doctor
@@ -230,7 +226,7 @@ export function MyHealthView() {
             <Button
               size="sm"
               onClick={() => window.print()}
-              className="h-9 px-3.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold gap-1.5 hover:bg-primary/90"
+              className="h-9 gap-1.5 rounded-lg px-3.5 text-xs font-semibold"
             >
               <Download className="h-3.5 w-3.5" />
               Export PDF
@@ -239,7 +235,7 @@ export function MyHealthView() {
         </div>
 
         {/* 4 Prominent Switchable Tabs (§ references/04_My_Health_Record.png) */}
-        <div className="tabrow" role="tablist">
+        <div className="tabrow" role="tablist" aria-label={t(uiLang, 'myHealth.title')}>
           {[
             { id: 'overview', icon: Activity, num: 1, label: 'Overview & Vitals' },
             { id: 'records', icon: ClipboardList, num: 2, label: 'Clinical Records & Labs' },
@@ -248,13 +244,14 @@ export function MyHealthView() {
           ].map((t) => (
             <button
               key={t.id}
+              type="button"
               role="tab"
               aria-selected={phrTab === t.id}
               onClick={() => setPhrTab(t.id as any)}
               className={cn('tab-custom', phrTab === t.id && 'active')}
             >
-              <t.icon className="h-4 w-4" />
-              <span>{t.num}. {t.label}</span>
+              <t.icon className="h-4 w-4" aria-hidden />
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
@@ -265,21 +262,21 @@ export function MyHealthView() {
             {/* 4 Vital Metric Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               {[
-                { icon: Heart, color: 'text-pink-600 bg-pink-500/10', title: 'Blood Pressure', val: '120 / 80', unit: 'mmHg', desc: 'Normal · sample' },
-                { icon: Activity, color: 'text-blue-600 bg-blue-500/10', title: 'Blood Glucose', val: '96', unit: 'mg/dL', desc: 'Optimal · sample' },
-                { icon: Thermometer, color: 'text-purple-600 bg-purple-500/10', title: 'Body Temperature', val: '98.6', unit: '°F', desc: 'Normal · sample' },
-                { icon: ClipboardList, color: 'text-emerald-600 bg-emerald-500/10', title: 'Weight & BMI', val: '62 kg', unit: 'BMI 23.1', desc: 'Sample profile' },
+                { icon: Heart, color: 'iconbox-pink', title: 'Blood pressure', val: '120 / 80', unit: 'mmHg', desc: 'Normal · sample' },
+                { icon: Activity, color: 'iconbox-blue', title: 'Blood glucose', val: '96', unit: 'mg/dL', desc: 'Optimal · sample' },
+                { icon: Thermometer, color: 'iconbox-purple', title: 'Body temperature', val: '98.6', unit: '°F', desc: 'Normal · sample' },
+                { icon: ClipboardList, color: '', title: 'Weight and BMI', val: '62 kg', unit: 'BMI 23.1', desc: 'Sample profile' },
               ].map((v, idx) => (
                 <div key={idx} className="metric-card surface p-4 flex items-center gap-3.5">
-                  <div className={cn('h-11 w-11 rounded-2xl flex items-center justify-center shrink-0', v.color)}>
+                  <div className={cn('iconbox', v.color)}>
                     <v.icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{v.title}</span>
-                    <div className="text-xl font-extrabold text-foreground mt-0.5">
-                      {v.val} <span className="text-[11px] font-normal text-muted-foreground">{v.unit}</span>
+                    <span className="text-xs font-medium text-muted-foreground">{v.title}</span>
+                    <div className="mt-0.5 text-xl font-semibold text-foreground tabular">
+                      {v.val} <span className="text-xs font-normal text-muted-foreground">{v.unit}</span>
                     </div>
-                    <span className="text-[11px] font-semibold text-[#008664]">{v.desc}</span>
+                    <span className="text-xs text-muted-foreground">{v.desc}</span>
                   </div>
                 </div>
               ))}
@@ -290,8 +287,8 @@ export function MyHealthView() {
               {/* Current Medications */}
               <div className="surface pad p-5 space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-base font-bold text-foreground">Current Medications & Reminders</h3>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-muted-foreground">See All →</Button>
+                  <h3 className="text-base font-semibold text-foreground">Medications and reminders</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setView('reminders')} className="h-9 text-xs font-semibold text-primary hover:text-primary">See all</Button>
                 </div>
                 <div className="space-y-2.5">
                   {[
@@ -299,21 +296,21 @@ export function MyHealthView() {
                     { name: 'Lisinopril 10mg', desc: 'Once daily in morning', status: 'Taken Today' },
                     { name: 'Vitamin D3 1000 IU', desc: 'Once daily after breakfast', status: 'Due at 8 PM' },
                   ].map((med, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 border border-border/60">
+                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/50">
                       <div className="flex items-center gap-2.5">
-                        <div className="iconbox h-8 w-8 rounded-lg bg-emerald-500/10 text-[#009b78]">
+                        <div className="iconbox h-8 w-8 rounded-lg">
                           <Pill className="h-4 w-4" />
                         </div>
                         <div>
                           <b className="text-xs text-foreground block">{med.name}</b>
-                          <span className="text-[11px] text-muted-foreground">{med.desc}</span>
+                          <span className="text-2xs text-muted-foreground">{med.desc}</span>
                         </div>
                       </div>
-                      <span className={cn('chip text-[10px]', med.status === 'Taken Today' ? 'green' : 'orange')}>{med.status}</span>
+                      <span className={cn('chip text-2xs', med.status === 'Taken Today' ? 'green' : 'orange')}>{med.status}</span>
                     </div>
                   ))}
-                  <Button variant="outline" size="sm" className="w-full h-9 rounded-xl border-dashed border-border text-xs font-semibold text-muted-foreground mt-1">
-                    + Add Medication
+                  <Button variant="outline" size="sm" onClick={() => setView('reminders')} className="mt-1 h-10 w-full rounded-xl border-dashed text-xs font-semibold text-muted-foreground">
+                    <Plus className="h-3.5 w-3.5" aria-hidden /> Add medication reminder
                   </Button>
                 </div>
               </div>
@@ -321,8 +318,8 @@ export function MyHealthView() {
               {/* Recent Symptoms & Health Notes */}
               <div className="surface pad p-5 space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-base font-bold text-foreground">Recent Symptoms & Health Notes</h3>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-muted-foreground">See All →</Button>
+                  <h3 className="text-base font-semibold text-foreground">Recent symptoms and notes</h3>
+                  <Button variant="ghost" size="sm" onClick={scrollToJournal} className="h-9 text-xs font-semibold text-primary hover:text-primary">See all</Button>
                 </div>
                 <div className="space-y-2.5">
                   {[
@@ -330,18 +327,18 @@ export function MyHealthView() {
                     { note: 'Mild tension headache', sub: 'Resolved after hydration and rest' },
                     { note: 'Mild stomach discomfort', sub: 'After food · Resolved' },
                   ].map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-muted/30 border border-border/60">
-                      <div className="iconbox h-8 w-8 rounded-lg bg-purple-500/10 text-purple-600 mt-0.5">
+                    <div key={idx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-muted/50">
+                      <div className="iconbox iconbox-purple mt-0.5 h-8 w-8 rounded-lg">
                         <Heart className="h-4 w-4" />
                       </div>
                       <div>
                         <b className="text-xs text-foreground block">{item.note}</b>
-                        <span className="text-[11px] text-muted-foreground">{item.sub}</span>
+                        <span className="text-2xs text-muted-foreground">{item.sub}</span>
                       </div>
                     </div>
                   ))}
-                  <Button variant="outline" size="sm" className="w-full h-9 rounded-xl border-dashed border-border text-xs font-semibold text-muted-foreground mt-1">
-                    + Log New Symptom
+                  <Button variant="outline" size="sm" onClick={scrollToJournal} className="mt-1 h-10 w-full rounded-xl border-dashed text-xs font-semibold text-muted-foreground">
+                    <Plus className="h-3.5 w-3.5" aria-hidden /> Log a symptom
                   </Button>
                 </div>
               </div>
@@ -352,14 +349,14 @@ export function MyHealthView() {
               {/* Health Insights */}
               <div className="surface pad p-5 space-y-2.5">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-foreground">Health Insights</h3>
-                  <span className="chip green text-[10px]">AI</span>
+                  <h3 className="text-sm font-semibold text-foreground">Health Insights</h3>
+                  <span className="chip orange">Illustrative</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Illustrative health insight. Real guidance must use source-backed clinical logic.
                 </p>
-                <div className="inset inset-green p-3 rounded-xl border border-emerald-200/60 flex items-start gap-2 text-xs text-foreground/90">
-                  <Sparkles className="h-4 w-4 text-[#009b78] shrink-0 mt-0.5" />
+                <div className="inset inset-green flex items-start gap-2 rounded-xl p-3 text-xs text-foreground">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <span>Continue hydration and note symptom changes over the next 48 hours.</span>
                 </div>
               </div>
@@ -367,8 +364,8 @@ export function MyHealthView() {
               {/* Upcoming Reminders */}
               <div className="surface pad p-5 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-foreground">Upcoming Reminders</h3>
-                  <Button variant="ghost" size="sm" className="h-6 text-[11px] text-muted-foreground">View All</Button>
+                  <h3 className="text-sm font-semibold text-foreground">Upcoming reminders</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setView('reminders')} className="h-8 text-xs font-semibold text-primary hover:text-primary">View all</Button>
                 </div>
                 <div className="space-y-2">
                   {[
@@ -381,10 +378,10 @@ export function MyHealthView() {
                         <Calendar className="h-3.5 w-3.5 text-blue-600" />
                         <div>
                           <b className="text-foreground block">{rem.title}</b>
-                          <span className="text-[10px] text-muted-foreground">{rem.time}</span>
+                          <span className="text-2xs text-muted-foreground">{rem.time}</span>
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-semibold text-primary">Manage</Button>
+                      <Button variant="ghost" size="sm" onClick={() => setView('reminders')} className="h-8 px-2 text-xs font-semibold text-primary hover:text-primary">Manage</Button>
                     </div>
                   ))}
                 </div>
@@ -393,11 +390,11 @@ export function MyHealthView() {
               {/* Air Quality */}
               <div className="surface pad p-5 space-y-2.5">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-foreground">Air Quality in Lahore</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Air Quality in Lahore</h3>
                   <Wind className="h-4 w-4 text-amber-500" />
                 </div>
-                <div className="text-xl font-extrabold text-[#be630c] flex items-center gap-2">
-                  AQI 168 <span className="chip orange text-[10px]">Example</span>
+                <div className="flex items-center gap-2 text-xl font-semibold text-warning">
+                  AQI 168 <span className="chip orange text-2xs">Example</span>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Sample environmental guidance. Live AQI requires a verified provider and timestamp.
@@ -405,9 +402,13 @@ export function MyHealthView() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full h-8 rounded-xl border-border text-xs font-semibold hover:bg-accent mt-1"
+                  onClick={() => {
+                    setPendingChatDraft('How can I protect my health on days with poor air quality (high AQI)?');
+                    setView('chat');
+                  }}
+                  className="mt-1 h-9 w-full rounded-lg text-xs font-semibold"
                 >
-                  Preventative Guidance →
+                  Ask about protective steps
                 </Button>
               </div>
             </div>
@@ -420,13 +421,13 @@ export function MyHealthView() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2
                   id="mh-profile-heading"
-                  className="text-lg font-bold tracking-tight text-foreground"
+                  className="text-lg font-semibold tracking-tight text-foreground"
                 >
                   {t(uiLang, 'myHealth.profileSection')}
                 </h2>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {profileActive ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-2xs font-bold text-emerald-700 dark:text-emerald-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
                       {t(uiLang, 'myHealth.profileSet')}
                     </span>
@@ -485,7 +486,7 @@ export function MyHealthView() {
                 <div className="flex flex-col gap-0.5">
                   <h2
                     id="mh-journal-heading"
-                    className="text-lg font-bold tracking-tight text-foreground"
+                    className="text-lg font-semibold tracking-tight text-foreground"
                   >
                     {t(uiLang, 'myHealth.journalSection')}
                   </h2>

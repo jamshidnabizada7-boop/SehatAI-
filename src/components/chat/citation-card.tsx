@@ -26,7 +26,7 @@ export function CitationCard({ citation, index, lang }: CitationCardProps) {
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-start transition-colors hover:bg-accent/60 focus-visible:outline-2 focus-visible:outline-ring"
             aria-expanded={open}
           >
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600/10 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600/10 text-2xs font-bold text-emerald-700 dark:text-emerald-400">
               {index + 1}
             </span>
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">

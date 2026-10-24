@@ -163,7 +163,7 @@ export default async function LegalDocPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="mx-auto max-w-2xl space-y-6">
         {/* Navigation & Document Header */}
         <div className="flex items-center justify-between border-b border-border/80 pb-4">
           <Link href="/">
@@ -171,7 +171,7 @@ export default async function LegalDocPage({ params }: PageProps) {
               <ArrowLeft className="h-3.5 w-3.5" /> Return to SehatAI
             </Button>
           </Link>
-          <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <FileText className="h-4 w-4 text-primary" />
             <span>{cleanSlug}.md</span>
           </div>
@@ -185,7 +185,7 @@ export default async function LegalDocPage({ params }: PageProps) {
               <p className="font-semibold text-sm">
                 PM&amp;DC Telemedicine Governance &amp; Compliance Policy
               </p>
-              <p className="text-xs mt-1 text-muted-foreground leading-relaxed">
+              <p className="mt-1 max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
                 This document sets forth patient data protection, clinical consent, and governance protocols in compliance with PM&amp;DC telemedicine guidelines and national digital healthcare privacy standards.
               </p>
             </div>
@@ -193,18 +193,18 @@ export default async function LegalDocPage({ params }: PageProps) {
         </div>
 
         {/* Document Content */}
-        <article className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-5">
+        <article className="space-y-5">
           {renderedSections.map((sec, idx) => {
             if (sec.type === 'h1') {
               return (
-                <h1 key={idx} className="text-2xl font-bold tracking-tight text-foreground border-b border-border pb-3">
+                <h1 key={idx} className="text-2xl font-semibold tracking-tight text-foreground border-b border-border pb-3">
                   {sec.text}
                 </h1>
               );
             }
             if (sec.type === 'h2') {
               return (
-                <h2 key={idx} className="text-lg font-bold text-foreground pt-3 border-t border-border/50">
+                <h2 key={idx} className="pt-4 text-lg font-semibold text-foreground">
                   {sec.text}
                 </h2>
               );
@@ -227,7 +227,7 @@ export default async function LegalDocPage({ params }: PageProps) {
             }
             if (sec.type === 'list') {
               return (
-                <ol key={idx} className="space-y-2.5 ps-5 list-decimal text-sm leading-relaxed text-foreground/90 marker:font-semibold marker:text-primary">
+                <ol key={idx} className="max-w-[62ch] space-y-2.5 ps-5 list-decimal text-[15px] leading-7 text-foreground marker:font-semibold marker:text-primary">
                   {sec.items?.map((item, itemIdx) => (
                     <li key={itemIdx} className="ps-1">
                       {item.replace(/\*\*(.*?)\*\*/g, '$1')}
@@ -237,7 +237,7 @@ export default async function LegalDocPage({ params }: PageProps) {
               );
             }
             return (
-              <p key={idx} className="text-sm leading-relaxed text-foreground/90">
+              <p key={idx} className="max-w-[62ch] text-[15px] leading-7 text-foreground [text-wrap:pretty]">
                 {sec.text.replace(/\*\*(.*?)\*\*/g, '$1')}
               </p>
             );

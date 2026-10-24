@@ -156,7 +156,7 @@ export function ReminderDialog({ open, onOpenChange, lang, onSave, initialDraft,
               {t(lang, 'reminders.templates')}
             </p>
             <div className="flex flex-wrap gap-2">
-              <span className="text-[11px] font-medium text-muted-foreground">
+              <span className="text-2xs font-medium text-muted-foreground">
                 {t(lang, 'reminders.epiTemplates')}:
               </span>
               {EPI_TEMPLATES.slice(0, 3).map((tpl) => (
@@ -171,7 +171,7 @@ export function ReminderDialog({ open, onOpenChange, lang, onSave, initialDraft,
               ))}
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="text-[11px] font-medium text-muted-foreground">
+              <span className="text-2xs font-medium text-muted-foreground">
                 {t(lang, 'reminders.ancTemplates')}:
               </span>
               {ANC_TEMPLATES.slice(0, 2).map((tpl) => (

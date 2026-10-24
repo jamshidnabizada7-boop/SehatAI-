@@ -71,14 +71,14 @@ export function CommunityForum() {
           {posts.map(p => (
             <li key={p.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
               <div className="flex items-start gap-2">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">{p.authorName?.[0]?.toUpperCase() ?? 'A'}</span>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-2xs font-bold text-primary">{p.authorName?.[0]?.toUpperCase() ?? 'A'}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2"><p className="text-sm font-bold text-foreground">{p.title}</p>{p.isPinned && <Badge className="bg-amber-500/15 text-[8px] text-amber-700">📌 Pinned</Badge>}</div>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">{p.content}</p>
-                  <div className="mt-1.5 flex items-center gap-3 text-[10px] text-muted-foreground">
+                  <div className="mt-1.5 flex items-center gap-3 text-2xs text-muted-foreground">
                     <span>{p.authorName}</span><span>·</span><span>{new Date(p.createdAt).toLocaleDateString()}</span>
                     <Badge variant="secondary" className="text-[8px]">{p.category}</Badge>
-                    <button onClick={() => setExpandedId(expandedId === p.id ? null : p.id)} className="ml-auto inline-flex items-center gap-0.5 font-semibold text-primary hover:underline"><Reply className="h-3 w-3" /> {p.replies}</button>
+                    <button onClick={() => setExpandedId(expandedId === p.id ? null : p.id)} className="ms-auto inline-flex items-center gap-0.5 font-semibold text-primary hover:underline"><Reply className="h-3 w-3" /> {p.replies}</button>
                   </div>
                 </div>
               </div>

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { AuthBrandHeading, AuthShell, ContinueAsGuestLink } from '@/components/auth/auth-shell';
-import { TriInline, TriStack } from '@/components/auth/trilingual';
+import { Tri, TriInline, TriStack, useTri } from '@/components/auth/trilingual';
 
 const T = {
   title: {
@@ -80,6 +80,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignInPage() {
   const router = useRouter();
+  const tri = useTri();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -91,8 +92,8 @@ export default function SignInPage() {
       e.preventDefault();
       if (submitting) return;
       const next: { email?: string; password?: string } = {};
-      if (!EMAIL_RE.test(email.trim())) next.email = T.errEmail.en;
-      if (password.length < 8) next.password = T.errPassword.en;
+      if (!EMAIL_RE.test(email.trim())) next.email = tri(T.errEmail);
+      if (password.length < 8) next.password = tri(T.errPassword);
       setErrors(next);
       if (next.email || next.password) return;
 
@@ -150,24 +151,20 @@ export default function SignInPage() {
         setSubmitting(false);
       }
     },
-    [email, password, router, submitting],
+    [email, password, router, submitting, tri],
   );
 
   return (
     <AuthShell>
       <AuthBrandHeading />
 
-      <Card className="border-border bg-card/70 shadow-sm">
+      <Card className="border-border bg-card shadow-[var(--soft-shadow)]">
         <CardHeader className="gap-3 border-b border-border px-5 py-5 sm:px-6">
-          <h1 className="text-xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
             <TriStack strings={T.title} size="sm" />
           </h1>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {T.subtitle.en}
-            <span dir="rtl" className="mt-1 block font-urdu">
-              {T.subtitle.ur}
-            </span>
-            <span className="mt-1 block italic">{T.subtitle.roman}</span>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            <Tri strings={T.subtitle} />
           </p>
         </CardHeader>
 
@@ -239,37 +236,24 @@ export default function SignInPage() {
             <Button
               type="submit"
               disabled={submitting}
-              className="h-auto min-h-12 flex-col gap-0.5 rounded-xl py-2.5 text-sm font-bold"
+              className="h-12 gap-2 rounded-xl text-sm font-semibold"
             >
-              <span className="inline-flex items-center gap-1.5">
-                <LogIn className="h-4 w-4" aria-hidden />
-                {submitting ? T.submitting.en : T.submit.en}
-              </span>
-              <span dir="rtl" className="font-urdu text-[11px] font-semibold opacity-90">
-                {submitting ? T.submitting.ur : T.submit.ur}
-              </span>
-              <span className="text-[10px] font-medium italic opacity-80">
-                {submitting ? T.submitting.roman : T.submit.roman}
-              </span>
+              <LogIn className="h-4 w-4" aria-hidden />
+              <Tri strings={submitting ? T.submitting : T.submit} />
             </Button>
           </form>
 
           <div className="mt-5 flex flex-col items-center gap-3 border-t border-border pt-4">
-            <p className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground">
-              {T.noAccount.en}
-              <span dir="rtl" className="font-urdu">
-                {T.noAccount.ur}
-              </span>
-              <span aria-hidden>·</span>
-              <span className="italic">{T.noAccount.roman}</span>
+            <p className="text-xs text-muted-foreground">
+              <Tri strings={T.noAccount} />
             </p>
             <Link
               href="/auth/signup"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-primary/40 bg-primary/5 px-4 text-sm font-bold text-primary transition-colors hover:bg-primary/12 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-input hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
             >
               <TriInline strings={T.createOne} />
             </Link>
-            <ContinueAsGuestLink label={T.guest.en} />
+            <ContinueAsGuestLink label={<Tri strings={T.guest} />} />
           </div>
         </CardContent>
       </Card>

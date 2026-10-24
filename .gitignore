@@ -83,3 +83,6 @@ db/*.db
 .vercel
 .agents/
 
+
+# Playwright MCP scratch output
+.playwright-mcp/

@@ -49,14 +49,14 @@ export default function DoctorPendingPage() {
     <AuthShell variant="doctor">
       <AuthBrandHeading variant="doctor" />
 
-      <Card className="border-amber-500/40 bg-card/70 shadow-sm">
+      <Card className="border-amber-500/40 bg-card shadow-[var(--soft-shadow)]">
         <CardContent className="flex flex-col items-center gap-4 px-5 py-8 text-center sm:px-6">
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15">
             <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </span>
 
           <div>
-            <h1 className="text-xl font-extrabold text-foreground">
+            <h1 className="text-xl font-semibold text-foreground">
               {loading ? 'Checking your account…' : `Thank you, Dr. ${info?.name ?? 'Doctor'}.`}
             </h1>
             {loading ? (
@@ -69,7 +69,7 @@ export default function DoctorPendingPage() {
           </div>
 
           {info?.doctorProfile ? (
-            <div className="w-full rounded-xl border border-border bg-background p-4 text-left">
+            <div className="w-full rounded-xl border border-border bg-background p-4 text-start">
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <p className="text-muted-foreground">PMDC #</p>
@@ -81,7 +81,7 @@ export default function DoctorPendingPage() {
                 </div>
                 <div className="col-span-2">
                   <p className="text-muted-foreground">Status</p>
-                  <Badge className="mt-0.5 bg-amber-500/15 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                  <Badge className="mt-0.5 bg-amber-500/15 text-2xs font-bold text-amber-700 dark:text-amber-400">
                     {info.accountStatus === 'pending_verification' ? 'PENDING VERIFICATION' : (info.accountStatus ?? 'PENDING').toUpperCase()}
                   </Badge>
                 </div>
@@ -89,7 +89,7 @@ export default function DoctorPendingPage() {
             </div>
           ) : null}
 
-          <div className="flex w-full flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-left">
+          <div className="flex w-full flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-start">
             <div className="flex items-start gap-2">
               <FileText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <p className="text-xs leading-relaxed text-foreground/85">
@@ -111,7 +111,7 @@ export default function DoctorPendingPage() {
             </Button>
           </div>
 
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             Questions? Contact <span className="font-semibold text-foreground">support@sehatai.pk</span> with your PMDC number.
           </p>
         </CardContent>

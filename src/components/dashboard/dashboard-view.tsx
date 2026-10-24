@@ -8,6 +8,7 @@ import {
   Activity,
   BadgeCheck,
   BarChart3,
+  Check,
   CheckCircle2,
   FlaskConical,
   Gauge,
@@ -202,7 +203,7 @@ function MetricCard({
       className="group rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+        <p className="min-w-0 truncate text-2xs font-bold tracking-wider text-muted-foreground uppercase">
           {label}
         </p>
         {Icon ? (
@@ -222,7 +223,7 @@ function MetricCard({
       </div>
       <p
         className={cn(
-          'mt-1.5 text-2xl font-extrabold tabular-nums',
+          'mt-1.5 text-2xl font-semibold tabular-nums',
           good === true && 'text-emerald-600 dark:text-emerald-400',
           good === false && 'text-red-600 dark:text-red-400',
         )}
@@ -409,68 +410,48 @@ export function DashboardView() {
     <div className="custom-scrollbar h-full overflow-y-auto px-4 py-4 sm:px-6">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Top Pale Blue Shield Hero Banner (§ references/07_Clinical_Safety.png) */}
-        <section className="hero-banner hero-safety relative min-h-[195px] overflow-hidden rounded-[20px] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between shadow-xs">
-          <div className="relative z-10 max-w-xl">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#112342] leading-tight">
-              Clinical Safety &amp; <br />
-              <em className="italic text-[#007e5e]">Golden Benchmark Evaluation</em>
+        <section className="hero-banner hero-safety flex flex-col gap-5 md:flex-row md:items-center">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-[1.7rem]">
+              Clinical safety and <span className="text-primary">golden benchmark evaluation</span>
             </h1>
-            <p className="mt-2 text-xs sm:text-sm text-[#4c6382] leading-relaxed">
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
               Transparent review of clinical safety tests and evidence-based evaluation metrics.
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-bold text-[#1a365d]">
-              <div className="flex items-center gap-1.5">
-                <span className="iconbox inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/80 text-[#007e5e] shadow-sm">
-                  <ShieldCheck className="h-4 w-4" />
-                </span>
-                <span>Evidence-based evaluation</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="iconbox inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/80 text-amber-500 shadow-sm">
-                  <Activity className="h-4 w-4" />
-                </span>
-                <span>Clinical test cases</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="iconbox inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/80 text-blue-500 shadow-sm">
-                  <CheckCircle2 className="h-4 w-4" />
-                </span>
-                <span>Verified test logic</span>
-              </div>
-            </div>
+            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-foreground">
+              <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-primary" aria-hidden />Evidence-based evaluation</li>
+              <li className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" aria-hidden />Clinical test cases</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" aria-hidden />Verified test logic</li>
+            </ul>
           </div>
 
           <img
             src="/assets/shield.png"
-            alt="Clinical Safety Shield"
-            className="hero-art pointer-events-none absolute right-[280px] top-0 hidden h-[210px] w-[280px] object-cover xl:block"
+            alt=""
+            className="pointer-events-none hidden h-36 w-40 shrink-0 object-contain 2xl:block"
           />
 
-          {/* Right Highlight Box */}
-          <div className="relative z-10 mt-4 md:mt-0 flex flex-col rounded-2xl border border-white/60 bg-white/80 p-5 backdrop-blur-sm shadow-xs min-w-[220px]">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#112342]">
-              <span className="text-amber-500 font-bold">★</span>
-              <span>Overall Safety Result</span>
-            </div>
-            <h2 className="text-4xl font-black text-[#007e5e] my-1.5">100%</h2>
-            <b className="text-xs font-extrabold text-[#00a273]">SAMPLE TEST PASS</b>
-            <p className="text-[11px] text-[#637795] mt-1.5 leading-snug">
+          <div className="shrink-0 rounded-xl border border-border bg-card/85 p-4 md:min-w-[220px]">
+            <p className="text-xs font-medium text-muted-foreground">Overall safety result</p>
+            <p className="my-1 text-3xl font-semibold text-foreground tabular">100%</p>
+            <span className="chip orange">Sample test pass</span>
+            <p className="mt-2 text-xs leading-snug text-muted-foreground">
               Illustrative fixture, not independent certification.
             </p>
           </div>
         </section>
 
         {/* Meta Strip Banner */}
-        <div className="surface pad p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-white shadow-xs">
+        <div className="surface flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#007e5e]">
-              <ShieldCheck className="h-5 w-5" />
+            <span className="iconbox">
+              <ShieldCheck className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h3 className="text-sm font-bold text-[#112342] sm:text-base">
-                Clinical Safety Benchmark — Golden Evaluation Run #139
-              </h3>
-              <p className="text-xs text-[#637795] mt-0.5">
+              <h2 className="text-sm font-semibold text-foreground sm:text-base">
+                Clinical safety benchmark — golden evaluation run #139
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Deterministic regression harness · 11 Oct 2026 07:09 UTC · SAMPLE RUN
               </p>
             </div>
@@ -480,103 +461,95 @@ export function DashboardView() {
               variant="outline"
               size="sm"
               onClick={() => setShowLogs(!showLogs)}
-              className="h-9 px-3.5 rounded-xl border-border text-xs font-bold text-[#547099]"
+              className="h-9 rounded-lg px-3.5 text-xs font-semibold"
             >
-              {showLogs ? 'Hide Logs' : 'View Logs'}
+              {showLogs ? 'Hide logs' : 'View logs'}
             </Button>
             <Button
               size="sm"
               onClick={() => void runEval()}
               disabled={runningEval}
-              className="h-9 px-3.5 rounded-xl bg-[#009b78] text-white text-xs font-bold gap-1.5 hover:bg-[#007f62]"
+              className="h-9 gap-1.5 rounded-lg px-3.5 text-xs font-semibold"
             >
               {runningEval ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Play className="h-3.5 w-3.5" />
               )}
-              {runningEval ? 'Running...' : 'Run Benchmark'}
+              {runningEval ? 'Running…' : 'Run benchmark'}
             </Button>
           </div>
         </div>
 
         {/* 4 KPI Metric Cards (§ references/07_Clinical_Safety.png) */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="metric-card shadow-xs">
+          <div className="metric-card">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+              <span className="iconbox iconbox-red">
                 <Siren className="h-5 w-5" />
               </span>
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#637795]">Emergency Recall</span>
-                <h3 className="text-2xl font-black text-[#00866a] mt-0.5">100.0%</h3>
-                <small className="text-xs text-[#547099]">35 / 35 acute examples</small>
+                <span className="text-xs font-medium text-muted-foreground">Emergency Recall</span>
+                <p className="mt-0.5 text-2xl font-semibold text-foreground tabular">100.0%</p>
+                <small className="text-xs text-muted-foreground">35 / 35 acute examples</small>
               </div>
             </div>
           </div>
 
-          <div className="metric-card shadow-xs">
+          <div className="metric-card">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <span className="iconbox iconbox-blue">
                 <ShieldCheck className="h-5 w-5" />
               </span>
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#637795]">Near-Miss Avoidance</span>
-                <h3 className="text-2xl font-black text-[#00866a] mt-0.5">100.0%</h3>
-                <small className="text-xs text-[#547099]">47 / 47 over-triage avoided</small>
+                <span className="text-xs font-medium text-muted-foreground">Near-Miss Avoidance</span>
+                <p className="mt-0.5 text-2xl font-semibold text-foreground tabular">100.0%</p>
+                <small className="text-xs text-muted-foreground">47 / 47 over-triage avoided</small>
               </div>
             </div>
           </div>
 
-          <div className="metric-card shadow-xs">
+          <div className="metric-card">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+              <span className="iconbox iconbox-purple">
                 <BadgeCheck className="h-5 w-5" />
               </span>
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#637795]">Prescription Refusal</span>
-                <h3 className="text-2xl font-black text-[#00866a] mt-0.5">100.0%</h3>
-                <small className="text-xs text-[#547099]">17 / 17 blocked</small>
+                <span className="text-xs font-medium text-muted-foreground">Prescription Refusal</span>
+                <p className="mt-0.5 text-2xl font-semibold text-foreground tabular">100.0%</p>
+                <small className="text-xs text-muted-foreground">17 / 17 blocked</small>
               </div>
             </div>
           </div>
 
-          <div className="metric-card shadow-xs">
+          <div className="metric-card">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <span className="iconbox">
                 <Target className="h-5 w-5" />
               </span>
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#637795]">Total Suite Assertions</span>
-                <h3 className="text-2xl font-black text-[#00866a] mt-0.5">566 / 566</h3>
-                <small className="text-xs text-[#547099]">Illustrative fixture</small>
+                <span className="text-xs font-medium text-muted-foreground">Total Suite Assertions</span>
+                <p className="mt-0.5 text-2xl font-semibold text-foreground tabular">566 / 566</p>
+                <small className="text-xs text-muted-foreground">Illustrative fixture</small>
               </div>
             </div>
           </div>
         </div>
 
         {/* Evaluation Results by Clinical Category */}
-        <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
+        <div className="surface p-5">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h3 className="text-base font-bold text-[#112342]">
-              Evaluation Results by Clinical Category
-            </h3>
+            <h2 className="text-base font-semibold text-foreground">
+              Evaluation results by clinical category
+            </h2>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => toast({ description: 'Category filter active across 4 primary clinical suites' })}
-                className="h-8 rounded-lg border-border text-xs font-bold text-[#547099]"
-              >
-                Search Categories
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={exportReport}
-                className="h-8 rounded-lg border-border text-xs font-bold text-[#009b78]"
+                className="h-9 rounded-lg text-xs font-semibold"
               >
-                Export Report
+                Export report
               </Button>
             </div>
           </div>
@@ -631,8 +604,8 @@ export function DashboardView() {
                   <tr key={row.cat}>
                     <td><strong>{row.cat}</strong></td>
                     <td className="font-bold">{row.cases}</td>
-                    <td className="text-[#637795]">{row.expected}</td>
-                    <td className="font-bold text-[#009475]">{row.actual}</td>
+                    <td className="text-muted-foreground">{row.expected}</td>
+                    <td className="font-bold text-primary">{row.actual}</td>
                     <td>
                       <div className="flex items-center gap-2">
                         <b className="text-xs font-bold">{row.rate}</b>
@@ -642,7 +615,7 @@ export function DashboardView() {
                       </div>
                     </td>
                     <td>
-                      <span className="chip chip-green text-[10px] font-bold">PASS</span>
+                      <span className="chip chip-green text-2xs font-bold">PASS</span>
                     </td>
                   </tr>
                 ))}
@@ -654,20 +627,20 @@ export function DashboardView() {
         {/* 3 Bottom Cards: Trend + Case Distribution + Key Insights */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Safety Performance Trend */}
-          <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
-            <h4 className="text-sm font-bold text-[#112342]">Safety Performance Trend</h4>
-            <p className="text-xs text-[#637795] mt-1">
+          <div className="surface p-5">
+            <h4 className="text-sm font-bold text-foreground">Safety Performance Trend</h4>
+            <p className="text-xs text-muted-foreground mt-1">
               Only one run is supplied; historical trend is not available.
             </p>
-            <div className="mt-4 rounded-xl border border-blue-200 bg-[#edf5ff] p-3.5 text-[#1a365d]">
+            <div className="mt-4 rounded-xl border border-blue-200 bg-info-soft p-3.5 text-foreground">
               <b className="block text-xs font-bold">Run #139</b>
-              <p className="text-xs text-[#3b597c] mt-0.5">566 / 566 sample assertions passed.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">566 / 566 sample assertions passed.</p>
             </div>
           </div>
 
           {/* Case Distribution Donut */}
-          <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
-            <h4 className="text-sm font-bold text-[#112342]">Case Distribution</h4>
+          <div className="surface p-5">
+            <h4 className="text-sm font-bold text-foreground">Case Distribution</h4>
             <div className="mt-4 flex items-center gap-4">
               <div
                 style={{
@@ -679,11 +652,11 @@ export function DashboardView() {
                   placeItems: 'center',
                 }}
               >
-                <div className="h-[70px] w-[70px] rounded-full bg-white flex items-center justify-center font-black text-sm text-[#112342]">
+                <div className="h-[70px] w-[70px] rounded-full bg-card flex items-center justify-center font-semibold text-sm text-foreground">
                   566
                 </div>
               </div>
-              <div className="space-y-1 text-xs text-[#547099]">
+              <div className="space-y-1 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#0cad88]" />
                   <span>35 acute examples</span>
@@ -705,19 +678,19 @@ export function DashboardView() {
           </div>
 
           {/* Key Insights */}
-          <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
-            <h4 className="text-sm font-bold text-[#112342]">Key Insights</h4>
-            <div className="mt-3 space-y-2.5 text-xs text-[#112342]">
+          <div className="surface p-5">
+            <h4 className="text-sm font-bold text-foreground">Key Insights</h4>
+            <div className="mt-3 space-y-2.5 text-xs text-foreground">
               <div className="flex items-center gap-2">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700 font-bold">✓</span>
+                <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                 <span>Sample run meets its stated criteria</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700 font-bold">✓</span>
+                <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                 <span>35/35 acute triggers checked</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700 font-bold">✓</span>
+                <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                 <span>47/47 over-triage scenarios avoided</span>
               </div>
             </div>
@@ -726,13 +699,13 @@ export function DashboardView() {
 
         {/* Dataset Stats — live counts of the offline knowledge base */}
         {datasetStats ? (
-          <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
-            <h3 className="mb-3 text-sm font-bold tracking-tight text-[#112342]">
+          <div className="surface p-5">
+            <h3 className="mb-3 text-sm font-bold tracking-tight text-foreground">
               Current Knowledge Base Dataset Stats
             </h3>
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-border text-start font-semibold text-[#637795] uppercase">
+                <tr className="border-b border-border text-start font-semibold text-muted-foreground uppercase">
                   <th className="py-2 text-start font-semibold">Dataset</th>
                   <th className="py-2 text-end font-semibold">Count</th>
                 </tr>
@@ -747,13 +720,13 @@ export function DashboardView() {
                   { label: 'Glossary terms', value: datasetStats.glossaryTerms },
                 ].map((row) => (
                   <tr key={row.label} className="border-t border-border/60">
-                    <td className="py-1.5 text-[#112342]">{row.label}</td>
-                    <td className="py-1.5 text-end font-bold tabular-nums text-[#112342]">{row.value}</td>
+                    <td className="py-1.5 text-foreground">{row.label}</td>
+                    <td className="py-1.5 text-end font-bold tabular-nums text-foreground">{row.value}</td>
                   </tr>
                 ))}
                 <tr className="border-t-2 border-border">
-                  <td className="py-2 font-bold text-[#112342]">TOTAL REGISTERED ENTITIES</td>
-                  <td className="py-2 text-end font-black tabular-nums text-[#009b78]">{datasetStats.total}</td>
+                  <td className="py-2 font-bold text-foreground">TOTAL REGISTERED ENTITIES</td>
+                  <td className="py-2 text-end font-semibold tabular-nums text-primary">{datasetStats.total}</td>
                 </tr>
               </tbody>
             </table>
@@ -763,14 +736,14 @@ export function DashboardView() {
         {/* Toggleable Run Logs & Case Results */}
         {showLogs && (
           <div className="space-y-4">
-            <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
-              <h3 className="mb-3 text-sm font-bold text-[#112342]">
+            <div className="surface p-5">
+              <h3 className="mb-3 text-sm font-bold text-foreground">
                 Detailed Run Logs ({filteredResults.length} records)
               </h3>
               <div className="custom-scrollbar max-h-96 overflow-y-auto">
                 <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-[#f8fafc] border-b border-border">
-                    <tr className="text-[11px] font-bold text-[#637795] uppercase">
+                  <thead className="sticky top-0 bg-muted/60 border-b border-border">
+                    <tr className="text-2xs font-bold text-muted-foreground uppercase">
                       <th className="px-2 py-2 text-start">Case ID</th>
                       <th className="px-2 py-2 text-start">Category</th>
                       <th className="px-2 py-2 text-start">Input</th>
@@ -783,15 +756,15 @@ export function DashboardView() {
                     {filteredResults.map((row) => (
                       <tr key={row.caseId} className={cn('border-b border-border/60 align-top', !row.passed && 'bg-red-50/50')}>
                         <td className="px-2 py-2 font-mono text-muted-foreground">{row.caseId}</td>
-                        <td className="px-2 py-2 font-semibold text-[#112342]">{row.category}</td>
+                        <td className="px-2 py-2 font-semibold text-foreground">{row.category}</td>
                         <td className="max-w-40 px-2 py-2 text-muted-foreground">{row.input}</td>
                         <td className="px-2 py-2 font-mono text-muted-foreground">{cellText(row.expected)}</td>
-                        <td className="px-2 py-2 font-mono text-[#009475]">{cellText(row.actual)}</td>
+                        <td className="px-2 py-2 font-mono text-primary">{cellText(row.actual)}</td>
                         <td className="px-2 py-2 text-end">
                           {row.passed ? (
-                            <span className="chip chip-green text-[10px]">PASS</span>
+                            <span className="chip chip-green text-2xs">PASS</span>
                           ) : (
-                            <span className="chip chip-red text-[10px]">FAIL</span>
+                            <span className="chip chip-red text-2xs">FAIL</span>
                           )}
                         </td>
                       </tr>
@@ -805,7 +778,7 @@ export function DashboardView() {
 
         {/* Doctor PMDC Verifications (admin only) */}
         {isAdmin && (
-          <div className="rounded-[16px] border border-border bg-white p-5 shadow-xs">
+          <div className="surface p-5">
             <DoctorVerificationsView />
           </div>
         )}

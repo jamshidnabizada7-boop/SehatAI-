@@ -81,7 +81,7 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'ہوا کا معیار' : lang === 'roman' ? 'Hawa ka mayar' : 'Air quality'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {lang === 'ur' ? 'پاکستان کے شہروں کا AQI' : lang === 'roman' ? 'Pakistan ke shehron ka AQI' : 'Pakistan city AQI + allergy risk'}
           </p>
         </div>
@@ -98,7 +98,7 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
               type="button"
               onClick={() => setSelectedCity(c)}
               className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-2xs font-semibold transition-colors',
                 isActive ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400' : 'border-border text-muted-foreground hover:bg-accent/30',
               )}
               aria-pressed={isActive}
@@ -119,14 +119,14 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
               {lang === 'ur' ? selectedCity.cityUr : selectedCity.city}
             </p>
             <p className={cn('mt-1 text-3xl font-bold', band.color)}>{selectedCity.aqi}</p>
-            <p className="text-[10px] text-muted-foreground">AQI · {selectedCity.dominant}</p>
+            <p className="text-2xs text-muted-foreground">AQI · {selectedCity.dominant}</p>
           </div>
-          <div className="text-right">
-            <Badge variant="secondary" className={cn('text-[10px] font-bold', band.color, 'bg-white/50 dark:bg-black/20')}>
+          <div className="text-end">
+            <Badge variant="secondary" className={cn('text-2xs font-bold', band.color, 'bg-white/50 dark:bg-black/20')}>
               {band.label[lang]}
             </Badge>
             {isHighRisk ? (
-              <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-red-600 dark:text-red-400">
+              <p className="mt-1.5 flex items-center gap-1 text-2xs font-bold text-red-600 dark:text-red-400">
                 <ShieldAlert className="h-3 w-3" aria-hidden />
                 {lang === 'ur' ? 'دمہ خطرہ' : lang === 'roman' ? 'Dama khatra' : 'Asthma risk'}
               </p>
@@ -149,14 +149,14 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
         </div>
 
         {/* advice */}
-        <p className={cn('mt-2 text-[11px] leading-relaxed', band.color)}>{band.advice[lang]}</p>
+        <p className={cn('mt-2 text-2xs leading-relaxed', band.color)}>{band.advice[lang]}</p>
       </div>
 
       {/* high-risk callout */}
       {isHighRisk ? (
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-50/40 p-2.5 dark:bg-red-950/20">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
-          <span className="text-[10px] leading-relaxed text-red-700 dark:text-red-400">
+          <span className="text-2xs leading-relaxed text-red-700 dark:text-red-400">
             {lang === 'ur'
               ? 'آپ کے شہر میں ہوا کا معیار خراب ہے۔ دمہ یا دل/پھیپھڑوں کی بیماری والے باہر نہ جائیں۔ N95 ماسک پہنیں۔ سانس کی تکلیف ہو تو 1122 پر کال کریں۔'
               : lang === 'roman'
@@ -171,11 +171,11 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
         <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-50/40 p-2.5 dark:bg-amber-950/20">
           <div className="flex items-center gap-1.5">
             <Leaf className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" aria-hidden />
-            <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
+            <p className="text-2xs font-bold text-amber-700 dark:text-amber-400">
               {lang === 'ur' ? 'موجودہ سیزن' : lang === 'roman' ? 'Mojooda season' : 'Active season'}: {activePollenSeason.name[lang]}
             </p>
           </div>
-          <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">{activePollenSeason.advice[lang]}</p>
+          <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">{activePollenSeason.advice[lang]}</p>
         </div>
       ) : null}
 
@@ -184,7 +184,7 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
         variant="ghost"
         size="sm"
         onClick={() => setShowPollen((v) => !v)}
-        className="mb-2 w-full gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+        className="mb-2 w-full gap-1.5 text-2xs font-semibold text-muted-foreground hover:text-foreground"
       >
         <Leaf className="h-3 w-3" aria-hidden />
         {lang === 'ur' ? 'تمام سیزن' : lang === 'roman' ? 'Tamam season' : 'All pollen seasons'}
@@ -197,10 +197,10 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
               {POLLEN_SEASONS.map((s, i) => (
                 <div key={i} className="rounded-lg border border-border/60 bg-card p-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-foreground">{s.name[lang]}</span>
-                    <span className="text-[10px] text-muted-foreground">{s.months}</span>
+                    <span className="text-2xs font-bold text-foreground">{s.name[lang]}</span>
+                    <span className="text-2xs text-muted-foreground">{s.months}</span>
                   </div>
-                  <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">{s.advice[lang]}</p>
+                  <p className="mt-0.5 text-2xs leading-relaxed text-muted-foreground">{s.advice[lang]}</p>
                 </div>
               ))}
             </div>
@@ -213,7 +213,7 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
         variant="ghost"
         size="sm"
         onClick={() => setShowTriggers((v) => !v)}
-        className="w-full gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+        className="w-full gap-1.5 text-2xs font-semibold text-muted-foreground hover:text-foreground"
       >
         <Activity className="h-3 w-3" aria-hidden />
         {lang === 'ur' ? 'دمہ کے محرکات' : lang === 'roman' ? 'Dama ke muharrikaat' : 'Asthma triggers guide'}
@@ -225,8 +225,8 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
             <div className="mt-2 space-y-1.5">
               {ASTHMA_TRIGGERS.map((t, i) => (
                 <div key={i} className="rounded-lg border border-border/60 bg-card p-2">
-                  <p className="text-[11px] font-bold text-foreground">{t.trigger[lang]}</p>
-                  <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">{t.avoidance[lang]}</p>
+                  <p className="text-2xs font-bold text-foreground">{t.trigger[lang]}</p>
+                  <p className="mt-0.5 text-2xs leading-relaxed text-muted-foreground">{t.avoidance[lang]}</p>
                 </div>
               ))}
             </div>
@@ -234,7 +234,7 @@ export function AirQualityTracker({ lang, className }: AirQualityTrackerProps) {
         ) : null}
       </AnimatePresence>
 
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
+      <p className="mt-2 text-center text-2xs text-muted-foreground">
         {lang === 'ur' ? 'AQI ڈیٹا نمونہ ہے — لائیو API انضمام Phase 3 میں' : lang === 'roman' ? 'AQI data nimonah hai — live API Phase 3' : 'AQI data is sample — live API integration is Phase 3'}
       </p>
     </motion.section>

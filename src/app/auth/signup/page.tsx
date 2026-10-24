@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AuthBrandHeading, AuthShell } from '@/components/auth/auth-shell';
-import { TriInline, TriStack } from '@/components/auth/trilingual';
+import { Tri, TriInline, TriStack, useTri } from '@/components/auth/trilingual';
 
 /** The Phase-0 Urdu consent statement (Nastaliq, RTL) — source of truth. */
 const CONSENT_UR =
@@ -78,6 +78,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignUpPage() {
   const router = useRouter();
+  const tri = useTri();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -96,9 +97,9 @@ export default function SignUpPage() {
       e.preventDefault();
       if (submitting) return;
       const next: { email?: string; password?: string; consent?: string } = {};
-      if (!EMAIL_RE.test(email.trim())) next.email = T.errEmail.en;
-      if (password.length < 8) next.password = T.errPassword.en;
-      if (!consent) next.consent = T.consentRequired.en;
+      if (!EMAIL_RE.test(email.trim())) next.email = tri(T.errEmail);
+      if (password.length < 8) next.password = tri(T.errPassword);
+      if (!consent) next.consent = tri(T.consentRequired);
       setErrors(next);
       if (next.email || next.password || next.consent) return;
 
@@ -150,16 +151,16 @@ export default function SignUpPage() {
         setSubmitting(false);
       }
     },
-    [consent, email, name, password, retention, router, submitting],
+    [consent, email, name, password, retention, router, submitting, tri],
   );
 
   return (
     <AuthShell>
       <AuthBrandHeading />
 
-      <Card className="border-border bg-card/70 shadow-sm">
+      <Card className="border-border bg-card shadow-[var(--soft-shadow)]">
         <CardHeader className="gap-3 border-b border-border px-5 py-5 sm:px-6">
-          <h1 className="text-xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
             <TriStack strings={T.title} size="sm" />
           </h1>
         </CardHeader>
@@ -247,7 +248,7 @@ export default function SignUpPage() {
             </div>
 
             {/* Urdu consent — the legally primary statement */}
-            <fieldset className="flex flex-col gap-2 rounded-2xl border border-primary/25 bg-primary/5 p-4">
+            <fieldset className="flex flex-col gap-2 rounded-2xl bg-accent/60 p-4">
               <legend className="px-1 text-sm font-bold text-foreground">
                 <TriInline strings={T.consentTitle} />
               </legend>
@@ -297,7 +298,7 @@ export default function SignUpPage() {
                 <SelectTrigger
                   id="retention"
                   className="h-11 min-h-11 w-full rounded-xl border-border text-sm"
-                  aria-label={T.retentionTitle.en}
+                  aria-label={tri(T.retentionTitle)}
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -314,33 +315,20 @@ export default function SignUpPage() {
             <Button
               type="submit"
               disabled={submitting}
-              className="h-auto min-h-12 flex-col gap-0.5 rounded-xl py-2.5 text-sm font-bold"
+              className="h-12 gap-2 rounded-xl text-sm font-semibold"
             >
-              <span className="inline-flex items-center gap-1.5">
-                <UserPlus className="h-4 w-4" aria-hidden />
-                {submitting ? T.submitting.en : T.submit.en}
-              </span>
-              <span dir="rtl" className="font-urdu text-[11px] font-semibold opacity-90">
-                {submitting ? T.submitting.ur : T.submit.ur}
-              </span>
-              <span className="text-[10px] font-medium italic opacity-80">
-                {submitting ? T.submitting.roman : T.submit.roman}
-              </span>
+              <UserPlus className="h-4 w-4" aria-hidden />
+              <Tri strings={submitting ? T.submitting : T.submit} />
             </Button>
           </form>
 
           <div className="flex flex-col items-center gap-2 border-t border-border pt-4">
-            <p className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground">
-              {T.haveAccount.en}
-              <span dir="rtl" className="font-urdu">
-                {T.haveAccount.ur}
-              </span>
-              <span aria-hidden>·</span>
-              <span className="italic">{T.haveAccount.roman}</span>
+            <p className="text-xs text-muted-foreground">
+              <Tri strings={T.haveAccount} />
             </p>
             <Link
               href="/auth/signin"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-primary/40 bg-primary/5 px-4 text-sm font-bold text-primary transition-colors hover:bg-primary/12 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-input hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
             >
               <TriInline strings={T.signinLink} />
             </Link>

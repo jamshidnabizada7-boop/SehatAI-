@@ -33,10 +33,10 @@ export function HealthBlog() {
         <div className="grid gap-2 sm:grid-cols-2">
           {posts.map((p, i) => (
             <motion.button key={p.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} onClick={() => setSelected(p)} className="group rounded-xl border border-border bg-card p-3 text-start shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
-              <div className="flex items-center gap-2"><Badge className={cn('text-[9px]', CATEGORY_COLORS[p.category] ?? 'bg-muted text-muted-foreground')}>{p.category}</Badge><span className="text-[10px] text-muted-foreground">{new Date(p.publishedAt).toLocaleDateString()}</span></div>
+              <div className="flex items-center gap-2"><Badge className={cn('text-2xs', CATEGORY_COLORS[p.category] ?? 'bg-muted text-muted-foreground')}>{p.category}</Badge><span className="text-2xs text-muted-foreground">{new Date(p.publishedAt).toLocaleDateString()}</span></div>
               <p className="mt-1.5 text-sm font-bold leading-tight text-foreground group-hover:text-primary">{p.title}</p>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2">{p.excerpt}</p>
-              <span className="mt-1.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary">Read more <ArrowRight className="h-3 w-3" /></span>
+              <span className="mt-1.5 inline-flex items-center gap-0.5 text-2xs font-semibold text-primary">Read more <ArrowRight className="h-3 w-3" /></span>
             </motion.button>
           ))}
         </div>
@@ -44,11 +44,11 @@ export function HealthBlog() {
       <AnimatePresence>{selected && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setSelected(null)}>
           <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={e => e.stopPropagation()} className="max-h-[85vh] w-full max-w-lg overflow-y-auto custom-scrollbar rounded-2xl bg-card p-5 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between"><Badge className={cn('text-[9px]', CATEGORY_COLORS[selected.category] ?? 'bg-muted')}>{selected.category}</Badge><button onClick={() => setSelected(null)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent"><X className="h-4 w-4" /></button></div>
+            <div className="mb-3 flex items-center justify-between"><Badge className={cn('text-2xs', CATEGORY_COLORS[selected.category] ?? 'bg-muted')}>{selected.category}</Badge><button onClick={() => setSelected(null)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent"><X className="h-4 w-4" /></button></div>
             <h2 className="text-lg font-bold text-foreground">{selected.title}</h2>
             <p className="mt-1 text-xs text-muted-foreground">By {selected.authorName} · {new Date(selected.publishedAt).toLocaleDateString()}</p>
             <div className="prose prose-sm mt-3 max-w-none whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">{selected.content}</div>
-            <div className="mt-4 flex flex-wrap gap-1.5">{selected.tags.map(t => <Badge key={t} variant="secondary" className="text-[9px]">{t}</Badge>)}</div>
+            <div className="mt-4 flex flex-wrap gap-1.5">{selected.tags.map(t => <Badge key={t} variant="secondary" className="text-2xs">{t}</Badge>)}</div>
           </motion.div>
         </motion.div>
       )}</AnimatePresence>

@@ -151,7 +151,7 @@ export function HealthTipsBrowser({ lang, className }: HealthTipsBrowserProps) {
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'صحت کے مشورے' : lang === 'roman' ? 'Sehat ke mashware' : 'Health tips'}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {index + 1} / {tips.length} {lang === 'ur' ? 'مضامین' : lang === 'roman' ? 'mazaameen' : 'tips'}
           </p>
         </div>
@@ -159,7 +159,7 @@ export function HealthTipsBrowser({ lang, className }: HealthTipsBrowserProps) {
           variant="ghost"
           size="sm"
           onClick={() => { setShowBookmarksOnly((v) => !v); setIndex(0); }}
-          className={cn('h-7 gap-1 px-2 text-[11px] font-semibold', showBookmarksOnly ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}
+          className={cn('h-7 gap-1 px-2 text-2xs font-semibold', showBookmarksOnly ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}
         >
           {showBookmarksOnly ? <BookmarkCheck className="h-3 w-3" aria-hidden /> : <Bookmark className="h-3 w-3" aria-hidden />}
           {bookmarks.length}
@@ -178,7 +178,7 @@ export function HealthTipsBrowser({ lang, className }: HealthTipsBrowserProps) {
         >
           {/* publisher badge */}
           <div className="mb-2 flex items-center justify-between">
-            <Badge variant="secondary" className="bg-amber-500/10 text-[9px] font-bold text-amber-700 dark:text-amber-400">
+            <Badge variant="secondary" className="bg-amber-500/10 text-2xs font-bold text-amber-700 dark:text-amber-400">
               {currentTip.publisher}
             </Badge>
             <button
@@ -214,11 +214,11 @@ export function HealthTipsBrowser({ lang, className }: HealthTipsBrowserProps) {
         <Button variant="outline" size="sm" onClick={goPrev} className="h-8 gap-1" disabled={tips.length <= 1}>
           <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
         </Button>
-        <Button variant="ghost" size="sm" onClick={shuffle} className="h-8 flex-1 gap-1 text-[11px] font-semibold text-muted-foreground" disabled={tips.length <= 1}>
+        <Button variant="ghost" size="sm" onClick={shuffle} className="h-8 flex-1 gap-1 text-2xs font-semibold text-muted-foreground" disabled={tips.length <= 1}>
           <Shuffle className="h-3 w-3" aria-hidden />
           {lang === 'ur' ? 'رینڈم' : lang === 'roman' ? 'Random' : 'Shuffle'}
         </Button>
-        <Button variant="ghost" size="sm" onClick={share} className="h-8 flex-1 gap-1 text-[11px] font-semibold text-muted-foreground">
+        <Button variant="ghost" size="sm" onClick={share} className="h-8 flex-1 gap-1 text-2xs font-semibold text-muted-foreground">
           <Share2 className="h-3 w-3" aria-hidden />
           {lang === 'ur' ? 'شیئر' : lang === 'roman' ? 'Share' : 'Share'}
         </Button>

@@ -38,21 +38,21 @@ export default function DoctorRejectedPage() {
     <AuthShell variant="doctor">
       <AuthBrandHeading variant="doctor" />
 
-      <Card className="border-red-500/40 bg-card/70 shadow-sm">
+      <Card className="border-red-500/40 bg-card shadow-[var(--soft-shadow)]">
         <CardContent className="flex flex-col items-center gap-4 px-5 py-8 text-center sm:px-6">
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/15">
             <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
           </span>
 
           <div>
-            <h1 className="text-xl font-extrabold text-foreground">Verification could not be completed</h1>
+            <h1 className="text-xl font-semibold text-foreground">Verification could not be completed</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Dr. {info?.name ?? 'Doctor'}, your PMDC registration could not be verified at this time.
             </p>
           </div>
 
           {info?.doctorProfile ? (
-            <div className="w-full rounded-xl border border-border bg-background p-4 text-left">
+            <div className="w-full rounded-xl border border-border bg-background p-4 text-start">
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <p className="text-muted-foreground">PMDC #</p>
@@ -64,7 +64,7 @@ export default function DoctorRejectedPage() {
                 </div>
                 <div className="col-span-2">
                   <p className="text-muted-foreground">Status</p>
-                  <Badge className="mt-0.5 bg-red-500/15 text-[10px] font-bold text-red-700 dark:text-red-400">
+                  <Badge className="mt-0.5 bg-red-500/15 text-2xs font-bold text-red-700 dark:text-red-400">
                     {(info.accountStatus ?? 'suspended').toUpperCase()}
                   </Badge>
                 </div>
@@ -72,11 +72,11 @@ export default function DoctorRejectedPage() {
             </div>
           ) : null}
 
-          <div className="flex w-full flex-col gap-2 rounded-xl border border-amber-500/30 bg-amber-50/50 p-3 text-left dark:bg-amber-950/10">
+          <div className="flex w-full flex-col gap-2 rounded-xl border border-amber-500/30 bg-amber-50/50 p-3 text-start dark:bg-amber-950/10">
             <p className="text-xs leading-relaxed text-amber-900 dark:text-amber-200">
               <span className="font-bold">Next steps:</span>
             </p>
-            <ul className="ml-4 list-disc space-y-1 text-xs text-amber-800 dark:text-amber-300">
+            <ul className="ms-4 list-disc space-y-1 text-xs text-amber-800 dark:text-amber-300">
               <li>Re-upload clearer photos of your PMDC card and CNIC.</li>
               <li>Make sure your PMDC number matches the card exactly.</li>
               <li>Contact PMDC if your registration has lapsed.</li>
@@ -102,7 +102,7 @@ export default function DoctorRejectedPage() {
             </Button>
           </div>
 
-          <p className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+          <p className="flex items-center justify-center gap-1 text-2xs text-muted-foreground">
             <Mail className="h-3 w-3" /> Questions? Email{' '}
             <span className="font-semibold text-foreground">support@sehatai.pk</span>
           </p>

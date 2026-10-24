@@ -125,7 +125,7 @@ export function SymptomJournal({ lang, entries, onLog, onDelete }: SymptomJourna
                       </span>
                       <span
                         className={cn(
-                          'inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-bold',
+                          'inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-2xs font-bold',
                           sev.color,
                         )}
                       >
@@ -139,14 +139,14 @@ export function SymptomJournal({ lang, entries, onLog, onDelete }: SymptomJourna
                     <div className="flex items-center justify-between gap-2 pt-1">
                       <time
                         dateTime={e.at}
-                        className="text-[11px] text-muted-foreground"
+                        className="text-2xs text-muted-foreground"
                       >
                         {formatRelativeTime(atMs, lang)}
                       </time>
                       <button
                         type="button"
                         onClick={() => onDelete(e.id)}
-                        className="inline-flex h-7 items-center gap-1 rounded-full border border-red-500/25 bg-red-500/5 px-2 text-[11px] font-semibold text-red-700 hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                        className="inline-flex h-7 items-center gap-1 rounded-full border border-red-500/25 bg-red-500/5 px-2 text-2xs font-semibold text-red-700 hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                         aria-label={t(lang, 'myHealth.deleteEntry')}
                       >
                         <Trash2 className="h-3 w-3" aria-hidden />
@@ -208,7 +208,7 @@ export function SymptomJournal({ lang, entries, onLog, onDelete }: SymptomJourna
                 <Label htmlFor="journal-severity" className="text-xs font-semibold text-muted-foreground">
                   {t(lang, 'myHealth.severity')}
                 </Label>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-2xs text-muted-foreground">
                   {t(lang, 'myHealth.severityHint')}
                 </span>
               </div>
@@ -236,7 +236,7 @@ export function SymptomJournal({ lang, entries, onLog, onDelete }: SymptomJourna
                   );
                 })}
               </div>
-              <p className={cn('text-[11px] font-medium', SEVERITY_META[severity].color)}>
+              <p className={cn('text-2xs font-medium', SEVERITY_META[severity].color)}>
                 {severityLabel(severity, lang)}
               </p>
             </div>

@@ -68,7 +68,7 @@ export function GlossarySection() {
           <BookMarked className="h-4 w-4 text-primary" aria-hidden />
         </span>
         {t(uiLang, 'about.glossaryTitle')}
-        <span className="ms-auto shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold text-muted-foreground tabular-nums">
+        <span className="ms-auto shrink-0 rounded-full bg-secondary px-2.5 py-1 text-2xs font-bold text-muted-foreground tabular-nums">
           {filtered.length} {t(uiLang, 'about.glossaryTerms')}
         </span>
       </h2>
@@ -144,7 +144,7 @@ export function GlossarySection() {
         </motion.dl>
       )}
       {isUr ? (
-        <p className="mt-2 font-urdu text-[11px] text-muted-foreground" dir="rtl">
+        <p className="mt-2 font-urdu text-2xs text-muted-foreground" dir="rtl">
           {t(uiLang, 'about.glossaryBody')}
         </p>
       ) : null}

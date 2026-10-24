@@ -44,7 +44,7 @@ export function PipelineTicker({ completedStages, currentStage, lang }: Pipeline
             ) : null}
             <span
               className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors',
+                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-medium transition-colors',
                 done && 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-400',
                 current &&
                   'bg-primary/15 text-primary font-semibold ring-1 ring-primary/30',

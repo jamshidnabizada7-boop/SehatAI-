@@ -45,8 +45,8 @@ export function DoctorAnalytics() {
         ].map(s => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-2.5 text-center shadow-sm">
             <s.icon className={cn('mx-auto h-4 w-4', s.color)} />
-            <p className="mt-1 text-lg font-black text-foreground">{s.value}</p>
-            <p className="text-[9px] font-semibold text-muted-foreground">{s.label}</p>
+            <p className="mt-1 text-lg font-semibold text-foreground">{s.value}</p>
+            <p className="text-2xs font-semibold text-muted-foreground">{s.label}</p>
           </div>
         ))}
       </div>
@@ -61,7 +61,7 @@ export function DoctorAnalytics() {
               <div className="h-3 flex-1 overflow-hidden rounded-full bg-muted">
                 <div className={cn('h-full rounded-full transition-all', triageColors[level] ?? 'bg-muted')} style={{ width: `${(count / totalTriage) * 100}%` }} />
               </div>
-              <span className="w-8 text-right font-semibold text-foreground">{count}</span>
+              <span className="w-8 text-end font-semibold text-foreground">{count}</span>
             </div>
           ))}
         </div>
@@ -78,7 +78,7 @@ export function DoctorAnalytics() {
           { label: 'Total', value: data.appointmentStats.total, color: 'bg-slate-500/15 text-slate-700' },
         ].map(s => (
           <div key={s.label} className="rounded-lg border border-border p-2 text-center">
-            <p className="text-lg font-black text-foreground">{s.value}</p>
+            <p className="text-lg font-semibold text-foreground">{s.value}</p>
             <Badge className={cn('mt-0.5 text-[8px]', s.color)}>{s.label}</Badge>
           </div>
         ))}
@@ -106,7 +106,7 @@ export function DoctorAnalytics() {
         <p className="mb-2 text-xs font-bold text-foreground">Recent Activity</p>
         <ul className="max-h-40 space-y-1 overflow-y-auto custom-scrollbar">
           {data.recentActivity.map((a, i) => (
-            <li key={i} className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <li key={i} className="flex items-center gap-2 text-2xs text-muted-foreground">
               <Activity className="h-2.5 w-2.5 shrink-0 text-primary" />
               <span className="font-semibold text-foreground/70">{a.action}</span>
               <span>· {new Date(a.at).toLocaleString()}</span>

@@ -133,7 +133,7 @@ function KpiCard({
       className="group rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+        <p className="min-w-0 truncate text-2xs font-bold tracking-wider text-muted-foreground uppercase">
           {label}
         </p>
         {Icon ? (
@@ -153,14 +153,14 @@ function KpiCard({
       </div>
       <p
         className={cn(
-          'mt-1.5 text-2xl font-extrabold tabular-nums',
+          'mt-1.5 text-2xl font-semibold tabular-nums',
           good === true && 'text-emerald-600 dark:text-emerald-400',
           good === false && 'text-red-600 dark:text-red-400',
         )}
       >
         {value}
       </p>
-      {sub ? <p className="mt-0.5 text-[11px] text-muted-foreground">{sub}</p> : null}
+      {sub ? <p className="mt-0.5 text-2xs text-muted-foreground">{sub}</p> : null}
     </motion.div>
   );
 }
@@ -425,7 +425,7 @@ export function ObservabilityView() {
         ) : null}
 
         {/* last updated + auto-refresh hint */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <Activity className="h-3 w-3" aria-hidden />
             {t(uiLang, 'observability.autoRefresh')}
@@ -498,7 +498,7 @@ export function ObservabilityView() {
             <p className="text-sm font-bold text-foreground">
               {t(uiLang, 'observability.injectionAttempts')}
             </p>
-            <p className="text-2xl font-extrabold tabular-nums text-foreground">
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
               {metrics?.injectionAttempts ?? 0}
             </p>
             {(metrics?.injectionAttempts ?? 0) > 0 ? (
@@ -639,7 +639,7 @@ export function ObservabilityView() {
         <ChartCard title={t(uiLang, 'observability.systemStats')} lang={uiLang}>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-xl bg-background/60 p-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                 <Cpu className="h-3 w-3" aria-hidden />
                 {t(uiLang, 'observability.memory')}
               </div>
@@ -649,7 +649,7 @@ export function ObservabilityView() {
               </p>
             </div>
             <div className="rounded-xl bg-background/60 p-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                 <Server className="h-3 w-3" aria-hidden />
                 {t(uiLang, 'observability.heap')}
               </div>
@@ -659,7 +659,7 @@ export function ObservabilityView() {
               </p>
             </div>
             <div className="rounded-xl bg-background/60 p-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                 <Zap className="h-3 w-3" aria-hidden />
                 {t(uiLang, 'observability.uptime')}
               </div>
@@ -668,7 +668,7 @@ export function ObservabilityView() {
               </p>
             </div>
             <div className="rounded-xl bg-background/60 p-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
                 <Activity className="h-3 w-3" aria-hidden />
                 {t(uiLang, 'observability.nodeVersion')}
               </div>
@@ -678,7 +678,7 @@ export function ObservabilityView() {
             </div>
           </div>
           {metrics?.startedAt ? (
-            <p className="mt-3 text-[11px] text-muted-foreground">
+            <p className="mt-3 text-2xs text-muted-foreground">
               {t(uiLang, 'observability.startedAt')}: {new Date(metrics.startedAt).toLocaleString()}
             </p>
           ) : null}

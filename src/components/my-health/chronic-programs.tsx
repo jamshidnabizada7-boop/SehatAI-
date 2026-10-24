@@ -52,8 +52,8 @@ export function ChronicPrograms() {
                 {activePrograms.map(p => (
                   <div key={p.id} className="rounded-xl border border-border bg-background p-3">
                     <div className="flex items-center justify-between">
-                      <div><p className="text-sm font-bold text-foreground">{p.programName}</p><p className="text-[10px] text-muted-foreground">Week {p.currentWeek} of {p.totalWeeks}</p></div>
-                      <Badge className="bg-emerald-500/15 text-[9px] text-emerald-700">Active</Badge>
+                      <div><p className="text-sm font-bold text-foreground">{p.programName}</p><p className="text-2xs text-muted-foreground">Week {p.currentWeek} of {p.totalWeeks}</p></div>
+                      <Badge className="bg-emerald-500/15 text-2xs text-emerald-700">Active</Badge>
                     </div>
                     {p.currentWeekData && (
                       <div className="mt-2">
@@ -65,7 +65,7 @@ export function ChronicPrograms() {
                             return (
                               <li key={task}>
                                 <button onClick={() => !done && completeTask(p.id, taskId)} className={cn('flex w-full items-center gap-2 rounded-lg p-1.5 text-xs transition-colors', done ? 'bg-emerald-500/10 text-muted-foreground line-through' : 'hover:bg-accent text-foreground')}>
-                                  <span className={cn('flex h-4 w-4 shrink-0 items-center justify-center rounded border', done ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-border')}>{done && <CheckCircle2 className="h-3 w-3" />}</span>
+                                  <span className={cn('flex h-4 w-4 shrink-0 items-center justify-center rounded border', done ? 'border-primary bg-primary text-primary-foreground' : 'border-border')}>{done && <CheckCircle2 className="h-3 w-3" />}</span>
                                   {task}
                                 </button>
                               </li>
@@ -80,7 +80,7 @@ export function ChronicPrograms() {
               </div>
             )}
             <div className="mt-2">
-              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Available Programs</p>
+              <p className="mb-1.5 text-2xs font-bold uppercase tracking-wider text-muted-foreground">Available Programs</p>
               <div className="flex flex-wrap gap-1.5">
                 {available.map(prog => (
                   <Button key={prog.type} size="sm" variant="outline" onClick={() => enroll(prog.type)} disabled={enrolling || programs.some(p => p.programType === prog.type && p.status === 'active')} className="min-h-9 gap-1 rounded-xl text-xs">

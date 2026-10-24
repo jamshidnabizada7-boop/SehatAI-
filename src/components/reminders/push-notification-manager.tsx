@@ -89,7 +89,7 @@ export function PushNotificationManager() {
     if (perm !== 'granted' || typeof Notification === 'undefined') return;
     try {
       const notif = new Notification(
-        uiLang === 'ur' ? 'سی ایچ اے آئی — یاد دہانی' : uiLang === 'roman' ? 'SehatAI — Yaad-dahani' : 'SehatAI — Reminder',
+        uiLang === 'ur' ? 'صحت اے آئی — یاد دہانی' : uiLang === 'roman' ? 'SehatAI — Yaad-dahani' : 'SehatAI — Reminder',
         {
           body:
             uiLang === 'ur'
@@ -161,18 +161,18 @@ export function PushNotificationManager() {
             <p className="text-sm font-bold text-foreground">
               {uiLang === 'ur' ? 'دوائی کی یاد دہانی' : uiLang === 'roman' ? 'Dawai ki yaad-dahani' : 'Medication reminders'}
             </p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               {uiLang === 'ur' ? 'براؤزر نوٹیفکیشنز' : uiLang === 'roman' ? 'Browser notifications' : 'Browser notifications'}
             </p>
           </div>
         </div>
-        <Badge variant="secondary" className={cn('gap-1 text-[10px] font-bold', config.color)}>
+        <Badge variant="secondary" className={cn('gap-1 text-2xs font-bold', config.color)}>
           <Icon className="h-2.5 w-2.5" aria-hidden />
           {config.label[uiLang]}
         </Badge>
       </div>
 
-      <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">
+      <p className="mb-3 text-2xs leading-relaxed text-muted-foreground">
         {perm === 'granted'
           ? uiLang === 'ur'
             ? 'آپ کی دوائی کی یاد دہانی اب آپ کی اسکرین پر ظاہر ہوگی، چاہے ایپ کھلی ہو یا نہیں۔'
@@ -220,7 +220,7 @@ export function PushNotificationManager() {
       </div>
 
       {perm === 'denied' ? (
-        <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-500/30 bg-amber-50/50 p-2 text-[10px] leading-relaxed text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
+        <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-500/30 bg-amber-50/50 p-2 text-2xs leading-relaxed text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
           <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
           <span>
             {uiLang === 'ur'

@@ -213,7 +213,7 @@ export function FirstAidSection() {
                       <ol className="space-y-1.5">
                         {tpl.immediateActions.map((action, i) => (
                           <li key={i} className="flex items-start gap-2 leading-relaxed text-foreground/85">
-                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-extrabold text-primary">
+                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-2xs font-extrabold text-primary">
                               {i + 1}
                             </span>
                             <span className="min-w-0 flex-1">{action[uiLang]}</span>
@@ -241,7 +241,7 @@ export function FirstAidSection() {
                       <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
                       {t(uiLang, 'about.firstAidCall')}
                     </p>
-                    <p className="text-[11px] text-muted-foreground" dir="ltr">
+                    <p className="text-2xs text-muted-foreground" dir="ltr">
                       {tpl.sources.join(' · ')}
                     </p>
                   </AccordionContent>

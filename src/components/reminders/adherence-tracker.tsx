@@ -140,14 +140,14 @@ export function AdherenceTracker({ reminders, lang, refreshKey, className }: Adh
 
       {/* day header row */}
       <div className="mb-2 grid grid-cols-[1fr_auto] items-center gap-2">
-        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+        <span className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
           {lang === 'ur' ? 'یاد دہانی' : lang === 'roman' ? 'Yaad dahani' : 'Reminder'}
         </span>
         <div className="flex gap-1">
           {last7.map((d) => (
             <div key={d} className="flex w-7 flex-col items-center">
-              <span className="text-[9px] font-medium text-muted-foreground">{dayLabel(d, lang)}</span>
-              <span className="text-[10px] font-bold text-foreground">{dayNum(d)}</span>
+              <span className="text-2xs font-medium text-muted-foreground">{dayLabel(d, lang)}</span>
+              <span className="text-2xs font-bold text-foreground">{dayNum(d)}</span>
             </div>
           ))}
         </div>
@@ -173,7 +173,7 @@ export function AdherenceTracker({ reminders, lang, refreshKey, className }: Adh
                 <p className="truncate text-xs font-semibold text-foreground">{r.title}</p>
                 <p className="mt-0.5 flex items-center gap-2">
                   <span className={cn('text-sm font-bold', rateColor)}>{adherenceRate}%</span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-2xs text-muted-foreground">
                     {doneCount}/7 {lang === 'ur' ? 'دن' : lang === 'roman' ? 'din' : 'days'}
                   </span>
                 </p>
@@ -204,7 +204,7 @@ export function AdherenceTracker({ reminders, lang, refreshKey, className }: Adh
         })}
       </ul>
 
-      <p className="mt-3 text-center text-[10px] text-muted-foreground">
+      <p className="mt-3 text-center text-2xs text-muted-foreground">
         {lang === 'ur'
           ? 'adherence صرف اس ڈیوائس پر محفوظ ہے۔'
           : lang === 'roman'

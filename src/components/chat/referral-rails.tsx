@@ -50,8 +50,8 @@ const RAILS: RailItem[] = [
   {
     id: 'edhi-115',
     icon: Ambulance,
-    label: { en: 'Edhi 115', ur: 'ایڈی 115', roman: 'Edhi 115' },
-    desc: { en: 'Edhi ambulance + welfare', ur: 'ایڈی ایمبولینس اور فلاحی مدد', roman: 'Edhi ambulance aur falahi madad' },
+    label: { en: 'Edhi 115', ur: 'ایدھی 115', roman: 'Edhi 115' },
+    desc: { en: 'Edhi ambulance + welfare', ur: 'ایدھی ایمبولینس اور فلاحی مدد', roman: 'Edhi ambulance aur falahi madad' },
     href: 'tel:115',
     kind: 'tel',
     emergency: true,
@@ -80,7 +80,7 @@ const RAILS: RailItem[] = [
     icon: Hospital,
     label: { en: 'Aga Khan Hospital', ur: 'آغاخان ہسپتال', roman: 'Agha Khan Hospital' },
     desc: { en: 'Karachi + nationwide clinics', ur: 'کراچی + پورے ملک میں کلینک', roman: 'Karachi + pore mulk mein clinic' },
-    href: 'https://thecharitywalk.com.pk/aku-hospital',
+    href: 'https://hospitals.aku.edu/pakistan/',
     kind: 'web',
   },
   {
@@ -94,7 +94,7 @@ const RAILS: RailItem[] = [
   {
     id: 'indus',
     icon: Hospital,
-    label: { en: 'Indus Hospital', ur: 'سندھ ہسپتال', roman: 'Indus Hospital' },
+    label: { en: 'Indus Hospital', ur: 'انڈس ہسپتال', roman: 'Indus Hospital' },
     desc: { en: 'Free care — Karachi + network', ur: 'مفت علاج — کراچی + نیٹورک', roman: 'Muft ilaaj — Karachi + network' },
     href: 'https://indushospital.org.pk/',
     kind: 'web',
@@ -156,16 +156,19 @@ export function ReferralRails({ triageLevel, lang, className }: ReferralRailsPro
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.25 }}
-          className={cn(
-            'overflow-hidden border-y border-red-600/30 bg-red-50/60 dark:bg-red-950/20',
-            className,
-          )}
+          className={cn('overflow-hidden px-3 pt-2 sm:px-5', lang === 'ur' && 'font-urdu', className)}
           aria-label={lang === 'ur' ? 'فوری مدد حاصل کریں' : lang === 'roman' ? 'Fori madad hasool karein' : 'Get care now'}
         >
-          <div className="mx-auto max-w-3xl px-4 py-3">
+          {/* Red is reserved for EMERGENCY; URGENT uses the warning tone. */}
+          <div
+            className={cn(
+              'rounded-2xl border p-3',
+              isEmergency ? 'border-danger/30 bg-danger-soft' : 'border-warning/30 bg-warning-soft',
+            )}
+          >
             <div className="mb-2 flex items-center gap-2">
-              <ShieldPlus className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden />
-              <h3 className="text-sm font-bold text-red-700 dark:text-red-400">
+              <ShieldPlus className={cn('h-4 w-4', isEmergency ? 'text-danger' : 'text-warning')} aria-hidden />
+              <h3 className={cn('text-sm font-semibold', isEmergency ? 'text-danger' : 'text-warning')}>
                 {isEmergency
                   ? lang === 'ur'
                     ? 'فوری مدد حاصل کریں — ابھی کال کریں'
@@ -200,9 +203,9 @@ function RailButton({ rail, lang }: { rail: RailItem; lang: Lang }) {
       target={isExternal ? '_blank' : undefined}
       rel={isExternal ? 'noopener noreferrer' : undefined}
       className={cn(
-        'group flex flex-col items-start gap-1 rounded-xl border bg-card p-2.5 shadow-sm transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring',
+        'group flex min-h-11 flex-col items-start gap-1 rounded-xl border bg-card p-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-ring',
         rail.emergency
-          ? 'border-red-600/40 hover:border-red-600/60 hover:bg-red-50 dark:hover:bg-red-950/30'
+          ? 'border-danger/25 hover:border-danger/50'
           : 'border-border hover:border-primary/40 hover:bg-accent/50',
       )}
     >
@@ -210,19 +213,17 @@ function RailButton({ rail, lang }: { rail: RailItem; lang: Lang }) {
         <span
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
-            rail.emergency
-              ? 'bg-red-600/15 text-red-600 dark:bg-red-500/20 dark:text-red-400'
-              : 'bg-primary/10 text-primary',
+            rail.emergency ? 'bg-danger-soft text-danger' : 'bg-accent text-primary',
           )}
         >
           <Icon className="h-4 w-4" aria-hidden />
         </span>
         {isExternal ? (
-          <ExternalLink className="h-3 w-3 text-muted-foreground/60 transition-colors group-hover:text-foreground" aria-hidden />
+          <ExternalLink className="h-3 w-3 text-muted-foreground transition-colors group-hover:text-foreground" aria-hidden />
         ) : null}
       </span>
-      <span className="text-xs font-bold leading-tight text-foreground">{rail.label[lang]}</span>
-      <span className="text-[10px] leading-tight text-muted-foreground">{rail.desc[lang]}</span>
+      <span className="text-xs font-semibold leading-tight text-foreground">{rail.label[lang]}</span>
+      <span className="text-2xs leading-tight text-muted-foreground">{rail.desc[lang]}</span>
     </a>
   );
 }

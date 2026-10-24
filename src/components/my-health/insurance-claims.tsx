@@ -81,7 +81,7 @@ export function InsuranceClaims() {
                 <Shield className="h-3.5 w-3.5 shrink-0 text-blue-500" />
                 <span className="flex-1 truncate font-semibold text-foreground">{c.provider}</span>
                 <span className="text-muted-foreground">PKR {c.amount}</span>
-                <Badge className={cn('text-[9px]', c.status === 'approved' || c.status === 'reimbursed' ? 'bg-emerald-500/15 text-emerald-700' : c.status === 'rejected' ? 'bg-red-500/15 text-red-700' : 'bg-amber-500/15 text-amber-700')}>{c.status}</Badge>
+                <Badge className={cn('text-2xs', c.status === 'approved' || c.status === 'reimbursed' ? 'bg-emerald-500/15 text-emerald-700' : c.status === 'rejected' ? 'bg-red-500/15 text-red-700' : 'bg-amber-500/15 text-amber-700')}>{c.status}</Badge>
               </li>
             ))}
           </ul>

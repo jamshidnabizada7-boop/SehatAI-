@@ -185,7 +185,7 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
           <h3 className="text-sm font-bold text-foreground">
             {lang === 'ur' ? 'صحت کی ٹائم لائن' : lang === 'roman' ? 'Sehat ki timeline' : 'Health timeline'}
           </h3>
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground">
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-2xs font-bold text-secondary-foreground">
             {entries.length}
           </span>
         </div>
@@ -195,7 +195,7 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
       {/* severity trend chart */}
       {chartData.length >= 2 ? (
         <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
-          <p className="mb-2 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+          <p className="mb-2 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
             {lang === 'ur' ? 'شدت کا رجحان' : lang === 'roman' ? 'Shiddat ka rujhan' : 'Severity trend'}
           </p>
           <ResponsiveContainer width="100%" height={180}>
@@ -230,7 +230,7 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
 
       {/* triage distribution */}
       <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
-        <p className="mb-2 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+        <p className="mb-2 text-2xs font-bold tracking-wider text-muted-foreground uppercase">
           {lang === 'ur' ? 'ٹرایج کی تقسیم' : lang === 'roman' ? 'Triage ki taqseem' : 'Triage distribution'}
         </p>
         <div className="grid grid-cols-4 gap-2">
@@ -242,7 +242,7 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
               >
                 {triageStats[level]}
               </div>
-              <p className="mt-1 text-[10px] font-medium leading-tight text-muted-foreground">{level}</p>
+              <p className="mt-1 text-2xs font-medium leading-tight text-muted-foreground">{level}</p>
             </div>
           ))}
         </div>
@@ -251,7 +251,7 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
       {/* recent entries list */}
       <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+          <p className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
             {lang === 'ur' ? 'حالیہ اندراج' : lang === 'roman' ? 'Haliya andaaraj' : 'Recent entries'}
           </p>
           <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
@@ -263,7 +263,7 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
               className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-2"
             >
               <span
-                className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-2xs font-bold text-white"
                 style={{ backgroundColor: SEVERITY_COLORS[entry.severity] }}
                 aria-label={`Severity ${entry.severity} of 5`}
               >
@@ -272,10 +272,10 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-medium text-foreground">{entry.symptom}</p>
                 <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] text-muted-foreground">{formatDateTime(entry.at, lang)}</span>
+                  <span className="text-2xs text-muted-foreground">{formatDateTime(entry.at, lang)}</span>
                   {entry.triage ? (
                     <span
-                      className="rounded-full px-1.5 py-0.5 text-[9px] font-bold"
+                      className="rounded-full px-1.5 py-0.5 text-2xs font-bold"
                       style={{ backgroundColor: `${TRIAGE_COLORS[entry.triage]}20`, color: TRIAGE_COLORS[entry.triage] }}
                     >
                       {entry.triage}
@@ -283,7 +283,7 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
                   ) : null}
                 </div>
                 {entry.notes ? (
-                  <p className="mt-0.5 truncate text-[10px] italic text-muted-foreground">“{entry.notes}”</p>
+                  <p className="mt-0.5 truncate text-2xs italic text-muted-foreground">“{entry.notes}”</p>
                 ) : null}
               </div>
             </li>
@@ -293,7 +293,7 @@ export function HealthTimeline({ entries, lang, className }: HealthTimelineProps
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}
-            className="mt-2 w-full rounded-lg border border-border/60 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-foreground/[0.02] hover:text-foreground"
+            className="mt-2 w-full rounded-lg border border-border/60 py-1.5 text-2xs font-semibold text-muted-foreground transition-colors hover:bg-foreground/[0.02] hover:text-foreground"
           >
             {showAll
               ? lang === 'ur' ? 'کم دکھائیں' : lang === 'roman' ? 'Kam dikhayein' : 'Show less'
@@ -325,7 +325,7 @@ function TrendBadge({ trend, lang }: { trend: 'improving' | 'worsening' | 'stabl
   }[trend];
   const Icon = config.icon;
   return (
-    <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold', config.cls)}>
+    <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-bold', config.cls)}>
       <Icon className="h-3 w-3" aria-hidden />
       {config.label[lang]}
     </span>

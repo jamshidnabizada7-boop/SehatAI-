@@ -97,7 +97,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
             <h3 className="text-sm font-bold text-foreground">
               {lang === 'ur' ? 'ذہنی صحت کی اسکریننگ' : lang === 'roman' ? 'Zehni sehat ki screening' : 'Mental health screening'}
             </h3>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               {lang === 'ur' ? 'PHQ-9 + GAD-7' : lang === 'roman' ? 'PHQ-9 + GAD-7' : 'PHQ-9 + GAD-7 validated tools'}
             </p>
           </div>
@@ -105,7 +105,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
 
         {/* disclaimer */}
         <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-50/50 p-2.5 dark:bg-amber-950/20">
-          <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-amber-800 dark:text-amber-300">
+          <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-amber-800 dark:text-amber-300">
             <ShieldAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
             <span>{MENTAL_HEALTH_DISCLAIMER[lang]}</span>
           </p>
@@ -122,7 +122,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-bold text-foreground">PHQ-9</span>
-              <span className="block text-[11px] text-muted-foreground">
+              <span className="block text-2xs text-muted-foreground">
                 {lang === 'ur' ? 'ڈپریشن کی اسکریننگ (9 سوالات)' : lang === 'roman' ? 'Depression ki screening (9 sawalat)' : 'Depression screening (9 questions)'}
               </span>
             </span>
@@ -138,7 +138,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-bold text-foreground">GAD-7</span>
-              <span className="block text-[11px] text-muted-foreground">
+              <span className="block text-2xs text-muted-foreground">
                 {lang === 'ur' ? 'گھبراہٹ کی اسکریننگ (7 سوالات)' : lang === 'roman' ? 'Ghabrahat ki screening (7 sawalat)' : 'Anxiety screening (7 questions)'}
               </span>
             </span>
@@ -146,7 +146,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
           </button>
         </div>
 
-        <p className="mt-2 text-center text-[10px] text-muted-foreground">
+        <p className="mt-2 text-center text-2xs text-muted-foreground">
           {lang === 'ur' ? 'سرکاری لائن: 1166 (24/7)' : lang === 'roman' ? 'Sarkari line: 1166 (24/7)' : 'Helpline: 1166 (24/7 free)'}
         </p>
       </motion.section>
@@ -175,7 +175,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
         {/* score + severity */}
         <div className="mb-3 rounded-lg border border-border bg-card p-3">
           <div className="flex items-baseline justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+            <span className="text-2xs font-bold tracking-wider text-muted-foreground uppercase">
               {lang === 'ur' ? 'اسکور' : lang === 'roman' ? 'Score' : 'Score'}
             </span>
             <span className={cn('text-2xl font-bold', result.color)}>
@@ -203,7 +203,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
                 <p className="text-xs font-bold text-red-700 dark:text-red-400">
                   {lang === 'ur' ? 'آپ نے خود کو نقصان پہنچانے کے خیالات کا ذکر کیا ہے' : lang === 'roman' ? 'Aap ne khud ko nuksan pahunchane ke khayalat ka zikr kiya hai' : 'You mentioned thoughts of self-harm'}
                 </p>
-                <p className="mt-1 text-[11px] leading-relaxed text-red-800 dark:text-red-300">
+                <p className="mt-1 text-2xs leading-relaxed text-red-800 dark:text-red-300">
                   {lang === 'ur' ? 'آپ اکیلے نہیں ہیں۔ براہ کرم ابھی مدد طلب کریں:' : lang === 'roman' ? 'Aap akele nahin hain. Barah-e-karam abhi madad talab karein:' : 'You are not alone. Please reach out for help now:'}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -220,7 +220,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
         ) : null}
 
         {/* disclaimer */}
-        <p className="mb-3 rounded-lg border border-amber-500/30 bg-amber-50/40 p-2 text-[10px] leading-relaxed text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
+        <p className="mb-3 rounded-lg border border-amber-500/30 bg-amber-50/40 p-2 text-2xs leading-relaxed text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
           {MENTAL_HEALTH_DISCLAIMER[lang]}
         </p>
 
@@ -257,7 +257,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
           </span>
           <span className="text-xs font-bold text-foreground">{tool === 'phq9' ? 'PHQ-9' : 'GAD-7'}</span>
         </div>
-        <Badge variant="secondary" className="bg-violet-500/15 text-[10px] font-bold text-violet-700 dark:text-violet-400">
+        <Badge variant="secondary" className="bg-violet-500/15 text-2xs font-bold text-violet-700 dark:text-violet-400">
           {currentQ + 1} / {questions.length}
         </Badge>
       </div>
@@ -285,7 +285,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
           <p className={cn('text-sm font-semibold leading-relaxed text-foreground', lang === 'ur' && 'font-urdu')} dir={lang === 'ur' ? 'rtl' : 'ltr'}>
             {q.text[lang]}
           </p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">
+          <p className="mt-0.5 text-2xs text-muted-foreground">
             {lang === 'ur' ? 'گزشتہ 2 ہفتوں میں کتنی بار؟' : lang === 'roman' ? 'Guzishta 2 hafton mein kitni baar?' : 'Over the last 2 weeks, how often?'}
           </p>
         </motion.div>
@@ -386,7 +386,7 @@ export function MentalHealthScreening({ lang, className }: MentalHealthScreening
       </div>
 
       {/* answered count */}
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
+      <p className="mt-2 text-center text-2xs text-muted-foreground">
         {answeredCount} / {questions.length} {lang === 'ur' ? 'جوابات' : lang === 'roman' ? 'jawabat' : 'answered'}
       </p>
     </motion.section>

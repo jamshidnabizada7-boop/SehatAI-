@@ -371,7 +371,7 @@ function FirstAidStepView({
           <p className={cn('text-sm font-bold text-foreground', lang === 'ur' && 'font-urdu')} dir={lang === 'ur' ? 'rtl' : 'ltr'}>
             {guide.title[lang]}
           </p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {lang === 'ur' ? `قدم ${stepIndex + 1} از ${guide.steps.length}` : lang === 'roman' ? `Qadam ${stepIndex + 1} of ${guide.steps.length}` : `Step ${stepIndex + 1} of ${guide.steps.length}`}
           </p>
         </div>
@@ -486,7 +486,7 @@ function FirstAidStepView({
       ) : null}
 
       {/* sources */}
-      <p className="text-center text-[10px] text-muted-foreground">
+      <p className="text-center text-2xs text-muted-foreground">
         {guide.sources.join(' · ')}
       </p>
     </div>
