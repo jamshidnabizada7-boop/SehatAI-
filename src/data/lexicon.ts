@@ -307,7 +307,7 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     groups: [
       {
         terms: [
-          'kill myself', 'killing myself', 'end my life', 'want to die', 'wish to die', 'suicide', 'suicidal', 'better off dead', "don't want to live", 'dont want to live', 'do not want to live', 'do not want to live anymore', 'no will to live', 'want to hurt myself', 'want to harm myself', 'hurt myself', 'harm myself', 'wants to hurt himself', 'wants to hurt herself', 'hurt himself', 'hurt herself', 'threatening suicide', 'khudkushi', 'khud kushi', 'khudkashi', 'marna chahta hoon', 'marna chahti hoon', 'jeena nahi chahta', 'jeena nahi chahti', 'mar jaunga', 'mar jaungi', 'zindagi khatam karna chahta', 'apne aap ko chot', 'khud ko nuksan', 'خودکشی', 'مرنا چاہتا ہوں', 'مرنا چاہتی ہوں', 'جینا نہیں چاہتا', 'جینا نہیں چاہتی', 'زندگی ختم کرنا چاہتا', 'خود کو نقصان',
+          'kill myself', 'killing myself', 'end my life', 'want to die', 'like to die', 'wish to die', 'suicide', 'suicidal', 'better off dead', "don't want to live", 'dont want to live', 'do not want to live', 'do not want to live anymore', 'no will to live', 'want to hurt myself', 'want to harm myself', 'hurt myself', 'harm myself', 'wants to hurt himself', 'wants to hurt herself', 'hurt himself', 'hurt herself', 'threatening suicide', 'khudkushi', 'khud kushi', 'khudkashi', 'marna chahta hoon', 'marna chahti hoon', 'jeena nahi chahta', 'jeena nahi chahti', 'mar jaunga', 'mar jaungi', 'zindagi khatam karna chahta', 'apne aap ko chot', 'khud ko nuksan', 'خودکشی', 'مرنا چاہتا ہوں', 'مرنا چاہتی ہوں', 'جینا نہیں چاہتا', 'جینا نہیں چاہتی', 'زندگی ختم کرنا چاہتا', 'خود کو نقصان',
         ],
       },
     ],
@@ -728,9 +728,9 @@ export const RED_FLAG_PATTERNS: RedFlagPattern[] = [
     terms_ur: ['گھریلو تشدد کا انکشاف'],
     terms_roman: ['gharelu tashadud ka inkishaf'],
     reason_template: {
-      en: 'If you are being hurt or threatened, you are not alone and it is not your fault. In immediate danger, call 15 (Police). For women, call Madadgar 1099 (Women Helpline). Reach a safe place first. Your safety is the priority.',
-      ur: 'اگر آپ کو نقصان پہنچایا جا رہا ہے یا دھمکی دی جا رہی ہے، تو آپ اکیلی نہیں ہیں اور یہ آپ کی غلطی نہیں۔ فوری خطرے میں 15 (پولیس) پر کال کریں۔ خواتین کے لیے مددگار 1099 (ویمن ہیلپ لائن) پر کال کریں۔ پہلے محفوظ جگہ پہنچیں۔ آپ کی حفاظت اولین ترجیح ہے۔',
-      roman: 'Agar aap ko nuksan pahunchaya ja raha hai ya dhamki di ja rahi hai, to aap akeeli nahin hain aur yeh aap ki ghalati nahin. Fori khatre mein 15 (Police) par call karein. Khwateen ke liye Madadgar 1099 (Women Helpline) par call karein. Pehle mehfooz jagah pahunchain. Aap ki hifazat awwaleen tarjeeh hai.',
+      en: 'If you are being hurt or threatened, you are not alone and it is not your fault. In immediate danger, call 15 (Police). For women, call Ministry of Human Rights 1099 (legal advice and referral). Reach a safe place first. Your safety is the priority.',
+      ur: 'اگر آپ کو نقصان پہنچایا جا رہا ہے یا دھمکی دی جا رہی ہے، تو آپ اکیلی نہیں ہیں اور یہ آپ کی غلطی نہیں۔ فوری خطرے میں 15 (پولیس) پر کال کریں۔ خواتین کے لیے وزارت انسانی حقوق 1099 (قانونی مشورہ اور حوالہ) پر کال کریں۔ پہلے محفوظ جگہ پہنچیں۔ آپ کی حفاظت اولین ترجیح ہے۔',
+      roman: 'Agar aap ko nuksan pahunchaya ja raha hai ya dhamki di ja rahi hai, to aap akeeli nahin hain aur yeh aap ki ghalati nahin. Fori khatre mein 15 (Police) par call karein. Khwateen ke liye Ministry of Human Rights 1099 (legal advice and referral) par call karein. Pehle mehfooz jagah pahunchain. Aap ki hifazat awwaleen tarjeeh hai.',
     },
     sources: ['UN Women — Violence against women', 'WHO — Intimate partner violence'],
   },
@@ -814,13 +814,8 @@ export interface EmergencyContact {
 }
 
 export const EMERGENCY_NUMBERS_PK: EmergencyContact[] = [
-  { label: 'Rescue 1122 (Ambulance)', number: '1122', coverage: 'Nationwide (Pakistan)', source: 'Government of Pakistan', verifiedAt: '2026-10-08' },
-  { label: 'Alkhidmat Ambulance', number: '1023', coverage: 'Nationwide (Pakistan)', source: 'Alkhidmat Foundation', verifiedAt: '2026-10-08' },
-  { label: 'Edhi Ambulance', number: '115', coverage: 'Nationwide (Pakistan)', source: 'Edhi Foundation', verifiedAt: '2026-10-08' },
-  // Phase 0 (W10 fix) — mental-health crisis lines
-  { label: 'Pakistan Health & Polio Helpline', number: '1166', coverage: 'Nationwide (Pakistan)', source: 'Ministry of National Health Services', verifiedAt: '2026-10-08' },
-  { label: 'Madadgar Women Helpline', number: '1099', coverage: 'Nationwide (Pakistan)', source: 'Madadgar', verifiedAt: '2026-10-08' },
-  { label: 'Umang Child Protection Line', number: '1152', coverage: 'Nationwide (Pakistan)', source: 'Umang', verifiedAt: '2026-10-08' },
+  { label: 'Rescue 1122 (Ambulance)', number: '1122', coverage: 'Pakistan — coverage varies by area', source: 'https://www.rescue.gov.pk/', verifiedAt: '2026-10-24' },
+  { label: 'Edhi Ambulance', number: '115', coverage: 'Pakistan — confirm local availability', source: 'https://dcmalir.sindh.gov.pk/ambulance-service/', verifiedAt: '2026-10-24' },
   { label: 'Police Emergency', number: '15', coverage: 'Nationwide (Pakistan)', source: 'Government of Pakistan', verifiedAt: '2026-10-08' },
 ];
 
@@ -863,3 +858,9 @@ export function getEmergencyNumbers(countryCode?: string | null, regionOrCity?: 
 
 export const EMERGENCY_NUMBERS = EMERGENCY_NUMBERS_PK;
 
+
+// Information/support resources; not ambulance dispatch or verified suicide crisis lines.
+export const SUPPORT_RESOURCES_PK = [
+  { number: '1166', label: 'Sehat Tahaffuz — health and immunization information', source: 'https://www.epi.gov.pk/sehat-tahaffuz-helpline/', verifiedAt: '2026-10-24' },
+  { number: '1099', label: 'Ministry of Human Rights — legal advice and referral', source: 'https://mohr.gov.pk/Detail/YWRiYjU0NzktMGE2Zi00NDYyLTljNzktMTA2N2M2MjBlZWZl', verifiedAt: '2026-10-24' },
+];

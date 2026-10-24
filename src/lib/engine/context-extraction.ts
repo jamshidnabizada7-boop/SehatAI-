@@ -913,11 +913,6 @@ export function buildConversationContextState(
         userName = intentRes.extractedName;
         break;
       }
-      const introMatch = msg.match(/\b(?:my\s+name\s+is|i\s+am|i'm|mera\s+naam|main\s+hoon)\s+([a-zA-Z]{2,20})\b/i);
-      if (introMatch && !/^(sick|fine|pregnant|ill|feeling|suffering|hurting|experiencing)$/i.test(introMatch[1])) {
-        userName = introMatch[1].charAt(0).toUpperCase() + introMatch[1].slice(1).toLowerCase();
-        break;
-      }
     }
   }
 

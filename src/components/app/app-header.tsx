@@ -12,8 +12,6 @@ import {
   Moon,
   Search,
   Sun,
-  Wifi,
-  WifiOff,
   ShieldCheck,
   Clock,
   ShieldAlert,
@@ -34,7 +32,6 @@ import {
 import { useAppStore } from '@/lib/store/app-store';
 import { resolveUiLang, t } from '@/lib/i18n';
 import type { LangPref } from '@/lib/i18n';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { LanguageSettings } from '@/components/settings/language-settings';
 import { SosButton } from '@/components/chat/sos-button';
@@ -93,12 +90,9 @@ export function AppHeader() {
   const langPref = useAppStore((s) => s.langPref);
   const setLangPref = useAppStore((s) => s.setLangPref);
   const [langSettingsOpen, setLangSettingsOpen] = useState(false);
-  const simulatedOffline = useAppStore((s) => s.simulatedOffline);
-  const setSimulatedOffline = useAppStore((s) => s.setSimulatedOffline);
   const setSearchOpen = useAppStore((s) => s.setSearchOpen);
   const setNavOpen = useAppStore((s) => s.setNavOpen);
   const uiLang = resolveUiLang(langPref);
-  const { toast } = useToast();
   const { data: session, status } = useSession();
   const shortcut = useShortcutLabel();
   // On /auth/* the page itself is the sign-in form; a second button is noise.
@@ -274,28 +268,6 @@ export function AppHeader() {
                     <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
                   ) : null}
                 </div>
-                <DropdownMenuSeparator />
-                {/* Offline simulation (demo tool) */}
-                <DropdownMenuItem
-                  onClick={() => {
-                    const next = !simulatedOffline;
-                    setSimulatedOffline(next);
-                    toast({
-                      description: t(uiLang, next ? 'toast.offlineOn' : 'toast.offlineOff'),
-                    });
-                  }}
-                  className="flex cursor-pointer items-center justify-between text-sm"
-                >
-                  <span className="flex items-center gap-2">
-                    {simulatedOffline ? (
-                      <WifiOff className="h-4 w-4 text-warning" aria-hidden />
-                    ) : (
-                      <Wifi className="h-4 w-4" aria-hidden />
-                    )}
-                    <span>{t(uiLang, 'header.simulateOffline')}</span>
-                  </span>
-                  {simulatedOffline ? <Check className="h-4 w-4 text-warning" aria-hidden /> : null}
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => void signOut({ callbackUrl: '/' })}

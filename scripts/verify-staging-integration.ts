@@ -5,6 +5,7 @@
 
 import { spawn, type ChildProcess } from 'node:child_process';
 import fs from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { encode } from 'next-auth/jwt';
@@ -13,7 +14,8 @@ const PORT = 4000;
 const DISCONNECTED_PORT = 4001;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const DISCONNECTED_URL = `http://127.0.0.1:${DISCONNECTED_PORT}`;
-const NEXTAUTH_SECRET = '32-character-secret-for-testing-only-12345';
+// Throwaway secret for the locally spawned server and the JWTs this script mints.
+const NEXTAUTH_SECRET = randomBytes(32).toString('hex');
 const CDP_PORT = 9444;
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 

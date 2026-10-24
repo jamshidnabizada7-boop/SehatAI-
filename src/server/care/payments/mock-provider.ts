@@ -1,3 +1,4 @@
+import { careSecret } from '../secrets';
 // ============================================================
 // Care Connect — MOCK payment provider. DEV/TEST ONLY (§100:
 // "Do not fake payments"). This adapter exists so the full
@@ -12,11 +13,11 @@ import {
   type WebhookVerification, ProviderNotConfiguredError,
 } from './provider';
 
-const MOCK_SECRET = process.env.CARE_MOCK_PAYMENT_SECRET ?? 'dev-only-mock-secret-change-me';
+function mockSecret() { return careSecret('CARE_MOCK_PAYMENT_SECRET', 'dev-only-mock-secret-change-me', false); }
 const TIMESTAMP_TOLERANCE_MS = 5 * 60_000;
 
 function signPayload(rawBody: string, timestamp: string): string {
-  return createHmac('sha256', MOCK_SECRET).update(`${timestamp}.${rawBody}`).digest('hex');
+  return createHmac('sha256', mockSecret()).update(`${timestamp}.${rawBody}`).digest('hex');
 }
 
 export class MockPaymentProvider implements PaymentProvider {

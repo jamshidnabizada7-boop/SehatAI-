@@ -15,7 +15,7 @@
 // navigator.onLine is false.
 // ============================================================
 
-const CACHE = 'sehatai-shell-v4';
+const CACHE = 'sehatai-shell-v5';
 const SHELL_URLS = ['/', '/manifest.json', '/icon.svg', '/logo.svg'];
 
 self.addEventListener('install', (event) => {
@@ -35,7 +35,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('sehatai-shell-') && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -48,13 +48,18 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return; // cross-origin: network
   if (url.pathname.startsWith('/api/')) return; // API: never touch
 
+  // Never cache login, checkout, consultation, or token-bearing URL responses as the public shell.
+  if (req.mode === 'navigate' && (url.pathname !== '/' || url.search)) return;
+
   if (req.mode === 'navigate') {
     // network-first with cached-shell fallback
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put('/', copy)).catch(() => {});
+          if (res.ok && !res.redirected && res.headers.get('Content-Type')?.includes('text/html')) {
+            const copy = res.clone();
+            caches.open(CACHE).then((cache) => cache.put('/', copy)).catch(() => {});
+          }
           return res;
         })
         .catch(() =>
@@ -81,8 +86,10 @@ self.addEventListener('fetch', (event) => {
         (cached) =>
           cached ||
           fetch(req).then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(req, copy)).catch(() => {});
+            if (res.ok && !res.redirected) {
+              const copy = res.clone();
+              caches.open(CACHE).then((cache) => cache.put(req, copy)).catch(() => {});
+            }
             return res;
           }),
       ),

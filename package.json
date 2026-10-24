@@ -13,10 +13,19 @@
     "test:all": "bun test tests/tests/safety/ tests/care/care-unit.test.ts tests/care/care-integration.test.ts && bun tests/tests/e2e/e2e-runner.ts",
     "test:m4": "npx tsx tests/tests/m4-failover.test.ts",
     "typecheck": "tsc --noEmit",
+    "scan:secrets": "bun scripts/scan-secrets.ts",
+    "test:hardening": "bun test --timeout 30000 tests/tests/safety/production-hardening.test.ts tests/care/production-capture.test.ts",
+    "verify:production": "bun scripts/verify-production-hardening.ts",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset"
+  },
+  "overrides": {
+    "effect": "^3.20.0",
+    "js-yaml": "^4.3.2",
+    "prismjs": "^1.30.0",
+    "sharp": "^0.35.5"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
@@ -89,7 +98,7 @@
     "react-resizable-panels": "^3.0.3",
     "react-syntax-highlighter": "^15.6.1",
     "recharts": "^2.15.4",
-    "sharp": "^0.34.3",
+    "sharp": "^0.35.5",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",

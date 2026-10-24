@@ -70,38 +70,9 @@ export function getOfflineDB(): SehatAIDB {
 
 // ---------- Sync helpers (CHT-style) ----------
 
-/**
- * Push unsynced local data to the server.
- * In production, this would call /api/sync with the pending items.
- * For now, marks them as synced.
- */
-export async function pushPendingSync(): Promise<{ pushed: number }> {
-  const db = getOfflineDB();
-  let pushed = 0;
-
-  // Conversations
-  const pendingConvs = await db.conversations.where('synced').equals(0 as any).toArray();
-  for (const conv of pendingConvs) {
-    // In production: await fetch('/api/sync', { method: 'POST', body: JSON.stringify({ conversation: conv }) })
-    await db.conversations.update(conv.id, { synced: true });
-    pushed++;
-  }
-
-  // Messages
-  const pendingMsgs = await db.messages.where('synced').equals(0 as any).toArray();
-  for (const msg of pendingMsgs) {
-    await db.messages.update(msg.id, { synced: true });
-    pushed++;
-  }
-
-  // Reminders
-  const pendingReminders = await db.reminders.where('synced').equals(0 as any).toArray();
-  for (const rem of pendingReminders) {
-    await db.reminders.update(rem.id, { synced: true });
-    pushed++;
-  }
-
-  return { pushed };
+/** There is no sync endpoint yet. Never acknowledge data that was not uploaded. */
+export async function pushPendingSync(): Promise<{ pushed: number; unavailable: boolean }> {
+  return { pushed: 0, unavailable: true };
 }
 
 /**
@@ -167,15 +138,19 @@ export async function saveMessageLocal(msg: LocalMessage): Promise<void> {
 /**
  * Get all conversations from local storage (offline).
  */
-export async function getLocalConversations(): Promise<LocalConversation[]> {
+export async function getLocalConversations(sessionToken?: string): Promise<LocalConversation[]> {
+  if (!sessionToken) return [];
   const db = getOfflineDB();
-  return db.conversations.orderBy('updatedAt').reverse().toArray();
+  return (await db.conversations.where('sessionToken').equals(sessionToken).toArray()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 /**
  * Get messages for a conversation from local storage.
  */
-export async function getLocalMessages(conversationId: string): Promise<LocalMessage[]> {
+export async function getLocalMessages(conversationId: string, sessionToken?: string): Promise<LocalMessage[]> {
+  if (!sessionToken) return [];
   const db = getOfflineDB();
+  const conv = await db.conversations.get(conversationId);
+  if (conv?.sessionToken !== sessionToken) return [];
   return db.messages.where('conversationId').equals(conversationId).sortBy('createdAt');
 }

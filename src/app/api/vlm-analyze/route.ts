@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { requireExternalProcessingUser } from '@/server/external-processing';
 
 export const runtime = 'nodejs';
 
@@ -81,6 +82,10 @@ function getGeminiApiKeys(): string[] {
 }
 
 export async function POST(req: NextRequest) {
+  let actor;
+  try { actor = await requireExternalProcessingUser(); } catch (error) {
+    return NextResponse.json({ error: 'Image analysis requires an active account and data-processing consent.' }, { status: (error as { status?: number }).status ?? 503 });
+  }
   if (process.env.STAGING_BLOCK_UPLOADS === 'true') {
     return NextResponse.json(
       { error: 'PHI_UPLOADS_HARD_BLOCKED_IN_STAGING', message: 'Image analysis uploads are disabled in staging.' },
@@ -93,7 +98,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized — please sign in to use image analysis' }, { status: 401 });
   }
 
-  const userRole = (session.user as { role?: string }).role ?? 'user';
+  const userRole = actor.role;
 
   let body: { image?: string; question?: string };
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }

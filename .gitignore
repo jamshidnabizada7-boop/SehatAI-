@@ -86,3 +86,6 @@ db/*.db
 
 # Playwright MCP scratch output
 .playwright-mcp/
+
+# Codex scratch logs and local verification assets
+/work/

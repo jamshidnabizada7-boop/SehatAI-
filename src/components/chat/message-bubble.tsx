@@ -27,14 +27,13 @@ import { answerPlainText } from '@/lib/speech';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store/app-store';
 import { useChatStore } from '@/lib/store/chat-store';
+import { careActionsFor } from '@/lib/care-actions';
 import { MarkdownContent } from './markdown-content';
 import { TriageBadge } from './triage-badge';
-import { ConfidenceBadge } from './confidence-badge';
 import { DrugWarningCard } from './drug-warning-card';
 import { DifferentialCard } from './differential-card';
 import { CitationCard, citationSummary } from './citation-card';
 import { PipelineTicker } from './pipeline-ticker';
-import { JudgeInspectorModal } from './judge-inspector-modal';
 import { Button } from '@/components/ui/button';
 
 /** "HH:MM" from a message timestamp (12h clock, locale-safe fallback). */
@@ -112,7 +111,13 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [showingUrdu, setShowingUrdu] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [inspectorOpen, setInspectorOpen] = useState(false);
+  // The user report this answer replies to, for the shared care-action policy.
+  const userText = useChatStore((state) => {
+    const index = state.messages.findIndex((m) => m.id === message.id);
+    for (let i = index - 1; i >= 0; i--) if (state.messages[i].role === 'user') return state.messages[i].content;
+    return '';
+  });
+  const careActions = careActionsFor(message.triage?.level, userText);
   const isUser = message.role === 'user';
   // content language of THIS message (kept regardless of UI language)
   const msgLang: Lang = message.language ?? 'en';
@@ -217,7 +222,6 @@ export function MessageBubble({
   const isEmergency = message.triage?.level === 'EMERGENCY';
   const isUrgent = message.triage?.level === 'URGENT';
   const showTriage = Boolean(message.triage && message.triage.level !== 'INFORMATIONAL');
-  const showConfidence = Boolean(message.confidence && message.triage?.level !== 'EMERGENCY');
 
   return (
     <motion.div
@@ -260,10 +264,9 @@ export function MessageBubble({
             isSpeaking && 'ring-2 ring-primary/25',
           )}
         >
-          {/* Triage level + confidence band, only when the pipeline sent them.
-              (The old always-on "Evidence-based guidance" chip was removed: it
-              also appeared on abstentions that had no sources.) */}
-          {showTriage || showConfidence ? (
+          {/* Care urgency, only when the pipeline sent it. No confidence band or
+              "evidence-based" boilerplate in the patient chat. */}
+          {showTriage ? (
             <div className="flex flex-wrap items-start gap-2">
               {showTriage && message.triage ? (
                 <TriageBadge
@@ -271,9 +274,6 @@ export function MessageBubble({
                   lang={msgLang}
                   reason={message.triage.reason}
                 />
-              ) : null}
-              {showConfidence ? (
-                <ConfidenceBadge confidence={message.confidence} lang={msgLang} />
               ) : null}
             </div>
           ) : null}
@@ -357,41 +357,35 @@ export function MessageBubble({
             </Button>
           ) : null}
 
-          {/* Next steps once the answer is complete */}
-          {!message.streaming && (
-            <div className="border-t border-border pt-3">
-              {isEmergency ? (
-                <div className="flex items-start gap-2.5 rounded-xl bg-danger-soft p-3" role="note">
-                  <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden />
-                  <div className="text-xs leading-relaxed">
-                    <p className="font-semibold text-danger">{t(uiLang, 'ui.emergencyPrecautionTitle')}</p>
-                    <p className="mt-0.5 text-foreground">{t(uiLang, 'ui.emergencyPrecautionBody')}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={isUrgent ? 'default' : 'outline'}
-                    onClick={() => setView('care')}
-                    className="h-9 gap-1.5 rounded-lg text-xs font-semibold"
-                  >
-                    <Stethoscope className={cn('h-3.5 w-3.5', !isUrgent && 'text-primary')} aria-hidden />
-                    {t(uiLang, 'ui.talkToDoctor')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setView('facilities')}
-                    className="h-9 gap-1.5 rounded-lg text-xs font-semibold"
-                  >
-                    <MapPin className="h-3.5 w-3.5 text-primary" aria-hidden />
-                    {t(uiLang, 'ui.nearbyFacilities')}
-                  </Button>
-                </div>
-              )}
+          {/* Next steps: latest finished answer only, and only what the shared
+              care-action policy allows (no booking push on greetings; emergencies
+              get emergency-care navigation instead of booking). */}
+          {!message.streaming && isLastAssistant && (careActions.bookDoctor || careActions.facilities) ? (
+            <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+              {careActions.bookDoctor ? (
+                <Button
+                  size="sm"
+                  variant={isUrgent ? 'default' : 'outline'}
+                  onClick={() => setView('care')}
+                  className="h-9 gap-1.5 rounded-lg text-xs font-semibold"
+                >
+                  <Stethoscope className={cn('h-3.5 w-3.5', !isUrgent && 'text-primary')} aria-hidden />
+                  {t(uiLang, 'ui.talkToDoctor')}
+                </Button>
+              ) : null}
+              {careActions.facilities ? (
+                <Button
+                  variant={isEmergency ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setView('facilities')}
+                  className={cn('h-9 gap-1.5 rounded-lg text-xs font-semibold', isEmergency && 'bg-red-700 text-white hover:bg-red-800')}
+                >
+                  <MapPin className={cn('h-3.5 w-3.5', !isEmergency && 'text-primary')} aria-hidden />
+                  {t(uiLang, isEmergency ? 'ui.findEmergencyCare' : 'ui.nearbyFacilities')}
+                </Button>
+              ) : null}
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* citations */}
@@ -404,7 +398,7 @@ export function MessageBubble({
         ) : null}
 
         {/* Offline: one-tap follow-ups so nobody has to type without a connection */}
-        {message.offline && !message.streaming && isLastAssistant ? (
+        {message.offline && !message.streaming && isLastAssistant && careActions.homeCare ? (
           <div className={cn('mt-2.5 flex flex-wrap gap-1.5', uiLang === 'ur' && 'font-urdu')}>
             {([
               { label: 'ui.homeCare', query: 'ui.homeCareQuery', icon: ClipboardList, cls: 'border-success/30 bg-success-soft text-success' },
@@ -487,30 +481,10 @@ export function MessageBubble({
               >
                 <ThumbsDown className="h-4 w-4" aria-hidden />
               </ActionIcon>
-              <span className="mx-1 h-4 w-px bg-border" aria-hidden />
-              {/* Judge Inspector: shows the pipeline checks behind this answer */}
-              <button
-                type="button"
-                onClick={() => setInspectorOpen(true)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-                aria-label={t(uiLang, 'ui.inspectAnswer')}
-              >
-                <Cpu className="h-4 w-4 text-primary" aria-hidden />
-                <span className="hidden sm:inline">{t(uiLang, 'ui.inspectAnswer')}</span>
-              </button>
             </span>
           </div>
         ) : null}
 
-        {/* Technical Inspector (Judge Mode) Modal */}
-        {!isUser ? (
-          <JudgeInspectorModal
-            open={inspectorOpen}
-            onOpenChange={setInspectorOpen}
-            message={message}
-            lang={uiLang}
-          />
-        ) : null}
       </div>
     </motion.div>
   );

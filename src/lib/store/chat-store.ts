@@ -15,6 +15,8 @@ import type {
 } from '@/lib/types';
 
 interface ChatState {
+  ownerKey: string | null;
+  storageUnavailable: boolean;
   messages: ChatMessage[];
   streaming: boolean;
   /** stages completed for the in-flight response (drives the pipeline ticker) */
@@ -67,6 +69,8 @@ interface ChatState {
 }
 
 export const useChatStore = create<ChatState>((set) => ({
+  ownerKey: null,
+  storageUnavailable: false,
   messages: [],
   streaming: false,
   completedStages: [],

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { canManageConversation } from '@/server/conversation-access';
 
 export const runtime = 'nodejs';
 
 /** POST /api/feedback {messageId, rating: 1|0, comment?} → {ok} */
 export async function POST(req: NextRequest) {
-  let body: { messageId?: unknown; rating?: unknown; comment?: unknown };
+  let body: { messageId?: unknown; rating?: unknown; comment?: unknown; sessionId?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -24,6 +25,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const message = await db.message.findUnique({ where: { id: messageId }, include: { conversation: true } });
+    if (!message || !await canManageConversation(message.conversation, typeof body.sessionId === 'string' ? body.sessionId : '')) return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     await db.feedback.create({ data: { messageId, rating, comment } });
     return NextResponse.json({ ok: true });
   } catch {

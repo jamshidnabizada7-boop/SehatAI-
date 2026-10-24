@@ -46,12 +46,12 @@ import { VoiceStatusIndicator } from './voice-status-indicator';
 import { SummaryModal } from './summary-modal';
 import { ConversationHistoryDrawer } from './conversation-history-drawer';
 import { OutcomeFollowupCard } from '@/components/outcomes/outcome-followup-card';
-import { ReferralRails } from './referral-rails';
 import { FirstAidCards } from './first-aid-cards';
 import { SymptomCheckerWizard } from './symptom-checker-wizard';
 import { ChatExportMenu } from './chat-export-menu';
 import { MedPreSendChecker } from './med-pre-send-checker';
 import { cn } from '@/lib/utils';
+import { careActionsFor } from '@/lib/care-actions';
 
 const EXAMPLE_ICONS = [Thermometer, HeartPulse, Sparkles, Baby, Brain, ShieldPlus] as const;
 
@@ -127,6 +127,10 @@ export function ChatView() {
   const setHistoryOpen = useChatStore((s) => s.setHistoryOpen);
 
   const hasAssistantReply = messages.some((m) => m.role === 'assistant');
+  // Sidebar doctor/facility prompts follow the same care-action policy as answers.
+  const recentAssistant = messages.findLast((m) => m.role === 'assistant');
+  const recentUser = messages.findLast((m) => m.role === 'user');
+  const sidebarActions = careActionsFor(recentAssistant?.triage?.level, recentUser?.content ?? '');
 
   // deterministic daily tip (rotates once a day, stable per session)
   const dailyTip = useMemo(() => getDailyTip(), []);
@@ -197,13 +201,6 @@ export function ChatView() {
     return level === 'URGENT' || level === 'ROUTINE';
   }, [messages, streaming]);
 
-  // Phase 2 — referral rails: show when last assistant message is URGENT/EMERGENCY
-  const lastTriageLevel = useMemo(() => {
-    if (messages.length === 0) return null;
-    const last = messages[messages.length - 1];
-    if (last.role !== 'assistant' || streaming) return null;
-    return last.triage?.level ?? null;
-  }, [messages, streaming]);
 
   const doSend = useCallback(
     (text: string) => {
@@ -409,8 +406,6 @@ export function ChatView() {
             </motion.div>
           ) : null}
 
-          {/* Phase 2 — referral rails: one-tap emergency + hospital + telemedicine deep-links */}
-          <ReferralRails triageLevel={lastTriageLevel} lang={uiLang} />
 
           {/* chat toolbar */}
           <div className="flex items-center gap-0.5 px-3 pt-1.5 sm:px-5">
@@ -605,6 +600,7 @@ export function ChatView() {
           </ul>
         </section>
 
+        {sidebarActions.bookDoctor ? (
         <section className="space-y-2 border-t border-border p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Stethoscope className="h-4 w-4 text-primary" aria-hidden />
@@ -615,7 +611,9 @@ export function ChatView() {
             {t(uiLang, 'ui.talkToDoctor')}
           </Button>
         </section>
+        ) : null}
 
+        {sidebarActions.facilities ? (
         <section className="space-y-2 border-t border-border p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <MapPin className="h-4 w-4 text-primary" aria-hidden />
@@ -626,6 +624,7 @@ export function ChatView() {
             {t(uiLang, 'ui.railFacilitiesCta')}
           </Button>
         </section>
+        ) : null}
 
         <section className="space-y-2 border-t border-border p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">

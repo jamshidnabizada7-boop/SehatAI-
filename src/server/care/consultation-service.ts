@@ -225,8 +225,9 @@ export async function transitionConsultation(opts: {
   actorRole?: string;
   reason?: string;
   extraData?: Record<string, unknown>;
-}) {
-  const current = await db.consultation.findUnique({ where: { id: opts.consultationId } });
+}, client: typeof db | import("@prisma/client").Prisma.TransactionClient = db) {
+  if (client === db) return db.$transaction(tx => transitionConsultation(opts, tx));
+  const current = await client.consultation.findUnique({ where: { id: opts.consultationId } });
   if (!current) throw new ConsultationError('CONSULTATION_NOT_FOUND', 404);
 
   // EXPIRED auto-expiry for stale instant requests.
@@ -243,7 +244,7 @@ export async function transitionConsultation(opts: {
   if (opts.to === 'PAID') {
     // §22: open the messaging window when payment lands (TEXT), or when accepted for media types.
     if (current.type === 'TEXT' && current.serviceId) {
-      const service = await db.doctorService.findUnique({ where: { id: current.serviceId } });
+      const service = await client.doctorService.findUnique({ where: { id: current.serviceId } });
       if (service) {
         data.windowOpensAt = new Date();
         data.windowClosesAt = new Date(Date.now() + (service.windowHours ?? 24) * 3600_000);
@@ -252,12 +253,14 @@ export async function transitionConsultation(opts: {
     }
   }
 
-  const updated = await db.consultation.update({
-    where: { id: opts.consultationId },
+  const changed = await client.consultation.updateMany({
+    where: { id: opts.consultationId, status: current.status },
     data: { status: opts.to, ...data },
   });
+  if (changed.count !== 1) throw new ConsultationError('CONCURRENT_STATE_CHANGE', 409);
+  const updated = await client.consultation.findUniqueOrThrow({ where: { id: opts.consultationId } });
 
-  await db.consultationStatusEvent.create({
+  await client.consultationStatusEvent.create({
     data: {
       consultationId: opts.consultationId,
       fromStatus: current.status,
@@ -267,7 +270,7 @@ export async function transitionConsultation(opts: {
       reason: opts.reason,
     },
   });
-  await db.consultationAuditEvent.create({
+  await client.consultationAuditEvent.create({
     data: {
       consultationId: opts.consultationId,
       action: `consultation.${opts.to.toLowerCase()}`,
@@ -288,7 +291,7 @@ export async function transitionConsultation(opts: {
     REFUNDED: 'refund.processed',
   };
   const nType = typeFor[opts.to];
-  if (nType) await notifyMany(recipients, { type: nType, consultationId: updated.id });
+  if (nType) await notifyMany(recipients, { type: nType, consultationId: updated.id }, client);
 
   return updated;
 }

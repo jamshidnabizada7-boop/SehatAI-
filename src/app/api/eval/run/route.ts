@@ -1,3 +1,4 @@
+import { diagnosticAccess } from '@/server/diagnostic-access';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { GOLDEN_SET, GOLDEN_SUITE_VERSION } from '@/data/eval-golden';
@@ -314,6 +315,8 @@ async function stepRun(runId: string) {
 
 /** POST /api/eval/run — no body: start a run. Body {runId}: process next batch. */
 export async function POST(req: NextRequest) {
+  const denied = await diagnosticAccess("run.post");
+  if (denied) return denied;
 
   let body: { runId?: string } = {};
   try {

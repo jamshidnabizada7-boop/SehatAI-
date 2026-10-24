@@ -1,4 +1,6 @@
 import { db } from '@/lib/db';
+import { buildSafetyState, safetyFollowUp, conversationRecall } from '@/lib/engine/safety-state';
+import { emergencyActionForUnknownLocation } from '@/lib/emergency-localization';
 import { CORPUS } from '@/data/corpus';
 import { glossaryForPrompt } from '@/data/glossary';
 import { EMERGENCY_TEMPLATES, getEmergencyTemplate } from '@/data/emergency-templates';
@@ -12,6 +14,7 @@ import {
   publisherUrlFor,
   retrieveCorpus,
   runL0Triage,
+  runOfflineEngine,
   triageReason,
 } from '@/lib/engine/safety-engine';
 export { extractEmergencySymptoms };
@@ -33,6 +36,10 @@ import {
   LANGUAGE_CHANGE_RESPONSES,
   NON_MEDICAL_RESPONSES,
   USER_CORRECTION_RESPONSES,
+  SMALL_TALK_RESPONSES,
+  ILLNESS_RESPONSES,
+  DISTRESS_RESPONSES,
+  RETURN_GREETING_RESPONSES,
 } from '@/lib/engine/intent-detection';
 import type { ClinicalContext } from '@/lib/types';
 import {
@@ -101,6 +108,8 @@ export interface PipelineInput {
   conversationId?: string;
   /** optional in-memory history turns for direct stream evaluation or testing */
   history?: Array<{ role: string; content: string; [key: string]: unknown }>;
+  /** Browser transcript used if persistence is unavailable, or for unsaved offline turns. */
+  clientHistory?: Array<{ id?: string; role: string; content: string; [key: string]: unknown }>;
   /** when false, skip DB persistence (used by the eval harness to avoid polluting prod tables) */
   persist?: boolean;
   /** Phase 1 (W1): server-side patient profile (pre-sanitized). When absent the
@@ -112,6 +121,8 @@ export interface PipelineInput {
   /** Jurisdiction routing: ISO 3166-1 alpha-2 country code (e.g. 'PK', 'AF') */
   country?: string;
   jurisdiction?: string;
+  /** False when the request has no recorded authorization for external AI processing. */
+  allowExternalAI?: boolean;
 }
 
 export interface PipelineResult extends DoneStageData {
@@ -866,6 +877,7 @@ function sanitizeL1(raw: unknown): L1Extraction | null {
 // ---------- persistence ----------
 
 interface PersistPayload {
+  recoveryHistory?: PipelineInput['clientHistory'];
   sessionId: string;
   conversationId?: string;
   userId?: string | null;
@@ -889,9 +901,10 @@ async function persistTurn(p: PersistPayload): Promise<{ messageId: string; conv
     return { messageId: '', conversationId: p.conversationId ?? '' };
   }
   try {
+    return await db.$transaction(async (tx) => {
     let conversationId = p.conversationId ?? '';
     if (conversationId) {
-      const existing = await db.conversation.findUnique({ where: { id: conversationId } });
+      const existing = await tx.conversation.findUnique({ where: { id: conversationId } });
       if (!existing) {
         conversationId = '';
       } else {
@@ -901,7 +914,7 @@ async function persistTurn(p: PersistPayload): Promise<{ messageId: string; conv
             conversationId = ''; // Reject appending to another user's conversation
           } else if (!existing.userId && existing.sessionToken === p.sessionId) {
             // Claim previously unauthenticated conversation under the same verified session
-            await db.conversation.update({ where: { id: conversationId }, data: { userId: p.userId } }).catch(() => undefined);
+            await tx.conversation.update({ where: { id: conversationId }, data: { userId: p.userId } }).catch(() => undefined);
           } else if (!existing.userId) {
             conversationId = ''; // Do not append to arbitrary guest conversations
           }
@@ -913,8 +926,15 @@ async function persistTurn(p: PersistPayload): Promise<{ messageId: string; conv
         }
       }
     }
+    let recover = [] as NonNullable<PipelineInput['clientHistory']>;
+    if (conversationId && p.recoveryHistory?.length) {
+      const last = await tx.message.findFirst({ where: { conversationId, role: 'assistant' }, orderBy: { createdAt: 'desc' }, select: { id: true } });
+      const anchor = last ? p.recoveryHistory.findIndex(m => m.id === last.id) : -1;
+      if (anchor >= 0) recover = p.recoveryHistory.slice(anchor + 1);
+    }
     if (!conversationId) {
-      const conv = await db.conversation.create({
+      recover = p.recoveryHistory ?? [];
+      const conv = await tx.conversation.create({
         data: {
           sessionToken: p.sessionId,
           userId: p.userId || null,
@@ -924,10 +944,13 @@ async function persistTurn(p: PersistPayload): Promise<{ messageId: string; conv
       });
       conversationId = conv.id;
     }
-    await db.message.create({
+    // Offline turns are persisted only inside the same ownership-checked transaction.
+    for (const [i, m] of recover.entries()) await tx.message.create({ data: { conversationId, role: m.role, content: m.content, language: p.lang, createdAt: new Date(Date.now() - (recover.length - i) * 2), pipelineMeta: JSON.stringify({ source: 'local-transcript', unverified: true }) } });
+    await tx.conversation.update({ where: { id: conversationId }, data: { updatedAt: new Date() } });
+    await tx.message.create({
       data: { conversationId, role: 'user', content: p.userContent, language: p.lang },
     });
-    const assistantMsg = await db.message.create({
+    const assistantMsg = await tx.message.create({
       data: {
         conversationId,
         role: 'assistant',
@@ -940,7 +963,7 @@ async function persistTurn(p: PersistPayload): Promise<{ messageId: string; conv
         emergency: p.emergency,
       },
     });
-    await db.triageEvent.create({
+    await tx.triageEvent.create({
       data: {
         messageId: assistantMsg.id,
         level: p.level,
@@ -950,6 +973,7 @@ async function persistTurn(p: PersistPayload): Promise<{ messageId: string; conv
       },
     });
     return { messageId: assistantMsg.id, conversationId };
+    }, { timeout: 15000 });
   } catch {
     return { messageId: '', conversationId: p.conversationId ?? '' };
   }
@@ -1412,6 +1436,7 @@ export async function runPipeline(
   input: PipelineInput,
   onEvent?: (stage: PipelineStage, data: unknown) => void,
 ): Promise<PipelineResult> {
+  const saveTurn = (payload: PersistPayload) => persistTurn({ ...payload, recoveryHistory: input.clientHistory });
   const t0 = Date.now();
   const message = (input.message ?? '').toString().slice(0, 4000);
   const events: { stage: PipelineStage; data: unknown }[] = [];
@@ -1448,12 +1473,12 @@ export async function runPipeline(
   const resolvedCountry =
     input.country ??
     input.jurisdiction ??
-    (afLocationRegex.test(message) ? 'AF' : 'PK');
+    (afLocationRegex.test(message) ? 'AF' : /\b(?:i am in|i live in|located in) pakistan\b/i.test(message) ? 'PK' : 'INTL');
   const resolvedRegion =
     (input as { city?: string; region?: string }).city ??
     (input as { city?: string; region?: string }).region ??
     (message.match(afRegionRegex)?.[1] ?? undefined);
-  const emergencyNumbers = getEmergencyNumbers(resolvedCountry, resolvedRegion);
+  const emergencyNumbers = resolvedCountry === 'INTL' ? [] : getEmergencyNumbers(resolvedCountry, resolvedRegion);
 
   // ---------- Step 0: Conversation History Loading & Stream Separation (M1 / R1) ----------
   let rawHistoryMessages: Array<{ role: string; content: string; triageLevel?: string | null; emergency?: boolean; createdAt?: Date | string }> = [];
@@ -1492,8 +1517,8 @@ export async function runPipeline(
         const past = await db.message.findMany({
           where: { conversationId: convId },
           orderBy: { createdAt: 'desc' },
-          take: 6,
-          select: { role: true, content: true, triageLevel: true, emergency: true, createdAt: true },
+          // Safety reconstruction uses the complete owned transcript, independently of prompt limits.
+          select: { id: true, role: true, content: true, triageLevel: true, emergency: true, createdAt: true },
         });
         rawHistoryMessages = past.reverse() as typeof rawHistoryMessages;
       }
@@ -1502,11 +1527,24 @@ export async function runPipeline(
     }
   }
 
+  if (!input.history && input.clientHistory?.length) {
+    if (!rawHistoryMessages.length) rawHistoryMessages = input.clientHistory;
+    else {
+      // Resume after the last server-issued assistant id; never replace authoritative history.
+      const lastAssistant = [...rawHistoryMessages].reverse().find(m => m.role === 'assistant') as { id?: string } | undefined;
+      const anchor = lastAssistant?.id ? input.clientHistory.findIndex(m => m.id === lastAssistant.id) : -1;
+      if (anchor >= 0) rawHistoryMessages.push(...input.clientHistory.slice(anchor + 1));
+    }
+  }
+
+  const safetyState = buildSafetyState([...rawHistoryMessages, { role: 'user', content: message }], runL0Triage);
+  const priorSafetyState = buildSafetyState(rawHistoryMessages, runL0Triage);
+
   // Pure structural role isolation:
   // 1. patientStream: strictly role: 'user' messages -> fed to L0, L1 extraction & clinical context.
   // 2. historyStream: all turns with role tags -> fed strictly to final generator for fluency.
   const { patientStream, historyStream } = createDialogueStreams(
-    rawHistoryMessages,
+    rawHistoryMessages.slice(-12),
     message,
     input.language && input.language !== 'auto' ? input.language : undefined,
   );
@@ -1548,9 +1586,39 @@ export async function runPipeline(
     convLang = det.language;
   }
 
+  const safetyContent = safetyFollowUp(safetyState, convLang);
+  if (safetyContent && (priorSafetyState.urgency !== 'INFORMATIONAL' || safetyState.concerns.some(c => /mental-health|^chest-pain$/.test(c.category)))) {
+    const triage: TriageStageData = { level: safetyState.urgency, reason: 'Patient-reported safety concerns require reassessment.', signals: safetyState.concerns.map(c => `safety:${c.category}:${c.status}`), engine: 'L0', shortCircuited: true };
+    const emergency: EmergencyStageData | null = safetyState.urgency === 'EMERGENCY' ? {
+      templateCategory: 'general-emergency', title: convLang === 'ur' ? 'فوری طبی مدد' : convLang === 'roman' ? 'Fori tibbi madad' : 'Urgent medical help', reason: triage.reason, matchedPatternId: 'longitudinal-safety',
+      actions: [safetyContent], doNot: [], numbers: [], sources: [],
+    } : null;
+    emit('triage', triage);
+    if (emergency) emit('emergency', emergency);
+    emit('generation', { delta: safetyContent });
+    const persisted = await saveTurn({ sessionId: input.sessionId, conversationId: input.conversationId, userId, lang: convLang, userContent: message, assistantContent: safetyContent, level: triage.level, redFlags: [], citations: [], meta: { version: 1, path: 'longitudinal-safety', safetyState }, emergency: Boolean(emergency), engine: 'L0', shortCircuited: true, signals: triage.signals, persist: input.persist });
+    const result: PipelineResult = { ...persisted, content: safetyContent, language: convLang, triage, emergency, citations: [], validation: null, offline: false, latencyMs: Date.now() - t0, confidence: null, events };
+    const { events: _events, ...done } = result;
+    emit('done', done);
+    return result;
+  }
+
+  const recall = conversationRecall(message, priorSafetyState, convLang);
+  if (recall) {
+    const triage: TriageStageData = { level: 'ROUTINE', reason: '', signals: ['factual-recall'], engine: 'intent', shortCircuited: true };
+    const persisted = await saveTurn({ sessionId: input.sessionId, conversationId: input.conversationId, userId, lang: recall.language, userContent: message, assistantContent: recall.content, level: triage.level, redFlags: [], citations: [], meta: { path: 'factual-recall' }, emergency: false, engine: 'intent', shortCircuited: true, signals: [], persist: input.persist });
+    const result: PipelineResult = { ...persisted, content: recall.content, language: recall.language, triage, citations: [], validation: null, offline: false, latencyMs: Date.now() - t0, confidence: null, events };
+    const { events: _events, ...done } = result;
+    emit('done', done);
+    return result;
+  }
+
   // Handle all non-medical / conversational intents
   const CONVERSATIONAL_INTENTS = [
     'greeting',
+    'small_talk',
+    'general_illness',
+    'emotional_distress',
     'farewell',
     'gratitude',
     'wellness_check',
@@ -1568,7 +1636,7 @@ export async function runPipeline(
     CONVERSATIONAL_INTENTS.push('user_correction');
   }
 
-  if (CONVERSATIONAL_INTENTS.includes(intentResult.intent)) {
+  if (CONVERSATIONAL_INTENTS.includes(intentResult.intent) && runL0Triage(message, convLang).level !== 'EMERGENCY') {
     let content = '';
     if (intentResult.intent === 'introduction') {
       content = INTRODUCTION_RESPONSES(intentResult.extractedName ?? 'there')[convLang];
@@ -1584,7 +1652,10 @@ export async function runPipeline(
       content = USER_CORRECTION_RESPONSES[convLang];
     } else {
       const responseMap: Record<string, Record<Lang, string>> = {
-        greeting: GREETING_RESPONSES,
+        greeting: previousPatientTexts.length ? RETURN_GREETING_RESPONSES : GREETING_RESPONSES,
+        small_talk: SMALL_TALK_RESPONSES,
+        general_illness: ILLNESS_RESPONSES,
+        emotional_distress: DISTRESS_RESPONSES,
         farewell: FAREWELL_RESPONSES,
         gratitude: GRATITUDE_RESPONSES,
         wellness_check: WELLNESS_RESPONSES,
@@ -1606,7 +1677,7 @@ export async function runPipeline(
     };
 
     const triageData: TriageStageData = {
-      level: 'INFORMATIONAL',
+      level: intentResult.intent === 'general_illness' || intentResult.intent === 'emotional_distress' ? 'ROUTINE' : 'INFORMATIONAL',
       reason: triageReasonMap[intentResult.intent]?.[convLang] ?? 'General health guidance.',
       signals: [`intent:${intentResult.intent}`],
       engine: 'intent',
@@ -1615,14 +1686,14 @@ export async function runPipeline(
     emit('triage', triageData);
     emit('generation', { delta: content });
 
-    const persisted = await persistTurn({
+    const persisted = await saveTurn({
       sessionId: input.sessionId,
       conversationId: input.conversationId,
       userId,
       lang: convLang,
       userContent: message,
       assistantContent: content,
-      level: 'INFORMATIONAL',
+      level: triageData.level,
       redFlags: [],
       citations: [],
       meta: { version: 2, path: `conversational-${intentResult.intent}`, intent: intentResult.intent },
@@ -1679,6 +1750,15 @@ export async function runPipeline(
   }
 
   // Flags for downstream: follow-up topic injection and repeat handling
+  if (input.allowExternalAI === false) {
+    const local = runOfflineEngine(message, convLang, rawHistoryMessages);
+    const persisted = await saveTurn({ sessionId: input.sessionId, conversationId: input.conversationId, userId, lang: convLang, userContent: message, assistantContent: local.content, level: local.triage.level, redFlags: [], citations: local.citations, meta: { path: 'local-guidance', reason: 'external-processing-not-authorized' }, emergency: local.triage.level === 'EMERGENCY', engine: 'offline', shortCircuited: true, signals: local.triage.signals, persist: input.persist });
+    const result: PipelineResult = { ...persisted, content: local.content, language: convLang, triage: local.triage, citations: local.citations, validation: null, offline: true, latencyMs: Date.now() - t0, confidence: null, events };
+    const { events: _events, ...done } = result;
+    emit('triage', local.triage);
+    emit('done', done);
+    return result;
+  }
   const isFollowUp = intentResult.intent === 'follow_up';
   const followUpTopic = intentResult.topicFromHistory ?? null;
   const isRepeat = intentResult.intent === 'repeat';
@@ -1689,25 +1769,6 @@ export async function runPipeline(
   let redFlagMatches = l0.redFlagMatches ?? matchRedFlags(message);
   const ctx = l0.context ?? extractClinicalContext(combinedPatientContext);
 
-  if (l0.level !== 'EMERGENCY' && priorPatientMessages.length > 0) {
-    const priorWasEmergency = rawHistoryMessages.slice(-2).some((m) => m.emergency === true || m.triageLevel === 'EMERGENCY');
-    const combinedL0 = runL0Triage(combinedPatientContext, convLang);
-    if (combinedL0.level === 'EMERGENCY' && !conversationState.isCorrection && !conversationState.isThirdPersonOrHistorical) {
-      l0 = combinedL0;
-      redFlagMatches = matchRedFlags(combinedPatientContext);
-    } else if (priorWasEmergency && !conversationState.isCorrection && !conversationState.isThirdPersonOrHistorical) {
-      const priorUserMsg = priorPatientMessages.find((m) => runL0Triage(m.content).level === 'EMERGENCY');
-      const priorCat = priorUserMsg ? runL0Triage(priorUserMsg.content).matchedCategory : combinedL0.matchedCategory;
-      l0 = {
-        level: 'EMERGENCY',
-        reason: l0.reason || combinedL0.reason || 'Emergency follow-up care required.',
-        signals: [...l0.signals, 'history:active-emergency'],
-        engine: 'L0',
-        shortCircuited: true,
-        matchedCategory: priorCat || 'general-emergency',
-      };
-    }
-  }
   latencies.l0 = Date.now() - tL0;
 
   const isEmergencyL0 = l0.level === 'EMERGENCY';
@@ -1784,6 +1845,7 @@ export async function runPipeline(
     const tpl = getEmergencyTemplate(templateCategory) ?? getEmergencyTemplate('unconscious') ?? EMERGENCY_TEMPLATES[0]!;
     const rawActions = tpl.immediateActions.map((a) => a[lang]);
     const actions = rawActions.map((act) => {
+      if (resolvedCountry === 'INTL') return emergencyActionForUnknownLocation(act, lang);
       if (resolvedCountry !== 'PK' && emergencyNumbers.length > 0) {
         const isAF = resolvedCountry === 'AF' || resolvedCountry === 'AFG' || resolvedCountry === 'AFGHANISTAN';
         const isKabulOrUnknown = !resolvedRegion || resolvedRegion.toLowerCase().includes('kabul') || resolvedRegion.includes('کابل');
@@ -1882,7 +1944,7 @@ export async function runPipeline(
       latencies: { ...latencies, total: totalMs },
       stages: events.map((e) => e.stage),
     };
-    const persisted = await persistTurn({
+    const persisted = await saveTurn({
       sessionId: input.sessionId,
       conversationId: input.conversationId,
       userId,
@@ -2293,7 +2355,7 @@ export async function runPipeline(
         const isAF = resolvedCountry === 'AF' || resolvedCountry === 'AFG' || resolvedCountry === 'AFGHANISTAN';
         const isKabulOrUnknown = !resolvedRegion || resolvedRegion.toLowerCase().includes('kabul') || resolvedRegion.includes('کابل');
         const primaryNumber = isAF ? (isKabulOrUnknown ? '102' : '166') : (emergencyNumbers[0]?.number ?? '1122');
-        const emDirective = lang === 'ur'
+        const emDirective = resolvedCountry === 'INTL' ? (lang === 'ur' ? 'مقامی ایمرجنسی سروس سے فوراً مدد لیں۔' : lang === 'roman' ? 'Local emergency service se foran madad lein.' : 'Contact your local emergency service immediately.') : lang === 'ur'
           ? `فوری طور پر ${primaryNumber} پر کال کریں۔`
           : lang === 'roman'
             ? `Foran ${primaryNumber} par call karein.`
@@ -2301,7 +2363,7 @@ export async function runPipeline(
         preVetoContent = [
           `🚨 **${emTemplate.title[langKey]}**`,
           emTemplate.reasonIntro[langKey],
-          ...emTemplate.immediateActions.map((a) => '• ' + a[langKey]),
+          ...emTemplate.immediateActions.map((a) => '• ' + (resolvedCountry === 'INTL' ? emergencyActionForUnknownLocation(a[langKey], langKey) : a[langKey])),
           emDirective,
         ].join('\n\n');
         preEmergencyData = {
@@ -2309,7 +2371,7 @@ export async function runPipeline(
           title: emTemplate.title[lang],
           reason: 'Pre-generation constellation validator detected critical emergency red flag',
           matchedPatternId: 'constellation-pre-veto',
-          actions: emTemplate.immediateActions.map((a) => a[lang]),
+          actions: emTemplate.immediateActions.map((a) => resolvedCountry === 'INTL' ? emergencyActionForUnknownLocation(a[lang], lang) : a[lang]),
           doNot: emTemplate.doNot.map((d) => d[lang]),
           numbers: emergencyNumbers,
           sources: emTemplate.sources,
@@ -2341,7 +2403,7 @@ export async function runPipeline(
       }
       emit('generation', { delta: preVetoContent });
 
-      const prePersisted = await persistTurn({
+      const prePersisted = await saveTurn({
         sessionId: input.sessionId,
         conversationId: input.conversationId,
         userId,
@@ -2857,47 +2919,7 @@ export async function runPipeline(
       riskScore: injectionScan.riskScore,
     },
   };
-  const persisted = await persistTurn({
-    sessionId: input.sessionId,
-    conversationId: input.conversationId,
-    userId,
-    lang,
-    userContent: message,
-    assistantContent: finalContent,
-    level: finalLevel,
-    redFlags: redFlagMatches.map((r) => ({ id: r.pattern.id, category: r.pattern.category })),
-    citations,
-    meta,
-    emergency: false,
-    engine: 'combined',
-    shortCircuited: false,
-    signals: combinedSignals,
-    persist: input.persist,
-  });
-
-  // ---------- Step 11 (Phase 1): audit log + outcome scheduling (never throw) ----------
-  await logPipelineAudit({
-    userId,
-    persist: input.persist,
-    meta: {
-      triageLevel: finalLevel,
-      confidenceBand: finalConfidence.band,
-      engine: 'combined',
-      latencyMs: totalMs,
-      injectionAttempt: injectionScan.isInjectionAttempt || ctx.injection.detected || l1?.injectionAttempt === true,
-      drugCheckSeverity: drugCheck?.overallSeverity ?? 'NONE',
-      path: usedFallback ? 'fallback' : hasContext ? 'grounded-generation' : 'abstention',
-      conversationId: persisted.conversationId,
-      profileUsed: isProfileMeaningful(profile),
-    },
-  });
-  await scheduleOutcomeFollowUp({
-    userId,
-    persist: input.persist,
-    messageId: persisted.messageId,
-    conversationId: persisted.conversationId,
-    level: finalLevel,
-  });
+  const persisted = { messageId: '', conversationId: input.conversationId ?? '' };
 
   if (errorMessage && !finalContent) {
     emit('error', { message: errorMessage, fallbackContent: finalContent });
@@ -2922,31 +2944,6 @@ export async function runPipeline(
     events,
     meta: meta as Record<string, unknown>,
   };
-
-  // Phase 1 — Observability: record aggregated metrics (no PHI).
-  try {
-    recordPipelineRun({
-      triageLevel: triageData.level,
-      confidenceBand: finalConfidence.band,
-      engine: triageData.engine,
-      latencyMs: result.latencyMs,
-      injectionAttempt: injectionScan?.isInjectionAttempt ?? false,
-      drugCheckSeverity: drugCheck ? drugCheck.overallSeverity : 'NONE',
-      success: !errorMessage,
-    });
-    structuredLog('info', 'pipeline.run', {
-      triageLevel: triageData.level,
-      confidenceBand: finalConfidence.band,
-      engine: triageData.engine,
-      latencyMs: result.latencyMs,
-      injectionAttempt: injectionScan?.isInjectionAttempt ?? false,
-      drugCheckSeverity: drugCheck ? drugCheck.overallSeverity : 'NONE',
-      success: !errorMessage,
-      offline: usedFallback,
-    });
-  } catch {
-    // observability must never break the response
-  }
 
   // Phase 2 — Parallel Veto Constellation: run 4 validators concurrently
   // (red-flag recheck, medication safety, citation grounding, language consistency)
@@ -2999,6 +2996,9 @@ export async function runPipeline(
 
     // Veto Enforcement: if any critical validator vetoes, enforce clinical safety fallback (§8.8)
     if (activeConstellation.mustAbstain) {
+      result.urduVersion = undefined;
+      result.citations = [];
+      result.validation = { verdict: 'fallback', checks: [{ name: 'final-safety-validation', passed: false }], latencyMs: 0 };
       const redFlagVeto = activeConstellation.results.find((r) => r.veto && r.name === 'red-flag-recheck');
       const medVeto = activeConstellation.results.find((r) => r.veto && r.name === 'medication-safety');
 
@@ -3010,7 +3010,7 @@ export async function runPipeline(
         const isAF = resolvedCountry === 'AF' || resolvedCountry === 'AFG' || resolvedCountry === 'AFGHANISTAN';
         const isKabulOrUnknown = !resolvedRegion || resolvedRegion.toLowerCase().includes('kabul') || resolvedRegion.includes('کابل');
         const primaryNumber = isAF ? (isKabulOrUnknown ? '102' : '166') : (emergencyNumbers[0]?.number ?? '1122');
-        const emDirective = lang === 'ur'
+        const emDirective = resolvedCountry === 'INTL' ? (lang === 'ur' ? 'مقامی ایمرجنسی سروس سے فوراً مدد لیں۔' : lang === 'roman' ? 'Local emergency service se foran madad lein.' : 'Contact your local emergency service immediately.') : lang === 'ur'
           ? `فوری طور پر ${primaryNumber} پر کال کریں۔`
           : lang === 'roman'
             ? `Foran ${primaryNumber} par call karein.`
@@ -3018,7 +3018,7 @@ export async function runPipeline(
         const emGuidance = [
           `🚨 **${emTemplate.title[langKey]}**`,
           emTemplate.reasonIntro[langKey],
-          ...emTemplate.immediateActions.map((a) => '• ' + a[langKey]),
+          ...emTemplate.immediateActions.map((a) => '• ' + (resolvedCountry === 'INTL' ? emergencyActionForUnknownLocation(a[langKey], langKey) : a[langKey])),
           emDirective,
         ].join('\n\n');
         result.content = emGuidance;
@@ -3026,19 +3026,19 @@ export async function runPipeline(
         result.emergency = {
           templateCategory,
           title: emTemplate.title[lang],
-          reason: 'Constellation validator detected emergency red flag',
+          reason: lang === 'ur' ? 'بتائی گئی علامات کے لیے فوری مدد لیں۔' : lang === 'roman' ? 'Batayi gayi alamaat ke liye fori madad lein.' : 'The reported symptoms need immediate help.',
           matchedPatternId: redFlagMatches[0]?.pattern.id ?? 'constellation-veto',
-          actions: emTemplate.immediateActions.map((a) => a[lang]),
+          actions: emTemplate.immediateActions.map((a) => resolvedCountry === 'INTL' ? emergencyActionForUnknownLocation(a[lang], lang) : a[lang]),
           doNot: emTemplate.doNot.map((d) => d[lang]),
           numbers: emergencyNumbers,
           sources: emTemplate.sources,
         };
       } else if (medVeto) {
         const medWarning = lang === 'ur'
-          ? 'توجہ: ادویات کا ممکنہ خطرناک تعامل سامنے آیا ہے۔ یہ دوا ایک ساتھ نہ لیں اور فوراً اپنے معالج یا فارماسسٹ سے رجوع کریں۔'
+          ? 'دواؤں کی حفاظت کی تصدیق نہیں ہو سکی۔ تجویز کردہ دوا خود سے تبدیل نہ کریں؛ مزید خوراک کے بارے میں فوراً ڈاکٹر یا فارماسسٹ سے پوچھیں۔ شدید علامات یا زیادہ خوراک کی صورت میں ایمرجنسی مدد لیں۔'
           : lang === 'roman'
-          ? 'Tawajah: Dawao ka khatarnak interact samne aaya hai. Yeh dawa aik saath na lein aur fori doctor ya pharmacist se rabta karein.'
-          : 'Warning: A potentially dangerous medication interaction was detected. Do not take these medications together and consult a doctor or pharmacist immediately.';
+          ? 'Dawa ki hifazat ki tasdeeq nahi ho saki. Prescribed dawa khud se tabdeel na karein; mazeed dose ke bare mein foran doctor ya pharmacist se poochein. Shadeed alamaat ya overdose ho to emergency madad lein.'
+          : 'I could not verify medication safety. Do not change prescribed treatment on your own; contact your doctor or pharmacist promptly about further doses. Seek emergency help for severe symptoms or a possible overdose.';
         result.content = medWarning;
         finalContent = medWarning;
       } else {
@@ -3062,7 +3062,14 @@ export async function runPipeline(
       vetoNames: activeConstellation.results.filter((r) => r.veto).map((r) => r.name),
     });
   } catch {
-    // constellation must never break the response — if it fails, the existing L2 judge still ran
+    // A validator failure cannot authorize displaying unvalidated model output.
+    const local = runOfflineEngine(message, lang, rawHistoryMessages);
+    result.content = local.content;
+    result.urduVersion = undefined;
+    result.citations = local.citations;
+    result.triage = local.triage;
+    result.offline = true;
+    result.validation = { verdict: 'fallback', checks: [{ name: 'final-safety-validation-unavailable', passed: false }], latencyMs: 0 };
     structuredLog('warn', 'constellation.failed', { error: 'constellation execution failed' });
   }
 
@@ -3088,6 +3095,47 @@ export async function runPipeline(
     }
   }
 
+  // Store only the final validated, localized answer. Earlier tokens never enter history.
+  if (resolvedCountry === 'INTL') result.content = emergencyActionForUnknownLocation(result.content, lang);
+  if (resolvedCountry === 'INTL' && result.urduVersion) result.urduVersion = emergencyActionForUnknownLocation(result.urduVersion, 'ur');
+  result.latencyMs = Date.now() - t0;
+  const finalPersisted = await saveTurn({
+    sessionId: input.sessionId, conversationId: input.conversationId, userId, lang,
+    userContent: message, assistantContent: result.content, level: result.triage.level,
+    redFlags: redFlagMatches.map(r => ({ id: r.pattern.id, category: r.pattern.category })),
+    citations: result.citations, meta: { ...meta, finalValidation: result.validation?.verdict, finalTriage: result.triage.level },
+    emergency: result.triage.level === 'EMERGENCY', engine: result.triage.engine,
+    shortCircuited: result.triage.shortCircuited, signals: result.triage.signals, persist: input.persist,
+  });
+  result.messageId = finalPersisted.messageId;
+  result.conversationId = finalPersisted.conversationId;
+  await logPipelineAudit({ userId, persist: input.persist, meta: { triageLevel: result.triage.level, confidenceBand: finalConfidence.band, engine: result.triage.engine, latencyMs: result.latencyMs, injectionAttempt: injectionScan.isInjectionAttempt, drugCheckSeverity: drugCheck?.overallSeverity ?? 'NONE', conversationId: result.conversationId } });
+  await scheduleOutcomeFollowUp({ userId, persist: input.persist, messageId: result.messageId, conversationId: result.conversationId, level: result.triage.level });
+  // Phase 1 — Observability: record aggregated metrics (no PHI).
+  try {
+    recordPipelineRun({
+      triageLevel: triageData.level,
+      confidenceBand: finalConfidence.band,
+      engine: triageData.engine,
+      latencyMs: result.latencyMs,
+      injectionAttempt: injectionScan?.isInjectionAttempt ?? false,
+      drugCheckSeverity: drugCheck ? drugCheck.overallSeverity : 'NONE',
+      success: !errorMessage,
+    });
+    structuredLog('info', 'pipeline.run', {
+      triageLevel: triageData.level,
+      confidenceBand: finalConfidence.band,
+      engine: triageData.engine,
+      latencyMs: result.latencyMs,
+      injectionAttempt: injectionScan?.isInjectionAttempt ?? false,
+      drugCheckSeverity: drugCheck ? drugCheck.overallSeverity : 'NONE',
+      success: !errorMessage,
+      offline: usedFallback,
+    });
+  } catch {
+    // observability must never break the response
+  }
+
   emit('done', {
     messageId: result.messageId,
     conversationId: result.conversationId,
@@ -3097,7 +3145,7 @@ export async function runPipeline(
     triage: result.triage,
     citations: result.citations,
     validation: result.validation,
-    offline: usedFallback,
+    offline: result.offline,
     latencyMs: result.latencyMs,
     confidence: result.confidence,
     drugCheck: drugCheck

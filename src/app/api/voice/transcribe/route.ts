@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGroq } from '@/server/llm';
 import { toFile } from 'groq-sdk';
 import { detectLanguage } from '@/lib/engine/safety-engine';
+import { requireExternalProcessingUser } from '@/server/external-processing';
 
 export const runtime = 'nodejs';
 
@@ -27,6 +28,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
  * can show a toast instead of a hard failure.
  */
 export async function POST(req: NextRequest) {
+  try { await requireExternalProcessingUser(); } catch (error) {
+    return NextResponse.json({ text: '', error: 'Transcription requires an active account and data-processing consent.' }, { status: (error as { status?: number }).status ?? 503 });
+  }
   let body: { audioBase64?: unknown; mimeType?: unknown };
   try {
     body = await req.json();
@@ -45,6 +49,7 @@ export async function POST(req: NextRequest) {
   if (!audioBase64) {
     return NextResponse.json({ text: '', error: 'transcription failed — no audio data' });
   }
+  if (audioBase64.length > 14_000_000) return NextResponse.json({ error: 'Audio is too large' }, { status: 413 });
 
   try {
     const groq = getGroq();

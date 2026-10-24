@@ -18,7 +18,8 @@ import { cn } from '@/lib/utils';
  * Emergency SOS — a compact trigger that lives in the app header (every
  * view, every breakpoint) and opens a dialog that:
  * 1. Gets the user's geolocation and copies a maps link to the clipboard
- * 2. Offers one-tap calls to 1122 / 1166 / 115
+ * 2. Offers one-tap calls to Pakistan ambulance services (1122 / 115);
+ *    coverage varies, so the copy says so and points to local numbers
  * It never places a call by itself, and the copy says so.
  */
 export function SosButton({ className }: { className?: string }) {
@@ -28,16 +29,19 @@ export function SosButton({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState(false);
+  // Only claim "copied" after the clipboard write actually succeeded.
+  const [locationCopied, setLocationCopied] = useState(false);
 
   const handleSos = () => {
     setOpen(true);
     setLocationError(false);
+    setLocationCopied(false);
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
           const locationText = `My location: https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
-          navigator.clipboard?.writeText(locationText).catch(() => {});
+          navigator.clipboard?.writeText(locationText).then(() => setLocationCopied(true)).catch(() => {});
         },
         () => setLocationError(true),
         { enableHighAccuracy: true, timeout: 5000 },
@@ -91,9 +95,8 @@ export function SosButton({ className }: { className?: string }) {
               <Phone className="h-4 w-4" aria-hidden />
               <span dir="ltr">1122</span> · {t(lang, 'ui.rescue')}
             </a>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2">
               {[
-                { n: '1166', label: t(lang, 'ui.healthHelpline') },
                 { n: '115', label: t(lang, 'ui.edhi') },
               ].map((e) => (
                 <a
@@ -118,7 +121,9 @@ export function SosButton({ className }: { className?: string }) {
               <div className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" aria-hidden />
                 <div className="min-w-0">
-                  <p className="font-semibold text-success">{t(lang, 'ui.sosLocated')}</p>
+                  <p className="font-semibold text-success">
+                    {t(lang, locationCopied ? 'ui.sosLocated' : 'ui.sosLocationFound')}
+                  </p>
                   <a
                     href={`https://maps.google.com/?q=${location.lat},${location.lng}`}
                     target="_blank"

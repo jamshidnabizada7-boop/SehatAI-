@@ -16,6 +16,9 @@ export type ConversationalIntent =
   | 'farewell'
   | 'gratitude'
   | 'wellness_check'
+  | 'small_talk'
+  | 'general_illness'
+  | 'emotional_distress'
   | 'introduction'
   | 'capabilities'
   | 'guidance_request'
@@ -43,16 +46,45 @@ export interface IntentResult {
 
 // ── Introduction patterns (e.g. "I AM AHMAD", "Hello, my name is Sarah", "Salam, Mera naam Ali hai") ──
 
-const INTRO_EN = /^\s*(?:(?:hi|hello|hey|salam|assalam\s*o?\s*alaikum|aoa|slm|good\s+(?:morning|afternoon|evening))\s*[,!.-]?\s*)?(?:i\s*am|i'?m|my\s+name\s+is|this\s+is|it'?s|name\s+is)\s+([A-Za-z\s'-]{2,30})\s*[.!]?$/i;
-const INTRO_ROMAN = /^\s*(?:(?:hi|hello|hey|salam|assalam\s*o?\s*alaikum|aoa|slm)\s*[,!.-]?\s*)?(?:mera\s+naam|main|mera\s+nam)\s+([A-Za-z\s'-]{2,30}?)(?:\s+(?:hoon|hon|hai|ha))?\s*[.!]?$/i;
-const INTRO_URDU = /^\s*(?:(?:سلام|السلام\s*علیکم|ہیلو|ہائے)\s*[,!؟.-]?\s*)?(?:میرا\s*نام|میں)\s+([\u0600-\u06FF\s]{2,30}?)(?:\s*(?:ہوں|ہے))?\s*[!؟.]*$/;
+// Identity requires an explicit naming act. Bare "I am / main / میں" is ambiguous.
+const INTRO_EN = /^\s*(?:(?:hi|hello|hey|salam)\s*[,!.-]?\s*)?(?:my\s+name\s+is|name\s+is|call\s+me)\s+([\p{L}][\p{L}\s'-]{1,49})\s*[.!]?$/iu;
+const INTRO_ROMAN = /^\s*(?:(?:hi|hello|hey|salam)\s*[,!.-]?\s*)?(?:mera\s+naam|mera\s+nam)\s+([A-Za-z\s'-]{2,50}?)(?:\s+(?:hoon|hon|hai|ha))?\s*[.!]?$/i;
+const INTRO_URDU = /^\s*(?:(?:سلام|السلام\s*علیکم|ہیلو|ہائے)\s*[,!؟.-]?\s*)?میرا\s*نام\s+([\u0600-\u06FF\s]{2,50}?)(?:\s*(?:ہوں|ہے))?\s*[!؟.]*$/;
 
 // Medical words that shouldn't be parsed as names ("I am sick", "I am pregnant", "I am bleeding")
 const NON_NAME_WORDS = new Set([
   'sick', 'ill', 'fine', 'good', 'ok', 'okay', 'well', 'hurting', 'injured', 'bleeding',
   'pregnant', 'diabetic', 'asthmatic', 'dying', 'in pain', 'feverish', 'choking',
   'theek', 'beemar', 'khush', 'pareshan', 'theek hoon',
+  'unwell', 'not good', 'not well', 'sad', 'depressed', 'anxious', 'doctor', 'teacher', 'student', 'a doctor', 'a student', 'بیمار', 'اداس', 'پریشان',
 ]);
+
+export function isValidExplicitName(name: string): boolean {
+  const value = name.trim();
+  return /^[\p{L}][\p{L}' -]{1,49}$/u.test(value) && value.split(/\s+/).length <= 4 &&
+    !value.toLowerCase().split(/\s+/).some(w => NON_NAME_WORDS.has(w)) && !NON_NAME_WORDS.has(value.toLowerCase());
+}
+
+export const SMALL_TALK_RESPONSES: Record<Lang, string> = {
+  en: "I'm here and ready to help, thanks for asking! How are you feeling?",
+  ur: 'پوچھنے کا شکریہ! میں آپ کی مدد کے لیے حاضر ہوں۔ آپ کی طبیعت کیسی ہے؟',
+  roman: 'Poochne ka shukriya! Main aap ki madad ke liye haazir hoon. Aap ki tabiyat kaisi hai?',
+};
+export const ILLNESS_RESPONSES: Record<Lang, string> = {
+  en: "I'm sorry you're not feeling well. What symptoms are bothering you, and when did they start?",
+  ur: 'افسوس کہ آپ کی طبیعت ٹھیک نہیں۔ کیا علامات ہیں اور کب سے ہیں؟',
+  roman: 'Afsos ke aap ki tabiyat theek nahi. Kya alamaat hain aur kab se hain?',
+};
+export const DISTRESS_RESPONSES: Record<Lang, string> = {
+  en: "I'm sorry things feel difficult. Can you tell me what's been troubling you?",
+  ur: 'افسوس کہ آپ پریشان ہیں۔ کیا آپ بتا سکتے ہیں کہ کس بات سے پریشانی ہے؟',
+  roman: 'Afsos ke aap pareshan hain. Kya bata sakte hain ke kis baat se pareshani hai?',
+};
+export const RETURN_GREETING_RESPONSES: Record<Lang, string> = {
+  en: 'Hi again! How are you feeling?',
+  ur: 'جی، میں حاضر ہوں۔ آپ کی طبیعت کیسی ہے؟',
+  roman: 'Ji, main haazir hoon. Aap ki tabiyat kaisi hai?',
+};
 
 // ── Capabilities patterns (e.g. "WHAT CAN YOU DO", "who are you") ──
 
@@ -290,6 +322,10 @@ export function detectIntent(
 ): IntentResult {
   const trimmed = message.trim();
 
+  if (/^\s*(?:how (?:are|r) (?:you|u)|how (?:are|r) (?:you|u) doing|aap kaise hain|aap kaisay hain|آپ کیسے ہیں)\s*[?!.؟]*$/i.test(trimmed)) return { intent: 'small_talk', confidence: 0.9 };
+  if (/^\s*(?:(?:i am|i'm|i feel|feeling)\s+(?:not (?:good|well|okay|ok)|unwell|sick|ill)|meri tabiyat (?:theek|thik) (?:nahi|nahin|nhi)|main (?:beemar|bimar)(?: hoon)?|میری طبیعت ٹھیک نہیں|میں بیمار ہوں)\s*[.!؟]*$/i.test(trimmed)) return { intent: 'general_illness', confidence: 0.9 };
+  if (/^\s*(?:(?:i am|i'm|i feel)\s+(?:sad|anxious|upset|depressed)|main (?:bohat |bahut )?pareshan(?: hoon)?|میں (?:بہت )?پریشان ہوں)\s*[.!؟]*$/i.test(trimmed)) return { intent: 'emotional_distress', confidence: 0.9 };
+
   // 1. Language change requests
   if (matchesAnyPattern(trimmed, LANG_EN_PATTERNS)) {
     return { intent: 'language_change', confidence: 0.98, requestedLanguage: 'en' };
@@ -313,18 +349,18 @@ export function detectIntent(
 
   // 3. User introduction (e.g. "I AM AHMAD", "My name is Sarah")
   const mEn = trimmed.match(INTRO_EN);
-  if (mEn && mEn[1] && !NON_NAME_WORDS.has(mEn[1].trim().toLowerCase())) {
+  if (mEn && mEn[1] && isValidExplicitName(mEn[1])) {
     return { intent: 'introduction', confidence: 0.95, extractedName: mEn[1].trim() };
   }
   const mRoman = trimmed.match(INTRO_ROMAN);
   if (mRoman && mRoman[1]) {
     const rawName = mRoman[1].replace(/\s+(?:hoon|hon|hai|ha)$/i, '').trim();
-    if (rawName && !NON_NAME_WORDS.has(rawName.toLowerCase())) {
+    if (rawName && isValidExplicitName(rawName)) {
       return { intent: 'introduction', confidence: 0.95, extractedName: rawName };
     }
   }
   const mUrdu = trimmed.match(INTRO_URDU);
-  if (mUrdu && mUrdu[1]) {
+  if (mUrdu && mUrdu[1] && isValidExplicitName(mUrdu[1])) {
     return { intent: 'introduction', confidence: 0.95, extractedName: mUrdu[1].trim() };
   }
 

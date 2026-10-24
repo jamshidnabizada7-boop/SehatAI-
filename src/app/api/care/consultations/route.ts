@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     const idemKey = req.headers.get('idempotency-key') ?? undefined;
     const { result } = await withIdempotency(
-      idemKey ? `consultation.create:${idemKey}` : undefined,
+      idemKey ? `consultation.create:${session.id}:${idemKey}` : undefined,
       'consultation.book',
       async () =>
         (await createConsultation({

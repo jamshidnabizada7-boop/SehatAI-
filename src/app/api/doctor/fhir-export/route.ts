@@ -1,3 +1,4 @@
+import { canReadPatient } from '@/server/conversation-access';
 // SehatAI — Doctor Portal: FHIR Bundle export for a patient
 // GET /api/doctor/fhir-export?patientId=... → returns a FHIR R4 Bundle (Patient + Condition + MedicationStatement resources)
 // Generated from the patient's PatientProfile + conversations (consent-gated).
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
   if (!patientId) {
     return NextResponse.json({ error: 'patientId is required' }, { status: 400 });
   }
+  if (!await canReadPatient(patientId)) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
   const patientUser = await db.user.findUnique({
     where: { id: patientId },
     select: { id: true, name: true, email: true, consentAt: true },

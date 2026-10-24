@@ -1,16 +1,16 @@
 // SehatAI — Doctor Portal: schedule follow-up for a patient
 // POST /api/doctor/followups { patientId, conversationId?, scheduledFor (ISO), notes?, scope? }
-// Creates a PatientConsentForDoctor (scope=follow_up) + an OutcomeEntry row (status=pending).
+// Requires existing patient-granted follow_up consent before creating an OutcomeEntry.
 // GET  /api/doctor/followups → returns the doctor's pending follow-ups (consented patients).
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireDoctor } from '@/lib/auth';
+import { requireActiveDoctor } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
   let user;
-  try { user = await requireDoctor(); } catch (e: unknown) {
+  try { user = await requireActiveDoctor(); } catch (e: unknown) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: (e as { status?: number }).status ?? 401 });
   }
   const profile = await db.doctorProfile.findUnique({ where: { userId: user.id } });
@@ -41,12 +41,12 @@ export async function GET() {
       conversationId: o.conversationId,
       createdAt: o.createdAt.toISOString(),
     })),
-  });
+  }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
 
 export async function POST(req: NextRequest) {
   let user;
-  try { user = await requireDoctor(); } catch (e: unknown) {
+  try { user = await requireActiveDoctor(); } catch (e: unknown) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: (e as { status?: number }).status ?? 401 });
   }
   let body: { patientId?: unknown; conversationId?: unknown; scheduledFor?: unknown; notes?: unknown };
@@ -63,16 +63,12 @@ export async function POST(req: NextRequest) {
   const profile = await db.doctorProfile.findUnique({ where: { userId: user.id } });
   if (!profile) return NextResponse.json({ error: 'Doctor profile not found' }, { status: 404 });
 
-  // Auto-grant consent: when a doctor schedules a follow-up, we create the consent row
-  // (in v1 this is implicit; in v2 we'd require the patient to approve via a notification).
-  try {
-    await db.patientConsentForDoctor.upsert({
-      where: { patientId_doctorId_scope: { patientId, doctorId: profile.id, scope: 'follow_up' } },
-      update: { revokedAt: null },
-      create: { patientId, doctorId: profile.id, scope: 'follow_up' },
-    });
-  } catch {
-    // race-condition OK
+  // Only the patient can grant sharing. Scheduling must never manufacture consent.
+  const consent = await db.patientConsentForDoctor.findFirst({ where: { patientId, doctorId: profile.id, scope: 'follow_up', revokedAt: null } });
+  if (!consent) return NextResponse.json({ error: 'Patient follow-up consent required' }, { status: 403 });
+  if (typeof body.conversationId === 'string') {
+    const conversation = await db.conversation.findUnique({ where: { id: body.conversationId }, select: { userId: true } });
+    if (!conversation || conversation.userId !== patientId) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
   }
 
   const outcome = await db.outcomeEntry.create({

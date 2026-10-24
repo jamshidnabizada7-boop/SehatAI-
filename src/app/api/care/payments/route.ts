@@ -31,9 +31,9 @@ export async function POST(req: NextRequest) {
 
     const idemKey = req.headers.get('idempotency-key') ?? `auto-${consultationId}-${session.id}`;
     const { result } = await withIdempotency(
-      `payment.create:${idemKey}`,
+      `payment.create:${session.id}:${idemKey}`,
       'payment.create',
-      () => createCheckoutForConsultation({ consultationId, patientId: session.id, idempotencyKey: `payment.create:${idemKey}` }),
+      () => createCheckoutForConsultation({ consultationId, patientId: session.id, idempotencyKey: `payment.create:${session.id}:${idemKey}` }),
     );
     return NextResponse.json(result, { status: 201 });
   } catch (e) {

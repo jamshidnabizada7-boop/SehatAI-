@@ -12,9 +12,10 @@ export function AppFooter() {
   const uiLang = resolveUiLang(langPref);
   const isUr = uiLang === 'ur';
 
+  // Ambulance services only (1166 is an information helpline, not an
+  // emergency line); coverage varies by area.
   const numbers = [
     { number: '1122', label: t(uiLang, 'ui.rescue') },
-    { number: '1166', label: t(uiLang, 'ui.healthHelpline') },
     { number: '115', label: t(uiLang, 'ui.edhi') },
   ];
 
@@ -30,7 +31,7 @@ export function AppFooter() {
           <span className="sm:hidden">{t(uiLang, 'ui.notADoctor')}</span>
           <span className="hidden sm:inline">{t(uiLang, 'footer.disclaimer')}</span>
         </p>
-        <nav className="flex flex-wrap items-center justify-center gap-1.5" aria-label={t(uiLang, 'ui.emergencyNumbers')}>
+        <nav className="flex flex-wrap items-center justify-center gap-1.5" aria-label={`${t(uiLang, 'ui.emergencyNumbers')} — Pakistan, check local coverage`}>
           {numbers.map((em) => (
             <a
               key={em.number}

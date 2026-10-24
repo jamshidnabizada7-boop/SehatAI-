@@ -13,6 +13,9 @@ import {
   NON_ANATOMICAL_CHEST,
 } from '@/lib/engine/context-extraction';
 import { fuzzyFindMedicalConcept } from '@/lib/engine/fuzzy-matcher';
+import { buildSafetyState, reportContext, safetyFollowUp, conversationRecall } from './safety-state';
+import { detectIntent, GREETING_RESPONSES, RETURN_GREETING_RESPONSES, SMALL_TALK_RESPONSES, ILLNESS_RESPONSES, DISTRESS_RESPONSES } from './intent-detection';
+import { emergencyActionForUnknownLocation } from '@/lib/emergency-localization';
 
 // ============================================================
 // SehatAI — Shared safety engine (L0)
@@ -354,6 +357,8 @@ export function isTermAffirmedInNormClause(normClause: string, rawTerm: string, 
 
   const normTermClean = normTerm.replace(/['"]/g, '');
   if (INTRINSIC_DANGER_TERMS.has(rawTerm) || INTRINSIC_DANGER_TERMS.has(normTermClean)) {
+    const idx = normClause.indexOf(normTerm);
+    if (idx >= 0 && /\b(?:not|never|denies|denied)\s*$/.test(normClause.slice(0, idx))) return false;
     return true;
   }
 
@@ -392,6 +397,7 @@ export function isTermAffirmedInClause(clause: string, term: string): boolean {
 /** L0: match red-flag patterns against normalized text with robust negation handling */
 export function matchRedFlags(rawText: string): LexiconMatch[] {
   const hits: LexiconMatch[] = [];
+  if (reportContext(rawText) !== 'current') return hits;
   if (isWarningSignQuestion(rawText)) return hits;
   const rawClauses = splitIntoClauses(rawText);
   const normClauses = rawClauses.map((c) => normalizeText(c)).filter(Boolean);
@@ -535,6 +541,8 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
   const ctx = extractClinicalContext(text);
   const clarification = assessClarification(ctx, text);
   const redFlags = matchRedFlags(text);
+  if (reportContext(text) !== 'current' && /\b(?:fiction|hypothetical|hypothetically)\b/i.test(text)) return { level: 'ROUTINE', reason: triageReason('ROUTINE', lang, ['context:hypothetical']), signals: ['context:hypothetical'], engine: 'L0', shortCircuited: false, context: ctx, redFlagMatches: [] };
+
 
   if (NON_ANATOMICAL_CHEST.test(text)) {
     return {
@@ -585,7 +593,7 @@ export function runL0Triage(text: string, language?: Lang): TriageResult {
   const hypoglycemiaEmergency =
     ctx.glucoseReading !== null && ctx.glucoseReading.value > 0 && ctx.glucoseReading.value < 55;
 
-  const isHistoricalOnly = Boolean(ctx.isHistorical && !ctx.hasSymptoms);
+  const isHistoricalOnly = reportContext(text) !== 'current' || Boolean(ctx.isHistorical && !ctx.hasSymptoms);
   if (!isHistoricalOnly && (redFlags.length > 0 || diabeticEmerg || traumaEmerg || overdoseEmerg || mentalStatusEmergency || respiratoryEmergency || anaphylaxisReaction || hypoglycemiaEmergency)) {
     const contextualEmerg = mentalStatusEmergency || respiratoryEmergency || anaphylaxisReaction || hypoglycemiaEmergency;
     const category = anaphylaxisReaction
@@ -1802,6 +1810,23 @@ export function runOfflineEngine(
   history?: MessageHistoryItem[]
 ): OfflineResponse {
   const language = lang ?? detectLanguage(query).language;
+  const prior = (history ?? []).filter(m => m.content && m.role === 'user');
+  // The hook's history already includes the current user message and its empty reply.
+  if (prior.at(-1)?.content === query) prior.pop();
+  const safety = buildSafetyState([...prior, { role: 'user', content: query }], runL0Triage, language);
+  const priorSafety = buildSafetyState(prior, runL0Triage, language);
+  const followUp = safetyFollowUp(safety, language);
+  if (followUp && (priorSafety.urgency !== 'INFORMATIONAL' || safety.concerns.some(c => /mental-health|^chest-pain$/.test(c.category)))) {
+    return { content: followUp, triage: { level: safety.urgency, reason: 'Unresolved patient-reported safety concerns require reassessment.', signals: safety.concerns.map(c => `safety:${c.category}:${c.status}`), engine: 'offline', shortCircuited: true }, citations: [], emergencyCategory: safety.urgency === 'EMERGENCY' ? 'general-emergency' : undefined };
+  }
+  const intent = detectIntent(query, prior.map(m => m.content));
+  const recall = conversationRecall(query, priorSafety, language);
+  if (recall) return { content: recall.content, triage: { level: 'ROUTINE', reason: '', signals: ['factual-recall'], engine: 'offline', shortCircuited: true }, citations: [] };
+  const conversational = intent.intent === 'greeting' ? prior.length ? RETURN_GREETING_RESPONSES : GREETING_RESPONSES
+    : intent.intent === 'small_talk' ? SMALL_TALK_RESPONSES
+    : intent.intent === 'general_illness' ? ILLNESS_RESPONSES
+    : intent.intent === 'emotional_distress' ? DISTRESS_RESPONSES : null;
+  if (conversational) return { content: conversational[language], triage: { level: intent.intent === 'general_illness' || intent.intent === 'emotional_distress' ? 'ROUTINE' : 'INFORMATIONAL', reason: '', signals: [`intent:${intent.intent}`], engine: 'offline', shortCircuited: true }, citations: [] };
   const triage = runL0Triage(query, language);
   const ctx = triage.context;
 
@@ -1814,12 +1839,12 @@ export function runOfflineEngine(
       lines.push(tpl.reasonIntro[language]);
       lines.push('');
       lines.push(language === 'ur' ? 'فوری اقدام:' : language === 'roman' ? 'Fori iqdam:' : 'Immediate actions:');
-      tpl.immediateActions.forEach((a) => lines.push(`• ${a[language]}`));
+      tpl.immediateActions.forEach((a) => lines.push(`• ${emergencyActionForUnknownLocation(a[language], language)}`));
       lines.push('');
       lines.push(language === 'ur' ? 'نہ کریں:' : language === 'roman' ? 'Na karein:' : 'Do NOT:');
       tpl.doNot.forEach((d) => lines.push(`• ${d[language]}`));
       lines.push('');
-      lines.push(language === 'ur' ? '📞 فوراً کال کریں: 1122 (ریسکیو) یا 1023 (الخدمت ایمبولینس)' : language === 'roman' ? '📞 Fori call karein: 1122 (Rescue) ya 1023 (Alkhidmat Ambulance)' : '📞 Call now: 1122 (Rescue) or 1023 (Alkhidmat Ambulance)');
+      lines.push(language === 'ur' ? 'مقامی ایمرجنسی سروس سے فوراً مدد لیں یا قریبی ایمرجنسی شعبے میں جائیں۔' : language === 'roman' ? 'Local emergency service se foran madad lein ya qareebi emergency department jayein.' : 'Contact your local emergency service now or go to the nearest emergency department.');
       return {
         content: lines.join('\n'),
         triage,

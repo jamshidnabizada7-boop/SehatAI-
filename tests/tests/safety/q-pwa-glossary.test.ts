@@ -42,7 +42,7 @@ describe('Q. service worker — safety contract', () => {
 
   test('cache is versioned so stale shells are evicted on activate', () => {
     expect(sw.includes('sehatai-shell-')).toBe(true);
-    expect(sw.includes("keys.filter((k) => k !== CACHE)")).toBe(true);
+    expect(sw.includes("k.startsWith('sehatai-shell-') && k !== CACHE")).toBe(true);
   });
 
   test('precache list contains only safe static shell URLs', () => {

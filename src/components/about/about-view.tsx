@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import {
-  ArrowRight,
   BookOpenCheck,
   CloudOff,
   Cpu,
@@ -89,11 +88,7 @@ export function AboutView() {
     { tag: 'Roman Urdu', text: 'mujhe do din se bukhar hai', dir: 'ltr' },
   ];
 
-  const personas = [
-    { title: t(uiLang, 'about.persona1Title'), body: t(uiLang, 'about.persona1Body') },
-    { title: t(uiLang, 'about.persona2Title'), body: t(uiLang, 'about.persona2Body') },
-    { title: t(uiLang, 'about.persona3Title'), body: t(uiLang, 'about.persona3Body') },
-  ];
+
 
   return (
     <div className="custom-scrollbar h-full overflow-y-auto px-4 py-4 sm:px-6">
@@ -136,59 +131,8 @@ export function AboutView() {
           </Section>
         </div>
 
-        {/* safety architecture */}
-        <Section title={t(uiLang, 'about.safetyTitle')} icon={Layers} delay={0.15}>
-          <div className="grid gap-3 sm:grid-cols-3" dir="ltr">
-            {[
-              {
-                layer: t(uiLang, 'about.safetyL0'),
-                body: t(uiLang, 'about.safetyL0Body'),
-                icon: ScanSearch,
-                time: '< 5ms',
-              },
-              {
-                layer: t(uiLang, 'about.safetyL1'),
-                body: t(uiLang, 'about.safetyL1Body'),
-                icon: Cpu,
-                time: 'pre-LLM',
-              },
-              {
-                layer: t(uiLang, 'about.safetyL2'),
-                body: t(uiLang, 'about.safetyL2Body'),
-                icon: ShieldCheck,
-                time: 'post-gen',
-              },
-            ].map((s, i) => (
-              <div
-                key={s.layer}
-                className="relative rounded-xl bg-muted/60 p-4"
-              >
-                <span className="chip stroke absolute end-3 top-3">
-                  {s.time}
-                </span>
-                <span className="iconbox mb-2 h-8 w-8 rounded-lg">
-                  <s.icon className="h-4 w-4" aria-hidden />
-                </span>
-                <p className="text-sm font-semibold text-foreground">{s.layer}</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{s.body}</p>
-                {/* pipeline order: L0 -> L1 -> L2 */}
-                {i < 2 ? (
-                  <ArrowRight className="absolute -end-[14px] top-1/2 z-10 hidden h-4 w-4 -translate-y-1/2 text-muted-foreground sm:block" aria-hidden />
-                ) : null}
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 flex items-start gap-2.5 rounded-xl bg-red-600/8 p-3.5">
-            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
-            <div>
-              <p className="text-sm font-bold text-red-700 dark:text-red-400">
-                {t(uiLang, 'about.bypassTitle')}
-              </p>
-              <p className="mt-0.5 text-xs leading-relaxed text-foreground/85">
-                {t(uiLang, 'about.bypassBody')}
-              </p>
-            </div>
-          </div>
+        <Section title={uiLang === 'ur' ? 'محفوظ رہنمائی' : uiLang === 'roman' ? 'Mehfooz rehnumai' : 'Using health guidance safely'} icon={ShieldCheck} delay={0.15}>
+          <p className="text-sm leading-relaxed">{uiLang === 'ur' ? 'یہ معاون عمومی معلومات دیتا ہے، تشخیص نہیں کرتا۔ شدید یا بڑھتی ہوئی علامات میں بالمشافہ طبی مدد لیں۔ ہنگامی حالت میں چیٹ کے جواب کا انتظار نہ کریں۔' : uiLang === 'roman' ? 'Yeh muawin aam maloomat deta hai, tashkhees nahi karta. Shadeed ya barhti hui alamaat mein rubaru tibbi madad lein. Emergency mein chat ke jawab ka intezar na karein.' : 'This assistant offers general information and cannot diagnose you. Seek in-person care for serious or worsening symptoms. In an emergency, do not wait for a chat response.'}</p>
         </Section>
 
         {/* languages + offline */}
@@ -246,7 +190,7 @@ export function AboutView() {
         {/* Doctor Directory — browse PMDC-verified doctors + reviews */}
         <Section title="Find a verified doctor" icon={Stethoscope} delay={0.25}>
           <p className="text-sm leading-relaxed text-foreground/90">
-            Browse PMDC-verified specialists across Pakistan. All doctors have completed our verification process.
+            Check each clinician’s verification and availability before requesting care.
           </p>
         </Section>
         <DoctorDirectory />
@@ -285,26 +229,9 @@ export function AboutView() {
           </ul>
         </Section>
 
-        {/* judge notes */}
-        <Section title={t(uiLang, 'about.judgeTitle')} icon={Users} delay={0.35}>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
-              <Smartphone className="h-3.5 w-3.5" aria-hidden />
-              {t(uiLang, 'about.judgePwa')}
-            </p>
-            <PwaInstallButton />
-          </div>
-          <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
-            {t(uiLang, 'about.installDesc')}
-          </p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {personas.map((p) => (
-              <div key={p.title} className="rounded-xl border border-border bg-background/60 p-4">
-                <p className="text-sm font-bold text-foreground">{p.title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{p.body}</p>
-              </div>
-            ))}
-          </div>
+        <Section title={uiLang === 'ur' ? 'ایپ انسٹال کریں' : uiLang === 'roman' ? 'App install karein' : 'Install the app'} icon={Smartphone} delay={0.35}>
+          <PwaInstallButton />
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{t(uiLang, 'about.installDesc')}</p>
         </Section>
 
         <p

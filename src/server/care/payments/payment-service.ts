@@ -1,3 +1,4 @@
+import { careSecret } from '../secrets';
 // ============================================================
 // Care Connect §7/§8/§11 — payment orchestration.
 // Commission resolution (CommissionRule, basis points) → checkout
@@ -208,27 +209,36 @@ export async function processWebhook(opts: { provider: string; rawBody: string; 
         payloadJson: opts.rawBody,
       },
     });
-  } catch {
-    // duplicate delivery — already recorded; ack ok, do not re-process
-    return { duplicate: true };
+  } catch (error) {
+    if ((error as { code?: string }).code !== 'P2002') throw error;
+    const existing = await db.paymentWebhook.findUnique({ where: { provider_eventId: { provider: provider.name, eventId: verification.eventId } } });
+    if (!existing) throw error;
+    if (existing.processed) return { duplicate: true };
+    record = existing;
   }
 
   try {
     const payload = verification.payload as {
       type?: string; reference?: string; amountMinor?: number; currency?: string;
     };
+    let duplicate = false;
+    if (verification.type === 'payment.succeeded' || verification.type === 'payment.failed') {
+      const target = await db.payment.findUnique({ where: { id: String(payload.reference ?? '') }, select: { provider: true } });
+      if (!target || target.provider !== provider.name) throw new PaymentError('PAYMENT_PROVIDER_MISMATCH', 409);
+    }
     switch (verification.type) {
       case 'payment.succeeded':
-        await markPaymentPaid({
+        const capture = await markPaymentPaid({
           paymentId: String(payload.reference ?? ''),
           amountMinor: Number(payload.amountMinor ?? 0),
           currency: String(payload.currency ?? ''),
           providerRef: String(payload.reference ?? ''),
         });
+        duplicate = capture.already;
         break;
       case 'payment.failed': {
         const payment = await db.payment.findUnique({ where: { id: String(payload.reference ?? '') } });
-        if (payment) await transitionPayment(payment.id, 'FAILED');
+        if (payment && payment.status !== 'FAILED') await transitionPayment(payment.id, 'FAILED');
         break;
       }
       default:
@@ -236,7 +246,7 @@ export async function processWebhook(opts: { provider: string; rawBody: string; 
         break;
     }
     await db.paymentWebhook.update({ where: { id: record.id }, data: { processed: true, processedAt: new Date() } });
-    return { duplicate: false, type: verification.type };
+    return { duplicate, type: verification.type };
   } catch (e) {
     await db.paymentWebhook.update({ where: { id: record.id }, data: { processed: false } }).catch(() => undefined);
     throw e;
@@ -245,12 +255,14 @@ export async function processWebhook(opts: { provider: string; rawBody: string; 
 
 /** Server-side payment success — the single trust boundary (§11). */
 export async function markPaymentPaid(opts: { paymentId: string; amountMinor: number; currency: string; providerRef: string }) {
-  const payment = await db.payment.findUnique({
+  const result = await db.$transaction(async (tx) => {
+  await tx.$queryRaw`SELECT id FROM "Payment" WHERE id = ${opts.paymentId} FOR UPDATE`;
+  const payment = await tx.payment.findUnique({
     where: { id: opts.paymentId },
     include: { consultation: { include: { doctorProfile: { select: { id: true, specialty: true } } } } },
   });
   if (!payment) throw new PaymentError('PAYMENT_NOT_FOUND', 404);
-  if (payment.status === 'PAID') return { already: true }; // idempotent
+
 
   // §11 amount/currency mismatch → do NOT trust; flag for review.
   if (opts.amountMinor !== payment.amountMinor || opts.currency.toUpperCase() !== payment.currency) {
@@ -258,8 +270,10 @@ export async function markPaymentPaid(opts: { paymentId: string; amountMinor: nu
     throw new PaymentError('AMOUNT_MISMATCH', 409);
   }
 
-  await transitionPayment(payment.id, 'PAID');
-  await db.payment.update({
+  if (payment.status === 'PAID') return { already: true, consultation: payment.consultation };
+  assertTransition(PAYMENT_TRANSITIONS, payment.status as PaymentState, 'PAID');
+  await tx.payment.update({ where: { id: payment.id }, data: { status: 'PAID' } });
+  await tx.payment.update({
     where: { id: payment.id },
     data: { capturedAt: new Date(), providerRef: opts.providerRef || payment.providerRef },
   });
@@ -284,13 +298,13 @@ export async function markPaymentPaid(opts: { paymentId: string; amountMinor: nu
       ...(platformFee > 0 ? [{ accountKind: 'PLATFORM_FEE' as const, direction: 'CREDIT' as const, amountMinor: platformFee, currency: ccy, memo: 'commission' }] : []),
       ...(processorFee > 0 ? [{ accountKind: 'PROCESSOR_FEE' as const, direction: 'CREDIT' as const, amountMinor: processorFee, currency: ccy, memo: 'processor fee' }] : []),
     ],
-  });
+  }, tx);
 
   // DoctorEarning (PENDING until payout-delay elapses → AVAILABLE)
   const delayHours = Number(process.env.CARE_EARNING_DELAY_HOURS ?? '72');
-  const existingEarning = await db.doctorEarning.findUnique({ where: { consultationId: payment.consultationId } });
+  const existingEarning = await tx.doctorEarning.findUnique({ where: { consultationId: payment.consultationId } });
   if (!existingEarning && doctorNet > 0) {
-    await db.doctorEarning.create({
+    await tx.doctorEarning.create({
       data: {
         doctorProfileId: payment.consultation.doctorProfile.id,
         consultationId: payment.consultationId,
@@ -304,7 +318,7 @@ export async function markPaymentPaid(opts: { paymentId: string; amountMinor: nu
       },
     });
   }
-  await db.platformFee.create({
+  await tx.platformFee.create({
     data: {
       consultationId: payment.consultationId,
       paymentId: payment.id,
@@ -312,26 +326,32 @@ export async function markPaymentPaid(opts: { paymentId: string; amountMinor: nu
       processorFeeMinor: processorFee,
       currency: ccy,
     },
-  }).catch(() => undefined); // reporting row; unique per payment handled logically
+  });
 
   // Consultation: PAYMENT_PENDING → PAID → REQUESTED (doctor now must accept)
   await transitionConsultation({
     consultationId: payment.consultationId, to: 'PAID', actorRole: 'SYSTEM', reason: `payment ${payment.id} captured`,
-  });
+  }, tx);
   const consultation = await transitionConsultation({
     consultationId: payment.consultationId, to: 'REQUESTED', actorRole: 'SYSTEM', reason: 'awaiting doctor acceptance',
-  });
-  await notify({ userId: consultation.patientId, type: 'consultation.confirmed', consultationId: consultation.id });
-  await notify({ userId: consultation.doctorUserId, type: 'consultation.doctor_accepted', consultationId: consultation.id });
-
-  return { already: false };
+  }, tx);
+  await notify({ userId: consultation.patientId, type: 'consultation.confirmed', consultationId: consultation.id }, tx);
+  await notify({ userId: consultation.doctorUserId, type: 'consultation.confirmed', consultationId: consultation.id }, tx);
+  return { already: false, consultation };
+  }, { timeout: 15000 });
+  return { already: result.already };
 }
 
 export async function transitionPayment(paymentId: string, to: PaymentState) {
-  const payment = await db.payment.findUnique({ where: { id: paymentId } });
+  return db.$transaction(async tx => {
+  // Failure events serialize with capture so a stale pending read cannot overwrite PAID.
+  await tx.$queryRaw`SELECT id FROM "Payment" WHERE id = ${paymentId} FOR UPDATE`;
+  const payment = await tx.payment.findUnique({ where: { id: paymentId } });
   if (!payment) throw new PaymentError('PAYMENT_NOT_FOUND', 404);
+  if (payment.status === to) return payment;
   assertTransition(PAYMENT_TRANSITIONS, payment.status as PaymentState, to);
-  return db.payment.update({ where: { id: paymentId }, data: { status: to } });
+  return tx.payment.update({ where: { id: paymentId }, data: { status: to } });
+  });
 }
 
 export function newPaymentIdempotencyKey(): string {
@@ -340,6 +360,6 @@ export function newPaymentIdempotencyKey(): string {
 
 /** CSRF-safe signing secret for checkout handoff endpoints (dev helper). */
 export function signCheckoutPayload(payload: string): string {
-  const secret = process.env.CARE_CHECKOUT_SECRET ?? process.env.NEXTAUTH_SECRET ?? 'dev-checkout-secret';
+  const secret = careSecret('CARE_CHECKOUT_SECRET', 'dev-checkout-secret');
   return createHmac('sha256', secret).update(payload).digest('hex');
 }

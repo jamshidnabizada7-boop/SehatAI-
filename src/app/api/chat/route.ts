@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runPipeline } from '@/server/pipeline/run';
 import { db } from '@/lib/db';
-import { getServerSession } from '@/lib/auth';
+import { getServerSession, requireUser } from '@/lib/auth';
+import { runOfflineEngine } from '@/lib/engine/safety-engine';
+import { publicPipelineEvent } from '@/server/public-pipeline-event';
+import { rateLimit, RATE_LIMITS, clientIpFrom } from '@/lib/care/rate-limit';
 import { sanitizeProfileServer, type ServerHealthProfile } from '@/lib/profile-server';
 import type { Lang, PipelineStage } from '@/lib/types';
 
@@ -17,12 +20,13 @@ export const runtime = 'nodejs';
  * passes both into the pipeline (profile-aware triage W1, drug checks W4).
  * Guests proceed exactly as before (profile = null).
  */
-async function resolveUserAndProfile(): Promise<{ userId?: string; profile?: ServerHealthProfile }> {
+async function resolveUserAndProfile(): Promise<{ userId?: string; profile?: ServerHealthProfile; allowExternalAI?: boolean }> {
   try {
     const session = await getServerSession();
-    const sessionUserId = (session?.user as { id?: string } | undefined)?.id;
-    if (!sessionUserId) return {};
-    const row = await db.patientProfile.findUnique({ where: { userId: sessionUserId } });
+    if (!(session?.user as { id?: string } | undefined)?.id) return {};
+    const actor = await requireUser();
+    const sessionUserId = actor.id;
+    const [row, user] = await Promise.all([db.patientProfile.findUnique({ where: { userId: sessionUserId } }), db.user.findUnique({ where: { id: sessionUserId }, select: { consentAt: true } })]);
     const profile = row
       ? sanitizeProfileServer({
           ageBand: row.ageBand as ServerHealthProfile['ageBand'],
@@ -35,9 +39,9 @@ async function resolveUserAndProfile(): Promise<{ userId?: string; profile?: Ser
           updatedAt: row.updatedAt.getTime(),
         })
       : undefined;
-    return { userId: sessionUserId, profile };
-  } catch {
-    return {}; // guest / demo mode — pipeline must not depend on auth
+    return { userId: sessionUserId, profile, allowExternalAI: Boolean(user?.consentAt) };
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -52,7 +56,7 @@ function safeParseArr(s: string | null | undefined): unknown[] {
 }
 
 export async function POST(req: NextRequest) {
-  let body: { message?: unknown; language?: unknown; sessionId?: unknown; conversationId?: unknown };
+  let body: { message?: unknown; language?: unknown; sessionId?: unknown; conversationId?: unknown; history?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -70,6 +74,8 @@ export async function POST(req: NextRequest) {
   if (!message) {
     return NextResponse.json({ error: 'message is required' }, { status: 400 });
   }
+  if (message.length > 4000 || (Array.isArray(body.history) && body.history.length > 2000)) return NextResponse.json({ error: 'Conversation is too large for this request; use local guidance or start a new conversation.' }, { status: 413 });
+  const clientHistory = Array.isArray(body.history) ? body.history.filter((m): m is { id?: string; role: string; content: string; createdAt?: string } => Boolean(m && typeof m === 'object' && ['user', 'assistant'].includes(m.role) && typeof m.content === 'string' && m.content.length <= 4000)).map(m => ({ id: typeof m.id === 'string' ? m.id : undefined, role: m.role, content: m.content })) : [];
   if (!sessionId) {
     return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
   }
@@ -81,7 +87,7 @@ export async function POST(req: NextRequest) {
       const send = (stage: PipelineStage, data: unknown) => {
         if (closed) return;
         try {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ stage, data })}\n\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ stage, data: publicPipelineEvent(stage, data) })}\n\n`));
         } catch {
           // client disconnected — stop writing
           closed = true;
@@ -89,29 +95,24 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        const { userId, profile } = await resolveUserAndProfile();
-        await runPipeline({ message, language, sessionId, conversationId, userId, profile }, send);
+        const { userId, profile, allowExternalAI = false } = await resolveUserAndProfile();
+        const rl = await rateLimit(`chat:${userId ?? clientIpFrom(req)}`, RATE_LIMITS.chat.limit, RATE_LIMITS.chat.windowSeconds);
+        await runPipeline({ message, language, sessionId, conversationId, userId, profile, clientHistory, allowExternalAI: allowExternalAI && rl.allowed }, send);
       } catch {
         // Absolute guard: the pipeline itself never throws, but if it somehow
         // does, still close the stream gracefully with error + done.
-        const fallbackContent =
-          '⚠️ An unexpected error occurred. If this is an emergency, call 1122 (Rescue) or 1166 (Health Helpline) now. Otherwise, please try again or visit your nearest health facility.';
+        const local = runOfflineEngine(message, language === 'auto' ? undefined : language, clientHistory);
+        const fallbackContent = local.content;
         send('error', { message: 'An unexpected error occurred.', fallbackContent });
         send('done', {
           messageId: '',
           conversationId: conversationId ?? '',
           content: fallbackContent,
-          language: 'en',
-          triage: {
-            level: 'ROUTINE',
-            reason: 'Service error — please retry or see a doctor.',
-            signals: [],
-            engine: 'offline',
-            shortCircuited: false,
-          },
+          language: language === 'auto' ? 'en' : language,
+          triage: local.triage,
           citations: [],
           validation: { verdict: 'fallback', checks: [{ name: 'serviceError', passed: false }], latencyMs: 0 },
-          offline: false,
+          offline: true,
           latencyMs: 0,
         });
       } finally {
